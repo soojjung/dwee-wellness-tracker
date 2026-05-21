@@ -2,15 +2,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useT } from '@/i18n/useT';
+import { cn } from '@/lib/cn';
+import { NavIcon, type NavIconKey } from './NavIcon';
 
-type Tab = { href: string; key: 'home' | 'log' | 'calendar' | 'insights' | 'settings' };
+type TabKey = NavIconKey;
+interface Tab {
+  href: string;
+  key: TabKey;
+  labelKey: 'home' | 'log' | 'insights' | 'settings';
+}
 
-const TABS: Tab[] = [
-  { href: '/', key: 'home' },
-  { href: '/log', key: 'log' },
-  { href: '/calendar', key: 'calendar' },
-  { href: '/insights', key: 'insights' },
-  { href: '/settings', key: 'settings' },
+const TABS: readonly Tab[] = [
+  { href: '/', key: 'home', labelKey: 'home' },
+  { href: '/log', key: 'log', labelKey: 'log' },
+  { href: '/insights', key: 'insights', labelKey: 'insights' },
+  { href: '/settings', key: 'settings', labelKey: 'settings' },
 ];
 
 export function BottomTabNav() {
@@ -20,24 +26,31 @@ export function BottomTabNav() {
   return (
     <nav
       aria-label="primary"
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-neutral-200/70 bg-white/95 backdrop-blur"
+      className="fixed inset-x-0 bottom-6 z-20 flex justify-center px-5"
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-between px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+      <ul
+        className={cn(
+          'flex items-center gap-2 rounded-[32px] border-[0.5px] border-nav-pillBorder',
+          'bg-nav-pillBg p-[6px] shadow-[0_0_12px_0_rgba(0,0,0,0.06)] backdrop-blur-[8px]',
+        )}
+      >
         {TABS.map((tab) => {
           const active = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href);
           return (
-            <li key={tab.key} className="flex-1">
+            <li key={tab.key}>
               <Link
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center justify-center gap-1 rounded-md py-1 text-xs ${
-                  active ? 'font-medium text-neutral-900' : 'text-neutral-400'
-                }`}
+                aria-label={t.nav[tab.labelKey]}
+                className={cn(
+                  'flex h-12 w-16 items-center justify-center rounded-[32px] transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',
+                  active
+                    ? 'border-[0.5px] border-nav-activePillBorder bg-nav-activePillBg text-brand-pink200'
+                    : 'text-brand-gray900',
+                )}
               >
-                <span aria-hidden className="text-base">
-                  {tabIcon(tab.key, active)}
-                </span>
-                <span>{t.nav[tab.key]}</span>
+                <NavIcon icon={tab.key} className="h-6 w-6" />
               </Link>
             </li>
           );
@@ -45,20 +58,4 @@ export function BottomTabNav() {
       </ul>
     </nav>
   );
-}
-
-function tabIcon(key: Tab['key'], active: boolean): string {
-  const filled = active;
-  switch (key) {
-    case 'home':
-      return filled ? '●' : '○';
-    case 'log':
-      return filled ? '✎' : '✎';
-    case 'calendar':
-      return filled ? '▦' : '▢';
-    case 'insights':
-      return filled ? '✦' : '✧';
-    case 'settings':
-      return filled ? '⚙' : '⚙';
-  }
 }

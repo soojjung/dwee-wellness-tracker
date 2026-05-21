@@ -38,3 +38,8 @@ paths:
 
 - 새 룰은 `src/lib/insight/rules/{name}Rule.ts` 한 파일.
 - 입력 부족 시 `null` 반환 (빈 배열 X). `generator.ts` 배열에 등록.
+- rule 반환값에 표시 문자열(`title`/`body`) 금지. `kind` + 숫자/날짜 payload + `confidence` 만. 표시는 화면이 `useT()`로 조립.
+
+## 7) 데이터 흐름
+
+→ 다이어그램: [docs/architecture/insight-flow.md](../../docs/architecture/insight-flow.md)

@@ -1,0 +1,2 @@
+- [dwee MVP1 마스터 계획](project_master_plan.md) — STEP 7.5+9.0~11.3 전체 분해, 결정 항목 A1~C4, 진행 방식 a/b/c 옵션
+- [산출물 위치](project_master_plan.md) — 사용자 검토용 마스터 계획: docs/product/mvp1-remaining-plan.md (2026-05-15 작성)

@@ -1,36 +1,47 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 
-interface LoginScreenProps {
-  bgColor: string;
-  logoColor: string;
-}
+const NOTICE_DURATION_MS = 2400;
 
-export function LoginScreen({ bgColor, logoColor }: LoginScreenProps) {
+export function LoginScreen() {
   const t = useT();
   const [notice, setNotice] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const showComingSoon = () => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+    }
     setNotice(t.auth.comingSoon);
-    window.setTimeout(() => setNotice(null), 2400);
+    timerRef.current = setTimeout(() => {
+      setNotice(null);
+      timerRef.current = null;
+    }, NOTICE_DURATION_MS);
   };
 
   return (
-    <main
-      className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-5"
-      style={{ backgroundColor: bgColor }}
-    >
+    <main className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-auth-bg px-5">
       <div className="flex flex-1 items-center justify-center">
-        <span
-          className="select-none text-5xl font-bold tracking-tight"
-          style={{ color: logoColor }}
-        >
-          {t.app.name}
-        </span>
+        <img
+          src="/brand/wordmark-dwee.svg"
+          alt={t.app.name}
+          width={161}
+          height={46}
+          className="select-none"
+          draggable={false}
+        />
       </div>
 
       <div className="flex flex-col pb-24">
@@ -45,8 +56,8 @@ export function LoginScreen({ bgColor, logoColor }: LoginScreenProps) {
         </Button>
 
         <Link
-          href="/onboarding"
-          className="mt-8 self-center text-sm text-auth-button underline underline-offset-4"
+          href="/"
+          className="mt-8 self-center rounded-sm px-2 py-1 text-base text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2"
         >
           {t.auth.continueWithoutSignIn}
         </Link>

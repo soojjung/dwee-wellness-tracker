@@ -27,8 +27,9 @@ paths:
 
 ## 3) 동적 값 처리
 
-- 문장에 숫자·날짜를 끼워넣을 때 ko/en 어순이 다를 수 있음. 사전 키 자체를 분리하거나 템플릿 함수로 분리.
-- `t.home.confidenceMedium` 같은 정적 문구 우선. 보간이 필요해지면 `tFn(args)` 헬퍼 별도 도입을 사용자 승인 후 추가.
+- 문장에 숫자·날짜를 끼워넣을 때 ko/en 어순이 다를 수 있음. 사전 키 자체를 분리.
+- **B1 결정 (2026-05-15)**: 정적 키 + JSX 조합으로 통일. `bodyPrefix`/`bodySuffix` 키 쌍에 동적 값을 JSX로 끼워넣음. `tFn(args)` 헬퍼 도입 금지.
+  - 예: `<>{t.insight.cycleRegularity.bodyPrefix}<strong>{avg}</strong>{t.insight.cycleRegularity.bodySuffix}</>`
 
 ## 4) 사전 외 위치 금지
 

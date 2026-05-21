@@ -1,16 +1,12 @@
 export type Confidence = 'low' | 'medium' | 'high' | 'unknown';
 
-export type InsightKind =
-  | 'cycle_regularity'
-  | 'cycle_phase'
-  | 'pain_pattern'
-  | 'mood_trend'
-  | 'data_needed';
+export type InsightPhase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal' | 'unknown';
 
-export interface Insight {
-  id: string;
-  kind: InsightKind;
-  title: string;
-  body: string;
-  confidence: Confidence;
-}
+export type Insight =
+  | { id: string; kind: 'data_needed'; confidence: Confidence }
+  | { id: string; kind: 'cycle_regularity'; confidence: Confidence; averageDays: number }
+  | { id: string; kind: 'cycle_phase'; confidence: Confidence; phase: InsightPhase }
+  | { id: string; kind: 'pain_pattern'; confidence: Confidence; count: number }
+  | { id: string; kind: 'mood_trend'; confidence: Confidence; count: number };
+
+export type InsightKind = Insight['kind'];

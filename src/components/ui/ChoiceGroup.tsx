@@ -8,7 +8,7 @@ interface Choice<T extends string> {
 
 interface ChoiceGroupProps<T extends string> {
   choices: ReadonlyArray<Choice<T>>;
-  value: T;
+  value: T | null;
   onChange: (value: T) => void;
   className?: string;
   ariaLabel?: string;

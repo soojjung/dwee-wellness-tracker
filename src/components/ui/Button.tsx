@@ -27,6 +27,7 @@ interface SharedProps {
 function buttonClasses({ variant = 'primary', size = 'md', fullWidth, className }: SharedProps) {
   return cn(
     'inline-flex items-center justify-center gap-3 font-medium',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',
     variantClasses[variant],
     sizeClasses[size],
     fullWidth && 'w-full',

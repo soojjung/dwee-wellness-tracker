@@ -12,8 +12,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [hydrate, hydrated]);
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <main className="flex-1 pb-16">{children}</main>
+    <div className="flex min-h-dvh flex-col bg-brand-white">
+      <main className="flex-1 pb-32">{children}</main>
       <BottomTabNav />
     </div>
   );

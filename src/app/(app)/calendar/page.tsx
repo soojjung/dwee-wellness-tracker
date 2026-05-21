@@ -1,13 +1,5 @@
-'use client';
-import { useT } from '@/i18n/useT';
-import { PageContainer } from '@/components/ui/PageContainer';
+import { CalendarScreen } from '@/components/calendar/CalendarScreen';
 
 export default function CalendarPage() {
-  const t = useT();
-  return (
-    <PageContainer>
-      <h1 className="text-xl font-medium text-neutral-900">{t.nav.calendar}</h1>
-      <p className="text-sm text-neutral-500">{t.placeholder.calendar}</p>
-    </PageContainer>
-  );
+  return <CalendarScreen />;
 }

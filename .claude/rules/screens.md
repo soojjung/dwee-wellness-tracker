@@ -7,6 +7,11 @@ paths:
 
 # 화면 규칙
 
+## 0) 화면 플로우 다이어그램
+
+- 분기/state machine을 가진 화면은 `docs/flows/<name>.md`에 Mermaid로 기록.
+- 현재 등록: [onboarding](../../docs/flows/onboarding.md), [home](../../docs/flows/home.md), [calendar](../../docs/flows/calendar.md)
+
 ## 1) 라우트 그룹
 
 - `(auth)` — 풀스크린, BottomTabNav 없음. 로그인/온보딩 등 진입 동선 전용.
