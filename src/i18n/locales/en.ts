@@ -67,11 +67,12 @@ export const en = {
       menstrual: 'You might need a little extra rest today',
       follicular: 'Your energy is starting to pick up',
       ovulation: 'You might feel more energized today',
-      luteal: 'You might feel tired today — it’s okay to slow down',
+      luteal: 'You may feel sensitive today — try lightening your schedule',
       unknown: 'Take it easy today',
     },
     changePhoto: 'Change photo',
     resetPhoto: 'Reset to default',
+    openCalendar: 'Open calendar',
     cropTitle: 'Crop to square',
     cropZoomLabel: 'Zoom',
     cropConfirm: 'Save',
@@ -89,9 +90,72 @@ export const en = {
       line2: 'is not wasted time.',
       author: 'John Lennon',
     },
+    editHint: {
+      cta: 'Tap above ↑',
+      line1: 'Add your photo &',
+      line2: 'your own words here!',
+    },
     keywordsTitle: 'Today’s keywords',
     activitiesTitle: 'You might enjoy these',
-    activitiesDraftNote: 'Tailored activity cards are coming soon',
+    foodsTitle: 'Foods that may help',
+    foods: {
+      menstrual: {
+        category: 'Comfort + iron',
+        items: [
+          'Warm soups and stews',
+          'Iron-rich greens (spinach, kale)',
+          'Whole grains',
+          'Ginger tea or chamomile',
+        ],
+      },
+      follicular: {
+        category: 'Fresh + light',
+        items: [
+          'Leafy greens and sprouts',
+          'Fermented foods (yogurt, kimchi)',
+          'Light proteins (eggs, fish)',
+          'Citrus and berries',
+          'Pumpkin or flax seeds',
+        ],
+      },
+      ovulation: {
+        category: 'Colorful + antioxidant',
+        items: [
+          'Colorful vegetables',
+          'Berries and tropical fruits',
+          'Avocado and olive oil',
+          'Nuts and seeds',
+          'Plenty of water',
+        ],
+      },
+      luteal: {
+        category: 'Steady + soothing',
+        items: [
+          'Magnesium-rich foods (nuts, dark chocolate)',
+          'Whole grains and sweet potatoes',
+          'Bananas and avocados',
+          'Herbal tea (chamomile, peppermint)',
+          'Salmon or other omega-3 sources',
+        ],
+      },
+      unknown: {
+        category: 'Balanced + gentle',
+        items: [
+          'Less processed, more whole foods',
+          'Plenty of water',
+          'Warm cooked meals',
+          'Fresh fruits and vegetables',
+        ],
+      },
+    },
+    empty: {
+      title: 'No period logged yet',
+      bodyPrefix: 'Pick a date in the calendar, or tap ',
+      bodySuffix: ' to log it.',
+      keywords: 'Log your period start and we’ll match keywords to your cycle.',
+      activities: 'Log your period start and we’ll suggest activities for your cycle.',
+      foods: 'Log your period start and we’ll suggest cycle-supportive foods.',
+    },
     activities: {
       menstrual: {
         category: 'Self-care',
