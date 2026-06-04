@@ -15,6 +15,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!authHydrated) hydrateAuth();
   }, [hydrateSettings, settingsHydrated, hydrateAuth, authHydrated]);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    import('@/dev/seedForPhase').then(({ seedForPhase }) => {
+      (window as unknown as { __dweeSeedPhase?: typeof seedForPhase }).__dweeSeedPhase =
+        seedForPhase;
+    });
+  }, []);
+
   return (
     <div className="flex min-h-dvh flex-col bg-brand-white">
       <main className="flex-1 pb-32">{children}</main>
