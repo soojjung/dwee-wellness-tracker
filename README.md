@@ -1,5 +1,7 @@
 # dwee
 
+_**D**aily **W**ellness for **E**very**E**ssence._
+
 > 내 몸의 리듬을 부드럽게 기록해요.
 
 여성의 생리 주기와 컨디션을 함께 기록하는 가벼운 웰니스 앱입니다.
@@ -71,7 +73,7 @@
 │   └── docs-diagram-curator.md      README/문서/Mermaid 다이어그램 관리
 │
 ├── commands/                커스텀 슬래시 커맨드
-│   └── commit.md            /commit — 브랜치 분리 + lint/typecheck + curator 호출 + PR 생성
+│   └── commit.md            /commit — 브랜치 관리 + 검증 게이트 + curator + PR (상세 ↓)
 │
 ├── rules/                   도메인별 규약 (CLAUDE.md 가 80줄 넘으면 여기로 이전)
 │   ├── cycle-logic.md       주기 도메인 계산 규칙
@@ -86,6 +88,14 @@
 - 진입점: 루트 [`CLAUDE.md`](./CLAUDE.md) — 단일 source of truth. `AGENTS.md`, `.cursorrules` 생성 금지.
 - 새 컨벤션은 코드와 함께 PR — 같은 실수 2회 발생 시 `CLAUDE.md` 또는 `.claude/rules/` 에 한 줄 추가.
 - 에이전트가 학습한 패턴은 `agent-memory/` 에 누적되어 다음 세션에 자동 활용.
+
+**`/commit` 가 자동으로 해주는 것**
+
+1. 머지된 로컬 브랜치 정리 — 내 브랜치 PR 이 머지됐으면 자동으로 `main` 이동 + 로컬 브랜치 삭제
+2. `main` 위라면 변경 성격에 맞는 새 브랜치 자동 생성
+3. 단일 검증 게이트 `pnpm test` — lint + typecheck + Playwright 시각 회귀(`tests/snapshots/`) + 런타임 에러 가드
+4. docs-diagram-curator 호출로 README/문서/Mermaid 다이어그램 동기화
+5. 영어 title/body 로 PR 생성 — `## Docs` 섹션과 이 PR 에서 검증된 Test plan 자동 채움
 
 ---
 

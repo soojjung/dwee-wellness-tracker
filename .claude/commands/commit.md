@@ -35,6 +35,50 @@ git branch --show-current
 - **현재 브랜치 ≠ main 인 경우**:
   - 이미 작업 브랜치 위에 있음. STEP 4 (검증) 로 점프. 단 origin/main 과 본 브랜치의 base 가 최신인지는 안내만 표시.
 
+## STEP 2.5 — 머지된 로컬 브랜치 정리
+
+PR 머지 시 GitHub 가 원격 브랜치를 자동 삭제 (repo Settings → "Automatically delete head branches" ON 전제). 그 결과 원격이 사라진 로컬 브랜치를 안전하게 정리.
+
+```bash
+git fetch --prune
+git branch -vv | awk '/: gone\]/ {print $1}'
+```
+
+출력이 비어있으면 이 STEP 스킵하고 STEP 3 진행.
+
+머지 확인 헬퍼 (각 후보 브랜치마다):
+```bash
+gh pr list --state merged --head <branch> --json number,mergedAt --limit 1
+```
+
+### 2.5.a — 현재 체크아웃된 브랜치가 후보인 경우 (= 내가 작업 중인 브랜치의 PR 이 머지된 케이스)
+
+자기 자신은 직접 삭제 불가. PR 머지 확인되면 자동으로 main 이동 + 삭제.
+
+1. 위 헬퍼로 머지 확인.
+2. **머지 확인됨**:
+   - uncommitted 변경이 있으면 `git stash push -u -m "auto-stash for /commit cleanup"` 으로 보관.
+   - `git checkout main && git pull --ff-only origin main` — main 최신화.
+   - `git branch -D <previous-branch>` — squash/rebase merge 로 커밋 해시가 달라 `-d` 가 거부할 수 있으니 강제 삭제 (PR 머지가 확인됐으므로 안전).
+   - 스태시 된 게 있으면 `git stash pop` (conflict 시 사용자에게 알리고 중단).
+   - 보고: "<branch> PR 머지 확인 → main 으로 이동 + 로컬 브랜치 삭제 완료."
+   - 이후 흐름: 이제 main 위에 있으므로 STEP 3 (변경사항 있으면 새 브랜치 생성) 으로 진행. STEP 2 의 "현재 브랜치 ≠ main → STEP 4 로 점프" 결정은 무효화.
+3. **머지 미확인**: 자동 이동/삭제 안 함. "현재 브랜치 <name> 원격이 사라졌지만 머지 PR 이 보이지 않아요. 수동 확인 필요." 안내하고 STEP 4 로 점프.
+
+### 2.5.b — 다른 후보 브랜치 정리
+
+현재 브랜치가 아닌 나머지 후보 각각:
+
+1. 위 헬퍼로 머지 확인.
+2. 머지 확인되면 `git branch -d <branch>` → 거부 시 `git branch -D <branch>` (squash merge 대응).
+3. 머지 미확인: "<branch> 원격이 없는데 머지 PR 도 없어 보여요. 수동 확인 필요." 안내, 자동 삭제 안 함.
+
+### 안전 조건
+
+- `gh` 미설치/미인증 → 머지 확인 불가. 자동 삭제·이동 모두 건너뛰고 후보 목록만 보고.
+
+삭제한 브랜치 및 자동 main 이동 여부는 STEP 8 보고에 포함.
+
 ## STEP 3 — 새 브랜치 생성 (현재 main 일 때만)
 
 1. `git stash push -u -m "auto-stash for /commit"` (untracked 포함).
@@ -48,18 +92,18 @@ git branch --show-current
 
 ## STEP 4 — 검증 (블로킹)
 
-순서대로 실행. 실패 시 에러 출력 + 중단:
+단일 게이트로 lint + typecheck + Playwright e2e (visual baseline + 런타임 에러 가드) 를 순차 실행.
 
 ```bash
-pnpm typecheck
+pnpm test < /dev/null 2>&1
 ```
 
-```bash
-pnpm lint < /dev/null 2>&1
-```
+내부 체인 (`package.json` 의 `"test"` script): `pnpm lint && pnpm typecheck && pnpm test:e2e`.
 
-- `pnpm lint` 가 interactive 프롬프트로 실패하면 (Next.js 15 의 ESLint 마이그레이션 안내 등): "lint 설정이 필요해요 — 일단 건너뛰고 진행할까요?" 라고 사용자에게 묻고 답에 따라 진행/중단.
-- 실제 lint 에러는 항상 블로킹.
+- 어느 단계든 실패하면 즉시 중단하고 사용자에게 에러 출력 + 원인 보고.
+- `pnpm lint` 가 interactive 프롬프트로 실패하면 (Next.js ESLint 마이그레이션 안내 등): "lint 설정이 필요해요 — 일단 건너뛰고 진행할까요?" 라고 사용자에게 묻고 답에 따라 진행/중단.
+- `pnpm test:e2e` 가 시각 회귀로 실패하면 (`toHaveScreenshot` diff): 변경이 의도된 UI/카피 수정이라면 사용자 동의 후 `pnpm test:e2e:update` 로 baseline 갱신, 그 결과를 같이 스테이지에 포함. 의도하지 않은 회귀라면 코드 수정 후 재실행.
+- 실제 lint/type/test 에러는 항상 블로킹 — `--no-verify` 같은 우회 금지.
 
 ## STEP 5 — 문서·다이어그램 보강 (docs-diagram-curator)
 
@@ -154,10 +198,16 @@ EOF
 
 ### PR body 규칙
 
+- **항상 영어로 작성**. 커밋 메시지가 한국어여도 PR body 는 영어로 다시 표현.
 - **너무 길지 않게**. Summary 는 3-6 bullet 으로 핵심만. 세부 파일 나열 금지.
-- 커밋이 여러 영역(앱 코드 + Claude 환경 + 문서 + 툴체인 등)을 묶었다면 **영역별로 짧은 소제목** 사용 가능 (예: `### App`, `### Claude 작업 환경`, `### 툴체인`).
-- `## Docs` 섹션은 위 추출 명령 결과로 **자동 생성** — Summary 에 문서 변경을 중복 나열하지 않음.
-- Test plan 은 영향 표면(홈/캘린더/인사이트/로그/설정/인증 등) 기준으로 체크리스트.
+- 커밋이 여러 영역(앱 코드 + Claude 환경 + 문서 + 툴체인 등)을 묶었다면 **영역별로 짧은 소제목** 사용 가능 (예: `### App`, `### Claude harness`, `### Toolchain`).
+- `## Docs` 섹션은 위 추출 명령 결과로 **자동 생성** — Summary 에 문서 변경을 중복 나열하지 않음. 경로는 `[path](path)` clickable markdown link.
+- **이미지 임베드는 raw URL 절대경로 사용** — GitHub PR body 안에서는 markdown 의 relative path (`![](tests/snapshots/x.png)`) 가 자동으로 raw URL 로 변환되지 않아 broken icon 으로 보임. 다음 형식 권장:
+  ```html
+  <img src="https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>" width="240" />
+  ```
+  브랜치명/경로는 PR 의 head branch 기준. 머지 후엔 branch 가 삭제돼 broken 이 되지만 PR 리뷰 시점엔 정상.
+- **Test plan = 이 PR 에서 이미 검증된 항목의 로그** — 사용자에게 떠넘기는 체크리스트가 아님. 과거형/완료형 (`Ran ...`, `Verified ...`, `Manually tested ...`). 체크박스 `[ ]` 금지, 일반 bullet `-` 만 사용. 검증 못한 항목은 빼거나 `**Not yet verified:** <item>` 줄로 표기.
 
 ## STEP 8 — 결과 보고
 
@@ -166,6 +216,7 @@ EOF
 - 사용된 브랜치 이름
 - 커밋 SHA (짧은 형태, `git rev-parse --short HEAD`)
 - PR URL (gh 출력에서)
+- (STEP 2.5 에서 삭제 있었으면) 정리한 로컬 브랜치 이름 목록 + 자동 main 이동 여부
 - (STEP 5 에서 docs 갱신 있었으면) curator 가 추가/수정한 문서 파일 개수
 - (필요 시) 다음 단계 안내 (예: "리뷰 받고 머지하세요")
 
