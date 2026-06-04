@@ -8,6 +8,12 @@ export const ko = {
     signInWithGoogle: 'Google로 로그인',
     continueWithoutSignIn: '로그인 없이 사용하기',
     comingSoon: '로그인 기능은 곧 준비될 예정이에요',
+    signingIn: '연결 중이에요...',
+    error: {
+      anonFailed: '익명 세션을 만들지 못했어요. 잠시 후 다시 시도해 주세요.',
+      networkOffline: '네트워크 연결을 확인해 주세요.',
+      missingConfig: '서버 연결 설정이 비어있어요. 관리자에게 문의해 주세요.',
+    },
   },
   placeholder: {
     log: '오늘의 컨디션 기록은 곧 준비될 예정이에요',

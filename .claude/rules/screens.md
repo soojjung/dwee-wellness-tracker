@@ -28,8 +28,8 @@ paths:
 
 - `useT()`, store, `usePathname` 등을 쓰는 페이지는 `'use client'` 선언.
 - 라우트 그룹 layout(`(auth)/layout.tsx`, `(app)/layout.tsx`)은 server 유지가 기본.
-- `AppShell`이 client 컴포넌트라 `(app)` 하위는 mount 시 `settingsStore.hydrate()` 1회 자동 실행됨.
-- `(auth)` 그룹은 hydrate 없음 — 데이터 의존 화면이면 별도 처리.
+- `AppShell`이 client 컴포넌트라 `(app)` 하위는 mount 시 `settingsStore.hydrate()` + `authStore.hydrate()` 각 1회 자동 실행됨.
+- `(auth)` 그룹은 hydrate 없음 — 데이터 의존 화면이면 별도 처리 (예: LoginScreen은 자체적으로 authStore.hydrate 트리거).
 
 ## 4) 컴포넌트 분리 기준
 

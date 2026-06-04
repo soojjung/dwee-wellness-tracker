@@ -1,15 +1,19 @@
 'use client';
 import { useEffect, type ReactNode } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 import { BottomTabNav } from './BottomTabNav';
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const hydrate = useSettingsStore((s) => s.hydrate);
-  const hydrated = useSettingsStore((s) => s.hydrated);
+  const hydrateSettings = useSettingsStore((s) => s.hydrate);
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
+  const hydrateAuth = useAuthStore((s) => s.hydrate);
+  const authHydrated = useAuthStore((s) => s.hydrated);
 
   useEffect(() => {
-    if (!hydrated) hydrate();
-  }, [hydrate, hydrated]);
+    if (!settingsHydrated) hydrateSettings();
+    if (!authHydrated) hydrateAuth();
+  }, [hydrateSettings, settingsHydrated, hydrateAuth, authHydrated]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-brand-white">

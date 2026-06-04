@@ -1,4 +1,3 @@
-// 초안. ConditionRepository 구현.
 import type { DailyConditionLog, Mood, Energy, Pain, Bloating, Appetite, Skin } from '@/types';
 import type {
   ConditionRepository,

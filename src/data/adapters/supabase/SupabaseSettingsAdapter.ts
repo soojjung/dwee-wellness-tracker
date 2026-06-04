@@ -1,4 +1,3 @@
-// 초안. SettingsRepository 구현.
 import type { UserSettings } from '@/types';
 import { DEFAULT_USER_SETTINGS } from '@/types/userSettings';
 import type { SettingsRepository } from '@/data/repositories/SettingsRepository';

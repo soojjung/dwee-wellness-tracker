@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
+import { useAuthStore } from '@/store/authStore';
 
 const NOTICE_DURATION_MS = 2400;
 
@@ -11,6 +12,26 @@ export function LoginScreen() {
   const t = useT();
   const [notice, setNotice] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const authHydrate = useAuthStore((s) => s.hydrate);
+  const authHydrated = useAuthStore((s) => s.hydrated);
+  const authError = useAuthStore((s) => s.error);
+
+  // (auth) 라우트 그룹은 AppShell이 없어 hydrate가 안 됨 — 여기서 직접 트리거.
+  // 사용자가 화면을 보는 동안 백그라운드에서 익명 세션을 미리 만들어둠.
+  useEffect(() => {
+    if (!authHydrated) authHydrate();
+  }, [authHydrate, authHydrated]);
+
+  useEffect(() => {
+    if (!authError) return;
+    const message =
+      authError === 'missingConfig'
+        ? t.auth.error.missingConfig
+        : authError === 'networkOffline'
+          ? t.auth.error.networkOffline
+          : t.auth.error.anonFailed;
+    setNotice(message);
+  }, [authError, t]);
 
   useEffect(() => {
     return () => {

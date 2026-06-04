@@ -1,4 +1,3 @@
-// 초안. PeriodRepository 구현.
 import type { PeriodLog } from '@/types';
 import type { PeriodRepository, NewPeriodInput } from '@/data/repositories/PeriodRepository';
 import { supabase, requireUserId } from './client';

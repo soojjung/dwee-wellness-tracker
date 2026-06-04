@@ -14,6 +14,7 @@
     "cap:ios": "next build && cap sync ios && cap open ios"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "idb-keyval": "^6.2.1",

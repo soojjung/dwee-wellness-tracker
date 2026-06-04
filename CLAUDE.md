@@ -3,24 +3,25 @@
 ## 프로젝트 컨텍스트
 
 - 여성의 생리 주기와 컨디션을 함께 기록하는 가벼운 웰니스 앱.
-- 단계: MVP1. 빠른 출시 / 유지보수 / 확장 가능 구조 우선.
+- 단계: **MVP2 — 서버 연동/인증 도입.** MVP1 (STEP 0–9.2) 핵심 플로우 완료. 잔여 polish(예: STEP 9.3 Log)는 MVP2 와 병행.
 - 사용자 노출 텍스트는 한국어 기본.
 
 ## 기술 스택
 
 - Next.js (App Router) + Capacitor / TypeScript strict
-- 상태: Zustand (+ persist) / 저장: IndexedDB via Repository 추상화
+- 상태: Zustand (+ persist) / 저장: IndexedDB (로컬) + Supabase (원격) via Repository 추상화
 - UI: Tailwind CSS / 날짜: date-fns / 폼: react-hook-form
 - 패키지 매니저: pnpm
 
-## 핵심 가치 (MVP1 범위)
+## 핵심 가치
 
-1. 생리 시작/종료 기록 2. 평균 주기 기반 예측
-2. 오늘의 컨디션 기록 4. 캘린더 확인 5. rule-based 인사이트
+**MVP1 (완료)** 1. 생리 시작/종료 기록 2. 평균 주기 기반 예측 3. 오늘의 컨디션 기록 4. 캘린더 확인 5. rule-based 인사이트
+
+**MVP2 (진행 중)** 6. Supabase 인증 7. 클라우드 동기화 8. 다기기 사용
 
 ## 명시적 제외 (추가 금지)
 
-- 실제 로그인/인증, 서버 연동, AI 챗봇, 실제 푸시
+- AI 챗봇, 실제 푸시
 - Apple Health / Google Fit 연동
 - 체중·칼로리·운동·식단·다이어트 유도
 - 임신·피임·성생활·커뮤니티

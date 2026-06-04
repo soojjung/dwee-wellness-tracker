@@ -10,6 +10,12 @@ export const en: Dictionary = {
     signInWithGoogle: 'Sign in with Google',
     continueWithoutSignIn: 'Continue without signing in',
     comingSoon: 'Sign-in is coming soon',
+    signingIn: 'Connecting...',
+    error: {
+      anonFailed: 'Could not create an anonymous session. Please try again.',
+      networkOffline: 'Please check your network connection.',
+      missingConfig: 'Server connection is not configured. Please contact support.',
+    },
   },
   placeholder: {
     log: 'Daily condition log is coming soon',
