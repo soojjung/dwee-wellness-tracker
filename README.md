@@ -202,9 +202,10 @@ constants/, types/            ← 어디서든 import 가능
 
 ## 🌐 i18n
 
-- 기본 언어: 한국어. 영어 사전은 `Dictionary` 타입(`typeof ko`)으로 강제 → 키 누락 시 컴파일 에러.
-- 사용자 노출 텍스트는 **항상** `useT()` 훅 경유. 인라인 한국어/영어 문자열 금지.
-- 첫 진입 시 디바이스 locale 자동 감지(`detectInitialLocale()`), 이후엔 사용자 설정 우선.
+- **Source of truth: en (en-US)**. 메인 타겟 시장 미국. 한국어 사전은 `Dictionary` 타입(`typeof en`)으로 강제 → en 키 누락 시 컴파일 에러.
+- 카피는 en 사전에 먼저 자연스러운 en-US 톤으로 작성하고, ko 는 그 번역물.
+- 사용자 노출 텍스트는 **항상** `useT()` 훅 경유. 인라인 영어/한국어 문자열 금지.
+- 첫 진입 시 디바이스 locale 감지 (`navigator.language` 가 `ko`로 시작하면 한국어, 그 외엔 en), 이후엔 사용자 설정 우선.
 
 ```ts
 // 사용 예
@@ -212,7 +213,7 @@ const t = useT();
 return <h1>{t.home.nextPeriodTitle}</h1>;
 ```
 
-신규 문구는 `src/i18n/locales/ko.ts`와 `en.ts`에 동시에 추가합니다.
+신규 문구는 `src/i18n/locales/en.ts` 에 먼저 추가 (source) → `ko.ts` 에 번역으로 추가. 카피 톤은 [`.claude/rules/health-copy.md`](./.claude/rules/health-copy.md) 참고.
 
 ---
 

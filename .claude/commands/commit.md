@@ -208,7 +208,7 @@ EOF
 - **항상 영어로 작성**. 커밋 메시지가 한국어여도 PR body 는 영어로 다시 표현.
 - **너무 길지 않게**. Summary 는 3-6 bullet 으로 핵심만. 세부 파일 나열 금지.
 - 커밋이 여러 영역(앱 코드 + Claude 환경 + 문서 + 툴체인 등)을 묶었다면 **영역별로 짧은 소제목** 사용 가능 (예: `### App`, `### Claude harness`, `### Toolchain`).
-- `## Docs` 섹션은 위 추출 명령 결과로 **자동 생성** — Summary 에 문서 변경을 중복 나열하지 않음. 경로는 `[path](path)` clickable markdown link.
+- `## Docs` 섹션은 위 추출 명령 결과로 **자동 생성** — Summary 에 문서 변경을 중복 나열하지 않음. 경로는 STEP 7 의 SHA 기반 절대 URL (`[<path>](https://github.com/<owner>/<repo>/blob/<sha>/<path>)`) 로 박음 — relative path 는 새 파일이면 404, branch URL 은 머지 후 broken.
 - **이미지 임베드는 commit SHA 기반 raw URL** — GitHub PR body 안에서 markdown 의 relative path (`![](tests/snapshots/x.png)`) 는 자동 변환되지 않아 broken icon 으로 보이고, branch name 기반 URL 은 PR 머지 후 branch 삭제와 함께 broken 이 됨. **SHA 는 영구**. 형식:
   ```html
   <img src="https://raw.githubusercontent.com/<owner>/<repo>/<commit-sha>/<path>" width="240" />
