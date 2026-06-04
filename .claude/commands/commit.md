@@ -61,7 +61,28 @@ pnpm lint < /dev/null 2>&1
 - `pnpm lint` 가 interactive 프롬프트로 실패하면 (Next.js 15 의 ESLint 마이그레이션 안내 등): "lint 설정이 필요해요 — 일단 건너뛰고 진행할까요?" 라고 사용자에게 묻고 답에 따라 진행/중단.
 - 실제 lint 에러는 항상 블로킹.
 
-## STEP 5 — 커밋 메시지 작성
+## STEP 5 — 문서·다이어그램 보강 (docs-diagram-curator)
+
+매 커밋마다 README 점검 + 변경 성격에 따라 아키텍처 문서/다이어그램 동기화.
+
+1. **항상 실행 (skip 금지)**: 단순 버그픽스/스타일 변경이라도 README 가 stale 해질 수 있어 매번 curator 호출.
+2. **추가 트리거 (curator 프롬프트에 명시)**: 아래 중 하나라도 해당하면 README 점검에 더해 아키텍처 문서·다이어그램까지 갱신 검토 요청.
+   - `src/data/repositories/`, `src/data/adapters/`, `src/store/`, `src/domain/`, `src/lib/` 에 **신규 파일** 추가
+   - `supabase/migrations/` 변경
+   - `src/app/` 라우트 그룹 / 페이지 신규 또는 화면 간 네비게이션 분기 추가
+   - 기존 `docs/` 하위 문서가 변경된 코드와 어긋날 가능성 (예: `data/index.ts` 같은 wiring 파일 수정)
+   - `$ARGUMENTS` 에 `--docs` 또는 "문서/다이어그램" 키워드 명시
+3. **호출**: `Agent` tool 의 `subagent_type=docs-diagram-curator` 로 호출. 프롬프트에 다음을 포함:
+   - `git diff --name-status` 결과 (변경 파일 목록)
+   - `git diff --stat` 요약
+   - 추가 트리거 매치 여부 (아키텍처 문서/다이어그램 검토 필요 여부)
+   - 지시문 예: "(1) 루트 `README.md` 및 nested README 가 이번 변경 후에도 정확한지 반드시 점검·갱신해 줘 (stage 표기, 기능 목록, 명시적 제외, 기술 스택, 셋업 안내, 깨진 링크). (2) 추가 트리거 매치 시 `docs/` 하위 문서·Mermaid 다이어그램도 검토. 갱신할 게 없으면 'no docs update needed' 로 회신해도 좋음."
+4. **결과 처리**:
+   - curator 가 파일을 추가/수정한 경우 → working tree 에 반영됨. STEP 6 의 `git add -A` 에서 자동 포함.
+   - curator 가 "no docs update needed" 로 회신 → 그대로 STEP 6 진행.
+   - 사용자에게 "문서 N개 점검·갱신했어요: <파일 목록>" 1줄로 보고 (README 포함, 변경 없으면 "README 포함 문서는 최신 상태").
+
+## STEP 6 — 커밋 메시지 작성
 
 1. `git diff HEAD` 로 변경 요약 확인.
 2. `git log --oneline -5` 로 기존 메시지 스타일 확인.
@@ -82,26 +103,42 @@ EOF
 )"
 ```
 
-## STEP 6 — 푸시 + PR
+## STEP 7 — 푸시 + PR
 
 ```bash
 git push -u origin <new-branch>
 ```
 
+**PR body 구성 전 문서 변경 추출** (PR body 에 포함시킬 데이터):
+
+```bash
+git diff --name-status origin/main...HEAD -- 'docs/**' '*.md' '.claude/rules/**' '.claude/agents/**' '.claude/commands/**' 'README*' 'CLAUDE.md'
+```
+
+- 출력이 있으면 status code 별로 그룹핑해 PR body 의 `## Docs` 섹션 bullet 으로 변환. **경로는 항상 clickable markdown link 형식** `[path](path)` 로:
+  - `A` → `➕ [<path>](<path>) (added)`
+  - `M` → `✏️ [<path>](<path>) (modified)`
+  - `D` → `🗑 [<path>](<path>) (removed)`
+  - `R<score>` → `↪ [<old-path>](<old-path>) → [<new-path>](<new-path>) (renamed)`
+- 출력이 비어있으면 `## Docs` 섹션 자체를 **생략** (빈 헤딩 만들지 않음).
+
 PR 생성 (HEREDOC):
 
 ```bash
-gh pr create --title "<PR title — 영어, 명백한 스코프>" --body "$(cat <<'EOF'
+gh pr create --title "<PR title — English, explicit scope>" --body "$(cat <<'EOF'
 ## Summary
-- <bullet 1>
+- <bullet 1 (English)>
 - <bullet 2>
-- (필요 시) <bullet 3>
+- (optional) <bullet 3>
+
+## Docs
+- <doc-change bullet — from extraction above. Omit this section entirely if empty>
 
 ## Test plan
-- [ ] `pnpm typecheck` 통과
-- [ ] `pnpm lint` 통과 (또는 N/A)
-- [ ] 영향받은 화면 브라우저 확인 — <화면 이름>
-- [ ] (필요 시) 추가 검증 항목
+- <past-tense item describing what was already verified in this PR — e.g. "Ran `pnpm typecheck` and `pnpm lint` — both pass">
+- <e.g. "Verified Home FAB layout in browser at 375px and 1024px widths">
+- <e.g. "Manually tested period add via FAB modal — toast appears, data persists after reload">
+- (if anything could not be verified) **Not yet verified:** <item>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
@@ -118,17 +155,18 @@ EOF
 ### PR body 규칙
 
 - **너무 길지 않게**. Summary 는 3-6 bullet 으로 핵심만. 세부 파일 나열 금지.
-- 커밋이 여러 영역(앱 코드 + Claude 환경 + 문서 + 툴체인 등)을 묶었다면 **영역별로 짧은 소제목** 사용 가능 (예: `### App`, `### Claude 작업 환경`, `### 문서`, `### 툴체인`).
-- `.claude/`, `docs/` 등 Claude/메타 작업이 포함된 경우 **반드시 별도 항목으로 언급** — 코드 변경만 적으면 무엇이 들어갔는지 PR 보고 기억 못 함.
+- 커밋이 여러 영역(앱 코드 + Claude 환경 + 문서 + 툴체인 등)을 묶었다면 **영역별로 짧은 소제목** 사용 가능 (예: `### App`, `### Claude 작업 환경`, `### 툴체인`).
+- `## Docs` 섹션은 위 추출 명령 결과로 **자동 생성** — Summary 에 문서 변경을 중복 나열하지 않음.
 - Test plan 은 영향 표면(홈/캘린더/인사이트/로그/설정/인증 등) 기준으로 체크리스트.
 
-## STEP 7 — 결과 보고
+## STEP 8 — 결과 보고
 
 다음 정보를 짧게 보고:
 
 - 사용된 브랜치 이름
 - 커밋 SHA (짧은 형태, `git rev-parse --short HEAD`)
 - PR URL (gh 출력에서)
+- (STEP 5 에서 docs 갱신 있었으면) curator 가 추가/수정한 문서 파일 개수
 - (필요 시) 다음 단계 안내 (예: "리뷰 받고 머지하세요")
 
 ## 안전 규칙
