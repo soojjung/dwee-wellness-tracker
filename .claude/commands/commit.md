@@ -153,17 +153,24 @@ EOF
 git push -u origin <new-branch>
 ```
 
+**푸시 직후 SHA 캡처** (Docs 링크·이미지 URL 모두 이 SHA 기반으로 박음):
+
+```bash
+SHA=$(git rev-parse --short HEAD)
+OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+```
+
 **PR body 구성 전 문서 변경 추출** (PR body 에 포함시킬 데이터):
 
 ```bash
 git diff --name-status origin/main...HEAD -- 'docs/**' '*.md' '.claude/rules/**' '.claude/agents/**' '.claude/commands/**' 'README*' 'CLAUDE.md'
 ```
 
-- 출력이 있으면 status code 별로 그룹핑해 PR body 의 `## Docs` 섹션 bullet 으로 변환. **경로는 항상 clickable markdown link 형식** `[path](path)` 로:
-  - `A` → `➕ [<path>](<path>) (added)`
-  - `M` → `✏️ [<path>](<path>) (modified)`
-  - `D` → `🗑 [<path>](<path>) (removed)`
-  - `R<score>` → `↪ [<old-path>](<old-path>) → [<new-path>](<new-path>) (renamed)`
+- 출력이 있으면 status code 별로 그룹핑해 PR body 의 `## Docs` 섹션 bullet 으로 변환. **경로는 SHA 기반 절대 URL** (`https://github.com/<owner>/<repo>/blob/<sha>/<path>`) 로 — relative path 는 새로 추가된 파일이 base branch 에 아직 없을 때 404 가 나고, branch name 은 머지 후 broken. SHA 는 영구.
+  - `A` → `➕ [<path>](https://github.com/<owner>/<repo>/blob/<sha>/<path>) (added)`
+  - `M` → `✏️ [<path>](https://github.com/<owner>/<repo>/blob/<sha>/<path>) (modified)`
+  - `D` → `🗑 <path> (removed)` — 삭제된 파일은 현재 트리에 없어 링크 불가, 텍스트만.
+  - `R<score>` → `↪ [<old-path>](https://github.com/<owner>/<repo>/blob/<sha>~1/<old-path>) → [<new-path>](https://github.com/<owner>/<repo>/blob/<sha>/<new-path>) (renamed)` — old 는 직전 부모 커밋(`<sha>~1`).
 - 출력이 비어있으면 `## Docs` 섹션 자체를 **생략** (빈 헤딩 만들지 않음).
 
 PR 생성 (HEREDOC):
