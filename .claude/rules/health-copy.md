@@ -19,11 +19,11 @@ paths:
 
 ## 2) i18n 규칙
 
-- 인라인 한국어·영어 문자열 금지. 항상 `useT()` 훅 경유.
-- 신규 문구 추가 시 `src/i18n/locales/ko.ts` + `src/i18n/locales/en.ts` 양쪽에 동시 추가.
-- en 사전은 `Dictionary` 타입(= `typeof ko`)으로 강제 — 키가 빠지면 컴파일 실패.
-- 같은 키에 대한 ko/en 의미가 어긋나지 않도록 작성.
-- 디바이스 locale 자동 감지(`detectInitialLocale()`)는 첫 진입 시 1회만. 사용자가 설정에서 바꾸면 그 선택 우선.
+- 인라인 영어·한국어 문자열 금지. 항상 `useT()` 훅 경유.
+- **en 이 source-of-truth** (en-US 톤으로 먼저 작성, ko 는 번역물). 신규 문구는 `src/i18n/locales/en.ts` 에 먼저 추가 → `ko.ts` 에 동기.
+- ko 사전은 `Dictionary` 타입(= `typeof en`)으로 강제 — en 키가 빠지면 ko 가 컴파일 실패.
+- 같은 키에 대한 en/ko 의미가 어긋나지 않도록 작성.
+- 디바이스 locale 자동 감지(`detectInitialLocale()` — `navigator.language` 가 `ko` 로 시작하면 한국어, 그 외 en)는 첫 진입 시 1회만. 사용자가 설정에서 바꾸면 그 선택 우선.
 
 ## 3) 동적 값 처리
 

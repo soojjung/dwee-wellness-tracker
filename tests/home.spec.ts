@@ -67,19 +67,21 @@ async function seedAndOpenHome(page: Page, phase: Phase, locale: Locale) {
   await page.waitForTimeout(400);
 }
 
-for (const locale of LOCALES) {
-  for (const phase of PHASES) {
-    test(`home — ${phase} (${locale})`, async ({ page }) => {
-      const errors = attachErrorGuards(page);
+// Locale is driven by Playwright project (`en` / `ko` in playwright.config.ts).
+// Each project runs the same phase matrix; baselines split into
+// `tests/snapshots/<projectName>/home-<phase>.png` via snapshotPathTemplate.
+for (const phase of PHASES) {
+  test(`home — ${phase}`, async ({ page }, testInfo) => {
+    const locale = testInfo.project.name as Locale;
+    const errors = attachErrorGuards(page);
 
-      await seedAndOpenHome(page, phase, locale);
+    await seedAndOpenHome(page, phase, locale);
 
-      await expect(page).toHaveScreenshot(`home-${phase}-${locale}.png`, {
-        fullPage: true,
-      });
-
-      expect(errors.pageErrors, 'uncaught page errors').toEqual([]);
-      expect(errors.consoleErrors, 'console.error during home render').toEqual([]);
+    await expect(page).toHaveScreenshot(`home-${phase}.png`, {
+      fullPage: true,
     });
-  }
+
+    expect(errors.pageErrors, 'uncaught page errors').toEqual([]);
+    expect(errors.consoleErrors, 'console.error during home render').toEqual([]);
+  });
 }

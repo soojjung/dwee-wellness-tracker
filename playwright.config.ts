@@ -8,7 +8,8 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   reporter: 'list',
-  snapshotPathTemplate: 'tests/snapshots/{arg}{ext}',
+  // One project per locale; baselines live under `tests/snapshots/<locale>/`.
+  snapshotPathTemplate: 'tests/snapshots/{projectName}/{arg}{ext}',
   use: {
     baseURL: process.env.SNAPSHOT_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -27,8 +28,12 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'mobile',
-      use: { ...devices['iPhone 13 Mini'] },
+      name: 'en',
+      use: { ...devices['iPhone 13 Mini'], locale: 'en-US' },
+    },
+    {
+      name: 'ko',
+      use: { ...devices['iPhone 13 Mini'], locale: 'ko-KR' },
     },
   ],
 });
