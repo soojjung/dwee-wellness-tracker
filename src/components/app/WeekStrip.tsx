@@ -17,6 +17,7 @@ interface WeekStripProps {
   predictedDate: string | null;
   daysUntilNext: number | null;
   averagePeriodLength: number;
+  isEmpty?: boolean;
 }
 
 type DotKind = 'today' | 'period' | 'predicted' | 'default';
@@ -27,6 +28,7 @@ export function WeekStrip({
   predictedDate,
   daysUntilNext,
   averagePeriodLength,
+  isEmpty = false,
 }: WeekStripProps) {
   const t = useT();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -95,7 +97,7 @@ export function WeekStrip({
               >
                 {weekdayLabel}
               </span>
-              {isToday ? (
+              {isToday && !isEmpty ? (
                 <span className="flex items-center justify-center whitespace-nowrap rounded-full bg-brand-gray900 px-4 py-2 text-base font-medium text-brand-white">
                   {todayChipText}
                 </span>
@@ -103,7 +105,7 @@ export function WeekStrip({
                 <span
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium',
-                    chipClasses(d.kind),
+                    isToday ? 'bg-brand-gray900 text-brand-white' : chipClasses(d.kind),
                   )}
                 >
                   {fromISO(d.date).getDate()}
@@ -155,6 +157,7 @@ function chipClasses(kind: DotKind): string {
     case 'today':
       return 'bg-brand-gray900 text-brand-white';
     case 'predicted':
+      return 'bg-brand-pink50 text-brand-pink800';
     case 'period':
       return 'bg-brand-pink100 text-brand-pink900';
     case 'default':

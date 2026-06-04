@@ -9,7 +9,7 @@ interface PhaseAdvicePillProps {
 export function PhaseAdvicePill({ phase }: PhaseAdvicePillProps) {
   const t = useT();
   return (
-    <div className="flex items-center gap-4 rounded-lg bg-brand-gray300 px-6 py-4">
+    <div className="flex items-center gap-4 rounded-lg bg-brand-gray200 px-6 py-4">
       <span className="shrink-0 text-sm font-semibold text-brand-gray900">
         {t.home.phaseShortLabel[phase]}
       </span>

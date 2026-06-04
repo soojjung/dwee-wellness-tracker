@@ -68,11 +68,12 @@ export const ko: Dictionary = {
       menstrual: '오늘은 조금 더 쉬는 게 좋을 수 있어요',
       follicular: '에너지가 조금씩 올라오는 시기예요',
       ovulation: '평소보다 활기찬 하루가 될 수 있어요',
-      luteal: '오늘은 피곤할 수 있어요. 천천히 가도 괜찮아요',
+      luteal: '오늘은 예민할 수 있어요. 일정 줄여볼까요?',
       unknown: '오늘은 쉬엄쉬엄 보내세요',
     },
     changePhoto: '사진 변경',
     resetPhoto: '기본 사진으로',
+    openCalendar: '캘린더 열기',
     cropTitle: '정사각형으로 자르기',
     cropZoomLabel: '확대',
     cropConfirm: '저장',
@@ -90,9 +91,72 @@ export const ko: Dictionary = {
       line2: '낭비가 아니에요.',
       author: '존 레논',
     },
+    editHint: {
+      cta: '위 버튼을 눌러서↑',
+      line1: '이곳에 원하는 사진과',
+      line2: '문구를 넣어보세요!',
+    },
     keywordsTitle: '오늘의 키워드는',
     activitiesTitle: '이런 활동 어때요?',
-    activitiesDraftNote: '시기에 맞는 활동 추천 카드는 곧 준비될 예정이에요',
+    foodsTitle: '이렇게 먹으면 좋아요',
+    foods: {
+      menstrual: {
+        category: '따뜻함과 철분',
+        items: [
+          '따뜻한 국이나 스튜',
+          '철분 풍부한 잎채소(시금치, 케일)',
+          '통곡물',
+          '생강차나 캐모마일',
+        ],
+      },
+      follicular: {
+        category: '신선함과 가벼움',
+        items: [
+          '잎채소와 새싹',
+          '발효식품(요거트, 김치)',
+          '가벼운 단백질(달걀, 생선)',
+          '감귤과 베리',
+          '호박씨나 아마씨',
+        ],
+      },
+      ovulation: {
+        category: '다채로움과 항산화',
+        items: [
+          '다양한 색의 채소',
+          '베리와 열대 과일',
+          '아보카도와 올리브유',
+          '견과류와 씨앗',
+          '충분한 물',
+        ],
+      },
+      luteal: {
+        category: '안정과 진정',
+        items: [
+          '마그네슘 풍부한 음식(견과류, 다크 초콜릿)',
+          '통곡물과 고구마',
+          '바나나와 아보카도',
+          '허브티(캐모마일, 페퍼민트)',
+          '연어 등 오메가-3 식품',
+        ],
+      },
+      unknown: {
+        category: '균형과 부드러움',
+        items: [
+          '가공식품보다 자연식품',
+          '충분한 물',
+          '따뜻한 익힌 음식',
+          '신선한 과일과 채소',
+        ],
+      },
+    },
+    empty: {
+      title: '아직 월경 기록이 없어요!',
+      bodyPrefix: '날짜에서 월경일을 선택하거나 ',
+      bodySuffix: ' 를 눌러 기록하세요',
+      keywords: '월경일을 기록하면 주기에 어울리는 키워드를 알려드려요!',
+      activities: '월경일을 기록하면 주기에 알맞는 활동을 추천드려요!',
+      foods: '월경일을 기록하면 주기에 도움되는 음식을 제안드려요!',
+    },
     activities: {
       menstrual: {
         category: '셀프 케어',

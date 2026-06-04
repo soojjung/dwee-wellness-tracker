@@ -15,6 +15,7 @@ paths:
   - "You are ovulating" ❌ → "Likely ovulation phase" ✅
 - 의료 단어 금지: "진단/치료/처방/정상/비정상", "diagnosis/treatment/normal/abnormal" → "참고용 패턴" / "reference pattern"으로 대체
 - 다이어트 유도 금지: "체중 관리/감량/칼로리", "weight management/loss/calories" 사용 자체 금지
+  - 예외: 주기 단계별 영양/음식 제안은 허용 (예: "철분이 풍부한 음식이 도움이 될 수 있어요" / "Iron-rich foods may help during this phase")
 - 데이터 부족 시 추정값 만들지 말기 → "아직 예측하기 어려워요" / "Not enough data yet"
 
 ## 2) i18n 규칙

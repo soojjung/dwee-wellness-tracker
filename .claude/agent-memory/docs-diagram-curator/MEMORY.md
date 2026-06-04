@@ -1,0 +1,1 @@
+- [Doc locations & sync rules](project_doc_locations.md) — which files must stay in sync with CLAUDE.md rule changes; SetupPeriodPicker removed
