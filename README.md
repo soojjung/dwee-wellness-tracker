@@ -45,19 +45,19 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 ## 🧰 기술 스택
 
-| 영역         | 선택                                                 |
-| ------------ | ---------------------------------------------------- |
-| 프레임워크   | Next.js 15 (App Router) + React 19                   |
-| 언어         | TypeScript (strict)                                  |
-| 모바일       | Capacitor 6 (iOS)                                    |
-| 상태         | Zustand (+ persist)                                  |
+| 영역         | 선택                                                                   |
+| ------------ | ---------------------------------------------------------------------- |
+| 프레임워크   | Next.js 15 (App Router) + React 19                                     |
+| 언어         | TypeScript (strict)                                                    |
+| 모바일       | Capacitor 6 (iOS)                                                      |
+| 상태         | Zustand (+ persist)                                                    |
 | 저장         | IndexedDB (`idb-keyval`, 로컬) + Supabase (원격) via Repository 추상화 |
-| 인증         | Supabase Auth (익명 세션)                            |
-| 스타일       | Tailwind CSS                                         |
-| 폼           | react-hook-form                                      |
-| 날짜         | date-fns                                             |
-| i18n         | 자체 사전 (`src/i18n/locales/{ko,en}.ts`) + `useT()` |
-| 패키지매니저 | pnpm 9                                               |
+| 인증         | Supabase Auth (익명 세션)                                              |
+| 스타일       | Tailwind CSS                                                           |
+| 폼           | react-hook-form                                                        |
+| 날짜         | date-fns                                                               |
+| i18n         | 자체 사전 (`src/i18n/locales/{ko,en}.ts`) + `useT()`                   |
+| 패키지매니저 | pnpm 9                                                                 |
 
 ---
 
@@ -91,11 +91,39 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 **`/commit` 가 자동으로 해주는 것**
 
-1. 머지된 로컬 브랜치 정리 — 내 브랜치 PR 이 머지됐으면 자동으로 `main` 이동 + 로컬 브랜치 삭제
-2. `main` 위라면 변경 성격에 맞는 새 브랜치 자동 생성
-3. 단일 검증 게이트 `pnpm test` — lint + typecheck + Playwright 시각 회귀(`tests/snapshots/`) + 런타임 에러 가드
-4. docs-diagram-curator 호출로 README/문서/Mermaid 다이어그램 동기화
-5. 영어 title/body 로 PR 생성 — `## Docs` 섹션과 이 PR 에서 검증된 Test plan 자동 채움
+브랜치 정리 → 검증 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
+
+```mermaid
+flowchart LR
+    S0([STEP 0\n변경 확인])
+    S1([STEP 1–2\nmain 동기화\n브랜치 정리])
+    S2([STEP 3\n새 브랜치 생성])
+    S3([STEP 4\n검증 게이트])
+    S4([STEP 5\ndocs 갱신])
+    S5([STEP 6\n커밋])
+    S6([STEP 7\npush + PR])
+    S7([STEP 8\nFigma sync])
+    S8([STEP 9\n결과 보고])
+
+    S0 -->|변경 있음| S1
+    S1 -->|main 위| S2
+    S1 -->|작업 브랜치| S3
+    S2 --> S3
+    S3 -->|통과| S4
+    S3 -->|실패| X([중단 · 보고])
+    S4 --> S5
+    S5 --> S6
+    S6 -->|snapshots 변경| S7
+    S6 -->|변경 없음| S8
+    S7 --> S8
+
+    classDef step fill:#FDE2EF,stroke:#E5A8BD,color:#5C3A4A;
+    classDef gate fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+    classDef stop fill:#F5F3F4,stroke:#C9C6C7,color:#353434;
+    class S0,S1,S2,S5,S6,S7,S8 step;
+    class S3,S4 gate;
+    class X stop;
+```
 
 ---
 
@@ -231,4 +259,3 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [ ] MVP2.2 — Supabase 어댑터 wiring (`data/index.ts` 분기)
 - [ ] MVP2.3~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 - [ ] MVP2.6 — IndexedDB → Supabase 1회성 마이그레이션
-

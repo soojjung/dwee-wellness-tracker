@@ -223,7 +223,41 @@ EOF
   STEP 7 푸시 직후 `git rev-parse HEAD` 의 short SHA (7자 이상) 를 캡처해 모든 이미지 URL 에 박음. PR 에 추가 커밋이 푸시돼도 기존 URL 은 그대로 유효 (해당 SHA 가 트리에 영구 보존). 머지 후에도 동일하게 작동.
 - **Test plan = 이 PR 에서 이미 검증된 항목의 로그** — 사용자에게 떠넘기는 체크리스트가 아님. 과거형/완료형 (`Ran ...`, `Verified ...`, `Manually tested ...`). **이미 검증된 항목은 `- [x]` 체크된 체크박스** 로 ("done" 시각 표현). 검증하지 못한 항목만 `- [ ] **Not yet verified:** <item>` 로 빈 체크박스 사용 — 이 경우 PR 본문 안에서 한눈에 미검증 항목이 드러남.
 
-## STEP 8 — 결과 보고
+## STEP 8 — Figma 스냅샷 동기화 (dwee 전용)
+
+`tests/snapshots/ko/*.png` 가 이 PR 에서 변경됐으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 변경 없으면 skip.
+
+### 트리거 확인
+
+```bash
+git diff --name-only origin/main...HEAD -- 'tests/snapshots/ko/*.png'
+```
+
+출력이 비어있으면 이 STEP 통째로 스킵하고 STEP 9 진행. 출력이 있으면 그 파일들만 sync.
+
+### 동기화 상수 (dwee 프로젝트 고정)
+
+- Figma fileKey: `E3KcglTsT2dQTnoMyL8YiP`
+- Target page name: `Snapshots (ko)`
+- Frame naming convention: `home-{phase}` (phase ∈ {menstrual, follicular, ovulation, luteal, unknown})
+
+### 동기화 절차
+
+1. **Figma 파일 페이지 listing**: `mcp__plugin_figma_figma__get_metadata` (fileKey 만 — nodeId 생략하면 페이지 목록 반환). "Snapshots (ko)" 페이지의 GUID 확보.
+2. **페이지 없으면 (최초 setup)**: `use_figma` 로 새 페이지 생성 → `upload_assets count=5 batchCommit=true` 로 5개 upload URL + commitUrl 받기 → 5개 PNG multipart POST (`curl -F "file=@<path>;type=image/png"`) → commitUrl 호출 → `use_figma` 로 생성된 frame 5개를 새 페이지로 이동·이름 (`home-{phase}`) 변경·원본 PNG dimension 으로 `resize(w, h)` ·가로 40px 간격으로 정렬·`setCurrentPageAsync(newPage)` 로 전환. (이 단계는 초기 1회만 — 페이지가 생긴 다음 commit 부터는 4번으로 갑니다.)
+3. **페이지 있으면**: 해당 페이지에 `get_metadata` 호출 → frame 들의 이름과 `id` 수집 (`home-{phase}` 매칭).
+4. **변경 파일별 처리**: STEP 8 트리거 단계에서 추출한 변경 PNG 파일 각각에 대해:
+   - 파일명에서 phase 추출 (`home-{phase}.png`)
+   - 매칭 frame 있음 → `upload_assets count=1 nodeId=<id>` 로 새 PNG 를 fill 로 교체. multipart POST + 받은 single submitUrl 사용. commitUrl 없으면 단일 URL 이 자동 commit.
+   - 매칭 frame 없음 (새 phase 추가됐을 때 등) → `use_figma` 로 빈 frame 생성 + 페이지에 append + 원본 dimension 으로 `resize` → 그 frame ID 로 `upload_assets count=1 nodeId=<new-id>` 호출하여 fill 적용 → 가장 우측 끝에 정렬 (xCursor + SPACING).
+5. **원본 dimension 재확인**: PNG 사이즈는 phase 별로 다를 수 있음 (높이가 달라짐). 새 PNG 의 dimension 을 `file <png>` 또는 헤더 파싱으로 확인하고 frame 도 `resize(w, h)` 로 맞춰줌. fill 의 `scaleMode: FILL` 이라 frame 비율과 PNG 비율이 다르면 crop 됨 — 항상 resize 필수.
+
+### 안전 조건
+
+- Figma MCP 미연결 또는 도구 호출 실패 → 이 STEP 만 skip, "Figma sync 실패 — 수동 동기화 필요" 로 보고. commit/PR 결과는 영향 없음 (이미 STEP 7 까지 끝났음).
+- upload URL 은 single-use, 10분 만료 — 받자마자 바로 POST.
+
+## STEP 9 — 결과 보고
 
 다음 정보를 짧게 보고:
 
@@ -232,6 +266,7 @@ EOF
 - PR URL (gh 출력에서)
 - (STEP 2.5 에서 삭제 있었으면) 정리한 로컬 브랜치 이름 목록 + 자동 main 이동 여부
 - (STEP 5 에서 docs 갱신 있었으면) curator 가 추가/수정한 문서 파일 개수
+- (STEP 8 에서 Figma sync 있었으면) 동기화된 phase 목록 + 새로 만든 frame 수 (있으면)
 - (필요 시) 다음 단계 안내 (예: "리뷰 받고 머지하세요")
 
 ## 안전 규칙
