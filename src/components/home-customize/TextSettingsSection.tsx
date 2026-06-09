@@ -13,7 +13,12 @@ import {
 const MAIN_KEYBOARD_MARGIN_PX = 56;
 const SUB_KEYBOARD_MARGIN_PX = 40;
 
-const POSITION_ORDER: readonly TextPosition[] = ['bottomLeft', 'topLeft', 'bottomRight', 'topRight'];
+const POSITION_ORDER: readonly TextPosition[] = [
+  'bottomLeft',
+  'topLeft',
+  'bottomRight',
+  'topRight',
+];
 
 interface TextSettingsSectionProps {
   position: TextPosition | null;
@@ -66,7 +71,7 @@ export function TextSettingsSection({
   );
 
   return (
-    <section className="px-4 pt-10">
+    <section className="px-4 py-10">
       <h2 className="text-lg font-semibold text-brand-gray900">{t.home.customize.text.title}</h2>
       <p className="mt-1 text-xs leading-[1.5] text-brand-gray800">{t.home.customize.text.hint}</p>
 
@@ -83,9 +88,7 @@ export function TextSettingsSection({
                 className={cn(
                   'flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl py-4 transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
-                  isSelected
-                    ? 'bg-brand-pink50'
-                    : 'bg-brand-gray300 hover:bg-brand-gray400/40',
+                  isSelected ? 'bg-brand-pink50' : 'bg-brand-gray300 hover:bg-brand-gray400/40',
                 )}
               >
                 <PositionIcon position={p} />
@@ -98,7 +101,7 @@ export function TextSettingsSection({
         })}
       </ul>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 space-y-4">
         {textOrder === 'mainFirst' ? mainField : subField}
         {textOrder === 'mainFirst' ? subField : mainField}
       </div>
@@ -167,7 +170,14 @@ function PositionIcon({ position }: { position: TextPosition }) {
   const markX = isLeft ? 4 : 11;
   const markY = isTop ? 4 : 13;
   return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="#353434" strokeWidth="1.6" className="h-5 w-5" aria-hidden>
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="#353434"
+      strokeWidth="1.6"
+      className="h-5 w-5"
+      aria-hidden
+    >
       <rect x="1" y="1" width="18" height="18" rx="3" />
       <rect x={markX} y={markY} width="5" height="3" rx="0.5" fill="#353434" stroke="none" />
     </svg>
@@ -176,8 +186,19 @@ function PositionIcon({ position }: { position: TextPosition }) {
 
 function SwapIcon() {
   return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-3 w-3" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v9m0 0l-2-2m2 2l2-2M11 13V4m0 0l-2 2m2-2l2 2" />
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      className="h-3 w-3"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 3v9m0 0l-2-2m2 2l2-2M11 13V4m0 0l-2 2m2-2l2 2"
+      />
     </svg>
   );
 }

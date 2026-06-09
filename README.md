@@ -70,7 +70,8 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 ├── agents/                  서브에이전트 정의 (역할별 system prompt + 도구 권한)
 │   ├── requirement-planner.md       모호한 요청 → 요구사항/STEP 계획
 │   ├── senior-code-craftsman.md     클린 아키텍처·strict TS·i18n·타입체크까지 책임지는 구현 에이전트
-│   └── docs-diagram-curator.md      README/문서/Mermaid 다이어그램 관리
+│   ├── docs-diagram-curator.md      README/문서/Mermaid 다이어그램 관리
+│   └── unit-test-author.md          domain/lib 순수 함수에 대한 Vitest 테스트 + cases.md 작성
 │
 ├── commands/                커스텀 슬래시 커맨드
 │   └── commit.md            /commit — 브랜치 관리 + 검증 게이트 + curator + PR (상세 ↓)
@@ -91,7 +92,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 **`/commit` 가 자동으로 해주는 것**
 
-브랜치 정리 → 검증 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
+브랜치 정리 → 검증 게이트 (`lint → typecheck → test:unit → test:e2e`) → 단위 테스트 보강 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
 
 ```mermaid
 flowchart LR
@@ -178,7 +179,7 @@ src/
 │   │   └── onboarding/
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
-│   │   ├── log/                  오늘의 컨디션 기록
+│   │   ├── log/                  생리 기록 이력 + 컨디션·생리 통합 입력
 │   │   ├── calendar/             캘린더
 │   │   ├── insights/             rule-based 인사이트
 │   │   └── settings/             설정 (언어 등)

@@ -8,6 +8,14 @@ export const todayISO = (): ISODate => format(startOfDay(new Date()), 'yyyy-MM-d
 
 export const toISO = (d: Date): ISODate => format(d, 'yyyy-MM-dd');
 
+export const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const isValidISODate = (s: unknown): s is ISODate => {
+  if (typeof s !== 'string') return false;
+  if (!ISO_DATE_RE.test(s)) return false;
+  return isValid(parseISO(s));
+};
+
 export const fromISO = (s: ISODate): Date => {
   const d = parseISO(s);
   if (!isValid(d)) throw new Error(`Invalid ISO date: ${s}`);

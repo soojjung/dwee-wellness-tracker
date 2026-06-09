@@ -26,7 +26,7 @@ interface CellSize {
 const DEFAULT_TX: Transform = { offsetX: 0, offsetY: 0, scale: 1 };
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
-const OUTPUT_LONG = 1024;
+const OUTPUT_LONG = 1280;
 
 export function PhotoEditScreen() {
   const t = useT();
@@ -120,11 +120,11 @@ export function PhotoEditScreen() {
   return (
     <div className="flex min-h-dvh flex-col bg-brand-white">
       <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-brand-white px-4">
+        <header className="sticky top-0 z-20 flex h-14 items-center bg-brand-white px-4">
           <Link
             href="/home/customize"
             aria-label={t.home.customize.photoEdit.back}
-            className="-ml-1 flex h-10 w-10 items-center justify-center text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
+            className="flex h-6 w-6 items-center justify-center text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
           >
             <BackIcon />
           </Link>
@@ -431,7 +431,7 @@ async function renderCroppedBlob({ srcUrl, natural, cell, transform }: RenderArg
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outputW, outputH);
-  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92));
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.95));
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -445,8 +445,17 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 function BackIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 5l-7 7 7 7" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+      aria-hidden
+    >
+      <path d="M8 19L1 12L8 5" />
     </svg>
   );
 }

@@ -138,7 +138,7 @@ export function HomeCustomizeScreen() {
     <div className="flex min-h-dvh flex-col bg-brand-gray50">
       <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">
         <HomeCustomizeHeader />
-        <main className="flex-1 pb-6">
+        <main className="flex-1">
           <PhotoCountSection selected={photoCount} onSelect={handleSelectCount} />
           {photoCount ? (
             <div className="px-4">

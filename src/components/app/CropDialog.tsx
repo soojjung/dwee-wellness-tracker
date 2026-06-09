@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 
-const OUTPUT_SIZE = 320;
+const OUTPUT_SIZE = 1280;
 const MIN_USER_SCALE = 1;
 const MAX_USER_SCALE = 3;
 
@@ -175,7 +175,7 @@ async function renderCroppedBlob(args: RenderArgs): Promise<Blob | null> {
   const sy = args.naturalHeight / 2 - args.offset.y / k - sourceSide / 2;
 
   ctx.drawImage(img, sx, sy, sourceSide, sourceSide, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
-  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9));
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.95));
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {

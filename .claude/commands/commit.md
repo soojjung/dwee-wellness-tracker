@@ -92,18 +92,52 @@ gh pr list --state merged --head <branch> --json number,mergedAt --limit 1
 
 ## STEP 4 — 검증 (블로킹)
 
-단일 게이트로 lint + typecheck + Playwright e2e (visual baseline + 런타임 에러 가드) 를 순차 실행.
+단일 게이트로 lint + typecheck + Vitest unit + Playwright e2e (visual baseline + 런타임 에러 가드) 를 순차 실행.
 
 ```bash
 pnpm test < /dev/null 2>&1
 ```
 
-내부 체인 (`package.json` 의 `"test"` script): `pnpm lint && pnpm typecheck && pnpm test:e2e`.
+내부 체인 (`package.json` 의 `"test"` script): `pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:e2e`.
 
 - 어느 단계든 실패하면 즉시 중단하고 사용자에게 에러 출력 + 원인 보고.
 - `pnpm lint` 가 interactive 프롬프트로 실패하면 (Next.js ESLint 마이그레이션 안내 등): "lint 설정이 필요해요 — 일단 건너뛰고 진행할까요?" 라고 사용자에게 묻고 답에 따라 진행/중단.
+- `pnpm test:unit` 실패 시: 실패 케이스의 원인 (테스트 잘못 vs 구현 잘못) 을 사용자에게 보고하고 결정 받기. STEP 4.5 에서 처리될 가능성 있으므로, 단순 누락 케이스라면 STEP 4.5 호출 후 재실행도 옵션.
 - `pnpm test:e2e` 가 시각 회귀로 실패하면 (`toHaveScreenshot` diff): 변경이 의도된 UI/카피 수정이라면 사용자 동의 후 `pnpm test:e2e:update` 로 baseline 갱신, 그 결과를 같이 스테이지에 포함. 의도하지 않은 회귀라면 코드 수정 후 재실행.
 - 실제 lint/type/test 에러는 항상 블로킹 — `--no-verify` 같은 우회 금지.
+
+## STEP 4.5 — 단위 테스트 보강 (unit-test-author)
+
+순수 함수가 추가/변경됐을 때 Vitest 테스트와 케이스 표를 자동으로 작성·갱신·실행.
+
+### 트리거 확인
+
+```bash
+git diff --name-only origin/main...HEAD -- 'src/domain/**/*.ts' 'src/lib/**/*.ts' \
+  | grep -vE '\.test\.ts$|\.cases\.md$'
+```
+
+출력이 비어있으면 이 STEP 통째로 스킵하고 STEP 5 진행.
+
+### 호출
+
+`Agent` tool 의 `subagent_type=unit-test-author` 로 호출. 프롬프트에 다음을 포함:
+
+- 위 트리거 명령의 출력 (테스트 대상 후보 파일 목록)
+- `git diff --stat origin/main...HEAD` 요약
+- 지시문: "(1) 위 파일들 중 `src/domain/**` 또는 `src/lib/**` 의 순수 함수에 대해 `*.test.ts` 와 짝 `*.cases.md` (마크다운 표) 를 신규 작성하거나 기존 케이스를 갱신해 줘. (2) `pnpm test:unit` 실행해서 모두 통과해야 완료로 보고. 실패 시 원인 (테스트 잘못 vs 구현 잘못) 진단 후 사용자에게 보고. (3) 스코프 밖 파일 (store, adapter, React 컴포넌트) 은 건너뛰고 그 이유 한 줄로 적어 줘."
+
+### 결과 처리
+
+- 에이전트가 `*.test.ts` / `*.cases.md` 를 추가/수정하면 working tree 에 반영됨. STEP 6 의 `git add -A` 에서 자동 포함.
+- 에이전트가 "no unit test needed" 또는 "all targets out of scope" 로 회신 → 그대로 STEP 5 진행.
+- 사용자에게 "단위 테스트 N개 추가/갱신, 모두 통과" 1줄로 보고.
+- 만약 에이전트가 구현 버그를 발견해서 멈췄으면 (테스트가 깨졌고 테스트 잘못이 아닌 경우): commit 중단 후 사용자에게 버그 내용 보고. 사용자 결정 받고 진행.
+
+### 안전 조건
+
+- `pnpm test:unit` 가 STEP 4 에서 이미 실패해서 들어왔다면, STEP 4.5 에서 신규 케이스를 보강 + 재실행 후 STEP 4 의 unit 게이트를 다시 통과시켜야 STEP 5 로 진행 가능.
+- 새로 만든 `.test.ts` / `.cases.md` 는 항상 `pnpm test:unit` 통과 상태로만 커밋에 포함.
 
 ## STEP 5 — 문서·다이어그램 보강 (docs-diagram-curator)
 

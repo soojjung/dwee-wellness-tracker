@@ -69,13 +69,16 @@ flowchart LR
 
 ## AddPeriodFab 내부 상태
 
+FAB 탭 시 `PeriodRangeDialog` (시작일 + 종료일 입력)가 열립니다.
+종료일은 `defaultPeriodEndDate(startDate, averagePeriodLength)` 로 자동 계산되며, 사용자가 직접 수정할 수 있습니다.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Closed
-    Closed --> Open : FAB 클릭
-    Open --> Closed : Cancel
-    Open --> Submitting : 날짜 선택 후 확인
-    Submitting --> Closed : addPeriod 완료 → toast 표시
+    Closed --> RangeDialog : FAB 클릭
+    RangeDialog --> Closed : Cancel
+    RangeDialog --> Submitting : 시작일 + 종료일 확인
+    Submitting --> Closed : addPeriod({startDate, endDate}) 완료
 ```
 
 ## 검증 케이스

@@ -12,7 +12,7 @@ export function HomeCustomizeFooter({ enabled, onSubmit }: HomeCustomizeFooterPr
   return (
     <footer
       className={cn(
-        'mt-10 px-4 pb-8 pt-5 transition-colors',
+        'px-4 pb-8 pt-5 transition-colors',
         enabled ? 'bg-brand-gray900' : 'bg-brand-gray400',
       )}
     >
@@ -21,8 +21,8 @@ export function HomeCustomizeFooter({ enabled, onSubmit }: HomeCustomizeFooterPr
         disabled={!enabled}
         onClick={onSubmit}
         className={cn(
-          'block w-full text-center text-xl font-semibold transition-colors',
-          enabled ? 'text-brand-white' : 'cursor-default text-brand-gray200',
+          'block w-full text-center text-xl font-semibold leading-[normal] transition-colors',
+          enabled ? 'text-brand-pink100' : 'cursor-default text-brand-gray200',
         )}
       >
         {t.home.customize.submit}
