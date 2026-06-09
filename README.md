@@ -163,10 +163,14 @@ pnpm dev          # http://localhost:3000
 ### 빌드 / 검증
 
 ```bash
-pnpm build        # Next.js production build
-pnpm typecheck    # tsc --noEmit (strict)
-pnpm lint         # eslint
-pnpm format       # prettier --write
+pnpm build              # Next.js production build
+pnpm typecheck          # tsc --noEmit (strict)
+pnpm lint               # eslint
+pnpm format             # prettier --write
+pnpm test               # lint → typecheck → unit → e2e (단일 게이트, /commit 이 호출)
+pnpm test:unit          # Vitest (src/domain, src/lib 순수 함수)
+pnpm test:e2e           # Playwright 시각 스냅샷 + 런타임 에러 가드
+pnpm test:e2e:update    # baseline PNG 갱신 (의도된 UI 변경 후)
 ```
 
 ### iOS (Capacitor)
@@ -183,9 +187,8 @@ pnpm cap:ios      # Xcode 열기
 ```
 src/
 ├── app/                          Next.js App Router
-│   ├── (auth)/                   로그인 / 온보딩 (풀스크린, 탭바 없음)
-│   │   ├── login/
-│   │   └── onboarding/
+│   ├── (auth)/                   로그인 (풀스크린, 탭바 없음)
+│   │   └── login/
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  생리 기록 이력 + 컨디션·생리 통합 입력
@@ -219,6 +222,10 @@ src/
 │
 ├── i18n/                         ko / en 사전 + useT()
 ├── constants/                    공용 상수 (copy 등)
+├── dev/                          개발/테스트 전용 시드 헬퍼
+│   ├── seedData.ts               샘플 데이터 (수동 dev 사용)
+│   ├── seedForPhase.ts           Playwright phase 시드 (window.__dweeSeedPhase)
+│   └── seedPhotos.ts             Playwright 사진 시드 (window.__dweeSeedPhotos)
 └── types/                        도메인 타입
 ```
 
