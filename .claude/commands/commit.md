@@ -275,21 +275,34 @@ git diff --name-only origin/main...HEAD -- 'tests/snapshots/ko/*.png'
 - Target page name: `Snapshots (ko)`
 - Frame naming convention: `home-{phase}` (phase ∈ {menstrual, follicular, ovulation, luteal, unknown})
 
+### ⚠️ 신뢰성 핵심 (2026-06-10 이슈로 확정)
+
+`upload_assets`(count=1, nodeId 지정) + multipart POST 의 single-URL 응답이 `{success: true, imageHash: ...}` 로 와도 **frame 의 `fills` 속성은 자동 갱신되지 않는 경우가 있다**. BlobStore 에 imageHash 만 등록되고 frame 은 옛 fill 을 유지한 채로 끝남. 따라서 다음 2-step 패턴을 **항상** 따른다:
+
+1. **Step A — Upload**: `upload_assets count=1 nodeId=<id>` 로 submitUrl 받기 → multipart POST → 응답에서 `imageHash` 캡처.
+2. **Step B — Apply (필수)**: `use_figma` 로 `node.fills = [{type:'IMAGE', imageHash, scaleMode:'FILL'}]` 직접 설정. **이 단계를 생략하면 frame 에 새 fill 이 안 박힌다.**
+3. **Step C — Verify**: `get_screenshot nodeId=<id>` 로 frame 캡처해서 새 PNG 가 실제로 박혔는지 눈으로 확인. screenshot 이 옛 버전이면 Step B 가 안 됐다는 신호 — `use_figma` 호출을 다시 검토.
+
+`upload_assets` 단독으로 끝내지 말 것. submitUrl 의 응답 `success: true` 는 BlobStore 등록 성공일 뿐, frame 적용 성공이 아니다.
+
 ### 동기화 절차
 
 1. **Figma 파일 페이지 listing**: `mcp__plugin_figma_figma__get_metadata` (fileKey 만 — nodeId 생략하면 페이지 목록 반환). "Snapshots (ko)" 페이지의 GUID 확보.
 2. **페이지 없으면 (최초 setup)**: `use_figma` 로 새 페이지 생성 → `upload_assets count=5 batchCommit=true` 로 5개 upload URL + commitUrl 받기 → 5개 PNG multipart POST (`curl -F "file=@<path>;type=image/png"`) → commitUrl 호출 → `use_figma` 로 생성된 frame 5개를 새 페이지로 이동·이름 (`home-{phase}`) 변경·원본 PNG dimension 으로 `resize(w, h)` ·가로 40px 간격으로 정렬·`setCurrentPageAsync(newPage)` 로 전환. (이 단계는 초기 1회만 — 페이지가 생긴 다음 commit 부터는 4번으로 갑니다.)
-3. **페이지 있으면**: 해당 페이지에 `get_metadata` 호출 → frame 들의 이름과 `id` 수집 (`home-{phase}` 매칭).
-4. **변경 파일별 처리**: STEP 8 트리거 단계에서 추출한 변경 PNG 파일 각각에 대해:
-   - 파일명에서 phase 추출 (`home-{phase}.png`)
-   - 매칭 frame 있음 → `upload_assets count=1 nodeId=<id>` 로 새 PNG 를 fill 로 교체. multipart POST + 받은 single submitUrl 사용. commitUrl 없으면 단일 URL 이 자동 commit.
-   - 매칭 frame 없음 (새 phase 추가됐을 때 등) → `use_figma` 로 빈 frame 생성 + 페이지에 append + 원본 dimension 으로 `resize` → 그 frame ID 로 `upload_assets count=1 nodeId=<new-id>` 호출하여 fill 적용 → 가장 우측 끝에 정렬 (xCursor + SPACING).
-5. **원본 dimension 재확인**: PNG 사이즈는 phase 별로 다를 수 있음 (높이가 달라짐). 새 PNG 의 dimension 을 `file <png>` 또는 헤더 파싱으로 확인하고 frame 도 `resize(w, h)` 로 맞춰줌. fill 의 `scaleMode: FILL` 이라 frame 비율과 PNG 비율이 다르면 crop 됨 — 항상 resize 필수.
+3. **페이지 있으면**: 해당 페이지에 `get_metadata` 호출 → frame 들의 이름과 `id` 수집 (`home-{phase}` 매칭) + 각 frame 의 `width`/`height`.
+4. **변경 파일별 처리 (Upload + Apply + Verify, 위 2-step 패턴 따름)**: STEP 8 트리거 단계에서 추출한 변경 PNG 파일 각각에 대해:
+   - 파일명에서 phase 추출 (`home-{phase}.png`).
+   - PNG dimension 확인 (`file <png>` 헤더 파싱) 후 frame dimension 과 비교 — 다르면 `use_figma` 로 `node.resize(w, h)` 먼저 호출 (가로 간격 유지하려면 다음 frame 들 `x` 도 같이 보정).
+   - **Step A — Upload**: 매칭 frame 있으면 `upload_assets count=1 nodeId=<id>` 로 submitUrl 받기 → multipart POST → `imageHash` 캡처. 매칭 frame 없으면 (신규 phase 등) `use_figma` 로 빈 frame 생성 + append + resize 한 뒤 그 frame ID 로 동일 호출.
+   - **Step B — Apply**: 모든 hash 가 모이면 한 `use_figma` 호출로 `await figma.setCurrentPageAsync(snapshotsPage)` 후 각 frame 에 `node.fills = [{type:'IMAGE', imageHash, scaleMode:'FILL'}]` 적용 (배열로 새로 할당해야 변경 감지됨). 반환값에 mutated node IDs 포함.
+   - **Step C — Verify**: 적용된 frame 중 최소 1개에 대해 `get_screenshot nodeId=<id> maxDimension=600` 호출해서 결과 PNG 다운로드 → Read 로 시각 확인. 옛 카피·옛 레이아웃이 보이면 Step B 가 반영 안 된 것 — `use_figma` 의 스크립트를 점검하고 재시도.
+5. **원본 dimension 재확인 (resize 필수성)**: PNG 사이즈는 phase 별로 다를 수 있음 (높이가 달라짐). 새 PNG dimension 과 frame dimension 이 일치하면 resize 생략 가능하지만 다르면 반드시 `node.resize(w, h)` — `scaleMode: FILL` 이라 비율이 다르면 crop 된다.
 
 ### 안전 조건
 
 - Figma MCP 미연결 또는 도구 호출 실패 → 이 STEP 만 skip, "Figma sync 실패 — 수동 동기화 필요" 로 보고. commit/PR 결과는 영향 없음 (이미 STEP 7 까지 끝났음).
 - upload URL 은 single-use, 10분 만료 — 받자마자 바로 POST.
+- Step B (`use_figma` 로 fill 적용) 누락은 가장 흔한 실패 모드. 보고 단계에서 "Step C verify 통과" 까지 확인했다고 명시할 것.
 
 ## STEP 9 — 결과 보고
 
