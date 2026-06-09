@@ -3,14 +3,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { Button } from '@/components/ui/Button';
+import { Toast } from '@/components/ui/Toast';
 import { usePeriodStore } from '@/store/periodStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
+import { PeriodRangeDialog, type AddPeriodInput } from '@/components/app/PeriodRangeDialog';
 import { todayISO, toISO, formatMonthLabel } from '@/lib/date';
 import { MonthGrid } from './MonthGrid';
 import { DayDetailSheet } from './DayDetailSheet';
 import { isPeriodDate } from './cellState';
+
+const TOAST_MS = 2400;
 
 const WEEK_STARTS_ON = 0;
 
@@ -22,6 +26,9 @@ export function CalendarScreen() {
   const periodsHydrated = usePeriodStore((s) => s.hydrated);
   const periodsError = usePeriodStore((s) => s.error);
   const hydratePeriods = usePeriodStore((s) => s.hydrate);
+  const addPeriod = usePeriodStore((s) => s.add);
+  const removePeriod = usePeriodStore((s) => s.remove);
+  const updatePeriod = usePeriodStore((s) => s.update);
 
   const settings = useSettingsStore((s) => s.settings);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
@@ -33,6 +40,14 @@ export function CalendarScreen() {
 
   const [cursor, setCursor] = useState(() => initialCursor(today));
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [rangeStartSeed, setRangeStartSeed] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), TOAST_MS);
+    return () => clearTimeout(id);
+  }, [toast]);
 
   useEffect(() => {
     if (!periodsHydrated) hydratePeriods();
@@ -53,6 +68,46 @@ export function CalendarScreen() {
     () => detectMonthEntry(cursor, periods, conditionByDate),
     [cursor, periods, conditionByDate],
   );
+
+  const startMatchId = useMemo(
+    () => (selectedDate ? (periods.find((p) => p.startDate === selectedDate)?.id ?? null) : null),
+    [periods, selectedDate],
+  );
+  const openRecordId = useMemo(() => {
+    if (!selectedDate) return null;
+    let latest: { id: string; startDate: string } | null = null;
+    for (const p of periods) {
+      if (p.endDate) continue;
+      if (p.startDate > selectedDate) continue;
+      if (!latest || p.startDate > latest.startDate) latest = { id: p.id, startDate: p.startDate };
+    }
+    return latest?.id ?? null;
+  }, [periods, selectedDate]);
+
+  const canAddOnSelected = !!selectedDate && !startMatchId && selectedDate <= today;
+
+  function handleAdd(startDate: string) {
+    setSelectedDate(null);
+    setRangeStartSeed(startDate);
+  }
+
+  async function handleRangeSubmit(input: AddPeriodInput) {
+    await addPeriod(input);
+    setRangeStartSeed(null);
+    setToast(t.calendar.detail.added);
+  }
+
+  async function handleRemove(id: string) {
+    await removePeriod(id);
+    setSelectedDate(null);
+    setToast(t.calendar.detail.removed);
+  }
+
+  async function handleMarkEnd(id: string, endDate: string) {
+    await updatePeriod(id, { endDate });
+    setSelectedDate(null);
+    setToast(t.calendar.detail.endMarked);
+  }
 
   if (!settingsHydrated) {
     return (
@@ -117,8 +172,26 @@ export function CalendarScreen() {
           hasPeriod={isPeriodDate(selectedDate, periods)}
           isPredicted={prediction.predictedDate === selectedDate}
           condition={conditionByDate[selectedDate] ?? null}
+          startMatchId={startMatchId}
+          openRecordId={openRecordId}
+          canAdd={canAddOnSelected}
+          onAdd={handleAdd}
+          onRemove={handleRemove}
+          onMarkEnd={handleMarkEnd}
         />
       ) : null}
+
+      {rangeStartSeed ? (
+        <PeriodRangeDialog
+          initialStartDate={rangeStartSeed}
+          defaultPeriodLength={settings.averagePeriodLength}
+          today={today}
+          onSubmit={handleRangeSubmit}
+          onCancel={() => setRangeStartSeed(null)}
+        />
+      ) : null}
+
+      <Toast message={toast} />
     </PageContainer>
   );
 }

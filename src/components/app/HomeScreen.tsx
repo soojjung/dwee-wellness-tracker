@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { currentPhase } from '@/domain/cycle/phase';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
+import type { AddPeriodInput } from './AddPeriodFab';
 import { generateInsights } from '@/lib/insight/generator';
 import { todayISO, daysBetween, addDaysISO } from '@/lib/date';
 import { AddPeriodFab } from './AddPeriodFab';
@@ -81,8 +82,8 @@ export function HomeScreen() {
     ? daysBetween(today, prediction.predictedDate)
     : null;
 
-  async function handleStartPeriod(startDate: string) {
-    const created = await addPeriod({ startDate });
+  async function handleStartPeriod(input: AddPeriodInput) {
+    const created = await addPeriod(input);
     if (!created) return;
     if (!settings.onboardingCompleted) {
       await updateSettings({ onboardingCompleted: true });
@@ -177,7 +178,11 @@ export function HomeScreen() {
 
       <Toast message={toast} />
 
-      <AddPeriodFab today={today} onSubmit={handleStartPeriod} />
+      <AddPeriodFab
+        today={today}
+        defaultPeriodLength={settings.averagePeriodLength}
+        onSubmit={handleStartPeriod}
+      />
     </PageContainer>
   );
 }
@@ -186,14 +191,14 @@ function PlusIcon() {
   return (
     <svg
       viewBox="0 0 12 12"
-      fill="currentColor"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
       className="inline-block h-3 w-3 text-brand-gray800"
       aria-hidden
     >
-      <g transform="translate(0 1)">
-        <path d="M12 8.18182C12 9.18597 11.1046 10 10 10H2C0.895431 10 0 9.18597 0 8.18182V5.77273C0 5.22044 0.447715 4.77273 1 4.77273H11C11.5523 4.77273 12 5.22044 12 5.77273V8.18182Z" />
-        <path d="M9 0C9.55228 0 10 0.407014 10 0.909091V1.81818C11.1046 1.81818 12 2.63221 12 3.63636C12 3.8874 11.7965 4.09091 11.5455 4.09091H0.454545C0.203507 4.09091 0 3.8874 0 3.63636C0 2.63221 0.895431 1.81818 2 1.81818V0.909091C2 0.407014 2.44772 0 3 0C3.55228 0 4 0.407014 4 0.909091V1.81818H8V0.909091C8 0.407014 8.44772 0 9 0Z" />
-      </g>
+      <path d="M6 2v8M2 6h8" />
     </svg>
   );
 }

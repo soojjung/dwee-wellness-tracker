@@ -21,6 +21,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       (window as unknown as { __dweeSeedPhase?: typeof seedForPhase }).__dweeSeedPhase =
         seedForPhase;
     });
+    import('@/dev/seedPhotos').then(({ seedPhotos }) => {
+      (window as unknown as { __dweeSeedPhotos?: typeof seedPhotos }).__dweeSeedPhotos =
+        seedPhotos;
+    });
   }, []);
 
   return (

@@ -47,7 +47,8 @@ src/data/
         ├── SupabaseConditionAdapter.ts
         ├── SupabaseSettingsAdapter.ts
         └── SupabaseMediaAdapter.ts  ← home_photos(slot별) + home_decor_settings 테이블 사용.
-                                        textOrder 컬럼 미존재 → no-op (TODO)
+                                        photo_count / text_position / text_order /
+                                        main_text / sub_text 모두 구현 완료.
 ```
 
 `indexeddb/`와 `supabase/` 폴더가 나란히 있어 **기술 교체는 `data/index.ts` 한 파일만 수정**하면 됩니다.

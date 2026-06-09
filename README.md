@@ -70,7 +70,8 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 ├── agents/                  서브에이전트 정의 (역할별 system prompt + 도구 권한)
 │   ├── requirement-planner.md       모호한 요청 → 요구사항/STEP 계획
 │   ├── senior-code-craftsman.md     클린 아키텍처·strict TS·i18n·타입체크까지 책임지는 구현 에이전트
-│   └── docs-diagram-curator.md      README/문서/Mermaid 다이어그램 관리
+│   ├── docs-diagram-curator.md      README/문서/Mermaid 다이어그램 관리
+│   └── unit-test-author.md          domain/lib 순수 함수에 대한 Vitest 테스트 + cases.md 작성
 │
 ├── commands/                커스텀 슬래시 커맨드
 │   └── commit.md            /commit — 브랜치 관리 + 검증 게이트 + curator + PR (상세 ↓)
@@ -91,7 +92,16 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 **`/commit` 가 자동으로 해주는 것**
 
-브랜치 정리 → 검증 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
+브랜치 정리 → 검증 게이트 (`lint → typecheck → test:unit → test:e2e`) → 단위 테스트 보강 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
+
+`test:e2e` 는 5개 phase × 2개 locale(en/ko) 매트릭스로 시각 스냅샷을 찍습니다. 현재 커버리지:
+
+| spec | 화면 | 비고 |
+|------|------|------|
+| `tests/home.spec.ts` | 홈 | Figma "Snapshots (ko)" 자동 동기화 대상 |
+| `tests/customize.spec.ts` | 홈 커스터마이즈 | e2e baseline 전용 |
+| `tests/log.spec.ts` | 생리 기록(/log) | e2e baseline 전용 |
+| `tests/photo-edit.spec.ts` | 사진 편집 | **skipped** — Playwright WebKit이 IndexedDB에 Blob을 저장할 때 null DOMException을 던지는 Playwright-only 버그. 실제 Safari/WKWebView·Chromium은 정상 동작. |
 
 ```mermaid
 flowchart LR
@@ -153,10 +163,14 @@ pnpm dev          # http://localhost:3000
 ### 빌드 / 검증
 
 ```bash
-pnpm build        # Next.js production build
-pnpm typecheck    # tsc --noEmit (strict)
-pnpm lint         # eslint
-pnpm format       # prettier --write
+pnpm build              # Next.js production build
+pnpm typecheck          # tsc --noEmit (strict)
+pnpm lint               # eslint
+pnpm format             # prettier --write
+pnpm test               # lint → typecheck → unit → e2e (단일 게이트, /commit 이 호출)
+pnpm test:unit          # Vitest (src/domain, src/lib 순수 함수)
+pnpm test:e2e           # Playwright 시각 스냅샷 + 런타임 에러 가드
+pnpm test:e2e:update    # baseline PNG 갱신 (의도된 UI 변경 후)
 ```
 
 ### iOS (Capacitor)
@@ -173,12 +187,11 @@ pnpm cap:ios      # Xcode 열기
 ```
 src/
 ├── app/                          Next.js App Router
-│   ├── (auth)/                   로그인 / 온보딩 (풀스크린, 탭바 없음)
-│   │   ├── login/
-│   │   └── onboarding/
+│   ├── (auth)/                   로그인 (풀스크린, 탭바 없음)
+│   │   └── login/
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
-│   │   ├── log/                  오늘의 컨디션 기록
+│   │   ├── log/                  생리 기록 이력 + 컨디션·생리 통합 입력
 │   │   ├── calendar/             캘린더
 │   │   ├── insights/             rule-based 인사이트
 │   │   └── settings/             설정 (언어 등)
@@ -209,6 +222,10 @@ src/
 │
 ├── i18n/                         ko / en 사전 + useT()
 ├── constants/                    공용 상수 (copy 등)
+├── dev/                          개발/테스트 전용 시드 헬퍼
+│   ├── seedData.ts               샘플 데이터 (수동 dev 사용)
+│   ├── seedForPhase.ts           Playwright phase 시드 (window.__dweeSeedPhase)
+│   └── seedPhotos.ts             Playwright 사진 시드 (window.__dweeSeedPhotos)
 └── types/                        도메인 타입
 ```
 

@@ -7,8 +7,11 @@
 ```
 supabase/
   migrations/
-    0001_init.sql   — 초기 스키마 (profiles, period_logs, condition_logs,
-                      home_photos, home_decor_settings + RLS + 트리거)
+    0001_init.sql       — 초기 스키마 (profiles, period_logs, condition_logs,
+                          home_hero, media bucket + RLS + 트리거)
+    0002_media_v2.sql   — home_hero 폐기 + home_photos(4슬롯) +
+                          home_decor_settings(photo_count, text_position,
+                          text_order, main_text, sub_text) 신규 생성
 ```
 
 어댑터 코드 위치: `src/data/adapters/supabase/`
@@ -21,8 +24,9 @@ src/data/adapters/supabase/
   SupabaseConditionAdapter.ts     — ConditionRepository 구현
   SupabaseMediaAdapter.ts         — MediaRepository 구현
                                     · home_photos 테이블: slot 별 Storage 경로
-                                    · home_decor_settings 테이블: photo_count / text_position / main_text / sub_text
-                                    · text_order 컬럼 미존재 → getTextOrder/setTextOrder no-op (TODO)
+                                    · home_decor_settings 테이블: photo_count /
+                                      text_position / text_order /
+                                      main_text / sub_text
 ```
 
 ## Supabase wiring 활성화 순서 (MVP2.2)
@@ -41,7 +45,7 @@ brew install supabase/tap/supabase
 supabase link --project-ref <ref>
 supabase db push
 ```
-**옵션 B (대시보드 SQL Editor):** `migrations/0001_init.sql` 내용 통째로 붙여넣기 후 RUN.
+**옵션 B (대시보드 SQL Editor):** `migrations/0001_init.sql` → `migrations/0002_media_v2.sql` 순서대로 내용 붙여넣기 후 각각 RUN.
 
 ### 3. `data/index.ts` wiring 교체
 ```ts

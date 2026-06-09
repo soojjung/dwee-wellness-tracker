@@ -92,18 +92,52 @@ gh pr list --state merged --head <branch> --json number,mergedAt --limit 1
 
 ## STEP 4 — 검증 (블로킹)
 
-단일 게이트로 lint + typecheck + Playwright e2e (visual baseline + 런타임 에러 가드) 를 순차 실행.
+단일 게이트로 lint + typecheck + Vitest unit + Playwright e2e (visual baseline + 런타임 에러 가드) 를 순차 실행.
 
 ```bash
 pnpm test < /dev/null 2>&1
 ```
 
-내부 체인 (`package.json` 의 `"test"` script): `pnpm lint && pnpm typecheck && pnpm test:e2e`.
+내부 체인 (`package.json` 의 `"test"` script): `pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:e2e`.
 
 - 어느 단계든 실패하면 즉시 중단하고 사용자에게 에러 출력 + 원인 보고.
 - `pnpm lint` 가 interactive 프롬프트로 실패하면 (Next.js ESLint 마이그레이션 안내 등): "lint 설정이 필요해요 — 일단 건너뛰고 진행할까요?" 라고 사용자에게 묻고 답에 따라 진행/중단.
+- `pnpm test:unit` 실패 시: 실패 케이스의 원인 (테스트 잘못 vs 구현 잘못) 을 사용자에게 보고하고 결정 받기. STEP 4.5 에서 처리될 가능성 있으므로, 단순 누락 케이스라면 STEP 4.5 호출 후 재실행도 옵션.
 - `pnpm test:e2e` 가 시각 회귀로 실패하면 (`toHaveScreenshot` diff): 변경이 의도된 UI/카피 수정이라면 사용자 동의 후 `pnpm test:e2e:update` 로 baseline 갱신, 그 결과를 같이 스테이지에 포함. 의도하지 않은 회귀라면 코드 수정 후 재실행.
 - 실제 lint/type/test 에러는 항상 블로킹 — `--no-verify` 같은 우회 금지.
+
+## STEP 4.5 — 단위 테스트 보강 (unit-test-author)
+
+순수 함수가 추가/변경됐을 때 Vitest 테스트와 케이스 표를 자동으로 작성·갱신·실행.
+
+### 트리거 확인
+
+```bash
+git diff --name-only origin/main...HEAD -- 'src/domain/**/*.ts' 'src/lib/**/*.ts' \
+  | grep -vE '\.test\.ts$|\.cases\.md$'
+```
+
+출력이 비어있으면 이 STEP 통째로 스킵하고 STEP 5 진행.
+
+### 호출
+
+`Agent` tool 의 `subagent_type=unit-test-author` 로 호출. 프롬프트에 다음을 포함:
+
+- 위 트리거 명령의 출력 (테스트 대상 후보 파일 목록)
+- `git diff --stat origin/main...HEAD` 요약
+- 지시문: "(1) 위 파일들 중 `src/domain/**` 또는 `src/lib/**` 의 순수 함수에 대해 `*.test.ts` 와 짝 `*.cases.md` (마크다운 표) 를 신규 작성하거나 기존 케이스를 갱신해 줘. (2) `pnpm test:unit` 실행해서 모두 통과해야 완료로 보고. 실패 시 원인 (테스트 잘못 vs 구현 잘못) 진단 후 사용자에게 보고. (3) 스코프 밖 파일 (store, adapter, React 컴포넌트) 은 건너뛰고 그 이유 한 줄로 적어 줘."
+
+### 결과 처리
+
+- 에이전트가 `*.test.ts` / `*.cases.md` 를 추가/수정하면 working tree 에 반영됨. STEP 6 의 `git add -A` 에서 자동 포함.
+- 에이전트가 "no unit test needed" 또는 "all targets out of scope" 로 회신 → 그대로 STEP 5 진행.
+- 사용자에게 "단위 테스트 N개 추가/갱신, 모두 통과" 1줄로 보고.
+- 만약 에이전트가 구현 버그를 발견해서 멈췄으면 (테스트가 깨졌고 테스트 잘못이 아닌 경우): commit 중단 후 사용자에게 버그 내용 보고. 사용자 결정 받고 진행.
+
+### 안전 조건
+
+- `pnpm test:unit` 가 STEP 4 에서 이미 실패해서 들어왔다면, STEP 4.5 에서 신규 케이스를 보강 + 재실행 후 STEP 4 의 unit 게이트를 다시 통과시켜야 STEP 5 로 진행 가능.
+- 새로 만든 `.test.ts` / `.cases.md` 는 항상 `pnpm test:unit` 통과 상태로만 커밋에 포함.
 
 ## STEP 5 — 문서·다이어그램 보강 (docs-diagram-curator)
 
@@ -225,12 +259,14 @@ EOF
 
 ## STEP 8 — Figma 스냅샷 동기화 (dwee 전용)
 
-`tests/snapshots/ko/*.png` 가 이 PR 에서 변경됐으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 변경 없으면 skip.
+`tests/snapshots/ko/home-*.png` 가 이 PR 에서 변경됐으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 변경 없으면 skip.
+
+> **스코프**: `home-*.png` 만 동기화 대상. `customize-*.png` / `log-*.png` / `photo-edit-*.png` 는 e2e 시각 회귀 전용 baseline 이며 Figma 에 업로드하지 않는다.
 
 ### 트리거 확인
 
 ```bash
-git diff --name-only origin/main...HEAD -- 'tests/snapshots/ko/*.png'
+git diff --name-only origin/main...HEAD -- 'tests/snapshots/ko/home-*.png'
 ```
 
 출력이 비어있으면 이 STEP 통째로 스킵하고 STEP 9 진행. 출력이 있으면 그 파일들만 sync.
@@ -241,21 +277,34 @@ git diff --name-only origin/main...HEAD -- 'tests/snapshots/ko/*.png'
 - Target page name: `Snapshots (ko)`
 - Frame naming convention: `home-{phase}` (phase ∈ {menstrual, follicular, ovulation, luteal, unknown})
 
+### ⚠️ 신뢰성 핵심 (2026-06-10 이슈로 확정)
+
+`upload_assets`(count=1, nodeId 지정) + multipart POST 의 single-URL 응답이 `{success: true, imageHash: ...}` 로 와도 **frame 의 `fills` 속성은 자동 갱신되지 않는 경우가 있다**. BlobStore 에 imageHash 만 등록되고 frame 은 옛 fill 을 유지한 채로 끝남. 따라서 다음 2-step 패턴을 **항상** 따른다:
+
+1. **Step A — Upload**: `upload_assets count=1 nodeId=<id>` 로 submitUrl 받기 → multipart POST → 응답에서 `imageHash` 캡처.
+2. **Step B — Apply (필수)**: `use_figma` 로 `node.fills = [{type:'IMAGE', imageHash, scaleMode:'FILL'}]` 직접 설정. **이 단계를 생략하면 frame 에 새 fill 이 안 박힌다.**
+3. **Step C — Verify**: `get_screenshot nodeId=<id>` 로 frame 캡처해서 새 PNG 가 실제로 박혔는지 눈으로 확인. screenshot 이 옛 버전이면 Step B 가 안 됐다는 신호 — `use_figma` 호출을 다시 검토.
+
+`upload_assets` 단독으로 끝내지 말 것. submitUrl 의 응답 `success: true` 는 BlobStore 등록 성공일 뿐, frame 적용 성공이 아니다.
+
 ### 동기화 절차
 
 1. **Figma 파일 페이지 listing**: `mcp__plugin_figma_figma__get_metadata` (fileKey 만 — nodeId 생략하면 페이지 목록 반환). "Snapshots (ko)" 페이지의 GUID 확보.
 2. **페이지 없으면 (최초 setup)**: `use_figma` 로 새 페이지 생성 → `upload_assets count=5 batchCommit=true` 로 5개 upload URL + commitUrl 받기 → 5개 PNG multipart POST (`curl -F "file=@<path>;type=image/png"`) → commitUrl 호출 → `use_figma` 로 생성된 frame 5개를 새 페이지로 이동·이름 (`home-{phase}`) 변경·원본 PNG dimension 으로 `resize(w, h)` ·가로 40px 간격으로 정렬·`setCurrentPageAsync(newPage)` 로 전환. (이 단계는 초기 1회만 — 페이지가 생긴 다음 commit 부터는 4번으로 갑니다.)
-3. **페이지 있으면**: 해당 페이지에 `get_metadata` 호출 → frame 들의 이름과 `id` 수집 (`home-{phase}` 매칭).
-4. **변경 파일별 처리**: STEP 8 트리거 단계에서 추출한 변경 PNG 파일 각각에 대해:
-   - 파일명에서 phase 추출 (`home-{phase}.png`)
-   - 매칭 frame 있음 → `upload_assets count=1 nodeId=<id>` 로 새 PNG 를 fill 로 교체. multipart POST + 받은 single submitUrl 사용. commitUrl 없으면 단일 URL 이 자동 commit.
-   - 매칭 frame 없음 (새 phase 추가됐을 때 등) → `use_figma` 로 빈 frame 생성 + 페이지에 append + 원본 dimension 으로 `resize` → 그 frame ID 로 `upload_assets count=1 nodeId=<new-id>` 호출하여 fill 적용 → 가장 우측 끝에 정렬 (xCursor + SPACING).
-5. **원본 dimension 재확인**: PNG 사이즈는 phase 별로 다를 수 있음 (높이가 달라짐). 새 PNG 의 dimension 을 `file <png>` 또는 헤더 파싱으로 확인하고 frame 도 `resize(w, h)` 로 맞춰줌. fill 의 `scaleMode: FILL` 이라 frame 비율과 PNG 비율이 다르면 crop 됨 — 항상 resize 필수.
+3. **페이지 있으면**: 해당 페이지에 `get_metadata` 호출 → frame 들의 이름과 `id` 수집 (`home-{phase}` 매칭) + 각 frame 의 `width`/`height`.
+4. **변경 파일별 처리 (Upload + Apply + Verify, 위 2-step 패턴 따름)**: STEP 8 트리거 단계에서 추출한 변경 PNG 파일 각각에 대해:
+   - 파일명에서 phase 추출 (`home-{phase}.png`).
+   - PNG dimension 확인 (`file <png>` 헤더 파싱) 후 frame dimension 과 비교 — 다르면 `use_figma` 로 `node.resize(w, h)` 먼저 호출 (가로 간격 유지하려면 다음 frame 들 `x` 도 같이 보정).
+   - **Step A — Upload**: 매칭 frame 있으면 `upload_assets count=1 nodeId=<id>` 로 submitUrl 받기 → multipart POST → `imageHash` 캡처. 매칭 frame 없으면 (신규 phase 등) `use_figma` 로 빈 frame 생성 + append + resize 한 뒤 그 frame ID 로 동일 호출.
+   - **Step B — Apply**: 모든 hash 가 모이면 한 `use_figma` 호출로 `await figma.setCurrentPageAsync(snapshotsPage)` 후 각 frame 에 `node.fills = [{type:'IMAGE', imageHash, scaleMode:'FILL'}]` 적용 (배열로 새로 할당해야 변경 감지됨). 반환값에 mutated node IDs 포함.
+   - **Step C — Verify**: 적용된 frame 중 최소 1개에 대해 `get_screenshot nodeId=<id> maxDimension=600` 호출해서 결과 PNG 다운로드 → Read 로 시각 확인. 옛 카피·옛 레이아웃이 보이면 Step B 가 반영 안 된 것 — `use_figma` 의 스크립트를 점검하고 재시도.
+5. **원본 dimension 재확인 (resize 필수성)**: PNG 사이즈는 phase 별로 다를 수 있음 (높이가 달라짐). 새 PNG dimension 과 frame dimension 이 일치하면 resize 생략 가능하지만 다르면 반드시 `node.resize(w, h)` — `scaleMode: FILL` 이라 비율이 다르면 crop 된다.
 
 ### 안전 조건
 
 - Figma MCP 미연결 또는 도구 호출 실패 → 이 STEP 만 skip, "Figma sync 실패 — 수동 동기화 필요" 로 보고. commit/PR 결과는 영향 없음 (이미 STEP 7 까지 끝났음).
 - upload URL 은 single-use, 10분 만료 — 받자마자 바로 POST.
+- Step B (`use_figma` 로 fill 적용) 누락은 가장 흔한 실패 모드. 보고 단계에서 "Step C verify 통과" 까지 확인했다고 명시할 것.
 
 ## STEP 9 — 결과 보고
 

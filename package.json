@@ -14,7 +14,9 @@
     "cap:ios": "next build && cap sync ios && cap open ios",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
-    "test": "pnpm lint && pnpm typecheck && pnpm test:e2e"
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:e2e"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",
@@ -43,7 +45,8 @@
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.8"
   },
   "packageManager": "pnpm@9.12.0"
 }

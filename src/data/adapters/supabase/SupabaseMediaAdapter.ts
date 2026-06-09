@@ -1,9 +1,11 @@
 // Blob 은 Storage bucket('media'), 메타데이터(경로/슬롯/텍스트)는 DB.
 import type { MediaRepository } from '@/data/repositories/MediaRepository';
 import {
+  TEXT_ORDERS,
   TEXT_POSITIONS,
   type PhotoCount,
   type PhotoSlot,
+  type TextOrder,
   type TextPosition,
 } from '@/domain/home/decor';
 import { supabase, requireUserId } from './client';
@@ -31,6 +33,10 @@ function isTextPosition(v: unknown): v is TextPosition {
   return typeof v === 'string' && (TEXT_POSITIONS as readonly string[]).includes(v);
 }
 
+function isTextOrder(v: unknown): v is TextOrder {
+  return typeof v === 'string' && (TEXT_ORDERS as readonly string[]).includes(v);
+}
+
 interface PhotoRow {
   user_id: string;
   slot: number;
@@ -41,6 +47,7 @@ interface SettingsRow {
   user_id: string;
   photo_count: number | null;
   text_position: string | null;
+  text_order: string | null;
   main_text: string | null;
   sub_text: string | null;
 }
@@ -55,7 +62,7 @@ async function upsertSettings(userId: string, patch: Partial<Omit<SettingsRow, '
 async function fetchSettings(userId: string): Promise<SettingsRow | null> {
   const { data } = await supabase
     .from('home_decor_settings')
-    .select('user_id, photo_count, text_position, main_text, sub_text')
+    .select('user_id, photo_count, text_position, text_order, main_text, sub_text')
     .eq('user_id', userId)
     .maybeSingle();
   return (data as SettingsRow | null) ?? null;
@@ -147,10 +154,13 @@ export const supabaseMediaAdapter: MediaRepository = {
   },
 
   async getTextOrder() {
-    return null;
+    const userId = await requireUserId();
+    const row = await fetchSettings(userId);
+    return isTextOrder(row?.text_order) ? row.text_order : null;
   },
 
-  async setTextOrder() {
-    // home_decor_settings.text_order 컬럼 추가 후 본격 구현 예정
+  async setTextOrder(order: TextOrder) {
+    const userId = await requireUserId();
+    await upsertSettings(userId, { text_order: order });
   },
 };

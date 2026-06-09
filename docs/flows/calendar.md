@@ -51,6 +51,35 @@ sequenceDiagram
   C->>C: selectedDate = null
 ```
 
+## DayDetailSheet 액션 버튼
+
+`selectedDate`와 `periods` 상태에 따라 버튼이 조건부로 노출됩니다.
+
+```mermaid
+flowchart TD
+  SD[selectedDate 결정됨] --> CA{canAdd?\n선택일 ≤ today\n&& 해당 startDate 없음}
+  SD --> OR{openRecordId?\n미종료 record 있고\nstartDate ≤ selectedDate}
+  SD --> SM{startMatchId?\n해당 날짜가\nstartDate 인 record 있음}
+
+  CA -- yes --> BAdd["[primary] 생리 시작으로 기록\n→ selectedDate 닫고\nrangeStartSeed = date 세트"]
+  OR -- yes --> BEnd["[secondary/primary] 종료일로 기록\n→ periodStore.update(id, endDate)"]
+  SM -- yes --> BRem["[ghost] 기록 삭제\n→ periodStore.remove(id)"]
+
+  BAdd --> RD[PeriodRangeDialog 오픈\ninitialStartDate = rangeStartSeed]
+  RD --> |"onSubmit"| PA["periodStore.add\n{startDate, endDate}"]
+  PA --> Toast["toast: 추가됨"]
+
+  classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
+  classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+  class SD,BAdd,BEnd,BRem,RD,Toast ui;
+  class CA,OR,SM,PA logic;
+```
+
+- 세 버튼은 중첩될 수 있습니다 (예: 미종료 record 가 있고 동시에 다른 startDate 도 있는 날).
+- `canAdd` 조건: `selectedDate <= today` 이고 해당 날짜를 startDate 로 갖는 record 가 없음.
+- `openRecordId`: endDate 가 없는 record 중 `startDate <= selectedDate` 를 만족하는 가장 최근 record.
+- `PeriodRangeDialog` 는 FAB 과 캘린더 양쪽에서 공유하는 컴포넌트 (`src/components/app/PeriodRangeDialog.tsx`).
+
 ## 결정 사항
 
 - **A9** = 주 시작 요일: 일요일 (`WEEK_STARTS_ON = 0`).

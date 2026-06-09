@@ -11,6 +11,12 @@ interface DayDetailSheetProps {
   hasPeriod: boolean;
   isPredicted: boolean;
   condition: DailyConditionLog | null;
+  startMatchId: string | null;
+  openRecordId: string | null;
+  canAdd: boolean;
+  onAdd: (startDate: string) => Promise<void> | void;
+  onRemove: (id: string) => Promise<void> | void;
+  onMarkEnd: (id: string, endDate: string) => Promise<void> | void;
 }
 
 export function DayDetailSheet({
@@ -19,6 +25,12 @@ export function DayDetailSheet({
   hasPeriod,
   isPredicted,
   condition,
+  startMatchId,
+  openRecordId,
+  canAdd,
+  onAdd,
+  onRemove,
+  onMarkEnd,
 }: DayDetailSheetProps) {
   const t = useT();
 
@@ -69,7 +81,49 @@ export function DayDetailSheet({
           <p className="mt-4 text-sm text-neutral-500">{t.calendar.detail.noCondition}</p>
         )}
 
-        <Button variant="ghost" size="md" fullWidth className="mt-6" onClick={onClose}>
+        {canAdd ? (
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            className="mt-6"
+            onClick={() => onAdd(date)}
+          >
+            {t.calendar.detail.addPeriod}
+          </Button>
+        ) : null}
+
+        {openRecordId ? (
+          <Button
+            variant={canAdd ? 'secondary' : 'primary'}
+            size="md"
+            fullWidth
+            className={canAdd ? 'mt-2' : 'mt-6'}
+            onClick={() => onMarkEnd(openRecordId, date)}
+          >
+            {t.calendar.detail.markEndDate}
+          </Button>
+        ) : null}
+
+        {startMatchId ? (
+          <Button
+            variant="ghost"
+            size="md"
+            fullWidth
+            className={canAdd || openRecordId ? 'mt-2' : 'mt-6'}
+            onClick={() => onRemove(startMatchId)}
+          >
+            {t.calendar.detail.removePeriod}
+          </Button>
+        ) : null}
+
+        <Button
+          variant="ghost"
+          size="md"
+          fullWidth
+          className={canAdd || openRecordId || startMatchId ? 'mt-2' : 'mt-6'}
+          onClick={onClose}
+        >
           {t.calendar.detail.close}
         </Button>
       </div>
