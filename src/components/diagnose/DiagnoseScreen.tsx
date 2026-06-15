@@ -26,10 +26,18 @@ const ARTICLE_HREF = '/magazine/personal-body-type';
 export function DiagnoseScreen() {
   const t = useT();
   const locale = useSettingsStore((s) => s.settings.locale);
+  const hydrateSettings = useSettingsStore((s) => s.hydrate);
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const [step, setStep] = useState<Step>({ kind: 'picker' });
   const [remaining, setRemaining] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+
+  // (fullscreen) route group sits outside AppShell, so the store isn't
+  // hydrated automatically — without this the page falls through to en.
+  useEffect(() => {
+    if (!settingsHydrated) hydrateSettings();
+  }, [hydrateSettings, settingsHydrated]);
 
   // Revoke object URLs when preview unmounts to avoid leaks.
   useEffect(() => {
