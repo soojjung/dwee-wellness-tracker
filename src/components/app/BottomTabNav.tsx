@@ -19,9 +19,17 @@ const TABS: readonly Tab[] = [
   { href: '/settings', key: 'settings', labelKey: 'settings' },
 ];
 
+// Tab bar shows only on the 4 tab-root routes; every detail/sub-route inside
+// them keeps the screen immersive and relies on its own back link.
+const SHOW_NAV_PATHS = ['/', '/log', '/magazine', '/settings'];
+
 export function BottomTabNav() {
   const t = useT();
   const pathname = usePathname();
+
+  // next.config sets trailingSlash: true → normalize before allowlist check.
+  const normalized = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
+  if (!SHOW_NAV_PATHS.includes(normalized)) return null;
 
   return (
     <nav

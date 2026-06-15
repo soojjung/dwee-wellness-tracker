@@ -8,14 +8,20 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { currentPhase } from '@/domain/cycle/phase';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
-import type { AddPeriodInput } from './AddPeriodFab';
+import { evaluateNewStart } from '@/domain/cycle/recordPolicy';
+import type { PeriodLog } from '@/types';
+import { PeriodRangeDialog, type AddPeriodInput } from './PeriodRangeDialog';
+import {
+  ShortCycleConfirmDialog,
+  type ShortCycleChoice,
+} from './ShortCycleConfirmDialog';
 import { generateInsights } from '@/lib/insight/generator';
 import { todayISO, daysBetween, addDaysISO } from '@/lib/date';
-import { AddPeriodFab } from './AddPeriodFab';
 import { InsightCard } from './InsightCard';
 import { WeekStrip } from './WeekStrip';
 import { HomeHero } from './HomeHero';
 import { TodayDateHeading } from './TodayDateHeading';
+import { CalendarAddIcon } from './CalendarAddIcon';
 import { PhaseAdvicePill } from './PhaseAdvicePill';
 import { KeywordCards } from './KeywordCards';
 import { ActivitySuggestions } from './ActivitySuggestions';
@@ -24,6 +30,7 @@ import { EmptyHintCard } from './EmptyHintCard';
 
 const TOAST_MS = 2400;
 const INSIGHT_LOOKBACK_DAYS = 90;
+const LONG_PERIOD_NOTICE_DAYS = 7;
 
 export function HomeScreen() {
   const t = useT();
@@ -36,6 +43,9 @@ export function HomeScreen() {
   const hydratePeriods = usePeriodStore((s) => s.hydrate);
   const addPeriod = usePeriodStore((s) => s.add);
 
+  const replacePeriod = usePeriodStore((s) => s.replace);
+  const extendThrough = usePeriodStore((s) => s.extendThrough);
+
   const settings = useSettingsStore((s) => s.settings);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const updateSettings = useSettingsStore((s) => s.update);
@@ -44,6 +54,12 @@ export function HomeScreen() {
   const hydrateRange = useConditionStore((s) => s.hydrateRange);
 
   const [toast, setToast] = useState<string | null>(null);
+  const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
+  const [pendingPeriod, setPendingPeriod] = useState<AddPeriodInput | null>(null);
+  const [shortCyclePrior, setShortCyclePrior] = useState<{
+    priorPeriod: PeriodLog;
+    daysSincePrior: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!periodsHydrated) hydratePeriods();
@@ -82,12 +98,62 @@ export function HomeScreen() {
     ? daysBetween(today, prediction.predictedDate)
     : null;
 
-  async function handleStartPeriod(input: AddPeriodInput) {
+  async function commitNewPeriod(input: AddPeriodInput) {
     const created = await addPeriod(input);
     if (!created) return;
     if (!settings.onboardingCompleted) {
       await updateSettings({ onboardingCompleted: true });
     }
+  }
+
+  async function handleStartPeriod(input: AddPeriodInput) {
+    const evaluation = evaluateNewStart(periods, input.startDate);
+    if (evaluation.kind === 'idempotent') {
+      setPeriodDialogOpen(false);
+      return;
+    }
+    if (evaluation.kind === 'shortGap') {
+      setPendingPeriod(input);
+      setShortCyclePrior({
+        priorPeriod: evaluation.priorPeriod,
+        daysSincePrior: evaluation.daysSincePrior,
+      });
+      setPeriodDialogOpen(false);
+      return;
+    }
+    await commitNewPeriod(input);
+    setPeriodDialogOpen(false);
+  }
+
+  async function handleShortCycleChoice(choice: ShortCycleChoice) {
+    const input = pendingPeriod;
+    const prior = shortCyclePrior;
+    if (!input || !prior) return;
+    if (choice === 'extend') {
+      await extendThrough(prior.priorPeriod.id, input.endDate);
+      const priorEnd = prior.priorPeriod.endDate;
+      const resolvedEnd = priorEnd && priorEnd > input.endDate ? priorEnd : input.endDate;
+      const lengthDays = daysBetween(prior.priorPeriod.startDate, resolvedEnd) + 1;
+      if (lengthDays > LONG_PERIOD_NOTICE_DAYS) {
+        setToast(
+          `${t.home.shortCycle.longPeriodNoticePrefix}${lengthDays}${t.home.shortCycle.longPeriodNoticeSuffix}`,
+        );
+      }
+    } else if (choice === 'replace') {
+      await replacePeriod(prior.priorPeriod.id, input);
+      if (!settings.onboardingCompleted) {
+        await updateSettings({ onboardingCompleted: true });
+      }
+    } else {
+      await commitNewPeriod(input);
+    }
+    setPendingPeriod(null);
+    setShortCyclePrior(null);
+  }
+
+  function handleShortCycleCancel() {
+    setPendingPeriod(null);
+    setShortCyclePrior(null);
   }
 
   if (!settingsHydrated || (periodsLoading && !periodsHydrated)) {
@@ -111,8 +177,8 @@ export function HomeScreen() {
     <PageContainer className="gap-0 pb-10">
       <HomeHero isEmpty={isEmpty} />
 
-      <div className="flex flex-col gap-5 pt-7">
-        <TodayDateHeading date={today} />
+      <div className="flex flex-col gap-5 pt-12">
+        <TodayDateHeading date={today} onCalendarClick={() => setPeriodDialogOpen(true)} />
 
         <WeekStrip
           today={today}
@@ -129,7 +195,7 @@ export function HomeScreen() {
             body={
               <p className="inline-flex items-center gap-1 text-xs text-brand-gray800">
                 {t.home.empty.bodyPrefix}
-                <PlusIcon />
+                <CalendarAddIcon className="inline-block h-4 w-4" />
                 {t.home.empty.bodySuffix}
               </p>
             }
@@ -139,7 +205,7 @@ export function HomeScreen() {
         )}
       </div>
 
-      <div className="flex flex-col gap-10 pt-10">
+      <div className="flex flex-col gap-12 pt-12">
         <section className="flex flex-col gap-5">
           <h3 className="text-2xl font-semibold text-brand-gray900">{t.home.keywordsTitle}</h3>
           {isEmpty ? (
@@ -178,27 +244,24 @@ export function HomeScreen() {
 
       <Toast message={toast} />
 
-      <AddPeriodFab
-        today={today}
-        defaultPeriodLength={settings.averagePeriodLength}
-        onSubmit={handleStartPeriod}
-      />
-    </PageContainer>
-  );
-}
+      {periodDialogOpen ? (
+        <PeriodRangeDialog
+          initialStartDate={today}
+          defaultPeriodLength={settings.averagePeriodLength}
+          today={today}
+          onSubmit={handleStartPeriod}
+          onCancel={() => setPeriodDialogOpen(false)}
+        />
+      ) : null}
 
-function PlusIcon() {
-  return (
-    <svg
-      viewBox="0 0 12 12"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      className="inline-block h-3 w-3 text-brand-gray800"
-      aria-hidden
-    >
-      <path d="M6 2v8M2 6h8" />
-    </svg>
+      {shortCyclePrior ? (
+        <ShortCycleConfirmDialog
+          priorStartDate={shortCyclePrior.priorPeriod.startDate}
+          daysSincePrior={shortCyclePrior.daysSincePrior}
+          onChoose={handleShortCycleChoice}
+          onCancel={handleShortCycleCancel}
+        />
+      ) : null}
+    </PageContainer>
   );
 }

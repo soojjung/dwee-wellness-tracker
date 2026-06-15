@@ -120,3 +120,39 @@
 
 - 모든 수정 후 `pnpm typecheck` 통과
 - 한국어 인라인 grep: `grep -rnE "[가-힣]" src/ --include="*.tsx" --include="*.ts" | grep -v "//"` (사용자 노출 0건 확인)
+
+---
+
+## 6. 짧은 주기 입력 (직전 startDate 와 < 15일 간격)
+
+> 도메인: `evaluateNewStart` (`src/domain/cycle/recordPolicy.ts`) → `ShortCycleConfirmDialog`.
+> 임계치 `SHORT_CYCLE_THRESHOLD_DAYS = 15` 는 `aggregate.ts` 의 outlier 필터와 동기화.
+
+### 시나리오: 6/10 기록 → 6/16 다시 입력
+
+홈 우상단 캘린더 아이콘 → 6/16 입력 → 저장.
+
+### 기대 동작
+
+- [ ] `PeriodRangeDialog` 닫히고 `ShortCycleConfirmDialog` 가 열림
+- [ ] 본문: "직전 생리 시작일이 **6**일 전이에요." 표시
+- [ ] **세 선택지** 노출 (각 클릭 시 동작):
+  - **아직 생리 중이에요** → `extendThrough(priorId, 새 endDate)`. 직전 record 의 `endDate` 가 `max(기존 endDate, 새 endDate)` 로 확장. 새 record 는 생성되지 않음.
+  - **날짜를 잘못 입력했어요** → `replace(priorId, 새 input)`. 직전 record 삭제 + 새 record 추가.
+  - **그래도 저장할게요** → 정상 `add`. 직전·새 record 모두 보존.
+- [ ] 취소 → 두 다이얼로그 모두 닫히고 아무 쓰기도 발생하지 않음
+
+### 데이터 정합성 노트
+
+- **`DailyConditionLog` 는 `date` 키 기반** (PK 가 날짜) — `PeriodLog.id` 와 FK 관계 없음.
+- 따라서 `replace` 로 직전 PeriodLog 가 삭제되어도 같은 날짜의 condition 은 그대로 보존. orphan 위험 없음.
+- 단, 사용자 멘탈 모델에서는 "그 날의 컨디션" 이 직전 생리와 같이 사라질 거라 기대할 수도 있으므로, 향후 UX 리뷰 대상.
+
+### 장기 생리(7일+) 안내
+
+- `extend` 선택 후 결과 기간이 `LONG_PERIOD_NOTICE_DAYS = 7` 일 초과면 토스트로 안내 ("총 N일로 저장했어요. 다르면 언제든 수정해 주세요").
+- 의료 단정 아닌 정보 제공 톤. 통계 이상치 컷오프(14일)와는 별개 — 사용자 인지용 알림.
+
+### 자동 점검됨
+
+- `src/domain/cycle/recordPolicy.test.ts` 의 `evaluateNewStart` describe 블록: idempotent / no prior / 14일 gap / 6일 gap (본 시나리오) / 15일 경계 / 가장 가까운 prior 선택 / 미래 record 무시 / 임계치 동기화 — 8 케이스.

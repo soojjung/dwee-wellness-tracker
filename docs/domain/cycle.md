@@ -222,12 +222,51 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 - 다이어트 유도 없음
 - 단정형 표현 없음 (모두 "~예요", "~할 수 있어요", "~로 보여요" 등)
 
+## 신규 기록 입력 정책 (evaluateNewStart)
+
+파일: `src/domain/cycle/recordPolicy.ts`
+
+새 생리 시작일을 추가하기 전에 호출되어 사용자의 의도를 확인할지 결정합니다.
+
+### SHORT_CYCLE_THRESHOLD_DAYS = 15
+
+`aggregate.ts` 의 이상치 필터(`gap >= 15`)와 동기화된 값. 직전 시작일과의 간격이 15일 미만이면 모호한 의도로 판단합니다.
+
+### 반환 유형 (NewStartEvaluation)
+
+| kind | 조건 | 호출처 동작 |
+|---|---|---|
+| `idempotent` | 같은 startDate 이미 존재 | 추가 없이 무시 |
+| `shortGap` | 가장 가까운 직전 startDate 와의 간격 < 15일 | `ShortCycleConfirmDialog` 노출, 사용자 선택 대기 |
+| `ok` | 위 두 경우 아님 | `reconcileForNewStart` → `addPeriod` 진행 |
+
+### 짧은 주기 사용자 선택지
+
+`shortGap` 시 UI가 세 선택지를 제공합니다.
+
+| 선택지 (en) | 선택지 (ko) | 실행 액션 |
+|---|---|---|
+| Still on my period | 아직 생리 중이에요 | `extendThrough(priorId, newEndDate)` — 직전 record의 endDate를 `max(기존, 새 endDate)`로 확장. 새 record 생성 안 함. |
+| Wrong date entered | 날짜를 잘못 입력했어요 | `replacePeriod(priorId, newInput)` — 직전 record 삭제 + 새 record 추가. |
+| Save anyway | 그래도 저장할게요 | `addPeriod(newInput)` — 두 record 모두 보존. |
+
+### 장기 생리 알림
+
+`extend` 선택 후 결과 기간이 `LONG_PERIOD_NOTICE_DAYS = 7`을 초과하면 토스트로 안내합니다. 의료 단정 아닌 정보 제공 톤 — aggregate.ts 이상치 컷오프(14일)와 별개입니다.
+
+### DailyConditionLog 와의 관계
+
+`DailyConditionLog`는 `date`를 PK로 사용하며 `PeriodLog.id`와 FK 관계가 없습니다. `replace`로 직전 PeriodLog가 삭제되어도 같은 날짜의 condition은 보존됩니다.
+
+---
+
 ## 변경 이력
 
 | 날짜 | 변경 | 영향 범위 | 상태 |
 |---|---|---|---|
 | 2026-06-04 | 초기 문서화 | phase.ts, aggregate.ts, predictor.ts 로직 검증 및 문서화 | 완료 |
 | 2026-06-04 | 황체기 phase advice 카피 완충 어조로 조정 ("휴식을 추천해요" → "잠시 쉬어가도 좋아요" / "rest is recommended" → "taking it easy may help") | `home.phaseAdvice.luteal` ko/en | 완료 |
+| 2026-06-16 | `evaluateNewStart` + `SHORT_CYCLE_THRESHOLD_DAYS` 신규. shortGap 시 ShortCycleConfirmDialog 분기 (extend / replace / saveAnyway). `recordPolicy.ts` 8개 테스트 추가. | `domain/cycle/recordPolicy.ts`, `periodStore.ts` (replace, extendThrough 메서드) | 완료 |
 
 ## 향후 계획
 

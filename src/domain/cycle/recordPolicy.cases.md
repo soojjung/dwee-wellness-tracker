@@ -2,7 +2,7 @@
 
 대상: `src/domain/cycle/recordPolicy.ts`
 
-Last run: 2026-06-10 — 15/15 passed
+Last run: 2026-06-16 — 23/23 passed
 
 ## `reconcileForNewStart(existing, newStart)`
 
@@ -36,3 +36,22 @@ Last run: 2026-06-10 — 15/15 passed
 **Notes**
 - 끝 날짜 포함이라 `endDate = startDate + (periodLength − 1) 일`. 1일 짜리면 endDate = startDate.
 - `periodLength` 자체에는 가드를 두지 않음 — 호출처 (`settings.averagePeriodLength`) 가 1~14 범위 보장.
+
+## `evaluateNewStart(existing, newStart)`
+
+| # | 설명 (`it` title) | 입력 | 기대 결과 | 결과 |
+|---|---|---|---|---|
+| 16 | returns idempotent when the same startDate already exists | `existing=[log('a','2026-06-10','2026-06-14')]`, `newStart='2026-06-10'` | `kind='idempotent'`, `match.id='a'` | ✅ |
+| 17 | returns ok when there is no prior period | `existing=[]`, `newStart='2026-06-10'` | `kind='ok'` | ✅ |
+| 18 | flags shortGap when the gap is under the threshold (14 days) | `existing=[log('a','2026-06-02','2026-06-06')]`, `newStart='2026-06-15'` | `kind='shortGap'`, `priorPeriod.id='a'`, `daysSincePrior=13` | ✅ |
+| 19 | flags shortGap for the user scenario (6/10 then 6/16 → 6 days) | `existing=[log('a','2026-06-10','2026-06-14')]`, `newStart='2026-06-16'` | `kind='shortGap'`, `daysSincePrior=6` | ✅ |
+| 20 | returns ok when the gap is exactly the threshold (15 days) | `existing=[log('a','2026-06-01')]`, `newStart='2026-06-16'` | `kind='ok'` | ✅ |
+| 21 | compares against the nearest prior, not the earliest | `existing=[log('old','2026-05-01','2026-05-05'),log('recent','2026-06-10','2026-06-14')]`, `newStart='2026-06-16'` | `kind='shortGap'`, `priorPeriod.id='recent'`, `daysSincePrior=6` | ✅ |
+| 22 | ignores future records when looking for prior | `existing=[log('future','2026-08-01'),log('prior','2026-06-01','2026-06-05')]`, `newStart='2026-06-20'` | `kind='ok'` | ✅ |
+| 23 | keeps the threshold in sync with the aggregate outlier rule | — | `SHORT_CYCLE_THRESHOLD_DAYS === 15` | ✅ |
+
+**Notes**
+- 행 18: 간격 14일은 임계치(`SHORT_CYCLE_THRESHOLD_DAYS = 15`) 미만이므로 `shortGap`.
+- 행 20: 간격이 정확히 15일이면 임계치 이상이므로 `ok` (경계값 포함 확인).
+- 행 21: 여러 이전 기록이 있을 때 가장 가까운(최근) 것과 비교해야 한다.
+- 행 23: `SHORT_CYCLE_THRESHOLD_DAYS` 상수가 `aggregate.ts` 이상치 필터(`gap >= 15`)와 같은 값(15)으로 고정되어 있는지 sanity check.

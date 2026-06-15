@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { defaultPeriodEndDate, reconcileForNewStart } from './recordPolicy';
+import {
+  defaultPeriodEndDate,
+  evaluateNewStart,
+  reconcileForNewStart,
+  SHORT_CYCLE_THRESHOLD_DAYS,
+} from './recordPolicy';
 import type { PeriodLog } from '@/types';
 
 function log(id: string, startDate: string, endDate?: string): PeriodLog {
@@ -118,5 +123,67 @@ describe('defaultPeriodEndDate', () => {
 
   it('crosses year boundary correctly', () => {
     expect(defaultPeriodEndDate('2025-12-30', 5)).toBe('2026-01-03');
+  });
+});
+
+describe('evaluateNewStart', () => {
+  it('returns idempotent when the same startDate already exists', () => {
+    const existing = [log('a', '2026-06-10', '2026-06-14')];
+    const result = evaluateNewStart(existing, '2026-06-10');
+    expect(result.kind).toBe('idempotent');
+    if (result.kind === 'idempotent') expect(result.match.id).toBe('a');
+  });
+
+  it('returns ok when there is no prior period', () => {
+    expect(evaluateNewStart([], '2026-06-10').kind).toBe('ok');
+  });
+
+  it('flags shortGap when the gap is under the threshold (14 days)', () => {
+    const existing = [log('a', '2026-06-02', '2026-06-06')];
+    const result = evaluateNewStart(existing, '2026-06-15');
+    expect(result.kind).toBe('shortGap');
+    if (result.kind === 'shortGap') {
+      expect(result.priorPeriod.id).toBe('a');
+      expect(result.daysSincePrior).toBe(13);
+    }
+  });
+
+  it('flags shortGap for the user scenario (6/10 then 6/16 → 6 days)', () => {
+    const existing = [log('a', '2026-06-10', '2026-06-14')];
+    const result = evaluateNewStart(existing, '2026-06-16');
+    expect(result.kind).toBe('shortGap');
+    if (result.kind === 'shortGap') expect(result.daysSincePrior).toBe(6);
+  });
+
+  it('returns ok when the gap is exactly the threshold (15 days)', () => {
+    const existing = [log('a', '2026-06-01')];
+    const result = evaluateNewStart(existing, '2026-06-16');
+    expect(result.kind).toBe('ok');
+  });
+
+  it('compares against the nearest prior, not the earliest', () => {
+    const existing = [
+      log('old', '2026-05-01', '2026-05-05'),
+      log('recent', '2026-06-10', '2026-06-14'),
+    ];
+    const result = evaluateNewStart(existing, '2026-06-16');
+    expect(result.kind).toBe('shortGap');
+    if (result.kind === 'shortGap') {
+      expect(result.priorPeriod.id).toBe('recent');
+      expect(result.daysSincePrior).toBe(6);
+    }
+  });
+
+  it('ignores future records when looking for prior', () => {
+    const existing = [
+      log('future', '2026-08-01'),
+      log('prior', '2026-06-01', '2026-06-05'),
+    ];
+    const result = evaluateNewStart(existing, '2026-06-20');
+    expect(result.kind).toBe('ok');
+  });
+
+  it('keeps the threshold in sync with the aggregate outlier rule', () => {
+    expect(SHORT_CYCLE_THRESHOLD_DAYS).toBe(15);
   });
 });

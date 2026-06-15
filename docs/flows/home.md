@@ -1,6 +1,43 @@
 # 홈 화면 플로우
 
-> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,KeywordCards,ActivitySuggestions,FoodSuggestions,AddPeriodFab}.tsx`, `src/app/(app)/page.tsx`
+> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,KeywordCards,ActivitySuggestions,FoodSuggestions,TodayDateHeading,CalendarAddIcon,PeriodRangeDialog,ShortCycleConfirmDialog}.tsx`, `src/app/(app)/page.tsx`
+
+## 생리 기록 진입점
+
+**우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 컴포넌트의 캘린더 아이콘을 탭하면 `PeriodRangeDialog`가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)은 삭제되었습니다.
+
+```mermaid
+flowchart TD
+    Icon(["캘린더 아이콘\n(TodayDateHeading 우상단)"])
+    RD["PeriodRangeDialog\n시작일 + 종료일 입력"]
+    Eval{"evaluateNewStart()\nkind?"}
+    SC["ShortCycleConfirmDialog\n세 선택지 제시"]
+    Add["addPeriod()"]
+    Ext["extendThrough()"]
+    Rep["replacePeriod()"]
+    Done(["완료"])
+
+    Icon --> RD
+    RD -->|"Cancel"| Done
+    RD -->|"Submit"| Eval
+    Eval -->|"idempotent"| Done
+    Eval -->|"ok"| Add --> Done
+    Eval -->|"shortGap\n< 15일"| SC
+    SC -->|"그래도 저장"| Add
+    SC -->|"아직 생리 중"| Ext
+    SC -->|"날짜 잘못 입력"| Rep
+    SC -->|"Cancel"| Done
+    Add --> Done
+    Ext --> Done
+    Rep --> Done
+
+    classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
+    classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+    classDef store fill:#F0E8FD,stroke:#BDA8E5,color:#4A3A5C;
+    class Icon,RD,SC,Done ui;
+    class Eval logic;
+    class Add,Ext,Rep store;
+```
 
 ## 화면 상태 분기
 
@@ -10,8 +47,8 @@ flowchart TD
     Hydrate --> Check{"settingsHydrated &&\nperiodsHydrated?"}
     Check -->|"No"| Loading["loading 표시\nt.home.loadingLabel"]
     Check -->|"Error"| Error["error 표시\nt.home.errorLabel"]
-    Check -->|"periods 0개"| Empty["isEmpty 분기\nEmptyHintCards + WeekStrip(today circle)\n+ AddPeriodFab"]
-    Check -->|"periods 1개+"| Normal["데이터 상태\nPhaseAdvicePill + Keywords\n+ Activities + Foods + InsightCards\n+ AddPeriodFab"]
+    Check -->|"periods 0개"| Empty["isEmpty 분기\nEmptyHintCards + WeekStrip(today circle)"]
+    Check -->|"periods 1개+"| Normal["데이터 상태\nPhaseAdvicePill + Keywords\n+ Activities + Foods + InsightCards"]
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
@@ -25,12 +62,11 @@ flowchart TD
   `isCustom` = photoCount 슬롯이 전부 채워진 경우, `hasUserText` = mainText 또는 subText 가 비어있지 않은 경우.  
   배경은 기본 `bg-brand-gray300`. 사진이 있으면 `PhotoLayout`(1/2/4 그리드), 텍스트가 있으면 `HomeHeroText` 오버레이 표시.
 - **WeekStrip**: 예측 데이터 없이 오늘 날짜 원만 표시 (pink50 배경, pink800 텍스트)
-- **PhaseAdvicePill**: 숨김 → `EmptyHintCard`(+ 캘린더 FAB 안내) 로 대체
-- **Keywords / Activities / Foods**: 각 섹션에 `EmptyHintCard` placeholder 삽입
-- **AddPeriodFab**: isEmpty 여부와 무관하게 항상 노출 (우하단 고정)
+- **PhaseAdvicePill**: 숨김 → `EmptyHintCard`(`t.home.empty.bodyPrefix` + 캘린더 아이콘 인라인 + `t.home.empty.bodySuffix`) 로 대체
+- **Keywords / Activities / Foods**: 각 섹션에 `EmptyHintCard` placeholder 삽입. 섹션 간 간격 `gap-12`.
 
-> 이전 `setupMode` (인라인 `SetupPeriodPicker` 캘린더 picker) 는 삭제됨.
-> 생리 첫 기록은 항상 `AddPeriodFab` → FAB 탭 → 날짜 선택 흐름으로 통일.
+> 이전 `setupMode` (인라인 `SetupPeriodPicker` 캘린더 picker) 는 삭제됨.  
+> 이전 우하단 `AddPeriodFab` 도 삭제됨. 기록 진입은 `TodayDateHeading` 캘린더 아이콘으로 통일.
 
 ## 데이터 흐름 (데이터 상태)
 
@@ -67,19 +103,10 @@ flowchart LR
 | 오늘 (isEmpty) | `brand-pink50` | `brand-pink800` |
 | 오늘 (데이터 있음) | 위 분류 우선, 없으면 강조 원 | — |
 
-## AddPeriodFab 내부 상태
+## ActivitySuggestions / FoodSuggestions 구조
 
-FAB 탭 시 `PeriodRangeDialog` (시작일 + 종료일 입력)가 열립니다.
-종료일은 `defaultPeriodEndDate(startDate, averagePeriodLength)` 로 자동 계산되며, 사용자가 직접 수정할 수 있습니다.
-
-```mermaid
-stateDiagram-v2
-    [*] --> Closed
-    Closed --> RangeDialog : FAB 클릭
-    RangeDialog --> Closed : Cancel
-    RangeDialog --> Submitting : 시작일 + 종료일 확인
-    Submitting --> Closed : addPeriod({startDate, endDate}) 완료
-```
+- **ActivitySuggestions**: chip 필터 탭(카테고리별) + 카드 그리드. `src/data/homeImagery.ts`의 `ACTIVITY_CATEGORY_KEYS` 순서 기반.
+- **FoodSuggestions**: 원형 카드 carousel. phase 기반 음식 목록을 `home.foods.{phase}` i18n 키에서 조회.
 
 ## 검증 케이스
 
@@ -89,4 +116,5 @@ stateDiagram-v2
 - `prediction.predictedDate === null` → "Not enough data yet" / "아직 예측하기 어려워요" 표시.
 - 다음 생리까지 0일 → "around today" / "오늘 즈음" 표시.
 - 다음 생리 예정일이 지남 (`diff < 0`) → "N days late" / "N일 지남" 표시.
+- 짧은 주기 (`evaluateNewStart` → `shortGap`) → `ShortCycleConfirmDialog` 노출. 세 선택지: extend / replace / saveAnyway. (상세: `docs/qa/edge-cases.md` 시나리오 6)
 - 의료적 단정 표현 없음 — 모든 phase 카피에 "추정/보여요/패턴" / "estimated/pattern/reference" 어휘 동반 (health-copy.md §1).

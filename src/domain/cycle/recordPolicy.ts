@@ -1,5 +1,11 @@
 import type { PeriodLog } from '@/types';
-import { addDaysISO } from '@/lib/date';
+import { addDaysISO, daysBetween } from '@/lib/date';
+
+/**
+ * 두 시작일 사이가 이 값 미만이면 의도가 모호하다고 보고 사용자에게 확인을 받는다.
+ * `aggregate.ts` 의 이상치 필터(`gap >= 15 && gap <= 60`)와 같은 값으로 두 정책을 동기화한다.
+ */
+export const SHORT_CYCLE_THRESHOLD_DAYS = 15;
 
 export interface CloseUpdate {
   id: string;
@@ -11,6 +17,40 @@ export interface NewStartReconciliation {
   existingMatch: PeriodLog | null;
   /** 새 record를 추가하기 전에 close 처리해야 하는 미완 record들 */
   closeUpdates: CloseUpdate[];
+}
+
+export type NewStartEvaluation =
+  | { kind: 'idempotent'; match: PeriodLog }
+  | { kind: 'shortGap'; priorPeriod: PeriodLog; daysSincePrior: number }
+  | { kind: 'ok' };
+
+/**
+ * 새 startDate 를 추가하기 전에 사용자의 의도를 확인할지 결정한다.
+ *
+ * - `idempotent`: 같은 startDate 가 이미 존재. 호출처는 추가 없이 무시.
+ * - `shortGap`: 가장 가까운 직전 startDate 와의 간격이 임계치(`SHORT_CYCLE_THRESHOLD_DAYS`) 미만.
+ *   호출처는 사용자에게 의도(연장/대체/그대로 저장)를 물어야 한다.
+ * - `ok`: 일반 흐름으로 진행. `reconcileForNewStart` 로 후속 처리.
+ */
+export function evaluateNewStart(
+  existing: PeriodLog[],
+  newStart: string,
+): NewStartEvaluation {
+  const match = existing.find((p) => p.startDate === newStart);
+  if (match) return { kind: 'idempotent', match };
+
+  let priorPeriod: PeriodLog | null = null;
+  for (const p of existing) {
+    if (p.startDate >= newStart) continue;
+    if (!priorPeriod || p.startDate > priorPeriod.startDate) priorPeriod = p;
+  }
+  if (!priorPeriod) return { kind: 'ok' };
+
+  const gap = daysBetween(priorPeriod.startDate, newStart);
+  if (gap < SHORT_CYCLE_THRESHOLD_DAYS) {
+    return { kind: 'shortGap', priorPeriod, daysSincePrior: gap };
+  }
+  return { kind: 'ok' };
 }
 
 /**

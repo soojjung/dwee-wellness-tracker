@@ -47,6 +47,7 @@ git branch -vv | awk '/: gone\]/ {print $1}'
 출력이 비어있으면 이 STEP 스킵하고 STEP 3 진행.
 
 머지 확인 헬퍼 (각 후보 브랜치마다):
+
 ```bash
 gh pr list --state merged --head <branch> --json number,mergedAt --limit 1
 ```
@@ -259,23 +260,34 @@ EOF
 
 ## STEP 8 — Figma 스냅샷 동기화 (dwee 전용)
 
-`tests/snapshots/ko/home-*.png` 가 이 PR 에서 변경됐으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 변경 없으면 skip.
+`tests/snapshots/ko/*.png` 변경이 있으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 트리거 없으면 skip.
 
-> **스코프**: `home-*.png` 만 동기화 대상. `customize-*.png` / `log-*.png` / `photo-edit-*.png` 는 e2e 시각 회귀 전용 baseline 이며 Figma 에 업로드하지 않는다.
+> **스코프 규칙** :
+>
+> - **포함 대상**: 디자인 레퍼런스로 의미 있는 화면 baseline. 기본적으로 `tests/snapshots/ko/*.png` 전부.
+> - **제외**: `customize-*` / `log-*` / `photo-edit-*` — e2e 시각 회귀 전용이며 Figma 디자인 레퍼런스 대상 아님.
+> - **date drift 가드**: src/ 변경이 동반되지 않은 PR (예: baseline 만 갱신된 케이스) 에서는 Modified baselines 은 sync 안 함. 신규 baseline (status A) 은 항상 sync.
 
 ### 트리거 확인
 
 ```bash
-git diff --name-only origin/main...HEAD -- 'tests/snapshots/ko/home-*.png'
+EXCLUDE='/(customize|log|photo-edit)-'
+# 신규 baseline (항상 sync)
+git diff --name-only --diff-filter=A origin/main...HEAD -- 'tests/snapshots/ko/*.png' | grep -vE "$EXCLUDE"
+# 변경된 baseline — src/ 변경이 있는 PR 에서만 sync
+if git diff --name-only origin/main...HEAD -- 'src/**' | head -1 | grep -q .; then
+  git diff --name-only --diff-filter=M origin/main...HEAD -- 'tests/snapshots/ko/*.png' | grep -vE "$EXCLUDE"
+fi
 ```
 
-출력이 비어있으면 이 STEP 통째로 스킵하고 STEP 9 진행. 출력이 있으면 그 파일들만 sync.
+두 출력 모두 비어있으면 이 STEP 통째로 스킵하고 STEP 9 진행. 합친 목록이 sync 대상.
 
 ### 동기화 상수 (dwee 프로젝트 고정)
 
 - Figma fileKey: `E3KcglTsT2dQTnoMyL8YiP`
-- Target page name: `Snapshots (ko)`
-- Frame naming convention: `home-{phase}` (phase ∈ {menstrual, follicular, ovulation, luteal, unknown})
+- Target page name: `Snapshots (ko)` — 2026-06-16 기준 page ID `2054:9`.
+- Frame naming convention: baseline 파일명에서 `.png` 만 떼면 frame 이름. 예: `magazine-list.png` → frame `magazine-list`.
+- Frame 가로 간격: 40px. 한 줄로 횡으로 정렬.
 
 ### ⚠️ 신뢰성 핵심 (2026-06-10 이슈로 확정)
 
@@ -285,26 +297,30 @@ git diff --name-only origin/main...HEAD -- 'tests/snapshots/ko/home-*.png'
 2. **Step B — Apply (필수)**: `use_figma` 로 `node.fills = [{type:'IMAGE', imageHash, scaleMode:'FILL'}]` 직접 설정. **이 단계를 생략하면 frame 에 새 fill 이 안 박힌다.**
 3. **Step C — Verify**: `get_screenshot nodeId=<id>` 로 frame 캡처해서 새 PNG 가 실제로 박혔는지 눈으로 확인. screenshot 이 옛 버전이면 Step B 가 안 됐다는 신호 — `use_figma` 호출을 다시 검토.
 
-`upload_assets` 단독으로 끝내지 말 것. submitUrl 의 응답 `success: true` 는 BlobStore 등록 성공일 뿐, frame 적용 성공이 아니다.
+신규 baseline (nodeId 없이 업로드) 의 경우엔 단일 multipart POST 응답이 frame 을 새로 만들고 `placedOnNodeId` 를 돌려주므로 Step B 는 자동 처리됨 — 다만 그 frame 은 default page 에 떨어지므로 "Snapshots (ko)" 페이지로 이동 + 이름·크기·위치 정리는 별도 `use_figma` 호출 필요.
 
 ### 동기화 절차
 
-1. **Figma 파일 페이지 listing**: `mcp__plugin_figma_figma__get_metadata` (fileKey 만 — nodeId 생략하면 페이지 목록 반환). "Snapshots (ko)" 페이지의 GUID 확보.
-2. **페이지 없으면 (최초 setup)**: `use_figma` 로 새 페이지 생성 → `upload_assets count=5 batchCommit=true` 로 5개 upload URL + commitUrl 받기 → 5개 PNG multipart POST (`curl -F "file=@<path>;type=image/png"`) → commitUrl 호출 → `use_figma` 로 생성된 frame 5개를 새 페이지로 이동·이름 (`home-{phase}`) 변경·원본 PNG dimension 으로 `resize(w, h)` ·가로 40px 간격으로 정렬·`setCurrentPageAsync(newPage)` 로 전환. (이 단계는 초기 1회만 — 페이지가 생긴 다음 commit 부터는 4번으로 갑니다.)
-3. **페이지 있으면**: 해당 페이지에 `get_metadata` 호출 → frame 들의 이름과 `id` 수집 (`home-{phase}` 매칭) + 각 frame 의 `width`/`height`.
-4. **변경 파일별 처리 (Upload + Apply + Verify, 위 2-step 패턴 따름)**: STEP 8 트리거 단계에서 추출한 변경 PNG 파일 각각에 대해:
-   - 파일명에서 phase 추출 (`home-{phase}.png`).
-   - PNG dimension 확인 (`file <png>` 헤더 파싱) 후 frame dimension 과 비교 — 다르면 `use_figma` 로 `node.resize(w, h)` 먼저 호출 (가로 간격 유지하려면 다음 frame 들 `x` 도 같이 보정).
-   - **Step A — Upload**: 매칭 frame 있으면 `upload_assets count=1 nodeId=<id>` 로 submitUrl 받기 → multipart POST → `imageHash` 캡처. 매칭 frame 없으면 (신규 phase 등) `use_figma` 로 빈 frame 생성 + append + resize 한 뒤 그 frame ID 로 동일 호출.
-   - **Step B — Apply**: 모든 hash 가 모이면 한 `use_figma` 호출로 `await figma.setCurrentPageAsync(snapshotsPage)` 후 각 frame 에 `node.fills = [{type:'IMAGE', imageHash, scaleMode:'FILL'}]` 적용 (배열로 새로 할당해야 변경 감지됨). 반환값에 mutated node IDs 포함.
-   - **Step C — Verify**: 적용된 frame 중 최소 1개에 대해 `get_screenshot nodeId=<id> maxDimension=600` 호출해서 결과 PNG 다운로드 → Read 로 시각 확인. 옛 카피·옛 레이아웃이 보이면 Step B 가 반영 안 된 것 — `use_figma` 의 스크립트를 점검하고 재시도.
-5. **원본 dimension 재확인 (resize 필수성)**: PNG 사이즈는 phase 별로 다를 수 있음 (높이가 달라짐). 새 PNG dimension 과 frame dimension 이 일치하면 resize 생략 가능하지만 다르면 반드시 `node.resize(w, h)` — `scaleMode: FILL` 이라 비율이 다르면 crop 된다.
+1. **페이지 listing**: `mcp__plugin_figma_figma__get_metadata` (fileKey 만, nodeId 생략 → top-level 페이지 목록). "Snapshots (ko)" 페이지의 GUID 확보. 없으면 `use_figma` 로 새 페이지 생성.
+2. **기존 frame 인벤토리**: 페이지가 있으면 `get_metadata nodeId=<pageId>` → frame 들의 `name` / `id` / `width` / `height` / `x` 수집. 가장 오른쪽 끝 위치 = `max(x + width) + 40` = 다음 신규 frame 의 시작 x.
+3. **변경 파일별 처리**: 트리거 출력의 각 baseline 파일 (`tests/snapshots/ko/<filename>.png`) 에 대해:
+   - frame 이름 = `<filename>` (확장자 제거)
+   - PNG dimension = `sips -g pixelWidth -g pixelHeight <path>`
+   - **(a) 갱신 — 같은 이름의 frame 이 이미 있음**:
+     - frame dimension 과 PNG 비교, 다르면 먼저 `use_figma` 로 `node.resize(w, h)` + 오른쪽 frame 들 x 보정.
+     - Step A: `upload_assets count=1 nodeId=<existingId>` → submitUrl → multipart POST → `imageHash` 캡처.
+   - **(b) 신규 — 같은 이름의 frame 없음**:
+     - Step A: `upload_assets count=1` (nodeId 없이) → submitUrl → multipart POST → `placedOnNodeId` 캡처 (자동 frame 생성).
+     - 별도 `use_figma` 호출로 그 frame 을 "Snapshots (ko)" 페이지로 이동 + 이름 변경 + 원본 dimension 으로 resize + 다음 신규 frame 시작 x 위치 배치 (cursorX 증가).
+4. **Step B (갱신용)**: (a) 케이스에서 모은 모든 (frameId, imageHash) 쌍을 한 `use_figma` 호출로 처리 — `await figma.setCurrentPageAsync(snapshotsPage)` 후 각 frame 에 `node.fills = [{type:'IMAGE', imageHash, scaleMode:'FILL'}]` 적용 (배열 재할당 필수, 변경 감지 트리거).
+5. **Step C (verify)**: 갱신된 frame 중 1개 + 신규 frame 중 1개에 대해 `get_screenshot nodeId=<id> maxDimension=600` → 다운로드 → Read 로 시각 확인. 옛 카피·옛 레이아웃이면 Step B 가 반영 안 된 것 — 재시도.
 
 ### 안전 조건
 
 - Figma MCP 미연결 또는 도구 호출 실패 → 이 STEP 만 skip, "Figma sync 실패 — 수동 동기화 필요" 로 보고. commit/PR 결과는 영향 없음 (이미 STEP 7 까지 끝났음).
 - upload URL 은 single-use, 10분 만료 — 받자마자 바로 POST.
-- Step B (`use_figma` 로 fill 적용) 누락은 가장 흔한 실패 모드. 보고 단계에서 "Step C verify 통과" 까지 확인했다고 명시할 것.
+- Step B (`use_figma` 로 fill 적용) 누락은 갱신 케이스의 가장 흔한 실패 모드. 보고 단계에서 "Step C verify 통과" 까지 확인했다고 명시할 것.
+- 신규 frame 의 page 이동·rename·resize 누락도 흔한 실수 — Step A 직후 반드시 `use_figma` 정리 수반.
 
 ## STEP 9 — 결과 보고
 
