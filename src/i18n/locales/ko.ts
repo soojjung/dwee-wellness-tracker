@@ -289,7 +289,7 @@ export const ko: Dictionary = {
         { subtitle: '외부보다', main: '내부', emoji: '🧘🏾‍♀️' },
       ],
       unknown: [
-        { subtitle: '채우기보다', main: '비우기', emoji: '🍃' },
+        { subtitle: '채우기보다', main: '그대로 두기', emoji: '🍃' },
         { subtitle: '결정보다', main: '관찰', emoji: '👀' },
         { subtitle: '서두르기보다', main: '천천히', emoji: '🐢' },
         { subtitle: '소란보다', main: '호흡', emoji: '🌿' },
