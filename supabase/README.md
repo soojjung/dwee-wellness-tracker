@@ -12,6 +12,11 @@ supabase/
     0002_media_v2.sql   — home_hero 폐기 + home_photos(4슬롯) +
                           home_decor_settings(photo_count, text_position,
                           text_order, main_text, sub_text) 신규 생성
+  functions/
+    body-type-analyze/  — 매거진 퍼스널 체형 진단 Edge Function (M2).
+                          사진 base64 입력 → Anthropic Vision 호출 →
+                          구조화 JSON 반환. 사진은 저장 X (in-memory).
+                          M2.0 스켈레톤 상태. 본체는 M2.1.
 ```
 
 어댑터 코드 위치: `src/data/adapters/supabase/`
@@ -72,6 +77,46 @@ export const settingsRepo = supabaseSettingsAdapter;
 - `condition_logs` upsert 는 항상 `onConflict: 'user_id,date'` 사용.
 - `period_logs` upsert 는 `onConflict: 'user_id,start_date'` 사용.
 - Hard delete 사용 중. 다기기에서 "기기 A 에서 삭제 → 기기 B 에서 다시 보임" 문제 발생 시 `deleted_at` 컬럼 추가하여 soft delete 로 전환.
+
+## Edge Functions
+
+### body-type-analyze (M2)
+
+매거진 퍼스널 체형 진단. 클라이언트 → `supabase.functions.invoke('body-type-analyze', { body })` → Edge Function 이 OpenAI gpt-4o Vision 호출 → 구조화 JSON 응답. **사진은 어디에도 저장하지 않음** (Storage 사용 X, 함수 내 in-memory 처리 후 폐기).
+
+요청 바디 (`RequestBody`):
+- `imageBase64`: 사진의 base64 문자열 (최대 ~18 MB)
+- `imageMediaType`: `'image/jpeg' | 'image/png' | 'image/webp'`
+- `shotType`: `'full-body' | 'upper-body'`
+- `locale`: `'en' | 'ko'`
+
+### 시크릿 설정 (한 번만)
+
+1. OpenAI API 키 발급: https://platform.openai.com/api-keys → Create new secret key. `sk-proj-...` 또는 `sk-...` 형식. 한 번만 보여주니 안전한 곳에 복사.
+2. Supabase CLI 설치·로그인 (없으면):
+   ```bash
+   brew install supabase/tap/supabase
+   supabase login
+   supabase link --project-ref <project-ref>
+   ```
+3. 시크릿 등록:
+   ```bash
+   supabase secrets set OPENAI_API_KEY=sk-...
+   ```
+4. 로컬 테스트:
+   ```bash
+   supabase functions serve body-type-analyze --env-file supabase/.env.local
+   ```
+   (`supabase/.env.local` 에 `OPENAI_API_KEY=` 한 줄. **커밋 금지** — `.gitignore` 의 `.env*.local` 패턴이 커버.)
+5. 배포:
+   ```bash
+   supabase functions deploy body-type-analyze
+   ```
+   JWT 검증은 기본 ON. 익명 세션 JWT 도 통과되므로 별도 플래그 불필요.
+
+### 타입체크 제외
+
+함수는 Deno 런타임이라 Next.js `tsc` 와 호환 X. `tsconfig.json` 의 `exclude` 에 `supabase/functions` 포함됨. 로컬 lint 가 필요하면 Deno 익스텐션을 별도 설치.
 
 ## 향후 확장
 

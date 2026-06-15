@@ -25,7 +25,7 @@
 - Apple Health / Google Fit 연동
 - 체중·칼로리·다이어트 유도 (단, 주기 단계별 영양/음식 제안은 허용)
 - 임신·피임·성생활·커뮤니티
-- ML/AI 라이브러리 (rule-based only)
+- 클라이언트측 ML/AI 라이브러리 금지 (rule-based only). 단, 매거진 진단처럼 명시적 사용자 트리거가 있는 케이스는 서버측 외부 LLM API (예: Anthropic Vision) 허용 — 결과 톤은 "추정/참고용" 유지.
 
 ## 도메인 표현 규칙
 

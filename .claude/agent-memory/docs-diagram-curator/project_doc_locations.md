@@ -10,6 +10,7 @@ type: project
 - `docs/flows/calendar.md` — calendar screen flow including DayDetailSheet action buttons + PeriodRangeDialog from calendar.
 - `docs/flows/customize.md` — fullscreen customize flow (HomeCustomize + PhotoEdit).
 - `docs/flows/log.md` — /log page flow: PeriodHistorySection (calendar/list toggle) + LogEntryDialog (period + condition combined). Added in period-record-rewrite PR.
+- `docs/flows/diagnose.md` — DiagnoseScreen state machine (picker → preview → loading → result | error) for `/magazine/personal-body-type/diagnose`. Added in M2.0–M2.3 magazine PR.
 - `docs/architecture/data-layer.md` — dependency direction + repository inventory. Must be updated when any new Repository interface is added.
 - `docs/product/mvp1-spec.md` — original product spec with persona, KPI, condition enums.
 - `.claude/rules/health-copy.md` — copy tone rules (diet/medical copy restrictions).
@@ -22,7 +23,15 @@ Period / Condition / Settings / Media. Each has both IndexedDB and Supabase adap
 
 ## Route groups (fullscreen added)
 
-Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscreen)` group hosts immersive editing screens with no AppShell or BottomTabNav. Currently: `/home/customize`, `/home/customize/edit-photos`.
+Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscreen)` group hosts immersive editing screens with no AppShell or BottomTabNav. Currently: `/home/customize`, `/home/customize/edit-photos`, `/magazine/personal-body-type/diagnose`.
+
+## Magazine feature (M2.0–M2.1)
+
+- BottomTabNav: `insights` tab replaced by `magazine` tab. `src/app/(app)/insights/` route removed; `src/components/insights/InsightsScreen.tsx` removed. `InsightCard.tsx` and `lib/insight/` preserved for home-embedded pattern cards.
+- New routes: `(app)/magazine/` (list + `[slug]` detail), `(fullscreen)/magazine/personal-body-type/diagnose/` (state-machine diagnose flow).
+- `src/data/magazine/articles.ts` — static article data type + first article (personal-body-type). Not backed by Supabase — static for now.
+- `supabase/functions/body-type-analyze/` — OpenAI gpt-4o Vision. Photo is never stored. Rate-limited to 5 calls/day via `supabase/migrations/0003_body_type_calls.sql`.
+- CLAUDE.md "명시적 제외" ML/AI clause now has server-side LLM exception for explicit-user-trigger cases (magazine diagnose). README must reflect same exception text.
 
 ## Figma sync scope: home snapshots only
 

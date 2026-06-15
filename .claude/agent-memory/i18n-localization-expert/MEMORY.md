@@ -1,0 +1,1 @@
+- [Magazine copy tone patterns](feedback_magazine_copy.md) — 직역체·업계용어 직역·괄호참고표기 등 매거진 카피 반복 오류 패턴
