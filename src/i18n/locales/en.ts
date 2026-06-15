@@ -368,18 +368,18 @@ export const en = {
         menstrual: 'Looks like you’re on your period. Take it easy.',
         follicular: 'Likely follicular phase — energy tends to gently rise.',
         ovulation: 'Likely ovulation phase — you may feel more active.',
-        luteal: 'Likely luteal phase — mild fatigue can show up.',
+        luteal: 'Likely luteal phase — mild fatigue may show up.',
         unknown: 'Still learning your phase.',
       },
     },
     painPattern: {
       title: 'Early-period pain pattern',
-      bodyPrefix: 'Pain was logged on ',
+      bodyPrefix: 'You logged pain on ',
       bodySuffix: ' days around recent period starts. For reference only.',
     },
     moodTrend: {
       title: 'Pre-period mood pattern',
-      bodyPrefix: 'Low mood appeared on ',
+      bodyPrefix: 'You logged a lower mood on ',
       bodySuffix: ' days before recent periods. For reference only.',
     },
     confidence: {

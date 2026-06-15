@@ -375,13 +375,13 @@ export const ko: Dictionary = {
     },
     painPattern: {
       title: '생리 초반 통증 패턴',
-      bodyPrefix: '최근 생리 시작 즈음 통증 기록이 ',
-      bodySuffix: '회 있었어요. 참고용 패턴이에요.',
+      bodyPrefix: '최근 생리 시작 즈음 통증을 기록한 날이 ',
+      bodySuffix: '일이에요. 참고용 패턴이에요.',
     },
     moodTrend: {
       title: '생리 전 기분 패턴',
-      bodyPrefix: '최근 생리 전 며칠 동안 기분이 가라앉은 기록이 ',
-      bodySuffix: '회 있었어요. 참고용 패턴이에요.',
+      bodyPrefix: '최근 생리 직전 기분 저하를 기록한 날이 ',
+      bodySuffix: '일이에요. 참고용 패턴이에요.',
     },
     confidence: {
       low: '데이터 적음',
