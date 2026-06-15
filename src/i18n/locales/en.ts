@@ -285,10 +285,10 @@ export const en = {
         { subtitle: 'Instead of starting', main: 'Organize', emoji: '🧺' },
         { subtitle: 'Instead of striving', main: 'Maintain', emoji: '🕯️' },
         { subtitle: 'Instead of achieving', main: 'Steady', emoji: '🍵' },
-        { subtitle: 'Instead of going out', main: 'Inside', emoji: '🧘🏾‍♀️' },
+        { subtitle: 'Instead of going out', main: 'Stay in', emoji: '🧘🏾‍♀️' },
       ],
       unknown: [
-        { subtitle: 'Instead of filling', main: 'Empty', emoji: '🍃' },
+        { subtitle: 'Instead of filling', main: 'Let it be', emoji: '🍃' },
         { subtitle: 'Instead of deciding', main: 'Observe', emoji: '👀' },
         { subtitle: 'Instead of rushing', main: 'Slow', emoji: '🐢' },
         { subtitle: 'Instead of noise', main: 'Breathe', emoji: '🌿' },
