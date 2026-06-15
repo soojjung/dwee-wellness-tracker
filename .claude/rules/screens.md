@@ -10,14 +10,14 @@ paths:
 ## 0) 화면 플로우 다이어그램
 
 - 분기/state machine을 가진 화면은 `docs/flows/<name>.md`에 Mermaid로 기록.
-- 현재 등록: [onboarding](../../docs/flows/onboarding.md), [home](../../docs/flows/home.md), [calendar](../../docs/flows/calendar.md), [customize](../../docs/flows/customize.md), [log](../../docs/flows/log.md)
+- 현재 등록: [onboarding](../../docs/flows/onboarding.md), [home](../../docs/flows/home.md), [calendar](../../docs/flows/calendar.md), [customize](../../docs/flows/customize.md), [log](../../docs/flows/log.md), [diagnose](../../docs/flows/diagnose.md)
 
 ## 1) 라우트 그룹
 
 - `(auth)` — 풀스크린, BottomTabNav 없음. 로그인/온보딩 등 진입 동선 전용.
 - `(app)` — `<AppShell>` 자동 래핑. BottomTabNav 항상 표시.
 - `(fullscreen)` — 풀스크린, BottomTabNav 없음. AppShell 밖의 몰입형 편집 화면 전용.  
-  현재 포함: `/home/customize`, `/home/customize/edit-photos`.
+  현재 포함: `/home/customize`, `/home/customize/edit-photos`, `/magazine/personal-body-type/diagnose`.
 - 새 화면 추가 시 셋 중 어디에 둘지 먼저 결정.
 
 ## 2) i18n
@@ -58,6 +58,6 @@ paths:
 
 ## 8) BottomTabNav
 
-- 5개 탭(home/log/calendar/insights/settings) 외 추가는 사용자 결정 사항.
+- 5개 탭(home/log/calendar/magazine/settings) 외 추가는 사용자 결정 사항.
 - 탭 라우트 변경 시 `BottomTabNav.tsx`의 `TABS` 배열만 수정.
 - 활성 탭 판정: 루트(`/`)는 정확 일치, 그 외는 `startsWith`.

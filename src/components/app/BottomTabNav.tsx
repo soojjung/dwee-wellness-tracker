@@ -9,13 +9,13 @@ type TabKey = NavIconKey;
 interface Tab {
   href: string;
   key: TabKey;
-  labelKey: 'home' | 'log' | 'insights' | 'settings';
+  labelKey: 'home' | 'log' | 'magazine' | 'settings';
 }
 
 const TABS: readonly Tab[] = [
   { href: '/', key: 'home', labelKey: 'home' },
   { href: '/log', key: 'log', labelKey: 'log' },
-  { href: '/insights', key: 'insights', labelKey: 'insights' },
+  { href: '/magazine', key: 'magazine', labelKey: 'magazine' },
   { href: '/settings', key: 'settings', labelKey: 'settings' },
 ];
 

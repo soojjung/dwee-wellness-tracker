@@ -39,7 +39,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 - Apple Health / Google Fit 연동
 - 체중·칼로리·운동·다이어트 유도 (주기 단계별 영양/음식 제안은 허용)
 - 임신·피임·성생활·커뮤니티
-- ML/AI 라이브러리 (rule-based만 사용)
+- 클라이언트측 ML/AI 라이브러리 (rule-based only). 단, 명시적 사용자 트리거가 있는 매거진 진단 등은 서버측 외부 LLM API 허용 — 결과 톤은 "추정/참고용" 유지.
 
 ---
 
@@ -153,6 +153,15 @@ cp .env.example .env.local
 
 `.env.local` 이 비어 있어도 dev/build 는 통과합니다(placeholder fallback). 단 익명 로그인은 실패하며 `auth.error.missingConfig` 토스트가 뜹니다.
 
+### Edge Function (체형 진단) 설정 — 선택사항
+
+매거진 퍼스널 체형 진단 기능을 사용하려면 Supabase Edge Function 배포 및 OpenAI 시크릿 설정이 필요합니다. 상세 절차는 [`supabase/README.md`](./supabase/README.md#edge-functions) 참고.
+
+```bash
+supabase secrets set OPENAI_API_KEY=sk-...
+supabase functions deploy body-type-analyze
+```
+
 ### 로컬 개발
 
 ```bash
@@ -193,14 +202,17 @@ src/
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  생리 기록 이력 + 컨디션·생리 통합 입력
 │   │   ├── calendar/             캘린더
-│   │   ├── insights/             rule-based 인사이트
+│   │   ├── magazine/             매거진 글 목록 + 글 상세 ([slug])
 │   │   └── settings/             설정 (언어 등)
 │   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
-│       └── home/customize/       홈 커스터마이즈 + 사진 편집
+│       ├── home/customize/       홈 커스터마이즈 + 사진 편집
+│       └── magazine/personal-body-type/diagnose/  퍼스널 체형 진단 플로우
 │
 ├── components/
 │   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, 카드 등
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
+│   ├── magazine/                 MagazineScreen, ArticleCard, ArticleScreen, ArticleSectionView 등
+│   ├── diagnose/                 DiagnoseScreen (상태머신), PhotoPicker, ReportView, exportReport
 │   ├── auth/                     LoginScreen
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer
 │
@@ -281,3 +293,9 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [ ] MVP2.2 — Supabase 어댑터 wiring (`data/index.ts` 분기)
 - [ ] MVP2.3~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 - [ ] MVP2.6 — IndexedDB → Supabase 1회성 마이그레이션
+
+### 매거진 (MVP 병행)
+
+- [x] **M2.0 — 인프라** — 매거진 라우트 (`/magazine`, `/magazine/[slug]`), ArticleCard/ArticleScreen, 글 데이터 모듈 (`src/data/magazine/articles.ts`)
+- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen 상태머신 (picker → preview → loading → result | error), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 5회 rate limit), PNG 리포트 내보내기
+- [ ] M2.2~ — 추가 매거진 글 / 진단 종류 확장
