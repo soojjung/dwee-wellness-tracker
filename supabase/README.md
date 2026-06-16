@@ -1,22 +1,26 @@
 # supabase — 마이그레이션 & DB 스키마
 
-이 폴더는 Supabase 백엔드 자산 저장소입니다. 어댑터 코드는 `src/data/adapters/supabase/` 로 이동 완료. 현재 `data/index.ts` wiring 은 IndexedDB 이며, Supabase wiring 은 MVP2.2 예정.
+이 폴더는 Supabase 백엔드 자산 저장소입니다. 어댑터 코드는 `src/data/adapters/supabase/`. `src/data/index.ts` 가 auth 상태에 따라 어댑터를 자동 분기(STEP 2.1) — 인증 사용자 → Supabase, 익명/env-less → IndexedDB.
 
 ## 구조
 
 ```
 supabase/
   migrations/
-    0001_init.sql       — 초기 스키마 (profiles, period_logs, condition_logs,
-                          home_hero, media bucket + RLS + 트리거)
-    0002_media_v2.sql   — home_hero 폐기 + home_photos(4슬롯) +
-                          home_decor_settings(photo_count, text_position,
-                          text_order, main_text, sub_text) 신규 생성
+    0001_init.sql        — 초기 스키마 (profiles, period_logs, condition_logs,
+                           home_hero, media bucket + RLS + 트리거)
+    0002_media_v2.sql    — home_hero 폐기 + home_photos(4슬롯) +
+                           home_decor_settings(photo_count, text_position,
+                           text_order, main_text, sub_text) 신규 생성
+    0003_body_type_calls.sql
+                         — body_type_calls (Edge Function 일일 호출 카운터)
+    0004_anon_lockout.sql
+                         — defensive RLS: 익명 user 의 Supabase 데이터 테이블
+                           쓰기/읽기 차단. body_type_calls 는 익명 호출 유지.
   functions/
-    body-type-analyze/  — 매거진 퍼스널 체형 진단 Edge Function (M2).
-                          사진 base64 입력 → Anthropic Vision 호출 →
-                          구조화 JSON 반환. 사진은 저장 X (in-memory).
-                          M2.0 스켈레톤 상태. 본체는 M2.1.
+    body-type-analyze/   — 매거진 퍼스널 체형 진단 Edge Function.
+                           사진 base64 입력 → gpt-4o Vision 호출 →
+                           구조화 JSON 반환. 사진은 저장 X (in-memory).
 ```
 
 어댑터 코드 위치: `src/data/adapters/supabase/`
@@ -34,36 +38,81 @@ src/data/adapters/supabase/
                                       main_text / sub_text
 ```
 
-## Supabase wiring 활성화 순서 (MVP2.2)
+## Supabase 활성화 순서
 
-### 1. 환경 변수 확인
-`.env.local` 에 값이 채워져 있는지 확인:
+### 1. 환경 변수
+`.env.local` 에 staging 프로젝트 값을 채움:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
+env 가 비어있으면 `isSupabaseConfigured === false` → `data/index.ts` 가 IndexedDB 로 자동 fallback. dev/CI 환경에서는 그대로 두어도 됨.
 
 ### 2. 마이그레이션 적용
+0001 → 0002 → 0003 → 0004 순서.
+
 **옵션 A (Supabase CLI):**
 ```bash
 brew install supabase/tap/supabase
 supabase link --project-ref <ref>
 supabase db push
 ```
-**옵션 B (대시보드 SQL Editor):** `migrations/0001_init.sql` → `migrations/0002_media_v2.sql` 순서대로 내용 붙여넣기 후 각각 RUN.
+**옵션 B (대시보드 SQL Editor):** 각 `migrations/000*_*.sql` 파일을 순서대로 붙여넣고 RUN.
 
-### 3. `data/index.ts` wiring 교체
-```ts
-// 전부 Supabase 로
-export const settingsRepo = supabaseSettingsAdapter;
-// 또는 하이브리드: IndexedDB 캐시 + 백그라운드 sync (별도 SyncAdapter 작성)
+### 3. Auth provider 활성화 (Supabase 대시보드 → Authentication → Providers)
+- **Email** — enable. "Confirm email" 은 MVP 단계에서는 off 권장 (signUp 직후 세션 발급되어야 STEP 2.2 흐름이 즉시 로그인됨).
+- **Anonymous sign-ins** — enable. `authStore.signInAnonymously()` 가 이 provider 를 사용. 끄면 첫 진입 시 `anonFailed` 에러.
+- **Apple / Google** — STEP 2.5 / 2.6 에서 활성화.
+
+### 4. wiring
+`src/data/index.ts` 가 `authStore` 의 user 상태를 보고 mode 를 토글 (STEP 2.1 완료). 추가 코드 작업 없음.
+
+### 5. 기존 IndexedDB 데이터 마이그레이션
+사용자가 익명 상태에서 만든 로컬 데이터는 첫 email/OAuth 로그인 시 1회 Supabase 로 upsert (STEP 2.3 예정). 결정 (C1) 은 local-wins.
+
+## STEP 2.8 — RLS 검증 SQL
+
+staging 에 0001~0004 적용 직후 한 번 돌려서 정책이 의도대로 동작하는지 확인.
+
+### 인증 user 로 CRUD (통과해야 함)
+Supabase SQL Editor 의 "Run as" 에서 임의 staging 사용자 선택, 또는 service-role 대신 anon-key 로 클라이언트에서 시도.
+```sql
+-- 본인 row insert/select/update 모두 통과해야 함
+insert into period_logs (user_id, start_date) values (auth.uid(), current_date);
+select * from period_logs where user_id = auth.uid();
+update period_logs set end_date = current_date where user_id = auth.uid();
 ```
 
-### 4. 인증 연결
-`LoginScreen` 의 Apple/Google 버튼에 `supabase.auth.signInWithOAuth(...)` 연결.
+### 익명 user (anonymous JWT) — 거부 확인 (0004 의 핵심)
+브라우저 콘솔에서:
+```js
+await supabase.auth.signInAnonymously();
+const r = await supabase.from('period_logs').insert({ user_id: (await supabase.auth.getUser()).data.user.id, start_date: '2026-06-16' });
+console.log(r.error); // 정책 위반 (42501) 이어야 함
+```
 
-### 5. 기존 IndexedDB 데이터 마이그레이션 (선택)
-첫 로그인 시 1회: IndexedDB 의 모든 데이터를 읽어 Supabase 로 INSERT. 끝나면 로컬 비우거나 캐시로만 유지.
+### 타 유저 데이터 접근 — 거부 확인
+같은 클라이언트에서 다른 사용자의 user_id 로 select 시도:
+```js
+await supabase.from('period_logs').select('*').eq('user_id', '<other-user-uuid>');
+// data 가 빈 배열이어야 함 (정책이 filter)
+```
+
+### body_type_calls — 익명 통과 확인 (의도된 예외)
+```js
+// 매거진 diagnose 호출이 익명 user 에서도 카운트되어야 하므로
+await supabase.from('body_type_calls').insert({ user_id: (await supabase.auth.getUser()).data.user.id });
+// 통과 (RLS 차단 없음)
+```
+
+### Storage media bucket — 익명 차단 확인
+```js
+const f = new Blob(['test']);
+const r = await supabase.storage.from('media').upload(`${userId}/home_photos/0.png`, f);
+console.log(r.error); // 익명 user 면 정책 위반이어야 함
+```
+
+검증 통과 후 `staging` 라벨로 마이그레이션 적용 끝.
 
 ## 핵심 설계 결정
 

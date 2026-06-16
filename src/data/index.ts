@@ -3,6 +3,10 @@ import { indexedDBSettingsAdapter } from './adapters/indexeddb/IndexedDBSettings
 import { indexedDBPeriodAdapter } from './adapters/indexeddb/IndexedDBPeriodAdapter';
 import { indexedDBConditionAdapter } from './adapters/indexeddb/IndexedDBConditionAdapter';
 import { indexedDBMediaAdapter } from './adapters/indexeddb/IndexedDBMediaAdapter';
+import { supabaseSettingsAdapter } from './adapters/supabase/SupabaseSettingsAdapter';
+import { supabasePeriodAdapter } from './adapters/supabase/SupabasePeriodAdapter';
+import { supabaseConditionAdapter } from './adapters/supabase/SupabaseConditionAdapter';
+import { supabaseMediaAdapter } from './adapters/supabase/SupabaseMediaAdapter';
 import { runMigrations } from './adapters/indexeddb/migrations';
 import {
   STORAGE_KEYS,
@@ -19,10 +23,64 @@ export type { SettingsRepository, PeriodRepository, ConditionRepository, MediaRe
 export type { NewPeriodInput } from './repositories/PeriodRepository';
 export type { NewConditionInput } from './repositories/ConditionRepository';
 
-export const settingsRepo: SettingsRepository = indexedDBSettingsAdapter;
-export const periodRepo: PeriodRepository = indexedDBPeriodAdapter;
-export const conditionRepo: ConditionRepository = indexedDBConditionAdapter;
-export const mediaRepo: MediaRepository = indexedDBMediaAdapter;
+export type RepoMode = 'local' | 'remote';
+
+let mode: RepoMode = 'local';
+
+export function getRepoMode(): RepoMode {
+  return mode;
+}
+
+export function setRepoMode(next: RepoMode): void {
+  mode = next;
+}
+
+function pickSettings(): SettingsRepository {
+  return mode === 'remote' ? supabaseSettingsAdapter : indexedDBSettingsAdapter;
+}
+function pickPeriod(): PeriodRepository {
+  return mode === 'remote' ? supabasePeriodAdapter : indexedDBPeriodAdapter;
+}
+function pickCondition(): ConditionRepository {
+  return mode === 'remote' ? supabaseConditionAdapter : indexedDBConditionAdapter;
+}
+function pickMedia(): MediaRepository {
+  return mode === 'remote' ? supabaseMediaAdapter : indexedDBMediaAdapter;
+}
+
+export const settingsRepo: SettingsRepository = {
+  get: () => pickSettings().get(),
+  update: (patch) => pickSettings().update(patch),
+};
+
+export const periodRepo: PeriodRepository = {
+  list: () => pickPeriod().list(),
+  add: (input) => pickPeriod().add(input),
+  update: (id, patch) => pickPeriod().update(id, patch),
+  remove: (id) => pickPeriod().remove(id),
+};
+
+export const conditionRepo: ConditionRepository = {
+  getByDate: (date) => pickCondition().getByDate(date),
+  upsert: (input) => pickCondition().upsert(input),
+  range: (from, to) => pickCondition().range(from, to),
+};
+
+export const mediaRepo: MediaRepository = {
+  getPhotoCount: () => pickMedia().getPhotoCount(),
+  setPhotoCount: (count) => pickMedia().setPhotoCount(count),
+  getHomePhoto: (slot) => pickMedia().getHomePhoto(slot),
+  setHomePhoto: (slot, blob) => pickMedia().setHomePhoto(slot, blob),
+  clearHomePhoto: (slot) => pickMedia().clearHomePhoto(slot),
+  getTextPosition: () => pickMedia().getTextPosition(),
+  setTextPosition: (position) => pickMedia().setTextPosition(position),
+  getMainText: () => pickMedia().getMainText(),
+  setMainText: (text) => pickMedia().setMainText(text),
+  getSubText: () => pickMedia().getSubText(),
+  setSubText: (text) => pickMedia().setSubText(text),
+  getTextOrder: () => pickMedia().getTextOrder(),
+  setTextOrder: (order) => pickMedia().setTextOrder(order),
+};
 
 let migrationsRan = false;
 export async function ensureMigrations(): Promise<void> {
