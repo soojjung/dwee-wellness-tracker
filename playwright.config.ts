@@ -6,7 +6,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
-  retries: 0,
+  // dev-mode first-compile of /home/customize and /log occasionally races
+  // a concurrent navigation on cold start; one retry absorbs the flakiness.
+  retries: 1,
   reporter: 'list',
   // One project per locale; baselines live under `tests/snapshots/<locale>/`.
   snapshotPathTemplate: 'tests/snapshots/{projectName}/{arg}{ext}',

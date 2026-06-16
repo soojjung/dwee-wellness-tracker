@@ -1,15 +1,18 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 import { useAuthStore } from '@/store/authStore';
+import { EmailSignInForm } from './EmailSignInForm';
 
 const NOTICE_DURATION_MS = 2400;
 
 export function LoginScreen() {
   const t = useT();
+  const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const authHydrate = useAuthStore((s) => s.hydrate);
@@ -24,14 +27,23 @@ export function LoginScreen() {
 
   useEffect(() => {
     if (!authError) return;
-    const message =
-      authError === 'missingConfig'
-        ? t.auth.error.missingConfig
-        : authError === 'networkOffline'
-          ? t.auth.error.networkOffline
-          : t.auth.error.anonFailed;
-    setNotice(message);
+    const e = t.auth.error;
+    const messageMap: Record<typeof authError & string, string> = {
+      missingConfig: e.missingConfig,
+      networkOffline: e.networkOffline,
+      anonFailed: e.anonFailed,
+      invalidCredentials: e.invalidCredentials,
+      emailInUse: e.emailInUse,
+      weakPassword: e.weakPassword,
+      invalidEmail: e.invalidEmail,
+    };
+    setNotice(messageMap[authError]);
   }, [authError, t]);
+
+  function handleEmailSuccess(mode: 'signin' | 'signup') {
+    if (mode === 'signup') setNotice(t.auth.email.signedUpToast);
+    router.push('/');
+  }
 
   useEffect(() => {
     return () => {
@@ -65,20 +77,30 @@ export function LoginScreen() {
         />
       </div>
 
-      <div className="flex flex-col pb-24">
-        <Button size="lg" fullWidth onClick={showComingSoon}>
-          <AppleGlyph />
-          <span>{t.auth.signInWithApple}</span>
-        </Button>
+      <div className="flex flex-col gap-6 pb-24">
+        <EmailSignInForm onSuccess={handleEmailSuccess} />
 
-        <Button size="lg" fullWidth className="mt-4" onClick={showComingSoon}>
-          <GoogleGlyph />
-          <span>{t.auth.signInWithGoogle}</span>
-        </Button>
+        <div className="flex items-center gap-3 text-xs uppercase tracking-wide text-auth-linkMuted">
+          <span className="h-px flex-1 bg-auth-linkMuted/40" />
+          <span>{t.auth.email.orDivider}</span>
+          <span className="h-px flex-1 bg-auth-linkMuted/40" />
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <Button size="lg" fullWidth onClick={showComingSoon}>
+            <AppleGlyph />
+            <span>{t.auth.signInWithApple}</span>
+          </Button>
+
+          <Button size="lg" fullWidth onClick={showComingSoon}>
+            <GoogleGlyph />
+            <span>{t.auth.signInWithGoogle}</span>
+          </Button>
+        </div>
 
         <Link
           href="/"
-          className="mt-8 self-center rounded-sm px-2 py-1 text-base text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2"
+          className="self-center rounded-sm px-2 py-1 text-base text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2"
         >
           {t.auth.continueWithoutSignIn}
         </Link>
