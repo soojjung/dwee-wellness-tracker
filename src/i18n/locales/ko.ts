@@ -547,6 +547,8 @@ export const ko: Dictionary = {
     languageEn: 'English',
     cycleLength: '평균 생리 주기',
     cycleLengthHint: '바뀐 값은 다음 예측부터 반영돼요',
+    cycleLengthSave: '저장',
+    cycleLengthSaving: '저장 중...',
     notifications: '알림',
     notificationsHint: '알림 기능은 곧 준비될 예정이에요',
     notificationsOn: '켜짐',

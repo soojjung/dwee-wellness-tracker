@@ -546,6 +546,8 @@ export const en = {
     languageEn: 'English',
     cycleLength: 'Average cycle length',
     cycleLengthHint: 'Takes effect on your next predicted cycle',
+    cycleLengthSave: 'Save',
+    cycleLengthSaving: 'Saving...',
     notifications: 'Notifications',
     notificationsHint: 'Notification support is coming soon',
     notificationsOn: 'On',
