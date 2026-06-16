@@ -561,6 +561,16 @@ export const ko: Dictionary = {
     devSeedHint: '샘플 데이터를 주입해서 화면을 빠르게 확인할 수 있어요. 기존 기록은 모두 사라져요.',
     devSeedButton: '시드 데이터 주입',
     devSeedBusy: '주입 중...',
+    account: {
+      title: '계정',
+      signedInAs: '로그인 계정 ',
+      signOutButton: '로그아웃',
+      signOutConfirm: '로그아웃할까요? 이 기기의 로컬 캐시는 지워지고, 클라우드 데이터는 그대로 남아있어요.',
+      signOutBusy: '로그아웃 중...',
+      signInButton: '로그인해서 동기화',
+      signInHint: '여러 기기에서 기록을 동기화할 수 있어요.',
+      anonymousLabel: '로그인 안 함',
+    },
   },
   condition: {
     mood: {

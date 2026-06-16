@@ -8,6 +8,7 @@ import { NotificationToggle } from '@/components/settings/NotificationToggle';
 import { CycleLengthEditor } from '@/components/settings/CycleLengthEditor';
 import { DataResetSection } from '@/components/settings/DataResetSection';
 import { DevSeedSection } from '@/components/settings/DevSeedSection';
+import { AccountSection } from '@/components/settings/AccountSection';
 import { APP_VERSION } from '@/constants/app';
 
 export default function SettingsPage() {
@@ -37,6 +38,8 @@ export default function SettingsPage() {
       <CycleLengthEditor />
 
       <NotificationToggle />
+
+      <AccountSection />
 
       <DataResetSection />
 

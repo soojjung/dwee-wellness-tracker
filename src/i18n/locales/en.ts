@@ -560,6 +560,16 @@ export const en = {
     devSeedHint: 'Insert sample data to preview screens quickly. Existing records will be replaced.',
     devSeedButton: 'Seed sample data',
     devSeedBusy: 'Seeding...',
+    account: {
+      title: 'Account',
+      signedInAs: 'Signed in as ',
+      signOutButton: 'Sign out',
+      signOutConfirm: 'Sign out? Your local cache will be cleared on this device. Cloud data stays safe.',
+      signOutBusy: 'Signing out...',
+      signInButton: 'Sign in to sync',
+      signInHint: 'Sync your records across devices.',
+      anonymousLabel: 'Not signed in',
+    },
   },
   condition: {
     mood: { great: 'Great', good: 'Good', neutral: 'Okay', down: 'Down', low: 'Tough' },

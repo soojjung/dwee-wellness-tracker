@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/data/adapters/supabase/client';
-import { setRepoMode } from '@/data';
+import { setRepoMode, resetAllUserData } from '@/data';
 
 export type AuthErrorKind =
   | 'anonFailed'
@@ -156,9 +156,21 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   async signOut() {
+    // C2: clear local cache and immediately mint a fresh anonymous
+    // session so the next user (or the same user, anonymously)
+    // starts from a clean slate. Cloud data stays untouched.
     await supabase.auth.signOut();
     setRepoMode('local');
     set({ session: null, user: null });
+    await resetAllUserData();
+    if (isSupabaseConfigured) {
+      try {
+        await get().signInAnonymously();
+      } catch {
+        // Network or provider hiccup — leave the user signed-out;
+        // the next app launch will retry via hydrate().
+      }
+    }
   },
 
   clearError() {
