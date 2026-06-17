@@ -1,0 +1,301 @@
+# dwee
+
+_**D**aily **W**ellness for **E**very**E**ssence._
+
+> 내 몸의 리듬을 부드럽게 기록해요.
+
+여성의 생리 주기와 컨디션을 함께 기록하는 가벼운 웰니스 앱입니다.
+무거운 의료 앱 대신, 매일 3탭 안에 끝나는 가벼운 기록과 rule-based 인사이트를 지향합니다.
+
+- 배포: https://dwee-neon.vercel.app/
+- 단계: **MVP2 — 서버 연동·인증 도입** (MVP1 핵심 플로우는 완료, 잔여 polish 는 MVP2 와 병행)
+
+---
+
+## ✨ 핵심 가치
+
+### MVP1 (완료)
+
+1. **생리 시작/종료 기록** — 캘린더에서 1~2탭으로 기록
+2. **평균 주기 기반 예측** — 데이터가 쌓이면 다음 예상일 추정
+3. **오늘의 컨디션 기록** — 기분 / 에너지 / 통증 / 붓기 / 식욕 / 피부 + 메모
+4. **캘린더 확인** — 기록·예측·국면(phase)을 한 눈에
+5. **rule-based 인사이트** — 단언 대신 "추정", 데이터 부족 시엔 "아직 예측하기 어려워요"
+
+### MVP2 (진행 중)
+
+6. **Supabase 익명 인증** — 가입 없이 익명 세션부터 시작 (이후 Apple/Google link 예정)
+7. **클라우드 동기화** — 로컬(IndexedDB) 우선 + 백그라운드 sync (hybrid)
+8. **다기기 사용** — 같은 계정으로 여러 기기 패턴 유지
+
+문구는 항상 추정형으로, 의료적·다이어트 유도 표현은 사용하지 않습니다.
+(상세 카피 규칙: [`/.claude/rules/health-copy.md`](./.claude/rules/health-copy.md))
+
+---
+
+## 🚫 명시적 제외 (추가하지 않습니다)
+
+- AI 챗봇, 실제 푸시
+- Apple Health / Google Fit 연동
+- 체중·칼로리·운동·다이어트 유도 (주기 단계별 영양/음식 제안은 허용)
+- 임신·피임·성생활·커뮤니티
+- 클라이언트측 ML/AI 라이브러리 (rule-based only). 단, 명시적 사용자 트리거가 있는 매거진 진단 등은 서버측 외부 LLM API 허용 — 결과 톤은 "추정/참고용" 유지.
+
+---
+
+## 🧰 기술 스택
+
+| 영역         | 선택                                                                   |
+| ------------ | ---------------------------------------------------------------------- |
+| 프레임워크   | Next.js 15 (App Router) + React 19                                     |
+| 언어         | TypeScript (strict)                                                    |
+| 모바일       | Capacitor 6 (iOS)                                                      |
+| 상태         | Zustand (+ persist)                                                    |
+| 저장         | IndexedDB (`idb-keyval`, 로컬) + Supabase (원격) via Repository 추상화 |
+| 인증         | Supabase Auth (익명 세션)                                              |
+| 스타일       | Tailwind CSS                                                           |
+| 폼           | react-hook-form                                                        |
+| 날짜         | date-fns                                                               |
+| i18n         | 자체 사전 (`src/i18n/locales/{ko,en}.ts`) + `useT()`                   |
+| 패키지매니저 | pnpm 9                                                                 |
+
+---
+
+## 🛠 하네스 엔지니어링 (`.claude/`)
+
+작업 환경 자체를 코드처럼 버전 관리합니다. `.claude/` 는 Claude Code 가 매 세션 자동 로드하는 하네스로, 팀 전체가 같은 규약·도구를 공유합니다.
+
+```
+.claude/
+├── agents/                  서브에이전트 정의 (역할별 system prompt + 도구 권한)
+│   ├── requirement-planner.md       모호한 요청 → 요구사항/STEP 계획
+│   ├── senior-code-craftsman.md     클린 아키텍처·strict TS·i18n·타입체크까지 책임지는 구현 에이전트
+│   ├── docs-diagram-curator.md      README/문서/Mermaid 다이어그램 관리
+│   └── unit-test-author.md          domain/lib 순수 함수에 대한 Vitest 테스트 + cases.md 작성
+│
+├── commands/                커스텀 슬래시 커맨드
+│   └── commit.md            /commit — 브랜치 관리 + 검증 게이트 + curator + PR (상세 ↓)
+│
+├── rules/                   도메인별 규약 (CLAUDE.md 가 80줄 넘으면 여기로 이전)
+│   ├── cycle-logic.md       주기 도메인 계산 규칙
+│   ├── health-copy.md       헬스 카피 톤 / 의료 단언 금지
+│   ├── screens.md           화면 분리 / hydrate 패턴
+│   └── storage.md           Repository · Adapter 패턴
+│
+├── agent-memory/            에이전트별 persistent memory (인스턴스 간 학습 누적)
+└── settings.local.json      로컬 권한 설정 (gitignore)
+```
+
+- 진입점: 루트 [`CLAUDE.md`](./CLAUDE.md) — 단일 source of truth. `AGENTS.md`, `.cursorrules` 생성 금지.
+- 새 컨벤션은 코드와 함께 PR — 같은 실수 2회 발생 시 `CLAUDE.md` 또는 `.claude/rules/` 에 한 줄 추가.
+- 에이전트가 학습한 패턴은 `agent-memory/` 에 누적되어 다음 세션에 자동 활용.
+
+**`/commit` 가 자동으로 해주는 것**
+
+브랜치 정리 → 검증 게이트 (`lint → typecheck → test:unit → test:e2e`) → 단위 테스트 보강 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
+
+`test:e2e` 는 5개 phase × 2개 locale(en/ko) 매트릭스로 시각 스냅샷을 찍습니다. 현재 커버리지:
+
+| spec | 화면 | 비고 |
+|------|------|------|
+| `tests/home.spec.ts` | 홈 | Figma "Snapshots (ko)" 자동 동기화 대상 |
+| `tests/customize.spec.ts` | 홈 커스터마이즈 | e2e baseline 전용 |
+| `tests/log.spec.ts` | 생리 기록(/log) | e2e baseline 전용 |
+| `tests/photo-edit.spec.ts` | 사진 편집 | **skipped** — Playwright WebKit이 IndexedDB에 Blob을 저장할 때 null DOMException을 던지는 Playwright-only 버그. 실제 Safari/WKWebView·Chromium은 정상 동작. |
+
+```mermaid
+flowchart LR
+    S0([STEP 0\n변경 확인])
+    S1([STEP 1–2\nmain 동기화\n브랜치 정리])
+    S2([STEP 3\n새 브랜치 생성])
+    S3([STEP 4\n검증 게이트])
+    S4([STEP 5\ndocs 갱신])
+    S5([STEP 6\n커밋])
+    S6([STEP 7\npush + PR])
+    S7([STEP 8\nFigma sync])
+    S8([STEP 9\n결과 보고])
+
+    S0 -->|변경 있음| S1
+    S1 -->|main 위| S2
+    S1 -->|작업 브랜치| S3
+    S2 --> S3
+    S3 -->|통과| S4
+    S3 -->|실패| X([중단 · 보고])
+    S4 --> S5
+    S5 --> S6
+    S6 -->|snapshots 변경| S7
+    S6 -->|변경 없음| S8
+    S7 --> S8
+
+    classDef step fill:#FDE2EF,stroke:#E5A8BD,color:#5C3A4A;
+    classDef gate fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+    classDef stop fill:#F5F3F4,stroke:#C9C6C7,color:#353434;
+    class S0,S1,S2,S5,S6,S7,S8 step;
+    class S3,S4 gate;
+    class X stop;
+```
+
+---
+
+## 🚀 시작하기
+
+### 사전 요구
+
+- Node.js 20.19.0 (`.nvmrc` 참고 — `nvm use` 또는 `fnm use`)
+- Corepack 활성화: `corepack enable && corepack prepare pnpm@9.12.0 --activate`
+
+### 환경 변수
+
+```bash
+cp .env.example .env.local
+# NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY 채우기
+```
+
+`.env.local` 이 비어 있어도 dev/build 는 통과합니다(placeholder fallback). 단 익명 로그인은 실패하며 `auth.error.missingConfig` 토스트가 뜹니다.
+
+### Edge Function (체형 진단) 설정 — 선택사항
+
+매거진 퍼스널 체형 진단 기능을 사용하려면 Supabase Edge Function 배포 및 OpenAI 시크릿 설정이 필요합니다. 상세 절차는 [`supabase/README.md`](./supabase/README.md#edge-functions) 참고.
+
+```bash
+supabase secrets set OPENAI_API_KEY=sk-...
+supabase functions deploy body-type-analyze
+```
+
+### 로컬 개발
+
+```bash
+pnpm install
+pnpm dev          # http://localhost:3000
+```
+
+### 빌드 / 검증
+
+```bash
+pnpm build              # Next.js production build
+pnpm typecheck          # tsc --noEmit (strict)
+pnpm lint               # eslint
+pnpm format             # prettier --write
+pnpm test               # lint → typecheck → unit → e2e (단일 게이트, /commit 이 호출)
+pnpm test:unit          # Vitest (src/domain, src/lib 순수 함수)
+pnpm test:e2e           # Playwright 시각 스냅샷 + 런타임 에러 가드
+pnpm test:e2e:update    # baseline PNG 갱신 (의도된 UI 변경 후)
+```
+
+### iOS (Capacitor)
+
+```bash
+pnpm cap:sync     # next build && cap sync
+pnpm cap:ios      # Xcode 열기
+```
+
+---
+
+## 🗂 폴더 구조
+
+```
+src/
+├── app/                          Next.js App Router
+│   ├── (auth)/                   로그인 (풀스크린, 탭바 없음)
+│   │   └── login/
+│   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
+│   │   ├── page.tsx              홈
+│   │   ├── log/                  생리 기록 이력 + 컨디션·생리 통합 입력
+│   │   ├── calendar/             캘린더
+│   │   ├── magazine/             매거진 글 목록 + 글 상세 ([slug])
+│   │   └── settings/             설정 (언어 등)
+│   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
+│       ├── home/customize/       홈 커스터마이즈 + 사진 편집
+│       └── magazine/personal-body-type/diagnose/  퍼스널 체형 진단 플로우
+│
+├── components/
+│   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, 카드 등
+│   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
+│   ├── magazine/                 MagazineScreen, ArticleCard, ArticleScreen, ArticleSectionView 등
+│   ├── diagnose/                 DiagnoseScreen (상태머신), PhotoPicker, ReportView, exportReport
+│   ├── auth/                     LoginScreen
+│   └── ui/                       Button, Toast, ChoiceGroup, PageContainer
+│
+├── store/                        Zustand: period / condition / settings / media / auth
+│
+├── data/                         어댑터 패턴
+│   ├── repositories/             인터페이스 (Period / Condition / Settings / Media)
+│   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v4, 현재 wiring)
+│   ├── adapters/supabase/        원격 구현 (Supabase JS, MVP2.2 부터 wiring)
+│   └── index.ts                  단일 진입점
+│
+├── domain/
+│   ├── cycle/                    순수 함수: aggregate, predictor, phase
+│   └── home/                     decor 타입·상수 (PhotoCount, TextPosition 등)
+├── lib/
+│   ├── date/                     날짜 유틸
+│   ├── insight/                  rule-based 인사이트 생성
+│   └── cn.ts                     clsx + tailwind-merge
+│
+├── i18n/                         ko / en 사전 + useT()
+├── constants/                    공용 상수 (copy 등)
+├── dev/                          개발/테스트 전용 시드 헬퍼
+│   ├── seedData.ts               샘플 데이터 (수동 dev 사용)
+│   ├── seedForPhase.ts           Playwright phase 시드 (window.__dweeSeedPhase)
+│   └── seedPhotos.ts             Playwright 사진 시드 (window.__dweeSeedPhotos)
+└── types/                        도메인 타입
+```
+
+---
+
+## 🏛 아키텍처 원칙
+
+```
+app/  ──▶  store/  ──▶  data/repositories/  ──┬──▶  data/adapters/indexeddb/   (로컬, 현재 wiring)
+                                              └──▶  data/adapters/supabase/    (원격, MVP2.2~)
+
+domain/cycle/, lib/insight/   ← 부수효과 없는 순수 함수, 어디서든 호출 가능
+constants/, types/            ← 어디서든 import 가능
+```
+
+- **단방향 의존성**: 화살표는 한 방향. 역방향 import 금지.
+- **어댑터 패턴**: 같은 Repository 인터페이스를 IndexedDB / Supabase 두 어댑터가 구현. 위 레이어는 한 줄도 수정하지 않고 갈아끼움.
+- **순수 도메인**: `domain/cycle/`, `lib/insight/`는 외부 호출/저장 없이 입력→출력만.
+- **단일 진입점**: store는 어댑터를 직접 import 하지 않고 `@/data` 한 곳만 import.
+
+상세: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md)
+
+---
+
+## 🌐 i18n
+
+- **Source of truth: en (en-US)**. 메인 타겟 시장 미국. 한국어 사전은 `Dictionary` 타입(`typeof en`)으로 강제 → en 키 누락 시 컴파일 에러.
+- 카피는 en 사전에 먼저 자연스러운 en-US 톤으로 작성하고, ko 는 그 번역물.
+- 사용자 노출 텍스트는 **항상** `useT()` 훅 경유. 인라인 영어/한국어 문자열 금지.
+- 첫 진입 시 디바이스 locale 감지 (`navigator.language` 가 `ko`로 시작하면 한국어, 그 외엔 en), 이후엔 사용자 설정 우선.
+
+```ts
+// 사용 예
+const t = useT();
+return <h1>{t.home.nextPeriodTitle}</h1>;
+```
+
+신규 문구는 `src/i18n/locales/en.ts` 에 먼저 추가 (source) → `ko.ts` 에 번역으로 추가. 카피 톤은 [`.claude/rules/health-copy.md`](./.claude/rules/health-copy.md) 참고.
+
+---
+
+## 🗺 진행 상태 (Roadmap)
+
+### MVP1 — 완료
+
+- [x] STEP 0~8 — 정의 / 하네스 / 아키텍처 / 공통 타입·유틸 / Storage 추상화 / Zustand stores / 화면 골격 / UI 컴포넌트 / i18n
+- [x] STEP 9 — 화면별 실제 구현 (Onboarding · Home · Log · Calendar · Insights · Settings)
+- [x] STEP 10~11 — 샘플 데이터 / edge case / 리팩토링
+
+### MVP2 — 진행 중
+
+- [x] **MVP2.1 — Supabase 기반 셋업** (auth store, 익명 로그인, 어댑터 src/ 이동)
+- [ ] MVP2.2 — Supabase 어댑터 wiring (`data/index.ts` 분기)
+- [ ] MVP2.3~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
+- [ ] MVP2.6 — IndexedDB → Supabase 1회성 마이그레이션
+
+### 매거진 (MVP 병행)
+
+- [x] **M2.0 — 인프라** — 매거진 라우트 (`/magazine`, `/magazine/[slug]`), ArticleCard/ArticleScreen, 글 데이터 모듈 (`src/data/magazine/articles.ts`)
+- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen 상태머신 (picker → preview → loading → result | error), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 5회 rate limit), PNG 리포트 내보내기
+- [ ] M2.2~ — 추가 매거진 글 / 진단 종류 확장
