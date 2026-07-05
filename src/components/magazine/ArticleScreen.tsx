@@ -72,12 +72,14 @@ export function ArticleScreen({ slug }: ArticleScreenProps) {
       </article>
 
       {cta ? (
-        <Link
-          href={cta.href}
-          className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-center bg-brand-gray900 pb-[calc(env(safe-area-inset-bottom,0px)+32px)] pt-5 text-xl font-semibold leading-[normal] text-brand-pink100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
-        >
-          {cta.label}
-        </Link>
+        <div className="fixed inset-x-0 bottom-0 z-30 bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
+          <Link
+            href={cta.href}
+            className="flex items-center justify-center bg-brand-gray900 py-4 text-xl font-semibold leading-[normal] text-brand-pink100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+          >
+            {cta.label}
+          </Link>
+        </div>
       ) : null}
     </div>
   );

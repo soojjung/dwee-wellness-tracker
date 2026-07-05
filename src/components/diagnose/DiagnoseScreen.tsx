@@ -169,7 +169,7 @@ function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
   };
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-brand-gray50 pb-[92px]">
+    <div className="relative flex min-h-dvh flex-col bg-brand-gray50 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
       <TopBar backHref={ARTICLE_HREF} backAria={p.backToArticle} />
 
       <div className="flex flex-col gap-8 pt-6">
@@ -215,7 +215,7 @@ function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
           <button
             type="button"
             onClick={() => onStart(photos)}
-            className="flex h-[calc(76px+env(safe-area-inset-bottom,0px))] w-full items-center justify-center bg-brand-gray900 pb-[env(safe-area-inset-bottom,0px)] text-xl font-semibold leading-[normal] text-brand-pink100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+            className="flex h-[60px] w-full items-center justify-center bg-brand-gray900 text-xl font-semibold leading-[normal] text-brand-pink100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
           >
             {p.picker.startButton}
           </button>
@@ -223,7 +223,7 @@ function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
           <button
             type="button"
             onClick={() => openPickerFor('front')}
-            className="flex h-[calc(76px+env(safe-area-inset-bottom,0px))] w-full flex-col items-center justify-center bg-brand-pink50 pb-[env(safe-area-inset-bottom,0px)] text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+            className="flex h-[72px] w-full flex-col items-center justify-center bg-brand-pink50 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
           >
             <span className="text-xl font-semibold leading-[normal]">{p.picker.selectButton}</span>
             <span className="mt-1 text-xs text-brand-gray700">{slotPrompt.front}</span>
@@ -427,7 +427,11 @@ function TopBar({ backHref, backAria }: { backHref: string; backAria: string }) 
 }
 
 function BottomBar({ children }: { children: React.ReactNode }) {
-  return <div className="fixed inset-x-0 bottom-0 z-30">{children}</div>;
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
+      {children}
+    </div>
+  );
 }
 
 function PlusIcon({ className }: { className?: string }) {
