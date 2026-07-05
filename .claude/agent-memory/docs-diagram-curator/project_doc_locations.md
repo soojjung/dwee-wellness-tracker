@@ -19,17 +19,22 @@ type: project
 
 ## Active repositories (as of schema v4)
 
-Period / Condition / Settings / Media. Each has both IndexedDB and Supabase adapter implementations. `data/index.ts` currently wires IndexedDB; Supabase wiring is MVP2.2.
+Period / Condition / Settings / Media / Bookmark. Each of the first four has both IndexedDB and Supabase adapter implementations. `BookmarkRepository` has only an IndexedDB adapter (`IndexedDBBookmarkAdapter`) — no Supabase adapter yet. `data/index.ts` currently wires IndexedDB for all; Supabase wiring is MVP2.2.
 
 ## Route groups (fullscreen added)
 
-Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscreen)` group hosts immersive editing screens with no AppShell or BottomTabNav. Currently: `/home/customize`, `/home/customize/edit-photos`, `/magazine/personal-body-type/diagnose`.
+Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscreen)` group hosts immersive editing screens with no AppShell or BottomTabNav. Currently: `/home/customize`, `/home/customize/edit-photos`, `/magazine/[slug]` (article reader), `/magazine/bookmarks`, `/magazine/personal-body-type/diagnose`, `/magazine/personal-body-type/diagnose/result`.
 
-## Magazine feature (M2.0–M2.1)
+## Magazine feature (M2.0–M2.2)
 
 - BottomTabNav: `insights` tab replaced by `magazine` tab. `src/app/(app)/insights/` route removed; `src/components/insights/InsightsScreen.tsx` removed. `InsightCard.tsx` and `lib/insight/` preserved for home-embedded pattern cards.
-- New routes: `(app)/magazine/` (list + `[slug]` detail), `(fullscreen)/magazine/personal-body-type/diagnose/` (state-machine diagnose flow).
-- `src/data/magazine/articles.ts` — static article data type + first article (personal-body-type). Not backed by Supabase — static for now.
+- `(app)/magazine/` — list only (no slug sub-route here; article detail moved to fullscreen).
+- `(fullscreen)/magazine/[slug]/` — article fullscreen reader.
+- `(fullscreen)/magazine/bookmarks/` — bookmarked articles list.
+- `(fullscreen)/magazine/personal-body-type/diagnose/` — 3-slot picker (front · side · back). `PhotoPicker.tsx` was deleted; slot inputs are inline in `DiagnoseScreen.tsx`. `Step` type is now `select | loading | error` (no preview or result steps — result is a separate route).
+- `(fullscreen)/magazine/personal-body-type/diagnose/result/` — `DiagnoseResultScreen`. Receives report via `sessionStorage` key `REPORT_SESSION_KEY`. Handles PNG export.
+- `ArticleCard.tsx` was deleted. Card rendering is now inline in `MagazineScreen`.
+- `src/data/magazine/articles.ts` — 4 articles total: personal-body-type, cycle-phases, cycle-length-35-days, period-supplements. Dates use ISO format (`YYYY-MM-DD`); dot format caused `RangeError`.
 - `supabase/functions/body-type-analyze/` — OpenAI gpt-4o Vision. Photo is never stored. Rate-limited to 5 calls/day via `supabase/migrations/0003_body_type_calls.sql`.
 - CLAUDE.md "명시적 제외" ML/AI clause now has server-side LLM exception for explicit-user-trigger cases (magazine diagnose). README must reflect same exception text.
 

@@ -3,6 +3,7 @@ import { indexedDBSettingsAdapter } from './adapters/indexeddb/IndexedDBSettings
 import { indexedDBPeriodAdapter } from './adapters/indexeddb/IndexedDBPeriodAdapter';
 import { indexedDBConditionAdapter } from './adapters/indexeddb/IndexedDBConditionAdapter';
 import { indexedDBMediaAdapter } from './adapters/indexeddb/IndexedDBMediaAdapter';
+import { indexedDBBookmarkAdapter } from './adapters/indexeddb/IndexedDBBookmarkAdapter';
 import { supabaseSettingsAdapter } from './adapters/supabase/SupabaseSettingsAdapter';
 import { supabasePeriodAdapter } from './adapters/supabase/SupabasePeriodAdapter';
 import { supabaseConditionAdapter } from './adapters/supabase/SupabaseConditionAdapter';
@@ -18,8 +19,9 @@ import type { SettingsRepository } from './repositories/SettingsRepository';
 import type { PeriodRepository } from './repositories/PeriodRepository';
 import type { ConditionRepository } from './repositories/ConditionRepository';
 import type { MediaRepository } from './repositories/MediaRepository';
+import type { BookmarkRepository } from './repositories/BookmarkRepository';
 
-export type { SettingsRepository, PeriodRepository, ConditionRepository, MediaRepository };
+export type { SettingsRepository, PeriodRepository, ConditionRepository, MediaRepository, BookmarkRepository };
 export type { NewPeriodInput } from './repositories/PeriodRepository';
 export type { NewConditionInput } from './repositories/ConditionRepository';
 
@@ -66,6 +68,14 @@ export const conditionRepo: ConditionRepository = {
   range: (from, to) => pickCondition().range(from, to),
 };
 
+// Bookmarks are local-only for now (no remote sync). If Supabase sync arrives later,
+// add a SupabaseBookmarkAdapter + mode-based picker like the other repos.
+export const bookmarkRepo: BookmarkRepository = {
+  list: () => indexedDBBookmarkAdapter.list(),
+  add: (slug) => indexedDBBookmarkAdapter.add(slug),
+  remove: (slug) => indexedDBBookmarkAdapter.remove(slug),
+};
+
 export const mediaRepo: MediaRepository = {
   getPhotoCount: () => pickMedia().getPhotoCount(),
   setPhotoCount: (count) => pickMedia().setPhotoCount(count),
@@ -95,6 +105,7 @@ export async function resetAllUserData(): Promise<void> {
     del(STORAGE_KEYS.periods),
     del(STORAGE_KEYS.conditions),
     del(STORAGE_KEYS.mediaPhotoCount),
+    del(STORAGE_KEYS.bookmarks),
     ...ALL_MEDIA_PHOTO_KEYS.map((k) => del(k)),
     ...ALL_MEDIA_TEXT_KEYS.map((k) => del(k)),
     del(DEPRECATED_KEYS.mediaHomeHero),

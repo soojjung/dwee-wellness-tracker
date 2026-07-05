@@ -202,24 +202,28 @@ src/
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  생리 기록 이력 + 컨디션·생리 통합 입력
 │   │   ├── calendar/             캘린더
-│   │   ├── magazine/             매거진 글 목록 + 글 상세 ([slug])
+│   │   ├── magazine/             매거진 글 목록
 │   │   └── settings/             설정 (언어 등)
 │   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
 │       ├── home/customize/       홈 커스터마이즈 + 사진 편집
-│       └── magazine/personal-body-type/diagnose/  퍼스널 체형 진단 플로우
+│       └── magazine/
+│           ├── [slug]/           글 상세 (풀스크린)
+│           ├── bookmarks/        북마크 목록
+│           └── personal-body-type/diagnose/  퍼스널 체형 진단 플로우
+│               └── result/       진단 결과 (별도 라우트)
 │
 ├── components/
 │   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, 카드 등
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
-│   ├── magazine/                 MagazineScreen, ArticleCard, ArticleScreen, ArticleSectionView 등
-│   ├── diagnose/                 DiagnoseScreen (상태머신), PhotoPicker, ReportView, exportReport
+│   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
+│   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, ReportView, exportReport
 │   ├── auth/                     LoginScreen
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer
 │
-├── store/                        Zustand: period / condition / settings / media / auth
+├── store/                        Zustand: period / condition / settings / media / auth / bookmark
 │
 ├── data/                         어댑터 패턴
-│   ├── repositories/             인터페이스 (Period / Condition / Settings / Media)
+│   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark)
 │   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v4, 현재 wiring)
 │   ├── adapters/supabase/        원격 구현 (Supabase JS, MVP2.2 부터 wiring)
 │   └── index.ts                  단일 진입점
@@ -296,6 +300,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 
 ### 매거진 (MVP 병행)
 
-- [x] **M2.0 — 인프라** — 매거진 라우트 (`/magazine`, `/magazine/[slug]`), ArticleCard/ArticleScreen, 글 데이터 모듈 (`src/data/magazine/articles.ts`)
-- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen 상태머신 (picker → preview → loading → result | error), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 5회 rate limit), PNG 리포트 내보내기
-- [ ] M2.2~ — 추가 매거진 글 / 진단 종류 확장
+- [x] **M2.0 — 인프라** — 매거진 라우트 (`/magazine` 목록), ArticleScreen/ArticleSectionView, 글 데이터 모듈 (`src/data/magazine/articles.ts`)
+- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen 3-슬롯 사진 picker (select → loading → result 라우트 | error), 결과 화면 분리 (`/diagnose/result`, DiagnoseResultScreen), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 5회 rate limit), PNG 리포트 내보내기
+- [x] **M2.2 — 추가 매거진 글 + 북마크** — 아티클 3편 추가 (cycle-phases, cycle-length-35-days, period-supplements), BookmarkRepository/IndexedDBBookmarkAdapter/bookmarkStore, BookmarksScreen (`/magazine/bookmarks`), 글 상세 풀스크린 이동 (`/magazine/[slug]`)
+- [ ] M2.3~ — 추가 진단 종류 확장 / 매거진 콘텐츠 운영

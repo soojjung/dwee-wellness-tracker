@@ -28,7 +28,10 @@ async function ensureAnonSession(): Promise<void> {
   const { data, error } = await supabase.auth.getUser();
   if (!error && data?.user) return;
   const signIn = await supabase.auth.signInAnonymously();
-  if (signIn.error) throw new Error('anon_signin_failed');
+  if (signIn.error) {
+    console.error('[bodyTypeService] anon sign-in failed', signIn.error);
+    throw new Error('anon_signin_failed');
+  }
 }
 
 interface InvokeErrorContext {
@@ -65,9 +68,11 @@ export async function analyzeBodyType(input: AnalyzeInput): Promise<AnalyzeResul
   );
 
   if (error) {
+    console.error('[bodyTypeService] invoke error', error);
     return { ok: false, error: await extractFunctionError(error) };
   }
   if (!data || data.ok === false || !data.data) {
+    console.error('[bodyTypeService] unexpected payload', data);
     return { ok: false, error: data?.error ?? 'unknown' };
   }
   return { ok: true, data: data.data };
