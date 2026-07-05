@@ -18,7 +18,7 @@ export function MagazineScreen() {
 
   if (articles.length === 0) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center">
+      <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
         <h1 className="text-xl font-semibold text-brand-gray900">{t.magazine.listTitle}</h1>
         <p className="text-base text-brand-gray800">{t.magazine.listEmpty}</p>
       </div>
@@ -26,7 +26,7 @@ export function MagazineScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6">
       <FeaturedSection articles={featured} locale={locale} />
       {rest.length > 0 ? (
         <BasicList articles={rest} locale={locale} title={t.magazine.moreStoriesTitle} />
@@ -93,7 +93,7 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
         <Link
           href="/magazine/bookmarks"
           aria-label={t.magazine.bookmark.openAria}
-          className="grid size-10 place-items-center rounded-full text-brand-gray50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
+          className="grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-[1.5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
         >
           <BookmarkIcon filled className="size-6" />
         </Link>
