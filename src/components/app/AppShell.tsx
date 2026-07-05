@@ -2,6 +2,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useBookmarkStore } from '@/store/bookmarkStore';
 import { BottomTabNav } from './BottomTabNav';
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -9,11 +10,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const hydrateAuth = useAuthStore((s) => s.hydrate);
   const authHydrated = useAuthStore((s) => s.hydrated);
+  const hydrateBookmarks = useBookmarkStore((s) => s.hydrate);
+  const bookmarksHydrated = useBookmarkStore((s) => s.hydrated);
 
   useEffect(() => {
     if (!settingsHydrated) hydrateSettings();
     if (!authHydrated) hydrateAuth();
-  }, [hydrateSettings, settingsHydrated, hydrateAuth, authHydrated]);
+    if (!bookmarksHydrated) hydrateBookmarks();
+  }, [hydrateSettings, settingsHydrated, hydrateAuth, authHydrated, hydrateBookmarks, bookmarksHydrated]);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development') return;

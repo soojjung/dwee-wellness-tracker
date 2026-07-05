@@ -29,9 +29,10 @@ src/data/
 │   ├── PeriodRepository.ts         : list(), add(), update(), remove()
 │   ├── ConditionRepository.ts      : getByDate(), upsert(), range()
 │   ├── SettingsRepository.ts       : get(), update()
-│   └── MediaRepository.ts          : getPhotoCount/setPhotoCount, getHomePhoto/setHomePhoto/clearHomePhoto (slot×4),
-│                                     getTextPosition/setTextPosition, getMainText/setMainText,
-│                                     getSubText/setSubText, getTextOrder/setTextOrder
+│   ├── MediaRepository.ts          : getPhotoCount/setPhotoCount, getHomePhoto/setHomePhoto/clearHomePhoto (slot×4),
+│   │                                 getTextPosition/setTextPosition, getMainText/setMainText,
+│   │                                 getSubText/setSubText, getTextOrder/setTextOrder
+│   └── BookmarkRepository.ts       : list(), add(), remove(), has()
 │
 └── adapters/                       ← 플러그 (실제 구현)
     ├── indexeddb/                  ← IndexedDB로 구현한 어댑터들 (현재 wiring)
@@ -39,6 +40,7 @@ src/data/
     │   ├── IndexedDBConditionAdapter.ts
     │   ├── IndexedDBSettingsAdapter.ts
     │   ├── IndexedDBMediaAdapter.ts
+    │   ├── IndexedDBBookmarkAdapter.ts
     │   ├── keys.ts                 ← STORAGE_KEYS / DEPRECATED_KEYS / CURRENT_SCHEMA_VERSION (현재 v4)
     │   └── migrations.ts           ← v1→v4 순차 실행 (v3: home_hero blob → slot 0 이주)
     └── supabase/                   ← Supabase로 구현한 어댑터들 (MVP2.2 wiring 예정)
@@ -188,7 +190,7 @@ import type { PeriodLog } from '@/types';
 - `CLAUDE.md` — "코딩 표준" 섹션의 의존성 방향 규칙
 - `.claude/rules/storage.md` — 저장소 규칙 가드레일
 - `src/data/index.ts` — 단일 진입점
-- `src/data/repositories/*.ts` — Repository 인터페이스 (Period / Condition / Settings / Media)
+- `src/data/repositories/*.ts` — Repository 인터페이스 (Period / Condition / Settings / Media / Bookmark)
 - `src/data/adapters/indexeddb/*.ts` — 로컬 구현 (현재 wiring, schema v4)
 - `src/data/adapters/supabase/*.ts` — 원격 구현 (MVP2.2 wiring 예정)
 - `src/domain/home/decor.ts` — PhotoCount / PhotoSlot / TextPosition / TextOrder 타입·상수

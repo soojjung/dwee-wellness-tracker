@@ -40,7 +40,7 @@ device without an explicit decision.
                  └─────┬──────┘
                        ▼
         ┌──────────────────────────┐    Repository interfaces
-        │ data/repositories/       │    Period · Condition · Settings · Media
+        │ data/repositories/       │    Period · Condition · Settings · Media · Bookmark
         └────────┬───────────┬─────┘
                  │           │
        ┌─────────▼──┐   ┌────▼──────────┐
@@ -164,6 +164,7 @@ Solo project. End-to-end ownership of:
 - **Cycle domain & insights** — pure-function `domain/cycle/*`, rule-based `lib/insight/*`.
 - **Type-safe i18n** — `Dictionary = typeof en` setup, en/ko dictionaries.
 - **Testing pipeline** — Playwright visual matrix, Vitest convention with paired `*.cases.md`.
+- **Magazine feature** — article data module, fullscreen article/bookmark routes, BookmarkRepository + IndexedDB adapter + Zustand store wired end-to-end.
 - **Supabase Edge Function** — `body-type-analyze` (Vision, no image retention, per-user rate limit).
 - **`.claude/` engineering harness** — `/commit` gate, six sub-agents, four rule files.
 
@@ -180,7 +181,7 @@ Solo project. End-to-end ownership of:
 
 ## Status & Stack
 
-**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n) and the magazine body-type analysis flow are shipped. Supabase sync is in progress — anonymous auth and adapter scaffolding live; wiring through `data/index.ts`, background sync, and the one-shot migration are next.
+**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase sync is in progress — anonymous auth and adapter scaffolding live; wiring through `data/index.ts`, background sync, and the one-shot migration are next.
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript strict · Zustand · IndexedDB (`idb-keyval`) · Supabase (Postgres + Auth + Edge Functions) · Tailwind · react-hook-form · Vitest · Playwright · Capacitor 6 (iOS).
 

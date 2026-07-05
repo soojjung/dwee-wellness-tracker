@@ -4,6 +4,8 @@
 
 `(fullscreen)` 라우트 그룹에 속합니다 — AppShell·BottomTabNav 없음. 사용자가 직접 진단을 시작할 때만 진입하는 몰입형 플로우입니다.
 
+결과 화면은 별도 라우트 `/magazine/personal-body-type/diagnose/result` (= `DiagnoseResultScreen`)로 분리되어 있으며, `sessionStorage` 키 `REPORT_SESSION_KEY` 로 리포트를 전달받습니다.
+
 ---
 
 ## 상태 머신
@@ -11,33 +13,34 @@
 `DiagnoseScreen` 은 `step` 상태 하나로 전체 플로우를 관리합니다.
 
 ```
+type Slot = 'front' | 'side' | 'back'
+
 type Step =
-  | { kind: 'picker' }
-  | { kind: 'preview'; file; previewUrl; mediaType }
-  | { kind: 'loading' }
-  | { kind: 'result'; report; remaining }
+  | { kind: 'select'; photos: Partial<Record<Slot, PhotoData>> }
+  | { kind: 'loading'; blurUrl: string }
   | { kind: 'error'; code: BodyTypeAnalyzeError }
 ```
 
 ```mermaid
 stateDiagram-v2
-    [*] --> picker : 진입
+    [*] --> select : 진입
 
-    picker --> preview : 사진 선택 (PhotoPicker)
-    picker --> error : 지원하지 않는 포맷
+    select --> select : 슬롯 사진 추가/교체 (front · side · back)
+    select --> loading : front 슬롯 채워진 상태에서 분석 시작
 
-    preview --> picker : 다시 찍기
-    preview --> loading : 분석 시작 (confirm)
-
-    loading --> result : 분석 성공 (analyzable = true)
+    loading --> result_page : 분석 성공 → sessionStorage 저장 후 result 라우트로 이동
     loading --> error : 네트워크/API 오류 또는 no_body_detected
 
-    result --> picker : 다시 시도
-    error --> picker : 재시도
+    error --> select : 재시도
 
     note right of loading
-        fileToBase64 → analyzeBodyType
+        front 사진 fileToBase64 → analyzeBodyType
         (Supabase Edge Function → OpenAI gpt-4o Vision)
+    end note
+
+    note right of result_page
+        /magazine/personal-body-type/diagnose/result
+        (DiagnoseResultScreen)
     end note
 ```
 
@@ -47,14 +50,13 @@ stateDiagram-v2
 
 | 단계 | 표시 내용 | 전환 조건 |
 |------|-----------|-----------|
-| **picker** | 인트로(제목·안내·톤·개인정보 고지) + PhotoPicker | 유효 포맷 사진 선택 → preview |
-| **preview** | 선택 사진 미리보기 (3:4 비율) + 재촬영·확인 버튼 | 확인 → loading / 재촬영 → picker |
-| **loading** | 스피너 + "분석 중" 문구 + "화면을 벗어나지 마세요" 힌트 | 응답 수신 → result 또는 error |
-| **result** | ReportView (체형 결과 카드) + 이미지 저장·다시 시도 버튼 | 저장 → PNG 내보내기 / 다시 시도 → picker |
-| **error** | 에러 코드별 메시지 + 재시도 버튼 | 재시도 → picker |
+| **select** | 인트로(제목·안내·톤·개인정보 고지) + 슬롯별 인라인 파일 입력 (front · side · back) | front 슬롯이 채워진 상태에서 분석 버튼 → loading |
+| **loading** | 스피너 + "분석 중" 문구 + 이탈 방지 힌트 | 응답 수신 → result 라우트 이동 또는 error |
+| **error** | 에러 코드별 메시지 + 재시도 버튼 | 재시도 → select |
 
+- 분석에는 `front` 슬롯 사진만 사용됩니다. `side`, `back` 슬롯은 UX 보조 목적.
 - `loading` 단계에서는 뒤로가기 링크가 숨겨집니다 (Edge Function 호출 중 이탈 방지).
-- `result` 단계의 PNG 내보내기는 `html-to-image` 기반 `exportReportAsPng()` 사용.
+- 결과 PNG 내보내기는 `DiagnoseResultScreen`에서 `html-to-image` 기반 `exportReportAsPng()` 호출.
 - 사진은 **어디에도 저장되지 않습니다** — base64 변환 후 Edge Function 에 전달되고 함수 종료 시 폐기.
 
 ---
@@ -82,15 +84,15 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    Picker([PhotoPicker])
+    Picker([슬롯 파일 입력\nfront · side · back])
     Base64[fileToBase64]
     Service[bodyTypeService.analyzeBodyType]
     EdgeFn[(Supabase\nEdge Function)]
     OpenAI{{OpenAI\ngpt-4o Vision}}
-    Report([ReportView])
+    Report([ReportView\nDiagnoseResultScreen])
     PNG([PNG 내보내기])
 
-    Picker -->|File| Base64
+    Picker -->|front File| Base64
     Base64 -->|imageBase64| Service
     Service -->|invoke| EdgeFn
     EdgeFn -->|API call| OpenAI
@@ -113,8 +115,8 @@ flowchart TD
 
 ## 관련 파일·문서
 
-- `src/components/diagnose/DiagnoseScreen.tsx` — 상태 머신 + 단계별 서브 컴포넌트
-- `src/components/diagnose/PhotoPicker.tsx` — 파일 입력 + 포맷 검증
+- `src/components/diagnose/DiagnoseScreen.tsx` — 상태 머신 + 슬롯별 인라인 파일 입력
+- `src/components/diagnose/DiagnoseResultScreen.tsx` — 결과 라우트 화면 (report 수신 + PNG 내보내기)
 - `src/components/diagnose/ReportView.tsx` — 체형 결과 카드 렌더
 - `src/components/diagnose/exportReport.ts` — `html-to-image` 기반 PNG 저장
 - `src/data/services/bodyTypeService.ts` — Edge Function 호출 + 익명 세션 보장

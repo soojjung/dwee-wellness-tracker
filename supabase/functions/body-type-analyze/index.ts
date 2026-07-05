@@ -160,18 +160,31 @@ serve(async (req: Request) => {
     return jsonError(502, 'report_parse_failed');
   }
 
-  // Best-effort log; we already have the result so don't fail the user
-  // response on insert error (just log it).
-  const { error: insertErr } = await supabase
-    .from('body_type_calls')
-    .insert({ user_id: userId });
-  if (insertErr) {
-    console.error('body_type_calls insert failed', insertErr.message);
+  // Only count against the daily quota when the reading actually succeeded.
+  // If the model returned analyzable=false the user sees an error screen,
+  // so charging their quota for it isn't fair.
+  const analyzable =
+    typeof report === 'object' &&
+    report !== null &&
+    (report as { analyzable?: unknown }).analyzable === true;
+
+  let usedCount = count ?? 0;
+  if (analyzable) {
+    // Best-effort log; we already have the result so don't fail the user
+    // response on insert error (just log it).
+    const { error: insertErr } = await supabase
+      .from('body_type_calls')
+      .insert({ user_id: userId });
+    if (insertErr) {
+      console.error('body_type_calls insert failed', insertErr.message);
+    } else {
+      usedCount += 1;
+    }
   }
 
   return jsonOk({
     report,
-    remaining: Math.max(0, DAILY_LIMIT - ((count ?? 0) + 1)),
+    remaining: Math.max(0, DAILY_LIMIT - usedCount),
   });
 });
 

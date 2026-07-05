@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   mediaMainText: 'dwee:media:main_text',
   mediaSubText: 'dwee:media:sub_text',
   mediaTextOrder: 'dwee:media:text_order',
+  bookmarks: 'dwee:bookmarks',
 } as const;
 
 export const ALL_MEDIA_PHOTO_KEYS = [0, 1, 2, 3].map((s) =>
