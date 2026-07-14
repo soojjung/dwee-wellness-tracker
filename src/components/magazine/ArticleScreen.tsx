@@ -31,7 +31,7 @@ export function ArticleScreen({ slug }: ArticleScreenProps) {
 
   if (!article) {
     return (
-      <div className="flex flex-col gap-4 px-6 pt-16">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-6 pt-16">
         <Link
           href="/magazine"
           className="text-sm font-medium text-brand-pink800 focus-visible:underline focus-visible:outline-none"
@@ -47,7 +47,7 @@ export function ArticleScreen({ slug }: ArticleScreenProps) {
   const cta = content.cta;
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-brand-gray50">
+    <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-brand-gray50">
       <TopBar backAria={t.magazine.backToList} slug={article.slug} />
 
       <div className="relative h-[508px] w-full shrink-0">
@@ -72,7 +72,7 @@ export function ArticleScreen({ slug }: ArticleScreenProps) {
       </article>
 
       {cta ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
           <Link
             href={cta.href}
             className="flex items-center justify-center bg-brand-gray900 py-4 text-xl font-semibold leading-[normal] text-brand-pink100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"

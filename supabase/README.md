@@ -62,7 +62,7 @@ supabase db push
 ### 3. Auth provider 활성화 (Supabase 대시보드 → Authentication → Providers)
 - **Email** — enable. "Confirm email" 은 MVP 단계에서는 off 권장 (signUp 직후 세션 발급되어야 STEP 2.2 흐름이 즉시 로그인됨).
 - **Anonymous sign-ins** — enable. `authStore.signInAnonymously()` 가 이 provider 를 사용. 끄면 첫 진입 시 `anonFailed` 에러.
-- **Apple / Google** — STEP 2.5 / 2.6 에서 활성화.
+- **Apple / Google** — 활성화 완료. Apple client_secret JWT 는 6개월 만료 → `scripts/gen-apple-secret.mjs` 로 재생성 후 Supabase 대시보드 → Auth → Providers → Apple → "Secret Key" 에 붙여넣기.
 
 ### 4. wiring
 `src/data/index.ts` 가 `authStore` 의 user 상태를 보고 mode 를 토글 (STEP 2.1 완료). 추가 코드 작업 없음.

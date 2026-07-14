@@ -74,13 +74,13 @@ a rewrite.
 
 ## Local-First Sync Strategy
 
-**Today:** writes go to IndexedDB synchronously; UI re-reads from local. Anonymous Supabase session exists but the Supabase adapter is not yet wired through `data/index.ts`.
+**Today:** writes go to IndexedDB synchronously; UI re-reads from local. Apple and Google OAuth sign-in are active — signing in triggers a one-shot local → Supabase migration, then the Supabase adapter takes over for that session. Anonymous users stay on IndexedDB.
 
 **Planned:**
 
 - **Read:** local-first; remote hydrates records the local store has never seen.
 - **Write:** write-through local, enqueue sync. Failures don't block the UI.
-- **Conflict:** last-write-wins by `updated_at`. One-shot IndexedDB → Supabase migration on first sign-in. LWW is intentional over CRDTs — a single user across 2–3 mostly append-only devices doesn't justify the complexity yet.
+- **Conflict:** last-write-wins by `updated_at`. LWW is intentional over CRDTs — a single user across 2–3 mostly append-only devices doesn't justify the complexity yet.
 
 I shipped the local-first slice first so the app is fully usable before any sync code exists. Sync becomes an enhancement, not a prerequisite.
 
@@ -181,7 +181,7 @@ Solo project. End-to-end ownership of:
 
 ## Status & Stack
 
-**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase sync is in progress — anonymous auth and adapter scaffolding live; wiring through `data/index.ts`, background sync, and the one-shot migration are next.
+**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase auth is live — Apple and Google OAuth active, anonymous → OAuth migration wired. Background sync and multi-device conflict resolution are next.
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript strict · Zustand · IndexedDB (`idb-keyval`) · Supabase (Postgres + Auth + Edge Functions) · Tailwind · react-hook-form · Vitest · Playwright · Capacitor 6 (iOS).
 
