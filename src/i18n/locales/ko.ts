@@ -9,7 +9,6 @@ export const ko: Dictionary = {
     signInWithApple: 'Apple로 로그인',
     signInWithGoogle: 'Google로 로그인',
     continueWithoutSignIn: '로그인 없이 사용하기',
-    comingSoon: '로그인 기능은 곧 준비될 예정이에요',
     signingIn: '연결 중이에요...',
     callback: {
       busy: '준비하고 있어요...',

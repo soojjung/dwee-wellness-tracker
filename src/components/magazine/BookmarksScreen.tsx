@@ -30,7 +30,7 @@ export function BookmarksScreen() {
   }, [savedSlugs]);
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-brand-gray50">
+    <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-brand-gray50">
       <Header backAria={t.magazine.bookmarks.backAria} />
       {saved.length === 0 ? (
         <EmptyState

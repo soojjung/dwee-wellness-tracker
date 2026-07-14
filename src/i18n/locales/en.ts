@@ -8,7 +8,6 @@ export const en = {
     signInWithApple: 'Sign in with Apple',
     signInWithGoogle: 'Sign in with Google',
     continueWithoutSignIn: 'Continue without signing in',
-    comingSoon: 'Sign-in is coming soon',
     signingIn: 'Connecting...',
     callback: {
       busy: 'Setting things up...',

@@ -24,7 +24,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 ### MVP2 (진행 중)
 
-6. **Supabase 익명 인증** — 가입 없이 익명 세션부터 시작 (이후 Apple/Google link 예정)
+6. **Supabase 인증** — 익명 세션으로 시작, Apple/Google OAuth 로그인 시 로컬 데이터 1회 마이그레이션 후 클라우드 전환
 7. **클라우드 동기화** — 로컬(IndexedDB) 우선 + 백그라운드 sync (hybrid)
 8. **다기기 사용** — 같은 계정으로 여러 기기 패턴 유지
 
@@ -225,7 +225,7 @@ src/
 ├── data/                         어댑터 패턴
 │   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark)
 │   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v4, 현재 wiring)
-│   ├── adapters/supabase/        원격 구현 (Supabase JS, MVP2.2 부터 wiring)
+│   ├── adapters/supabase/        원격 구현 (Supabase JS, 인증 사용자에게 wiring 완료)
 │   └── index.ts                  단일 진입점
 │
 ├── domain/
@@ -251,7 +251,7 @@ src/
 
 ```
 app/  ──▶  store/  ──▶  data/repositories/  ──┬──▶  data/adapters/indexeddb/   (로컬, 현재 wiring)
-                                              └──▶  data/adapters/supabase/    (원격, MVP2.2~)
+                                              └──▶  data/adapters/supabase/    (원격, 인증 사용자)
 
 domain/cycle/, lib/insight/   ← 부수효과 없는 순수 함수, 어디서든 호출 가능
 constants/, types/            ← 어디서든 import 가능
@@ -294,9 +294,8 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 ### MVP2 — 진행 중
 
 - [x] **MVP2.1 — Supabase 기반 셋업** (auth store, 익명 로그인, 어댑터 src/ 이동)
-- [ ] MVP2.2 — Supabase 어댑터 wiring (`data/index.ts` 분기)
+- [x] **MVP2.2 — Supabase 어댑터 wiring** (`data/index.ts` 분기 완료, Apple/Google OAuth 활성화, 로컬→클라우드 1회 마이그레이션 완료)
 - [ ] MVP2.3~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
-- [ ] MVP2.6 — IndexedDB → Supabase 1회성 마이그레이션
 
 ### 매거진 (MVP 병행)
 
