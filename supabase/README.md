@@ -13,7 +13,7 @@ supabase/
                            home_decor_settings(photo_count, text_position,
                            text_order, main_text, sub_text) 신규 생성
     0003_body_type_calls.sql
-                         — body_type_calls (Edge Function 일일 호출 카운터)
+                         — body_type_calls (Edge Function 일일 호출 카운터, 일 10회 limit)
     0004_anon_lockout.sql
                          — defensive RLS: 익명 user 의 Supabase 데이터 테이블
                            쓰기/읽기 차단. body_type_calls 는 익명 호출 유지.

@@ -9,7 +9,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 import { BODY_TYPE_REPORT_SCHEMA } from './schema.ts';
-import { buildSystemPrompt, buildUserText } from './prompt.ts';
+import { buildSystemPrompt, buildUserText, buildRetryUserText } from './prompt.ts';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -29,8 +29,13 @@ interface RequestBody {
 }
 
 const MAX_IMAGE_BYTES = 18 * 1024 * 1024; // 18 MB (OpenAI vision limit is 20 MB encoded)
-const DAILY_LIMIT = 5;
+const DAILY_LIMIT = 10;
 const OPENAI_MODEL = 'gpt-4o';
+// One retry when the model refuses or returns analyzable:false. Vision
+// calls are non-deterministic on marginal shots; a nudged second pass
+// recovers a lot of previously-lost readings without doubling latency
+// for the common case.
+const MAX_ATTEMPTS = 2;
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -89,15 +94,83 @@ serve(async (req: Request) => {
   }
 
   const dataUri = `data:${body.imageMediaType};base64,${body.imageBase64}`;
-  const openaiPayload = {
+
+  let report: unknown = null;
+  let analyzable = false;
+  let lastFailureCode: string | null = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    const userText =
+      attempt === 1
+        ? buildUserText(body.locale, body.shotType)
+        : buildRetryUserText(body.locale, body.shotType);
+    const outcome = await callOpenAI({
+      openaiKey,
+      systemPrompt: buildSystemPrompt(body.locale),
+      userText,
+      dataUri,
+    });
+    if (outcome.kind === 'ok') {
+      report = outcome.report;
+      analyzable = outcome.analyzable;
+      if (analyzable) break;
+      lastFailureCode = 'image_refused';
+    } else {
+      lastFailureCode = outcome.code;
+      // Don't retry on validation / non-transient config errors — only on
+      // transient OpenAI failures and on model-level refusals.
+      if (!isRetryable(outcome.code)) break;
+    }
+  }
+
+  if (!analyzable) {
+    return jsonError(mapFailureStatus(lastFailureCode), lastFailureCode ?? 'unknown');
+  }
+
+  // Only count against the daily quota when the reading actually succeeded.
+  // If the model returned analyzable=false the user sees an error screen,
+  // so charging their quota for it isn't fair.
+  let usedCount = count ?? 0;
+  const { error: insertErr } = await supabase
+    .from('body_type_calls')
+    .insert({ user_id: userId });
+  if (insertErr) {
+    console.error('body_type_calls insert failed', insertErr.message);
+  } else {
+    usedCount += 1;
+  }
+
+  return jsonOk({
+    report,
+    remaining: Math.max(0, DAILY_LIMIT - usedCount),
+  });
+});
+
+interface OpenAIOk {
+  kind: 'ok';
+  report: unknown;
+  analyzable: boolean;
+}
+interface OpenAIFail {
+  kind: 'fail';
+  code: string;
+}
+
+async function callOpenAI(args: {
+  openaiKey: string;
+  systemPrompt: string;
+  userText: string;
+  dataUri: string;
+}): Promise<OpenAIOk | OpenAIFail> {
+  const payload = {
     model: OPENAI_MODEL,
     messages: [
-      { role: 'system', content: buildSystemPrompt(body.locale) },
+      { role: 'system', content: args.systemPrompt },
       {
         role: 'user',
         content: [
-          { type: 'text', text: buildUserText(body.locale, body.shotType) },
-          { type: 'image_url', image_url: { url: dataUri, detail: 'high' } },
+          { type: 'text', text: args.userText },
+          { type: 'image_url', image_url: { url: args.dataUri, detail: 'high' } },
         ],
       },
     ],
@@ -110,83 +183,75 @@ serve(async (req: Request) => {
       },
     },
     max_tokens: 4000,
-    temperature: 0.6,
+    // Lower temperature makes the analyzability decision more consistent —
+    // the previous 0.6 caused the model to flip on marginal shots.
+    temperature: 0.3,
   };
 
-  let openaiRes: Response;
+  let res: Response;
   try {
-    openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${openaiKey}`,
+        Authorization: `Bearer ${args.openaiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(openaiPayload),
+      body: JSON.stringify(payload),
     });
   } catch {
-    return jsonError(502, 'openai_unreachable');
+    return { kind: 'fail', code: 'openai_unreachable' };
   }
 
-  if (!openaiRes.ok) {
-    const errText = await openaiRes.text().catch(() => '');
-    console.error('openai non-2xx', openaiRes.status, errText);
-    return jsonError(502, 'openai_failed');
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    console.error('openai non-2xx', res.status, errText);
+    return { kind: 'fail', code: 'openai_failed' };
   }
 
-  let openaiJson: {
-    choices?: Array<{
-      message?: { content?: string | null; refusal?: string | null };
-    }>;
+  let json: {
+    choices?: Array<{ message?: { content?: string | null; refusal?: string | null } }>;
   };
   try {
-    openaiJson = await openaiRes.json();
+    json = await res.json();
   } catch {
-    return jsonError(502, 'openai_invalid_response');
+    return { kind: 'fail', code: 'openai_invalid_response' };
   }
 
-  const choice = openaiJson.choices?.[0]?.message;
-  if (choice?.refusal) {
-    return jsonError(422, 'image_refused');
-  }
-  const reportText = choice?.content;
-  if (!reportText) {
-    return jsonError(502, 'openai_empty');
-  }
+  const choice = json.choices?.[0]?.message;
+  if (choice?.refusal) return { kind: 'fail', code: 'image_refused' };
+  const text = choice?.content;
+  if (!text) return { kind: 'fail', code: 'openai_empty' };
 
-  let report: unknown;
+  let parsed: unknown;
   try {
-    report = JSON.parse(reportText);
+    parsed = JSON.parse(text);
   } catch {
-    return jsonError(502, 'report_parse_failed');
+    return { kind: 'fail', code: 'report_parse_failed' };
   }
 
-  // Only count against the daily quota when the reading actually succeeded.
-  // If the model returned analyzable=false the user sees an error screen,
-  // so charging their quota for it isn't fair.
   const analyzable =
-    typeof report === 'object' &&
-    report !== null &&
-    (report as { analyzable?: unknown }).analyzable === true;
+    typeof parsed === 'object' &&
+    parsed !== null &&
+    (parsed as { analyzable?: unknown }).analyzable === true;
 
-  let usedCount = count ?? 0;
-  if (analyzable) {
-    // Best-effort log; we already have the result so don't fail the user
-    // response on insert error (just log it).
-    const { error: insertErr } = await supabase
-      .from('body_type_calls')
-      .insert({ user_id: userId });
-    if (insertErr) {
-      console.error('body_type_calls insert failed', insertErr.message);
-    } else {
-      usedCount += 1;
-    }
-  }
+  return { kind: 'ok', report: parsed, analyzable };
+}
 
-  return jsonOk({
-    report,
-    remaining: Math.max(0, DAILY_LIMIT - usedCount),
-  });
-});
+function isRetryable(code: string | null): boolean {
+  return (
+    code === 'openai_unreachable' ||
+    code === 'openai_failed' ||
+    code === 'openai_invalid_response' ||
+    code === 'openai_empty' ||
+    code === 'report_parse_failed' ||
+    code === 'image_refused'
+  );
+}
+
+function mapFailureStatus(code: string | null): number {
+  if (code === 'image_refused') return 422;
+  return 502;
+}
 
 function validate(b: RequestBody): string | null {
   if (typeof b.imageBase64 !== 'string' || b.imageBase64.length === 0) {

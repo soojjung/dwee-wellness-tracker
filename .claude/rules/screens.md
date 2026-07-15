@@ -20,6 +20,8 @@ paths:
   현재 포함: `/home/customize`, `/home/customize/edit-photos`, `/magazine/personal-body-type/diagnose`.
 - 새 화면 추가 시 셋 중 어디에 둘지 먼저 결정.
 
+**모바일 셸 (mobile shell):** 세 라우트 그룹 모두 최상위 layout 에서 `max-w-md` (448px) + `mx-auto` 로 콘텐츠 폭을 고정합니다. 데스크톱 브라우저에서도 모바일 폭을 유지하는 것이 의도된 동작입니다. `(app)` 은 `AppShell` 내부 `main` 에서, `(auth)` 와 `(fullscreen)` 은 각 `layout.tsx` 의 wrapper div 에서 적용합니다. 새 레이아웃을 추가할 때도 `max-w-md mx-auto w-full` 을 유지하세요.
+
 ## 2) i18n
 
 - 페이지/컴포넌트의 모든 사용자 노출 텍스트는 `useT()` 경유.

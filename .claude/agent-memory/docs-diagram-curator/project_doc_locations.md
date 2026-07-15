@@ -31,11 +31,11 @@ Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscree
 - `(app)/magazine/` — list only (no slug sub-route here; article detail moved to fullscreen).
 - `(fullscreen)/magazine/[slug]/` — article fullscreen reader.
 - `(fullscreen)/magazine/bookmarks/` — bookmarked articles list.
-- `(fullscreen)/magazine/personal-body-type/diagnose/` — 3-slot picker (front · side · back). `PhotoPicker.tsx` was deleted; slot inputs are inline in `DiagnoseScreen.tsx`. `Step` type is now `select | loading | error` (no preview or result steps — result is a separate route).
-- `(fullscreen)/magazine/personal-body-type/diagnose/result/` — `DiagnoseResultScreen`. Receives report via `sessionStorage` key `REPORT_SESSION_KEY`. Handles PNG export.
+- `(fullscreen)/magazine/personal-body-type/diagnose/` — 3-slot picker (front · side · back). `PhotoPicker.tsx` was deleted; slot inputs are inline in `DiagnoseScreen.tsx`. `Step` type is `intro | loading | error`. `intro` step carries `consent` (modal open) and `consented` (one-time gate cleared) flags. First slot tap without consent opens `ConsentModal`; after agree, file picker opens. Result is a separate route.
+- `(fullscreen)/magazine/personal-body-type/diagnose/result/` — `DiagnoseResultScreen`. Receives report via `sessionStorage` key `REPORT_SESSION_KEY`. `ReportView` renders 2-tab layout: BodyTab (frame paragraphs) and StyleTab (4 clothing cards horizontal scroll). Handles PNG export.
 - `ArticleCard.tsx` was deleted. Card rendering is now inline in `MagazineScreen`.
 - `src/data/magazine/articles.ts` — 4 articles total: personal-body-type, cycle-phases, cycle-length-35-days, period-supplements. Dates use ISO format (`YYYY-MM-DD`); dot format caused `RangeError`.
-- `supabase/functions/body-type-analyze/` — OpenAI gpt-4o Vision. Photo is never stored. Rate-limited to 5 calls/day via `supabase/migrations/0003_body_type_calls.sql`.
+- `supabase/functions/body-type-analyze/` — OpenAI gpt-4o Vision, temperature 0.3. Photo is never stored. Rate-limited to 10 calls/day (`DAILY_LIMIT = 10`, only successful analyses counted) via `supabase/migrations/0003_body_type_calls.sql`. `MAX_ATTEMPTS = 2`: retries once on `analyzable: false` or transient OpenAI failure using a separate retry prompt (`buildRetryUserText`).
 - CLAUDE.md "명시적 제외" ML/AI clause now has server-side LLM exception for explicit-user-trigger cases (magazine diagnose). README must reflect same exception text.
 
 ## Figma sync scope: home snapshots only
