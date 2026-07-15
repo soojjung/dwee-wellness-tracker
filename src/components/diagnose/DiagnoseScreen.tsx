@@ -7,34 +7,38 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { fileToBase64, supportedMediaType } from '@/lib/image/fileToBase64';
 import { analyzeBodyType } from '@/data/services/bodyTypeService';
 import type { BodyTypeAnalyzeError, SupportedImageMediaType } from '@/types';
-import { BackIcon } from '@/components/ui/icons';
+import { AlertCircleIcon, BackIcon } from '@/components/ui/icons';
 import { REPORT_SESSION_KEY } from './DiagnoseResultScreen';
+
+const ARTICLE_HREF = '/magazine/personal-body-type';
+const RESULT_HREF = '/magazine/personal-body-type/diagnose/result';
 
 type Slot = 'front' | 'side' | 'back';
 const SLOT_ORDER: readonly Slot[] = ['front', 'side', 'back'] as const;
 
-interface PhotoData {
+interface Photo {
   file: File;
   previewUrl: string;
   mediaType: SupportedImageMediaType;
 }
-
-type Photos = Partial<Record<Slot, PhotoData>>;
+type Photos = Partial<Record<Slot, Photo>>;
 
 type Step =
-  | { kind: 'select'; photos: Photos }
+  | { kind: 'intro'; photos: Photos; consent: boolean; consented: boolean }
   | { kind: 'loading'; blurUrl: string }
   | { kind: 'error'; code: BodyTypeAnalyzeError };
-
-const ARTICLE_HREF = '/magazine/personal-body-type';
-const RESULT_HREF = '/magazine/personal-body-type/diagnose/result';
 
 export function DiagnoseScreen() {
   const router = useRouter();
   const locale = useSettingsStore((s) => s.settings.locale);
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
-  const [step, setStep] = useState<Step>({ kind: 'select', photos: {} });
+  const [step, setStep] = useState<Step>({
+    kind: 'intro',
+    photos: {},
+    consent: false,
+    consented: false,
+  });
   const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
@@ -47,27 +51,30 @@ export function DiagnoseScreen() {
     return () => URL.revokeObjectURL(url);
   }, [step]);
 
-  function setSlot(slot: Slot, data: PhotoData | null) {
+  function setSlot(slot: Slot, data: Photo | null) {
     setStep((prev) => {
-      if (prev.kind !== 'select') return prev;
+      if (prev.kind !== 'intro') return prev;
       const prevData = prev.photos[slot];
       if (prevData) URL.revokeObjectURL(prevData.previewUrl);
       const next: Photos = { ...prev.photos };
       if (data) next[slot] = data;
       else delete next[slot];
-      return { kind: 'select', photos: next };
+      return { ...prev, photos: next };
     });
   }
 
-  function resetPhotos() {
-    setStep((prev) => {
-      if (prev.kind !== 'select') return { kind: 'select', photos: {} };
-      for (const s of SLOT_ORDER) {
-        const p = prev.photos[s];
-        if (p) URL.revokeObjectURL(p.previewUrl);
-      }
-      return { kind: 'select', photos: {} };
-    });
+  function setConsentOpen(consent: boolean) {
+    setStep((prev) => (prev.kind === 'intro' ? { ...prev, consent } : prev));
+  }
+
+  function markConsented() {
+    setStep((prev) =>
+      prev.kind === 'intro' ? { ...prev, consent: false, consented: true } : prev,
+    );
+  }
+
+  function resetIntro() {
+    setStep({ kind: 'intro', photos: {}, consent: false, consented: false });
   }
 
   async function startAnalysis(photos: Photos) {
@@ -110,38 +117,68 @@ export function DiagnoseScreen() {
     router.push(RESULT_HREF);
   }
 
-  if (step.kind === 'select') {
+  if (step.kind === 'intro') {
     return (
-      <SelectView
+      <IntroView
         photos={step.photos}
         remaining={remaining}
+        consentOpen={step.consent}
+        consented={step.consented}
+        onOpenConsent={() => setConsentOpen(true)}
+        onCloseConsent={() => setConsentOpen(false)}
+        onConsentGranted={markConsented}
         onSlot={setSlot}
-        onStart={(p) => startAnalysis(p)}
+        onStart={() => startAnalysis(step.photos)}
       />
     );
   }
   if (step.kind === 'loading') return <LoadingView blurUrl={step.blurUrl} />;
-  return <ErrorView code={step.code} onRetry={resetPhotos} />;
+  return <ErrorView code={step.code} onRetry={resetIntro} />;
 }
 
-interface SelectViewProps {
+interface IntroViewProps {
   photos: Photos;
   remaining: number | null;
-  onSlot: (slot: Slot, data: PhotoData | null) => void;
-  onStart: (photos: Photos) => void;
+  consentOpen: boolean;
+  consented: boolean;
+  onOpenConsent: () => void;
+  onCloseConsent: () => void;
+  onConsentGranted: () => void;
+  onSlot: (slot: Slot, data: Photo | null) => void;
+  onStart: () => void;
 }
 
-function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
+function IntroView({
+  photos,
+  remaining,
+  consentOpen,
+  consented,
+  onOpenConsent,
+  onCloseConsent,
+  onConsentGranted,
+  onSlot,
+  onStart,
+}: IntroViewProps) {
   const t = useT();
   const p = t.magazine.diagnose;
   const inputRef = useRef<HTMLInputElement>(null);
   const [pendingSlot, setPendingSlot] = useState<Slot | null>(null);
-
   const hasFront = Boolean(photos.front);
 
-  function openPickerFor(slot: Slot) {
+  function requestPickerFor(slot: Slot) {
     setPendingSlot(slot);
+    if (!consented) {
+      onOpenConsent();
+      return;
+    }
     inputRef.current?.click();
+  }
+
+  function handleConsentAgree() {
+    onConsentGranted();
+    // Defer to next tick so the modal unmounts (releasing body scroll lock)
+    // before the file picker takes over.
+    setTimeout(() => inputRef.current?.click(), 0);
   }
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -162,17 +199,12 @@ function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
     side: p.picker.slotSide,
     back: p.picker.slotBack,
   };
-  const slotPrompt: Record<Slot, string> = {
-    front: p.picker.slotPromptFront,
-    side: p.picker.slotPromptSide,
-    back: p.picker.slotPromptBack,
-  };
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-brand-gray50 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
       <TopBar backHref={ARTICLE_HREF} backAria={p.backToArticle} />
 
-      <div className="flex flex-col gap-8 pt-6">
+      <div className="flex flex-col gap-6 pt-6">
         <header className="flex flex-col gap-2 px-4">
           <h1 className="text-2xl font-semibold leading-[normal] text-brand-gray900">
             {p.intro.title}
@@ -180,7 +212,7 @@ function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
           <p className="text-lg leading-normal text-brand-gray800">{p.intro.subtitle}</p>
         </header>
 
-        <SlotStrip photos={photos} labels={slotLabel} onSlotTap={openPickerFor} />
+        <SlotStrip photos={photos} labels={slotLabel} onSlotTap={requestPickerFor} />
 
         <GuideSection
           chip={p.picker.guideChip}
@@ -188,9 +220,9 @@ function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
           items={[p.picker.guideItem1, p.picker.guideItem2, p.picker.guideItem3]}
         />
         <GuideSection
-          chip={p.picker.storageChip}
-          title={p.picker.storageTitle}
-          items={[p.picker.storageItem1, p.picker.storageItem2]}
+          chip={p.picker.uploadChip}
+          title={p.picker.uploadTitle}
+          items={[p.picker.uploadItem1, p.picker.uploadItem2]}
         />
 
         {remaining !== null ? (
@@ -214,22 +246,25 @@ function SelectView({ photos, remaining, onSlot, onStart }: SelectViewProps) {
         {hasFront ? (
           <button
             type="button"
-            onClick={() => onStart(photos)}
-            className="flex h-[60px] w-full items-center justify-center bg-brand-gray900 text-xl font-semibold leading-[normal] text-brand-pink100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+            onClick={onStart}
+            className="flex h-[60px] w-full items-center justify-center bg-brand-pink50 text-xl font-semibold leading-[normal] text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
           >
             {p.picker.startButton}
           </button>
         ) : (
           <button
             type="button"
-            onClick={() => openPickerFor('front')}
-            className="flex h-[72px] w-full flex-col items-center justify-center bg-brand-pink50 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+            onClick={() => requestPickerFor('front')}
+            className="flex h-[60px] w-full items-center justify-center bg-brand-pink50 text-xl font-semibold leading-[normal] text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
           >
-            <span className="text-xl font-semibold leading-[normal]">{p.picker.selectButton}</span>
-            <span className="mt-1 text-xs text-brand-gray700">{slotPrompt.front}</span>
+            {p.picker.selectButton}
           </button>
         )}
       </BottomBar>
+
+      {consentOpen ? (
+        <ConsentModal onCancel={onCloseConsent} onAgree={handleConsentAgree} />
+      ) : null}
     </div>
   );
 }
@@ -246,16 +281,14 @@ function SlotStrip({
   return (
     <div className="px-4">
       <div className="flex overflow-hidden rounded-2xl">
-        {SLOT_ORDER.map((slot, i) => {
+        {SLOT_ORDER.map((slot) => {
           const photo = photos[slot];
-          const roundedClass =
-            i === 0 ? 'rounded-l-2xl' : i === SLOT_ORDER.length - 1 ? 'rounded-r-2xl' : '';
           return (
             <button
               key={slot}
               type="button"
               onClick={() => onSlotTap(slot)}
-              className={`relative h-[180px] flex-1 overflow-hidden bg-brand-gray200 ${roundedClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200`}
+              className="relative h-[180px] flex-1 overflow-hidden bg-brand-gray200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
               aria-label={labels[slot]}
             >
               {photo ? (
@@ -285,11 +318,11 @@ function GuideSection({
   items: readonly string[];
 }) {
   return (
-    <section className="flex flex-col gap-3 px-4">
-      <span className="inline-flex w-fit items-center justify-center rounded bg-brand-gray200 px-2 py-1 text-xs text-brand-gray700">
+    <section className="flex flex-col gap-2 px-4">
+      <span className="inline-flex w-fit items-center justify-center rounded bg-brand-gray200 px-2 py-1 text-xs leading-normal text-brand-gray700">
         {chip}
       </span>
-      <h2 className="text-lg font-semibold leading-[normal] text-brand-gray900">{title}</h2>
+      <h2 className="text-lg font-semibold leading-normal text-brand-gray900">{title}</h2>
       <ul className="flex flex-col gap-1 pl-6 text-base leading-normal text-brand-gray700">
         {items.map((item, i) => (
           <li key={i} className="list-disc">
@@ -298,6 +331,68 @@ function GuideSection({
         ))}
       </ul>
     </section>
+  );
+}
+
+function ConsentModal({ onCancel, onAgree }: { onCancel: () => void; onAgree: () => void }) {
+  const t = useT();
+  const c = t.magazine.diagnose.consent;
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+  return (
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="diagnose-consent-title"
+        className="flex w-full max-w-[333px] flex-col overflow-hidden rounded-2xl bg-brand-gray50"
+      >
+        <div className="flex flex-col gap-4 p-8">
+          <h2
+            id="diagnose-consent-title"
+            className="text-xl font-semibold leading-normal text-brand-gray900"
+          >
+            {c.title}
+          </h2>
+          <div className="flex flex-col gap-2">
+            <p className="text-base font-semibold leading-[normal] text-brand-gray900">
+              {c.heading}
+            </p>
+            <ul className="flex flex-col gap-1 pl-5 text-sm leading-normal text-brand-gray700">
+              <li className="list-disc">{c.item1}</li>
+              <li className="list-disc">{c.item2}</li>
+            </ul>
+            <p className="text-xs leading-normal text-brand-gray600">{c.footnote}</p>
+          </div>
+        </div>
+        <div className="flex w-full items-center">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-[50px] flex-1 items-center justify-center bg-brand-gray300 text-lg font-medium leading-normal text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+          >
+            {c.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={onAgree}
+            className="flex h-[50px] w-[167px] items-center justify-center bg-brand-gray900 text-lg font-semibold leading-normal text-brand-gray50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+          >
+            {c.agree}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -329,14 +424,16 @@ function LoadingView({ blurUrl }: { blurUrl: string }) {
   return (
     <div className="fixed inset-0 z-40 flex h-dvh w-full items-center justify-center overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={blurUrl} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl" />
-      <div className="absolute inset-0 bg-black/10" />
+      <img
+        src={blurUrl}
+        alt=""
+        className="absolute inset-0 h-full w-full scale-110 object-cover blur-[15px]"
+      />
+      <div className="absolute inset-0 bg-black/[0.15]" />
       <div className="relative flex flex-col items-center gap-8 px-6">
         <CircularProgress percent={percent} label={`${percentInt}%`} />
         <div className="flex flex-col items-center gap-1 text-center">
-          <p className="whitespace-nowrap text-2xl font-semibold leading-normal text-brand-gray50">
-            {l.title}
-          </p>
+          <p className="text-2xl font-semibold leading-normal text-brand-gray50">{l.title}</p>
           <p className="text-base leading-normal text-brand-gray200">{l.body}</p>
         </div>
       </div>
@@ -398,13 +495,18 @@ function ErrorView({ code, onRetry }: { code: BodyTypeAnalyzeError; onRetry: () 
     unknown: e.unknown,
   };
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center gap-4 px-4 py-10 text-center">
-      <h1 className="text-xl font-semibold text-brand-gray900">{e.title}</h1>
-      <p className="text-sm text-brand-gray700">{messageMap[code]}</p>
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-5 px-4">
+      <span className="grid size-[70px] place-items-center rounded-full bg-brand-gray300 text-brand-gray600">
+        <AlertCircleIcon className="size-[42px]" />
+      </span>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <h1 className="text-xl font-semibold leading-normal text-brand-gray900">{e.title}</h1>
+        <p className="text-base leading-normal text-brand-gray800">{messageMap[code]}</p>
+      </div>
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-2xl bg-brand-pink200 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-pink800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+        className="inline-flex items-center justify-center rounded-full bg-brand-pink50 px-7 py-4 text-base font-medium leading-normal text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
       >
         {e.retry}
       </button>
@@ -428,7 +530,7 @@ function TopBar({ backHref, backAria }: { backHref: string; backAria: string }) 
 
 function BottomBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
+    <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
       {children}
     </div>
   );

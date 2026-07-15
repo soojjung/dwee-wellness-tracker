@@ -155,7 +155,7 @@ describe('compact', () => {
     ];
     const result = compact(drafts);
     expect(result.length).toBe(1);
-    expect(result[0].originalId).toBe('b');
+    expect(result[0]?.originalId).toBe('b');
   });
 });
 
