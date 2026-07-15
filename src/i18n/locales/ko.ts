@@ -76,6 +76,11 @@ export const ko: Dictionary = {
     startPeriodStartLabel: '시작일',
     startPeriodEndLabel: '종료일',
     startPeriodSave: '저장',
+    periodSheet: {
+      title: '생리일 선택',
+      closeAria: '닫기',
+      saveAria: '저장',
+    },
     setupDone: '저장',
     setupRemove: '삭제',
     cancel: '취소',

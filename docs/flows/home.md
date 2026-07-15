@@ -1,49 +1,48 @@
 # 홈 화면 플로우
 
-> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,KeywordCards,ActivitySuggestions,FoodSuggestions,TodayDateHeading,CalendarAddIcon,PeriodRangeDialog,ShortCycleConfirmDialog}.tsx`, `src/app/(app)/page.tsx`
+> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,KeywordCards,ActivitySuggestions,FoodSuggestions,TodayDateHeading,CalendarAddIcon,PeriodSelectSheet}.tsx`, `src/app/(app)/page.tsx`
 
 ## 생리 기록 진입점
 
-**우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 컴포넌트의 캘린더 아이콘을 탭하면 `PeriodRangeDialog`가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)은 삭제되었습니다.
+**우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 컴포넌트의 캘린더 아이콘을 탭하면 `PeriodSelectSheet` (바텀 시트 캘린더)가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)과 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합은 제거되었습니다.
+
+`PeriodSelectSheet`는 최근 N개월 캘린더 그리드를 보여주며, 날짜 셀을 탭하면 `domain/cycle/periodEdit.ts`의 순수 함수로 드래프트를 조작합니다. 저장 시 `PeriodChange[]` diff를 `HomeScreen.handlePeriodChanges`로 전달해 add / update / remove를 일괄 적용합니다.
 
 ```mermaid
 flowchart TD
     Icon(["캘린더 아이콘\n(TodayDateHeading 우상단)"])
-    RD["PeriodRangeDialog\n시작일 + 종료일 입력"]
-    Eval{"evaluateNewStart()\nkind?"}
-    SC["ShortCycleConfirmDialog\n세 선택지 제시"]
-    Add["addPeriod()"]
-    Ext["extendThrough()"]
-    Rep["replacePeriod()"]
+    Sheet["PeriodSelectSheet\n(바텀 시트 캘린더)"]
+    Tap{"셀 탭 — 날짜 상태?"}
+    Remove["removeDay()\n기존 기간에서 제거"]
+    Extend["extendTo()\n인접 기간 연장"]
+    Range["addRange()\n새 범위 추가"]
+    Save["computeChanges() →\nhandlePeriodChanges()"]
     Done(["완료"])
 
-    Icon --> RD
-    RD -->|"Cancel"| Done
-    RD -->|"Submit"| Eval
-    Eval -->|"idempotent"| Done
-    Eval -->|"ok"| Add --> Done
-    Eval -->|"shortGap\n< 15일"| SC
-    SC -->|"그래도 저장"| Add
-    SC -->|"아직 생리 중"| Ext
-    SC -->|"날짜 잘못 입력"| Rep
-    SC -->|"Cancel"| Done
-    Add --> Done
-    Ext --> Done
-    Rep --> Done
+    Icon --> Sheet
+    Sheet -->|"Cancel"| Done
+    Sheet -->|"날짜 탭"| Tap
+    Tap -->|"기존 기간 내 날짜"| Remove --> Sheet
+    Tap -->|"인접 기간 근처\n(≤ 7일)"| Extend --> Sheet
+    Tap -->|"새 날짜\n(첫 탭)"| Sheet
+    Tap -->|"새 날짜\n(두 번째 탭)"| Range --> Sheet
+    Sheet -->|"Save (dirty)"| Save --> Done
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
     classDef store fill:#F0E8FD,stroke:#BDA8E5,color:#4A3A5C;
-    class Icon,RD,SC,Done ui;
-    class Eval logic;
-    class Add,Ext,Rep store;
+    class Icon,Sheet,Done ui;
+    class Tap,Remove,Extend,Range logic;
+    class Save store;
 ```
 
 ## 화면 상태 분기
 
 ```mermaid
 flowchart TD
-    Mount["HomeScreen mount"] --> Hydrate["periodStore.hydrate()\nconditionStore.hydrateRange(−90d, today)"]
+    Mount["HomeScreen mount"] --> Auth{"authHydrated?"}
+    Auth -->|"No (AuthGuard → /login)"| Done2(["리다이렉트"])
+    Auth -->|"Yes"| Hydrate["periodStore.hydrate()\nconditionStore.hydrateRange(−90d, today)"]
     Hydrate --> Check{"settingsHydrated &&\nperiodsHydrated?"}
     Check -->|"No"| Loading["loading 표시\nt.home.loadingLabel"]
     Check -->|"Error"| Error["error 표시\nt.home.errorLabel"]
@@ -52,8 +51,8 @@ flowchart TD
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
-    class Mount,Loading,Error,Empty,Normal ui;
-    class Hydrate,Check logic;
+    class Mount,Loading,Error,Empty,Normal,Done2 ui;
+    class Auth,Hydrate,Check logic;
 ```
 
 ### isEmpty 분기 상세
@@ -66,7 +65,9 @@ flowchart TD
 - **Keywords / Activities / Foods**: 각 섹션에 `EmptyHintCard` placeholder 삽입. 섹션 간 간격 `gap-12`.
 
 > 이전 `setupMode` (인라인 `SetupPeriodPicker` 캘린더 picker) 는 삭제됨.  
-> 이전 우하단 `AddPeriodFab` 도 삭제됨. 기록 진입은 `TodayDateHeading` 캘린더 아이콘으로 통일.
+> 이전 우하단 `AddPeriodFab` 도 삭제됨.  
+> 이전 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합도 제거됨 — 파일은 남아 있으나 `HomeScreen`에서 미사용.  
+> 기록 진입은 `TodayDateHeading` 캘린더 아이콘 → `PeriodSelectSheet` 로 통일.
 
 ## 데이터 흐름 (데이터 상태)
 

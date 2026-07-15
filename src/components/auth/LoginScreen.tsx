@@ -1,6 +1,6 @@
 'use client';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
@@ -8,18 +8,26 @@ import { useAuthStore, type OAuthProvider } from '@/store/authStore';
 
 export function LoginScreen() {
   const t = useT();
+  const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState<OAuthProvider | null>(null);
+  const [guestPending, setGuestPending] = useState(false);
   const authHydrate = useAuthStore((s) => s.hydrate);
   const authHydrated = useAuthStore((s) => s.hydrated);
   const authError = useAuthStore((s) => s.error);
+  const user = useAuthStore((s) => s.user);
   const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth);
+  const signInAnonymously = useAuthStore((s) => s.signInAnonymously);
 
-  // (auth) 라우트 그룹은 AppShell이 없어 hydrate가 안 됨 — 여기서 직접 트리거.
-  // 사용자가 화면을 보는 동안 백그라운드에서 익명 세션을 미리 만들어둠.
+  // (auth) 그룹은 AppShell 밖이라 여기서 직접 hydrate — 이미 살아있는 세션이면
+  // 아래 useEffect 가 곧바로 `/` 로 보내줌.
   useEffect(() => {
     if (!authHydrated) authHydrate();
   }, [authHydrate, authHydrated]);
+
+  useEffect(() => {
+    if (authHydrated && user) router.replace('/');
+  }, [authHydrated, user, router]);
 
   useEffect(() => {
     if (!authError) return;
@@ -38,6 +46,18 @@ export function LoginScreen() {
     setNotice(null);
     setPending(provider);
     void signInWithOAuth(provider);
+  };
+
+  const handleGuest = async () => {
+    if (guestPending || pending) return;
+    setNotice(null);
+    setGuestPending(true);
+    try {
+      await signInAnonymously();
+      router.replace('/');
+    } catch {
+      setGuestPending(false);
+    }
   };
 
   return (
@@ -74,12 +94,15 @@ export function LoginScreen() {
           <span>{pending === 'google' ? t.auth.signingIn : t.auth.signInWithGoogle}</span>
         </Button>
 
-        <Link
-          href="/"
-          className="mt-5 self-center rounded-sm px-2 py-1 text-base text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2"
+        <button
+          type="button"
+          onClick={handleGuest}
+          disabled={guestPending || pending !== null}
+          data-testid="guest-sign-in"
+          className="mt-5 self-center rounded-sm px-2 py-1 text-base text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2 disabled:opacity-60"
         >
-          {t.auth.continueWithoutSignIn}
-        </Link>
+          {guestPending ? t.auth.signingIn : t.auth.continueWithoutSignIn}
+        </button>
       </div>
 
       <Toast message={notice} />

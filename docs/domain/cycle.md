@@ -260,6 +260,25 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 
 ---
 
+## periodEdit.ts — 시트 편집 로직
+
+파일: `src/domain/cycle/periodEdit.ts` (+ `periodEdit.test.ts`, `periodEdit.cases.md`)
+
+`PeriodSelectSheet`가 내부적으로 유지하는 드래프트 상태를 조작하는 순수 함수 모음. 저장·저장소 호출 없음.
+
+| 함수 | 역할 |
+|---|---|
+| `toDrafts(periods)` | `PeriodLog[]` → `DraftPeriod[]` 변환 (endDate 없으면 startDate 로 대체) |
+| `findContainingDraft(drafts, d)` | `d`를 포함하는 드래프트 반환 (없으면 null) |
+| `findExtendableDraft(drafts, d, gapDays)` | `d` 이전에 끝난 기록 중 gapDays(=7) 이내에 종료된 가장 최근 것 반환 |
+| `removeDay(drafts, key, d, newKey)` | 기간에서 날짜 하나 제거 (중간이면 두 드래프트로 분리) |
+| `extendTo(drafts, key, d)` | 기간의 endDate를 `d`로 연장 후 compact |
+| `addRange(drafts, lo, hi, newKey)` | 새 범위 추가 후 compact (인접·중첩 자동 병합) |
+| `compact(drafts)` | 인접·중첩 구간 병합 (originalId 최소값 보존) |
+| `computeChanges(original, working)` | 드래프트 vs 원본 diff → `PeriodChange[]` (add / update / remove) |
+
+`PeriodChange[]`는 `HomeScreen.handlePeriodChanges`가 소비해 remove → update → add 순서로 store 메서드를 호출합니다.
+
 ## 변경 이력
 
 | 날짜 | 변경 | 영향 범위 | 상태 |
@@ -267,6 +286,7 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 | 2026-06-04 | 초기 문서화 | phase.ts, aggregate.ts, predictor.ts 로직 검증 및 문서화 | 완료 |
 | 2026-06-04 | 황체기 phase advice 카피 완충 어조로 조정 ("휴식을 추천해요" → "잠시 쉬어가도 좋아요" / "rest is recommended" → "taking it easy may help") | `home.phaseAdvice.luteal` ko/en | 완료 |
 | 2026-06-16 | `evaluateNewStart` + `SHORT_CYCLE_THRESHOLD_DAYS` 신규. shortGap 시 ShortCycleConfirmDialog 분기 (extend / replace / saveAnyway). `recordPolicy.ts` 8개 테스트 추가. | `domain/cycle/recordPolicy.ts`, `periodStore.ts` (replace, extendThrough 메서드) | 완료 |
+| 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). `PeriodSelectSheet` + `PeriodSelectSheet`가 소비. | `domain/cycle/periodEdit.ts`, `components/app/PeriodSelectSheet.tsx` | 완료 |
 
 ## 향후 계획
 

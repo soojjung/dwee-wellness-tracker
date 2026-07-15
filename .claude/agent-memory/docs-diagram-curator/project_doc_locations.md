@@ -55,10 +55,20 @@ When the exclusion list in CLAUDE.md changes:
 
 ## Removed component: SetupPeriodPicker
 
-`SetupPeriodPicker.tsx` was deleted in `feat/home-figma-pass`. The old `setupMode` inline calendar picker flow no longer exists. All first-record entry now goes through `AddPeriodFab`. If any doc references `setupMode` or `SetupPeriodPicker`, delete the reference.
+`SetupPeriodPicker.tsx` was deleted in `feat/home-figma-pass`. The old `setupMode` inline calendar picker flow no longer exists. All first-record entry now goes through `TodayDateHeading` calendar icon. If any doc references `setupMode` or `SetupPeriodPicker`, delete the reference.
 
-## Shared period-record components (added in period-record-rewrite PR)
+## Period-record components — current active pattern (2026-07-15)
 
-- `PeriodRangeDialog` (`src/components/app/PeriodRangeDialog.tsx`) — shared by `AddPeriodFab` (home) and `CalendarScreen` (calendar). Takes `{startDate, endDate}` as `AddPeriodInput`.
-- `domain/cycle/recordPolicy.ts` — pure functions `defaultPeriodEndDate` and `reconcileForNewStart`. Has paired `recordPolicy.test.ts` + `recordPolicy.cases.md`. Must remain a pure function file (no store/adapter imports).
+- `PeriodSelectSheet` (`src/components/app/PeriodSelectSheet.tsx`) — **active** bottom-sheet calendar grid. Replaces `PeriodRangeDialog` + `ShortCycleConfirmDialog` as the home-screen entry point. Tap-per-day interface; delegates draft state mutations to `domain/cycle/periodEdit.ts` pure functions.
+- `PeriodRangeDialog` / `ShortCycleConfirmDialog` — files still exist in `src/components/app/` but are **not used** by `HomeScreen`. `CalendarScreen` may still use `PeriodRangeDialog` — verify before removing files.
+- `domain/cycle/periodEdit.ts` — pure functions for draft mutation (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). Has paired `periodEdit.test.ts` + `periodEdit.cases.md`. No store/adapter imports — must stay pure.
+- `domain/cycle/recordPolicy.ts` — pure functions `defaultPeriodEndDate` and `reconcileForNewStart`. Companion to the older dialog flow.
 - `SupabaseMediaAdapter.ts` now fully implements `getTextOrder`/`setTextOrder` via `home_decor_settings.text_order`. The old "no-op TODO" note was removed from `data-layer.md`.
+
+## Auth gate pattern (2026-07-15, C4 decision)
+
+- `src/components/auth/AuthGuard.tsx` wraps `(app)/layout.tsx` and `(fullscreen)/layout.tsx`. Hydrates authStore, redirects to `/login` if `user === null`.
+- Auto-anonymous sign-in on app boot was **removed**. Cold start → `/login`. "Continue without signing in" button in `LoginScreen` explicitly calls `signInAnonymously()` then navigates to `/`.
+- Sign-out → `resetAllUserData()` → `applyRepoMode('local')` → `user = null` → `AuthGuard` redirects to `/login`. No auto anonymous re-issue.
+- `src/store/rehydrateAll.ts` — parallel-rehydrates settings / period / condition / media stores. Called by `authStore.applyRepoMode()` whenever mode flips.
+- Docs that mention "anonymous-first" or "auto-anonymous" are stale if they imply it happens without user action. Use "explicit guest tap mints anonymous session" instead.

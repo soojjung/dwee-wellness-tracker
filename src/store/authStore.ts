@@ -2,7 +2,8 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/data/adapters/supabase/client';
-import { setRepoMode, resetAllUserData } from '@/data';
+import { getRepoMode, setRepoMode, resetAllUserData, type RepoMode } from '@/data';
+import { rehydrateAllData } from './rehydrateAll';
 
 export type AuthErrorKind = 'anonFailed' | 'networkOffline' | 'missingConfig' | 'oauthFailed';
 export type OAuthProvider = 'apple' | 'google';
@@ -37,6 +38,12 @@ function classifyError(e: unknown): AuthErrorKind {
   return 'anonFailed';
 }
 
+async function applyRepoMode(nextMode: RepoMode): Promise<void> {
+  const prev = getRepoMode();
+  setRepoMode(nextMode);
+  if (prev !== nextMode) await rehydrateAllData();
+}
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   session: null,
@@ -56,8 +63,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       subscribed = true;
       supabase.auth.onAuthStateChange((_event, session) => {
         const user = session?.user ?? null;
-        setRepoMode(repoModeForUser(user));
         set({ session, user });
+        void applyRepoMode(repoModeForUser(user));
       });
     }
 
@@ -65,9 +72,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
       const user = data.session?.user ?? null;
-      setRepoMode(repoModeForUser(user));
       set({ session: data.session, user });
-      if (!data.session) await get().signInAnonymously();
+      await applyRepoMode(repoModeForUser(user));
       set({ hydrated: true, loading: false });
     } catch (e) {
       set({ error: classifyError(e), loading: false, hydrated: true });
@@ -83,8 +89,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       const { data, error } = await supabase.auth.signInAnonymously();
       if (error) throw error;
-      setRepoMode(repoModeForUser(data.user));
       set({ session: data.session, user: data.user, loading: false });
+      await applyRepoMode(repoModeForUser(data.user));
     } catch (e) {
       set({ error: classifyError(e), loading: false });
       throw e;
@@ -114,20 +120,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   async signOut() {
-    // C2: clear local cache and immediately mint a fresh anonymous
-    // session so the next user (or the same user, anonymously)
-    // starts from a clean slate. Cloud data stays untouched.
+    // Clear cloud session + wipe local cache. The user lands back
+    // at /login via AuthGuard; anonymous re-entry is an explicit
+    // "Continue without signing in" tap from there.
     await supabase.auth.signOut();
-    setRepoMode('local');
     set({ session: null, user: null });
     await resetAllUserData();
-    if (isSupabaseConfigured) {
-      try {
-        await get().signInAnonymously();
-      } catch {
-        // Network or provider hiccup — leave the user signed-out;
-        // the next app launch will retry via hydrate().
-      }
-    }
+    await applyRepoMode('local');
   },
 }));

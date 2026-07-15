@@ -75,6 +75,11 @@ export const en = {
     startPeriodStartLabel: 'Start date',
     startPeriodEndLabel: 'End date',
     startPeriodSave: 'Save',
+    periodSheet: {
+      title: 'Log period',
+      closeAria: 'Close',
+      saveAria: 'Save',
+    },
     setupDone: 'Save',
     setupRemove: 'Remove',
     cancel: 'Cancel',
