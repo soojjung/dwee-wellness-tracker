@@ -5,16 +5,12 @@ import { PageContainer } from '@/components/ui/PageContainer';
 import { Toast } from '@/components/ui/Toast';
 import { usePeriodStore } from '@/store/periodStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { currentPhase } from '@/domain/cycle/phase';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
-import { evaluateNewStart } from '@/domain/cycle/recordPolicy';
-import type { PeriodLog } from '@/types';
-import { PeriodRangeDialog, type AddPeriodInput } from './PeriodRangeDialog';
-import {
-  ShortCycleConfirmDialog,
-  type ShortCycleChoice,
-} from './ShortCycleConfirmDialog';
+import { PeriodSelectSheet } from './PeriodSelectSheet';
+import type { PeriodChange } from '@/domain/cycle/periodEdit';
 import { generateInsights } from '@/lib/insight/generator';
 import { todayISO, daysBetween, addDaysISO } from '@/lib/date';
 import { InsightCard } from './InsightCard';
@@ -30,7 +26,6 @@ import { EmptyHintCard } from './EmptyHintCard';
 
 const TOAST_MS = 2400;
 const INSIGHT_LOOKBACK_DAYS = 90;
-const LONG_PERIOD_NOTICE_DAYS = 7;
 
 export function HomeScreen() {
   const t = useT();
@@ -42,32 +37,30 @@ export function HomeScreen() {
   const periodsError = usePeriodStore((s) => s.error);
   const hydratePeriods = usePeriodStore((s) => s.hydrate);
   const addPeriod = usePeriodStore((s) => s.add);
-
-  const replacePeriod = usePeriodStore((s) => s.replace);
-  const extendThrough = usePeriodStore((s) => s.extendThrough);
+  const updatePeriod = usePeriodStore((s) => s.update);
+  const removePeriod = usePeriodStore((s) => s.remove);
 
   const settings = useSettingsStore((s) => s.settings);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const updateSettings = useSettingsStore((s) => s.update);
+
+  const authHydrated = useAuthStore((s) => s.hydrated);
 
   const conditionMap = useConditionStore((s) => s.byDate);
   const hydrateRange = useConditionStore((s) => s.hydrateRange);
 
   const [toast, setToast] = useState<string | null>(null);
   const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
-  const [pendingPeriod, setPendingPeriod] = useState<AddPeriodInput | null>(null);
-  const [shortCyclePrior, setShortCyclePrior] = useState<{
-    priorPeriod: PeriodLog;
-    daysSincePrior: number;
-  } | null>(null);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!periodsHydrated) hydratePeriods();
-  }, [periodsHydrated, hydratePeriods]);
+  }, [authHydrated, periodsHydrated, hydratePeriods]);
 
   useEffect(() => {
+    if (!authHydrated) return;
     hydrateRange(addDaysISO(today, -INSIGHT_LOOKBACK_DAYS), today);
-  }, [hydrateRange, today]);
+  }, [authHydrated, hydrateRange, today]);
 
   useEffect(() => {
     if (!toast) return;
@@ -98,65 +91,27 @@ export function HomeScreen() {
     ? daysBetween(today, prediction.predictedDate)
     : null;
 
-  async function commitNewPeriod(input: AddPeriodInput) {
-    const created = await addPeriod(input);
-    if (!created) return;
-    if (!settings.onboardingCompleted) {
+  async function handlePeriodChanges(changes: PeriodChange[]) {
+    for (const c of changes) {
+      if (c.kind === 'remove') await removePeriod(c.id);
+    }
+    for (const c of changes) {
+      if (c.kind === 'update') {
+        await updatePeriod(c.id, { startDate: c.startDate, endDate: c.endDate });
+      }
+    }
+    for (const c of changes) {
+      if (c.kind === 'add') {
+        await addPeriod({ startDate: c.startDate, endDate: c.endDate });
+      }
+    }
+    if (changes.length > 0 && !settings.onboardingCompleted) {
       await updateSettings({ onboardingCompleted: true });
     }
-  }
-
-  async function handleStartPeriod(input: AddPeriodInput) {
-    const evaluation = evaluateNewStart(periods, input.startDate);
-    if (evaluation.kind === 'idempotent') {
-      setPeriodDialogOpen(false);
-      return;
-    }
-    if (evaluation.kind === 'shortGap') {
-      setPendingPeriod(input);
-      setShortCyclePrior({
-        priorPeriod: evaluation.priorPeriod,
-        daysSincePrior: evaluation.daysSincePrior,
-      });
-      setPeriodDialogOpen(false);
-      return;
-    }
-    await commitNewPeriod(input);
     setPeriodDialogOpen(false);
   }
 
-  async function handleShortCycleChoice(choice: ShortCycleChoice) {
-    const input = pendingPeriod;
-    const prior = shortCyclePrior;
-    if (!input || !prior) return;
-    if (choice === 'extend') {
-      await extendThrough(prior.priorPeriod.id, input.endDate);
-      const priorEnd = prior.priorPeriod.endDate;
-      const resolvedEnd = priorEnd && priorEnd > input.endDate ? priorEnd : input.endDate;
-      const lengthDays = daysBetween(prior.priorPeriod.startDate, resolvedEnd) + 1;
-      if (lengthDays > LONG_PERIOD_NOTICE_DAYS) {
-        setToast(
-          `${t.home.shortCycle.longPeriodNoticePrefix}${lengthDays}${t.home.shortCycle.longPeriodNoticeSuffix}`,
-        );
-      }
-    } else if (choice === 'replace') {
-      await replacePeriod(prior.priorPeriod.id, input);
-      if (!settings.onboardingCompleted) {
-        await updateSettings({ onboardingCompleted: true });
-      }
-    } else {
-      await commitNewPeriod(input);
-    }
-    setPendingPeriod(null);
-    setShortCyclePrior(null);
-  }
-
-  function handleShortCycleCancel() {
-    setPendingPeriod(null);
-    setShortCyclePrior(null);
-  }
-
-  if (!settingsHydrated || (periodsLoading && !periodsHydrated)) {
+  if (!authHydrated || !settingsHydrated || (periodsLoading && !periodsHydrated)) {
     return (
       <PageContainer>
         <p className="text-sm text-neutral-500">{t.home.loadingLabel}</p>
@@ -245,21 +200,11 @@ export function HomeScreen() {
       <Toast message={toast} />
 
       {periodDialogOpen ? (
-        <PeriodRangeDialog
-          initialStartDate={today}
-          defaultPeriodLength={settings.averagePeriodLength}
+        <PeriodSelectSheet
           today={today}
-          onSubmit={handleStartPeriod}
+          periods={periods}
+          onSubmit={handlePeriodChanges}
           onCancel={() => setPeriodDialogOpen(false)}
-        />
-      ) : null}
-
-      {shortCyclePrior ? (
-        <ShortCycleConfirmDialog
-          priorStartDate={shortCyclePrior.priorPeriod.startDate}
-          daysSincePrior={shortCyclePrior.daysSincePrior}
-          onChoose={handleShortCycleChoice}
-          onCancel={handleShortCycleCancel}
         />
       ) : null}
     </PageContainer>

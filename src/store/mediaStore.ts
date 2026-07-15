@@ -24,6 +24,7 @@ interface MediaState {
   loading: boolean;
   error: string | null;
   hydrate: () => Promise<void>;
+  rehydrate: () => Promise<void>;
   setPhotoCount: (count: PhotoCount) => Promise<void>;
   setPhoto: (slot: PhotoSlot, blob: Blob) => Promise<void>;
   clearPhoto: (slot: PhotoSlot) => Promise<void>;
@@ -61,6 +62,11 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
   hydrated: false,
   loading: false,
   error: null,
+
+  async rehydrate() {
+    set({ hydrated: false });
+    await get().hydrate();
+  },
 
   async hydrate() {
     set({ loading: true, error: null });

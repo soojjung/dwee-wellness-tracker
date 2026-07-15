@@ -65,7 +65,7 @@ a rewrite.
 | **Local-first (IndexedDB primary)** | Cloud-first                   | Records must work offline and survive auth changes. Cloud is a sync target, not a dependency.             |
 | **Repository + Adapter pattern**    | Direct Supabase SDK in stores | Interface boundaries let me swap backends and run tests without network.                                  |
 | **Pure-function domain layer**      | Cycle math inside components  | Isolating the riskiest logic makes Vitest coverage cheap and prevents UI re-renders from corrupting math. |
-| **Anonymous-first auth**            | Forced account creation       | Reduces first-run friction; account linking is deferred until the user has data worth syncing.            |
+| **Login-gate on first entry**       | Anonymous auto-start          | Forces the sign-in screen on every cold start; anonymous ("Continue without signing in") is an explicit guest tap that mints an anonymous session, not a silent default.   |
 | **`Dictionary = typeof en` i18n**   | Runtime fallback              | Catches missing translations at `tsc --noEmit`.                                                           |
 | **Server-side LLM (Edge Function)** | Client-side LLM               | Keeps API key, rate limit, and prompt off the client; swap models without a new bundle.                   |
 | **Visual snapshots for UI**         | Component snapshot tests      | Cycle phase × locale combinations are where visual bugs hide. The matrix gates merges.                    |
@@ -74,7 +74,7 @@ a rewrite.
 
 ## Local-First Sync Strategy
 
-**Today:** writes go to IndexedDB synchronously; UI re-reads from local. Apple and Google OAuth sign-in are active — signing in triggers a one-shot local → Supabase migration, then the Supabase adapter takes over for that session. Anonymous users stay on IndexedDB.
+**Today:** writes go to IndexedDB synchronously; UI re-reads from local. Cold start always lands on `/login`; "Continue without signing in" mints an anonymous Supabase session (stays on IndexedDB). Apple and Google OAuth sign-in trigger a one-shot local → Supabase migration, then the Supabase adapter takes over. Sign-out wipes the local cache and returns to `/login` — no automatic anonymous re-issue. All four data stores rehydrate whenever the repo mode flips (sign-in, sign-out, session restore).
 
 **Planned:**
 
@@ -181,7 +181,7 @@ Solo project. End-to-end ownership of:
 
 ## Status & Stack
 
-**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase auth is live — Apple and Google OAuth active, anonymous → OAuth migration wired. Background sync and multi-device conflict resolution are next.
+**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase auth is live — login gate on every cold start, Apple and Google OAuth active, anonymous → OAuth migration wired, 4-store rehydrate on mode switch. Background sync and multi-device conflict resolution are next.
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript strict · Zustand · IndexedDB (`idb-keyval`) · Supabase (Postgres + Auth + Edge Functions) · Tailwind · react-hook-form · Vitest · Playwright · Capacitor 6 (iOS).
 

@@ -24,7 +24,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 ### MVP2 (진행 중)
 
-6. **Supabase 인증** — 익명 세션으로 시작, Apple/Google OAuth 로그인 시 로컬 데이터 1회 마이그레이션 후 클라우드 전환
+6. **Supabase 인증** — 첫 진입 시 `/login` 강제 게이트. "로그인 없이 계속"은 익명 세션을 명시적으로 발급(자동 발급 아님). Apple/Google OAuth 로그인 시 로컬 데이터 1회 마이그레이션 후 클라우드 전환. 로그아웃 시 로컬 캐시 초기화 후 `/login` 복귀.
 7. **클라우드 동기화** — 로컬(IndexedDB) 우선 + 백그라운드 sync (hybrid)
 8. **다기기 사용** — 같은 계정으로 여러 기기 패턴 유지
 
@@ -217,7 +217,7 @@ src/
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
 │   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, ReportView, exportReport
-│   ├── auth/                     LoginScreen
+│   ├── auth/                     LoginScreen, AuthGuard
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer
 │
 ├── store/                        Zustand: period / condition / settings / media / auth / bookmark
@@ -294,7 +294,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 ### MVP2 — 진행 중
 
 - [x] **MVP2.1 — Supabase 기반 셋업** (auth store, 익명 로그인, 어댑터 src/ 이동)
-- [x] **MVP2.2 — Supabase 어댑터 wiring** (`data/index.ts` 분기 완료, Apple/Google OAuth 활성화, 로컬→클라우드 1회 마이그레이션 완료)
+- [x] **MVP2.2 — Supabase 어댑터 wiring + 로그인 게이트** (`data/index.ts` 분기 완료, Apple/Google OAuth 활성화, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 강제, 로그아웃 후 `/login` 복귀, 4 스토어 rehydrate)
 - [ ] MVP2.3~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 
 ### 매거진 (MVP 병행)

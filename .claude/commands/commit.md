@@ -260,27 +260,28 @@ EOF
 
 ## STEP 8 — Figma 스냅샷 동기화 (dwee 전용)
 
-`tests/snapshots/ko/*.png` 변경이 있으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 트리거 없으면 skip.
+`tests/snapshots/ko/*.png` 변경이 **방금 만든 커밋 (STEP 6) 안에** 있으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 트리거 없으면 skip.
 
 > **스코프 규칙** :
 >
+> - **커밋 범위 한정 (2026-07-15)**: 반드시 `HEAD~1..HEAD` (직전 커밋 하나) 기준으로만 판단. 브랜치에 쌓인 이전 커밋들의 baseline 은 sync 대상 아님 — 이미 이전 /commit 실행 때 처리됐거나 사용자가 이번에 건드리지 않은 파일.
 > - **포함 대상**: 디자인 레퍼런스로 의미 있는 화면 baseline. 기본적으로 `tests/snapshots/ko/*.png` 전부.
 > - **제외**: `customize-*` / `log-*` / `photo-edit-*` — e2e 시각 회귀 전용이며 Figma 디자인 레퍼런스 대상 아님.
-> - **date drift 가드**: src/ 변경이 동반되지 않은 PR (예: baseline 만 갱신된 케이스) 에서는 Modified baselines 은 sync 안 함. 신규 baseline (status A) 은 항상 sync.
+> - **date drift 가드**: src/ 변경이 이번 커밋에 없으면 (예: baseline 만 갱신된 커밋) Modified baselines 은 sync 안 함. 신규 baseline (status A) 은 항상 sync.
 
 ### 트리거 확인
 
 ```bash
 EXCLUDE='/(customize|log|photo-edit)-'
-# 신규 baseline (항상 sync)
-git diff --name-only --diff-filter=A origin/main...HEAD -- 'tests/snapshots/ko/*.png' | grep -vE "$EXCLUDE"
-# 변경된 baseline — src/ 변경이 있는 PR 에서만 sync
-if git diff --name-only origin/main...HEAD -- 'src/**' | head -1 | grep -q .; then
-  git diff --name-only --diff-filter=M origin/main...HEAD -- 'tests/snapshots/ko/*.png' | grep -vE "$EXCLUDE"
+# 신규 baseline (항상 sync) — 이번 커밋에서 추가된 것만
+git diff --name-only --diff-filter=A HEAD~1..HEAD -- 'tests/snapshots/ko/*.png' | grep -vE "$EXCLUDE"
+# 변경된 baseline — 이번 커밋에 src/ 변경이 함께 있을 때만 sync
+if git diff --name-only HEAD~1..HEAD -- 'src/**' | head -1 | grep -q .; then
+  git diff --name-only --diff-filter=M HEAD~1..HEAD -- 'tests/snapshots/ko/*.png' | grep -vE "$EXCLUDE"
 fi
 ```
 
-두 출력 모두 비어있으면 이 STEP 통째로 스킵하고 STEP 9 진행. 합친 목록이 sync 대상.
+두 출력 모두 비어있으면 이 STEP 통째로 스킵하고 STEP 9 진행. 합친 목록이 sync 대상 — **이 목록 밖 baseline 은 이번 커밋에서 손 안 댔으므로 절대 건드리지 않음**.
 
 ### 동기화 상수 (dwee 프로젝트 고정)
 
