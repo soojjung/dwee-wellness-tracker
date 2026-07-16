@@ -19,7 +19,7 @@ import { HomeHero } from './HomeHero';
 import { TodayDateHeading } from './TodayDateHeading';
 import { CalendarAddIcon } from './CalendarAddIcon';
 import { PhaseAdvicePill } from './PhaseAdvicePill';
-import { KeywordCards } from './KeywordCards';
+import { ScratchKeywordCard } from './ScratchKeywordCard';
 import { ActivitySuggestions } from './ActivitySuggestions';
 import { FoodSuggestions } from './FoodSuggestions';
 import { EmptyHintCard } from './EmptyHintCard';
@@ -166,7 +166,7 @@ export function HomeScreen() {
           {isEmpty ? (
             <EmptyHintCard body={t.home.empty.keywords} />
           ) : (
-            <KeywordCards phase={phase.phase} />
+            <ScratchKeywordCard phase={phase.phase} today={today} />
           )}
         </section>
 
