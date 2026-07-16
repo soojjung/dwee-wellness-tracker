@@ -1,6 +1,6 @@
 # 홈 화면 플로우
 
-> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,KeywordCards,ActivitySuggestions,FoodSuggestions,TodayDateHeading,CalendarAddIcon,PeriodSelectSheet}.tsx`, `src/app/(app)/page.tsx`
+> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,ScratchKeywordCard,ActivitySuggestions,FoodSuggestions,TodayDateHeading,CalendarAddIcon,PeriodSelectSheet}.tsx`, `src/app/(app)/page.tsx`
 
 ## 생리 기록 진입점
 
@@ -106,8 +106,8 @@ flowchart LR
 
 ## ActivitySuggestions / FoodSuggestions 구조
 
-- **ActivitySuggestions**: chip 필터 탭(카테고리별) + 카드 그리드. `src/data/homeImagery.ts`의 `ACTIVITY_CATEGORY_KEYS` 순서 기반.
-- **FoodSuggestions**: 원형 카드 carousel. phase 기반 음식 목록을 `home.foods.{phase}` i18n 키에서 조회.
+- **ActivitySuggestions**: chip 필터 탭(카테고리별: emotion / exercise / work / selfcare) + 톤 순환 카드(gray → pink → dark → gray). 각 카드는 제목·인라인 이모지·설명·duration pill(`durationMinutes` + `t.home.durationSuffix`)을 표시. `src/data/homeImagery.ts`의 `ACTIVITY_CATEGORY_KEYS` 순서 기반.
+- **FoodSuggestions**: 그릇 컴포지션(bowl illustration) — 그릇 하단 고정, 음식 이모지 4개가 그릇 상단에 회전값 적용되어 겹쳐 배치됨. 각 이모지 위에 dark pill 라벨. phase 기반 음식 목록은 `home.foods.{phase}` i18n 키에서 조회.
 
 ## 검증 케이스
 

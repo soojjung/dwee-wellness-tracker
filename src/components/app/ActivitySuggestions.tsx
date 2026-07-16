@@ -13,6 +13,9 @@ interface ActivitySuggestionsProps {
   phase: CyclePhase;
 }
 
+type CardTone = 'gray' | 'pink' | 'dark';
+const TONE_CYCLE: ReadonlyArray<CardTone> = ['gray', 'pink', 'dark', 'gray'];
+
 export function ActivitySuggestions({ phase }: ActivitySuggestionsProps) {
   const t = useT();
   const items = t.home.activities[phase].items;
@@ -22,7 +25,7 @@ export function ActivitySuggestions({ phase }: ActivitySuggestionsProps) {
     const first = ACTIVITY_CATEGORY_KEYS.find((key) =>
       items.some((item) => item.categoryKey === key),
     );
-    return first ?? 'selfcare';
+    return first ?? 'emotion';
   }, [items]);
 
   const [selected, setSelected] = useState<ActivityCategoryKey>(defaultCategory);
@@ -45,7 +48,7 @@ export function ActivitySuggestions({ phase }: ActivitySuggestionsProps) {
                   'rounded-full px-3 py-2 text-sm transition-colors',
                   active
                     ? 'bg-brand-gray900 font-semibold text-brand-white'
-                    : 'bg-brand-gray300 font-medium text-brand-gray900',
+                    : 'border border-brand-gray300 font-medium text-brand-gray600',
                 )}
               >
                 {tabs[key]}
@@ -59,18 +62,16 @@ export function ActivitySuggestions({ phase }: ActivitySuggestionsProps) {
         <p className="text-sm text-brand-gray600">{t.home.activitiesEmptyCategory}</p>
       ) : (
         <div className="-mx-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-max gap-6 px-5">
-            {chunkPairs(visibleItems).map((pair, columnIndex) => (
-              <div key={columnIndex} className="flex w-[300px] flex-col gap-4">
-                {pair.map((item) => (
-                  <ActivityCard
-                    key={item.id}
-                    id={item.id}
-                    title={item.title}
-                    description={item.description}
-                  />
-                ))}
-              </div>
+          <div className="flex w-max gap-2.5 px-5 pb-1">
+            {visibleItems.map((item, i) => (
+              <ActivityToneCard
+                key={item.id}
+                tone={TONE_CYCLE[i % TONE_CYCLE.length] ?? 'gray'}
+                emoji={activityVisual(item.id).emoji}
+                title={item.title}
+                description={item.description}
+                durationLabel={`${item.durationMinutes}${t.home.durationSuffix}`}
+              />
             ))}
           </div>
         </div>
@@ -79,38 +80,62 @@ export function ActivitySuggestions({ phase }: ActivitySuggestionsProps) {
   );
 }
 
-interface ActivityCardProps {
-  id: string;
+interface ActivityToneCardProps {
+  tone: CardTone;
+  emoji: string;
   title: string;
   description: string;
+  durationLabel: string;
 }
 
-function ActivityCard({ id, title, description }: ActivityCardProps) {
-  const visual = activityVisual(id);
+function ActivityToneCard({ tone, emoji, title, description, durationLabel }: ActivityToneCardProps) {
+  const dark = tone === 'dark';
+  const bg =
+    tone === 'gray'
+      ? 'bg-brand-gray300'
+      : tone === 'pink'
+      ? 'bg-brand-pink50'
+      : 'bg-brand-gray900';
+  const durationPill =
+    tone === 'gray'
+      ? 'bg-brand-gray500 text-brand-white'
+      : tone === 'pink'
+      ? 'bg-brand-pink100 text-brand-white'
+      : 'bg-brand-gray800 text-brand-white';
   return (
-    <div className="flex items-center gap-4">
-      <div
+    <div
+      className={cn(
+        'flex w-[170px] shrink-0 flex-col justify-between gap-8 rounded-2xl p-4',
+        bg,
+      )}
+    >
+      <span
         className={cn(
-          'flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-2xl border-brand-pink100 text-3xl',
-          visual.bg,
+          'inline-flex w-fit items-center justify-center rounded-full px-2 py-1 text-xs font-medium',
+          durationPill,
         )}
-        aria-hidden
       >
-        {visual.emoji}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <p className="text-xl font-semibold text-brand-gray900">{title}</p>
-        <p className="text-sm leading-relaxed text-brand-gray800">{description}</p>
+        {durationLabel}
+      </span>
+      <div className="flex flex-col gap-1.5">
+        <p
+          className={cn(
+            'flex items-center gap-1.5 text-lg font-semibold leading-snug',
+            dark ? 'text-brand-white' : 'text-brand-gray900',
+          )}
+        >
+          <span>{title}</span>
+          <span aria-hidden>{emoji}</span>
+        </p>
+        <p
+          className={cn(
+            'text-xs leading-relaxed',
+            dark ? 'text-brand-gray300' : 'text-brand-gray800',
+          )}
+        >
+          {description}
+        </p>
       </div>
     </div>
   );
-}
-
-function chunkPairs<T>(arr: ReadonlyArray<T>): T[][] {
-  const PAIR_SIZE = 3;
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += PAIR_SIZE) {
-    result.push(arr.slice(i, i + PAIR_SIZE));
-  }
-  return result;
 }

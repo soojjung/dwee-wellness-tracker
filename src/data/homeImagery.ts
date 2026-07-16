@@ -1,4 +1,4 @@
-export const ACTIVITY_CATEGORY_KEYS = ['selfcare', 'exercise', 'emotion'] as const;
+export const ACTIVITY_CATEGORY_KEYS = ['emotion', 'exercise', 'work', 'selfcare'] as const;
 export type ActivityCategoryKey = (typeof ACTIVITY_CATEGORY_KEYS)[number];
 
 interface Visual {
@@ -47,6 +47,16 @@ const ACTIVITY_VISUAL: Record<string, Visual> = {
   'gentle-move-u': { emoji: '🕊️', bg: 'bg-brand-pink50' },
   'favorite-moment-u': { emoji: '🎁', bg: 'bg-brand-pink50' },
   'warm-drink-u': { emoji: '🍵', bg: 'bg-brand-pink50' },
+  'focus-simple-m': { emoji: '🗂️', bg: 'bg-brand-pink50' },
+  'admin-inbox-m': { emoji: '📥', bg: 'bg-brand-pink50' },
+  'brainstorm-f': { emoji: '💭', bg: 'bg-brand-pink50' },
+  'plan-week-f': { emoji: '🗓️', bg: 'bg-brand-pink50' },
+  'present-idea-o': { emoji: '🎤', bg: 'bg-brand-pink50' },
+  'lead-meeting-o': { emoji: '🤝', bg: 'bg-brand-pink50' },
+  'organize-task-l': { emoji: '🗃️', bg: 'bg-brand-pink50' },
+  'review-week-l': { emoji: '📓', bg: 'bg-brand-pink50' },
+  'light-task-u': { emoji: '✅', bg: 'bg-brand-pink50' },
+  'review-list-u': { emoji: '📋', bg: 'bg-brand-pink50' },
 };
 
 const FOOD_VISUAL: Record<string, Visual> = {
@@ -65,7 +75,7 @@ const FOOD_VISUAL: Record<string, Visual> = {
   'dark-choco-l': { emoji: '🍫', bg: 'bg-brand-pink50' },
   'sweet-potato-l': { emoji: '🍠', bg: 'bg-brand-pink50' },
   'fiber-banana-l': { emoji: '🍌', bg: 'bg-brand-pink50' },
-  'calm-tea-l': { emoji: '🌼', bg: 'bg-brand-pink50' },
+  'calm-tea-l': { emoji: '🍵', bg: 'bg-brand-pink50' },
   'cooked-warm-u': { emoji: '🍚', bg: 'bg-brand-pink50' },
   'fresh-simple-u': { emoji: '🍎', bg: 'bg-brand-pink50' },
   'hydration-u': { emoji: '💧', bg: 'bg-brand-pink50' },
