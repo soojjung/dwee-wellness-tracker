@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEscToClose } from '@/hooks/useEscToClose';
 import { fromISO } from '@/lib/date';
 import { Button } from '@/components/ui/Button';
 
@@ -45,6 +47,9 @@ export function ShortCycleConfirmDialog({
     if (submitting) return;
     onCancel();
   }
+
+  useBodyScrollLock();
+  useEscToClose(handleCancel);
 
   return (
     <div

@@ -4,8 +4,8 @@ const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal', 'unknown'] as 
 const LOCALES = ['en', 'ko'] as const;
 
 const KEYWORDS_TITLE: Record<(typeof LOCALES)[number], string> = {
-  en: 'Today’s keywords',
-  ko: '오늘의 키워드는',
+  en: 'Your keyword right now',
+  ko: '지금 필요한 키워드는',
 };
 
 type Phase = (typeof PHASES)[number];
@@ -51,6 +51,12 @@ function attachErrorGuards(page: Page) {
 }
 
 async function seedAndOpenHome(page: Page, phase: Phase, locale: Locale) {
+  // Enable the dev auth bypass on every navigation of this page. Without this,
+  // authStore.hydrate() would query Supabase on each fresh document load and
+  // reset the synthetic anon user, dropping us back on /login.
+  await page.addInitScript(() => {
+    (window as unknown as { __dweeTestAnon?: boolean }).__dweeTestAnon = true;
+  });
   await page.goto('/');
   await page.waitForFunction(
     () => typeof window.__dweeSeedPhase === 'function',
@@ -61,7 +67,12 @@ async function seedAndOpenHome(page: Page, phase: Phase, locale: Locale) {
     async ({ phase, locale }) => window.__dweeSeedPhase!(phase, locale),
     { phase, locale },
   );
-  await page.reload();
+  // seedForPhase sets a synthetic anon user in the in-memory Zustand store.
+  // A `page.reload()` would re-run `authStore.hydrate()` and wipe that user,
+  // dropping us back on /login. Instead, wait for LoginScreen's auto-redirect
+  // (fires when it observes the user) to land on `/`, then wait for the
+  // keywords section to render off the freshly-seeded IndexedDB data.
+  await page.waitForURL((url) => url.pathname === '/', { timeout: 15_000 });
   await page.waitForSelector(`text=${KEYWORDS_TITLE[locale]}`, { timeout: 15_000 });
   // Settle layout / fonts.
   await page.waitForTimeout(400);

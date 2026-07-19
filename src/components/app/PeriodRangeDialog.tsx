@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEscToClose } from '@/hooks/useEscToClose';
 import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
 
 export interface AddPeriodInput {
@@ -60,6 +62,9 @@ export function PeriodRangeDialog({
     if (submitting) return;
     onCancel();
   }
+
+  useBodyScrollLock();
+  useEscToClose(handleCancel);
 
   return (
     <div

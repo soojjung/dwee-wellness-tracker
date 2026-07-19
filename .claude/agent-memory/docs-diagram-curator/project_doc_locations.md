@@ -57,6 +57,17 @@ When the exclusion list in CLAUDE.md changes:
 
 `SetupPeriodPicker.tsx` was deleted in `feat/home-figma-pass`. The old `setupMode` inline calendar picker flow no longer exists. All first-record entry now goes through `TodayDateHeading` calendar icon. If any doc references `setupMode` or `SetupPeriodPicker`, delete the reference.
 
+## New dirs and rules added (2026-07-20, feat/home-dday-modal-rules)
+
+- `src/hooks/` — new dir for reusable custom hooks. Current contents: `useBodyScrollLock.ts`, `useEscToClose.ts`. Any new shared modal hook goes here.
+- `.claude/rules/modals.md` — new rule file covering modal/dialog/bottom-sheet conventions: two required hooks (`useBodyScrollLock`, `useEscToClose`), backdrop click, scroll container structure, a11y (`role="dialog"`, `aria-modal`, `aria-labelledby`), z-index (`z-40` normal / `z-50` stacked), opacity. README.ko.md folder tree lists it in `.claude/rules/` block.
+- `src/domain/cycle/fertile.ts` — new pure function `predictFertileWindow(predictedDate, predictionConfidence)`. Returns `{ start, end } | null`. Integrated into `WeekStrip.tsx` as `predictedFertile` CycleState.
+- `src/dev/DevBridge.tsx` + `src/dev/ensureAnon.ts` — e2e test bridges (dev-only, excluded from production bundle). `DevBridge.tsx` registers `window.__dweeSeedPhase` and `window.__dweeTestAnon` globals. Moved from `AppShell` to root `layout.tsx` so `/login` route also gets the bridge.
+
+## WeekStrip CycleState (as of 2026-07-20)
+
+Four states: `'actualPeriod' | 'predictedPeriod' | 'predictedFertile' | null`. Priority: actual > predicted period > predicted fertile > default. Fertile uses lavender tokens (`brand-lavender100` border, `brand-lavender400` text). Documented in `docs/flows/home.md` §"WeekStrip 색상 분기".
+
 ## Period-record components — current active pattern (2026-07-15)
 
 - `PeriodSelectSheet` (`src/components/app/PeriodSelectSheet.tsx`) — **active** bottom-sheet calendar grid. Replaces `PeriodRangeDialog` + `ShortCycleConfirmDialog` as the home-screen entry point. Tap-per-day interface; delegates draft state mutations to `domain/cycle/periodEdit.ts` pure functions.

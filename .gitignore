@@ -23,6 +23,8 @@ android
 
 # claude code personal settings (commit settings.json, rules, CLAUDE.md)
 .claude/settings.local.json
+# claude harness runtime state — session-specific, not project code
+.claude/scheduled_tasks.lock
 
 # playwright (per-run output; baselines under tests/snapshots/ are committed)
 test-results/

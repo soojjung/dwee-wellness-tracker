@@ -19,18 +19,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!bookmarksHydrated) hydrateBookmarks();
   }, [hydrateSettings, settingsHydrated, hydrateAuth, authHydrated, hydrateBookmarks, bookmarksHydrated]);
 
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-    import('@/dev/seedForPhase').then(({ seedForPhase }) => {
-      (window as unknown as { __dweeSeedPhase?: typeof seedForPhase }).__dweeSeedPhase =
-        seedForPhase;
-    });
-    import('@/dev/seedPhotos').then(({ seedPhotos }) => {
-      (window as unknown as { __dweeSeedPhotos?: typeof seedPhotos }).__dweeSeedPhotos =
-        seedPhotos;
-    });
-  }, []);
-
   return (
     <div className="flex min-h-dvh flex-col bg-brand-gray50">
       <main className="mx-auto w-full max-w-md flex-1 pb-32">{children}</main>

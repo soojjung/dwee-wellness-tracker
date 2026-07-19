@@ -43,6 +43,9 @@ function attachErrorGuards(page: Page) {
 }
 
 async function seedAndOpenLog(page: Page, phase: Phase, locale: Locale) {
+  await page.addInitScript(() => {
+    (window as unknown as { __dweeTestAnon?: boolean }).__dweeTestAnon = true;
+  });
   await page.goto('/');
   await page.waitForFunction(
     () => typeof window.__dweeSeedPhase === 'function',
@@ -53,6 +56,9 @@ async function seedAndOpenLog(page: Page, phase: Phase, locale: Locale) {
     async ({ phase, locale }) => window.__dweeSeedPhase!(phase, locale),
     { phase, locale },
   );
+  // LoginScreen auto-redirects to `/` when it detects a user. Wait for that
+  // redirect to settle before the next goto so navigation isn't interrupted.
+  await page.waitForURL((url) => url.pathname === '/', { timeout: 5_000 }).catch(() => {});
   await page.goto('/log');
   await page.waitForSelector(`text=${TITLE[locale]}`, { timeout: 15_000 });
   await page.waitForTimeout(400);

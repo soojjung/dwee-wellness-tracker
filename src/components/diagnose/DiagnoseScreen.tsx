@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEscToClose } from '@/hooks/useEscToClose';
 import { fileToBase64, supportedMediaType } from '@/lib/image/fileToBase64';
 import { analyzeBodyType } from '@/data/services/bodyTypeService';
 import type { BodyTypeAnalyzeError, SupportedImageMediaType } from '@/types';
@@ -337,13 +339,8 @@ function GuideSection({
 function ConsentModal({ onCancel, onAgree }: { onCancel: () => void; onAgree: () => void }) {
   const t = useT();
   const c = t.magazine.diagnose.consent;
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  useBodyScrollLock();
+  useEscToClose(onCancel);
   return (
     <div
       onClick={(e) => {

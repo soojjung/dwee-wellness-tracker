@@ -1,7 +1,8 @@
 'use client';
-import { useEffect } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEscToClose } from '@/hooks/useEscToClose';
 import { formatKR } from '@/lib/date';
 import type { DailyConditionLog } from '@/types';
 
@@ -34,13 +35,8 @@ export function DayDetailSheet({
 }: DayDetailSheetProps) {
   const t = useT();
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useBodyScrollLock();
+  useEscToClose(onClose);
 
   const conditionRows = condition
     ? buildConditionRows(condition, t.condition, t.log)
