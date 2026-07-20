@@ -1,7 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
-import { cn } from '@/lib/cn';
 import type { CyclePhase } from '@/domain/cycle/types';
 
 interface ScratchKeywordCardProps {
@@ -169,30 +168,17 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
       </div>
 
       {!revealed ? (
-        <>
-          <canvas
-            ref={canvasRef}
-            role="img"
-            aria-label={t.home.scratchCanvasAria}
-            className="absolute inset-0 h-full w-full touch-none cursor-pointer"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerEnd}
-            onPointerCancel={onPointerEnd}
-            onPointerLeave={onPointerEnd}
-          />
-          <button
-            type="button"
-            onClick={revealNow}
-            aria-label={t.home.scratchRevealAria}
-            className={cn(
-              'absolute bottom-3 right-3 rounded-full bg-brand-gray900/80 px-3 py-1.5 text-xs font-medium text-brand-white',
-              'backdrop-blur-sm transition-colors hover:bg-brand-gray900',
-            )}
-          >
-            {t.home.scratchRevealAria}
-          </button>
-        </>
+        <canvas
+          ref={canvasRef}
+          role="img"
+          aria-label={t.home.scratchCanvasAria}
+          className="absolute inset-0 h-full w-full touch-none cursor-pointer"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerEnd}
+          onPointerCancel={onPointerEnd}
+          onPointerLeave={onPointerEnd}
+        />
       ) : null}
     </div>
   );

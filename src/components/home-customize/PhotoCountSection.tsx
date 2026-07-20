@@ -34,8 +34,8 @@ export function PhotoCountSection({ selected, onSelect }: PhotoCountSectionProps
                   'flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl py-4 transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
                   isSelected
-                    ? 'bg-brand-pink50'
-                    : 'bg-brand-gray300 hover:bg-brand-gray400/40',
+                    ? 'border-[0.75px] border-brand-pink200 bg-brand-pink50'
+                    : 'border-[0.75px] border-brand-gray400 bg-transparent hover:bg-brand-gray200',
                 )}
               >
                 <PhotoLayoutIcon count={count} />

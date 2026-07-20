@@ -5,7 +5,7 @@
 // clone quirks (see tests/photo-edit.spec.ts for the WebKit/Playwright
 // limitation that currently keeps the matching spec skipped).
 import { ensureMigrations, mediaRepo } from '@/data';
-import { PHOTO_SLOTS, type PhotoCount } from '@/domain/home/decor';
+import { slotsForCount, type PhotoCount } from '@/domain/home/decor';
 
 const COLORS = ['#FBB7D8', '#FDE2EF', '#F689BC', '#FBD0DE'];
 
@@ -30,8 +30,9 @@ export async function seedPhotos(count: PhotoCount): Promise<void> {
   if (process.env.NODE_ENV === 'production') return;
   await ensureMigrations();
   await mediaRepo.setPhotoCount(count);
+  const slots = slotsForCount(count);
   for (let i = 0; i < count; i++) {
-    const slot = PHOTO_SLOTS[i]!;
+    const slot = slots[i]!;
     const canvasBlob = await makeColoredJpegBlob(COLORS[i % COLORS.length]!);
     const buf = await canvasBlob.arrayBuffer();
     const blob = new Blob([buf], { type: 'image/jpeg' });

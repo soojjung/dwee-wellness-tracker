@@ -226,7 +226,7 @@ src/
 │
 ├── data/                         어댑터 패턴
 │   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark)
-│   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v4, 현재 wiring)
+│   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v5, 현재 wiring)
 │   ├── adapters/supabase/        원격 구현 (Supabase JS, 인증 사용자에게 wiring 완료)
 │   └── index.ts                  단일 진입점
 │
