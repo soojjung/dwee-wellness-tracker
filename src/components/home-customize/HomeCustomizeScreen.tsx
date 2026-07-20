@@ -1,30 +1,26 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
+import { cn } from '@/lib/cn';
 import { useMediaStore } from '@/store/mediaStore';
 import { usePeriodStore } from '@/store/periodStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { currentPhase } from '@/domain/cycle/phase';
 import { todayISO } from '@/lib/date';
-import { DEFAULT_TEXT_ORDER, type PhotoCount, type PhotoSlot } from '@/domain/home/decor';
-import { CropDialog } from '@/components/app/CropDialog';
+import { DEFAULT_TEXT_ORDER, slotsForCount, type PhotoCount } from '@/domain/home/decor';
 import { HomeCustomizeHeader } from './HomeCustomizeHeader';
 import { PhotoCountSection } from './PhotoCountSection';
-import { PhotoSlotPicker } from './PhotoSlotPicker';
+import { PhotoPreviewGrid } from './PhotoPreviewGrid';
 import { TextSettingsSection } from './TextSettingsSection';
 import { HomeCustomizeFooter } from './HomeCustomizeFooter';
-
-interface Pending {
-  src: string;
-  naturalWidth: number;
-  naturalHeight: number;
-}
 
 export function HomeCustomizeScreen() {
   const t = useT();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const pickTargetRef = useRef<PhotoCount | null>(null);
 
   const hydrated = useMediaStore((s) => s.hydrated);
   const hydrate = useMediaStore((s) => s.hydrate);
@@ -32,6 +28,7 @@ export function HomeCustomizeScreen() {
   const photoUrls = useMediaStore((s) => s.photoUrls);
   const setPhotoCount = useMediaStore((s) => s.setPhotoCount);
   const setPhoto = useMediaStore((s) => s.setPhoto);
+  const clearPhoto = useMediaStore((s) => s.clearPhoto);
   const textPosition = useMediaStore((s) => s.textPosition);
   const mainText = useMediaStore((s) => s.mainText);
   const subText = useMediaStore((s) => s.subText);
@@ -48,8 +45,6 @@ export function HomeCustomizeScreen() {
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
 
-  const [targetSlot, setTargetSlot] = useState<PhotoSlot | null>(null);
-  const [pending, setPending] = useState<Pending | null>(null);
   const [localMain, setLocalMain] = useState('');
   const [localSub, setLocalSub] = useState('');
   const initRef = useRef(false);
@@ -60,12 +55,6 @@ export function HomeCustomizeScreen() {
     if (!periodsHydrated) hydratePeriods();
     if (!settingsHydrated) hydrateSettings();
   }, [hydrated, hydrate, periodsHydrated, hydratePeriods, settingsHydrated, hydrateSettings]);
-
-  useEffect(() => {
-    return () => {
-      if (pending) URL.revokeObjectURL(pending.src);
-    };
-  }, [pending]);
 
   const phaseResult = useMemo(
     () => currentPhase(todayISO(), periods, settings),
@@ -94,38 +83,37 @@ export function HomeCustomizeScreen() {
 
   async function handleSelectCount(count: PhotoCount) {
     await setPhotoCount(count);
-  }
-
-  function handleSlotPick(slot: PhotoSlot) {
-    setTargetSlot(slot);
+    const targetSlots = slotsForCount(count);
+    const missing = targetSlots.some((s) => !photoUrls[s]);
+    if (!missing) return;
+    pickTargetRef.current = count;
     fileRef.current?.click();
   }
 
   async function handleFilesPicked(files: FileList) {
-    const [file] = Array.from(files);
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    const size = await readImageSize(url);
-    setPending({ src: url, naturalWidth: size.width, naturalHeight: size.height });
+    const target = pickTargetRef.current;
+    pickTargetRef.current = null;
+    if (!target) return;
+    const targetSlots = slotsForCount(target);
+    const picked = Array.from(files).slice(0, target);
+    for (let i = 0; i < target; i++) {
+      const slot = targetSlots[i]!;
+      const file = picked[i];
+      if (file) {
+        await setPhoto(slot, file);
+      } else {
+        await clearPhoto(slot);
+      }
+    }
+    if (picked.length === target) {
+      router.push('/home/customize/edit-photos');
+    }
   }
 
-  async function handleCropConfirm(blob: Blob) {
-    if (targetSlot !== null) await setPhoto(targetSlot, blob);
-    if (pending) URL.revokeObjectURL(pending.src);
-    setPending(null);
-    setTargetSlot(null);
-  }
-
-  function handleCropCancel() {
-    if (pending) URL.revokeObjectURL(pending.src);
-    setPending(null);
-    setTargetSlot(null);
-  }
-
-  const filledSlots = photoCount
-    ? photoUrls.slice(0, photoCount).filter(Boolean).length
-    : 0;
-  const submitEnabled = photoCount !== null && filledSlots === photoCount && !pending;
+  const activeSlots = photoCount ? slotsForCount(photoCount) : [];
+  const activeUrls = activeSlots.map((s) => photoUrls[s] ?? null);
+  const allFilled = photoCount !== null && activeUrls.every((u) => !!u);
+  const submitEnabled = allFilled;
 
   async function handleSubmit() {
     if (!submitEnabled) return;
@@ -140,13 +128,19 @@ export function HomeCustomizeScreen() {
         <HomeCustomizeHeader />
         <main className="flex-1">
           <PhotoCountSection selected={photoCount} onSelect={handleSelectCount} />
-          {photoCount ? (
+          {allFilled && photoCount ? (
             <div className="px-4">
-              <PhotoSlotPicker
-                count={photoCount}
-                urls={photoUrls.slice(0, photoCount)}
-                onSlotPick={handleSlotPick}
-              />
+              <PhotoPreviewGrid count={photoCount} urls={activeUrls} />
+              <Link
+                href="/home/customize/edit-photos"
+                className={cn(
+                  'mt-6 flex items-center justify-center gap-2 rounded-2xl bg-brand-gray300 py-4 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/40',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
+                )}
+              >
+                <CropIcon />
+                {t.home.customize.photo.editButton}
+              </Link>
             </div>
           ) : null}
           <TextSettingsSection
@@ -169,6 +163,7 @@ export function HomeCustomizeScreen() {
         ref={fileRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         onChange={(e) => {
           const files = e.target.files;
@@ -176,25 +171,14 @@ export function HomeCustomizeScreen() {
           e.target.value = '';
         }}
       />
-
-      {pending ? (
-        <CropDialog
-          src={pending.src}
-          naturalWidth={pending.naturalWidth}
-          naturalHeight={pending.naturalHeight}
-          onConfirm={handleCropConfirm}
-          onCancel={handleCropCancel}
-        />
-      ) : null}
     </div>
   );
 }
 
-function readImageSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = reject;
-    img.src = src;
-  });
+function CropIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 1v11a1 1 0 001 1h11M1 4h11a1 1 0 011 1v11" />
+    </svg>
+  );
 }

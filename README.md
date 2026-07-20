@@ -173,7 +173,7 @@ Solo project. End-to-end ownership of:
 ## Future Scalability Considerations
 
 - **Conflict policy:** LWW is fine for one user × few devices. Multi-author records (partner view) would need per-field merge or CRDTs.
-- **Schema migrations:** IndexedDB is on schema v4, versioned but untested under real data drift. A real rollout needs a forward-only migration log with failure telemetry.
+- **Schema migrations:** IndexedDB is on schema v5, versioned but untested under real data drift. A real rollout needs a forward-only migration log with failure telemetry.
 - **Observability:** no production error pipeline yet. Sentry or a Supabase log table is the first step before opening signups.
 - **Multi-region:** Supabase region is fixed. For international launch I'd evaluate edge caching for magazine content (the hot read path) before sharding user data.
 

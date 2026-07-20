@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useT } from '@/i18n/useT';
 import { useMediaStore } from '@/store/mediaStore';
+import { slotsForCount } from '@/domain/home/decor';
 import { PhotoLayout } from '@/components/home-customize/PhotoLayout';
 import { HomeHeroText } from './HomeHeroText';
 
@@ -26,7 +27,9 @@ export function HomeHero({ isEmpty = false }: HomeHeroProps) {
   }, [hydrated, hydrate]);
 
   const activePhotos = photoCount
-    ? photoUrls.slice(0, photoCount).filter((u): u is string => !!u)
+    ? slotsForCount(photoCount)
+        .map((s) => photoUrls[s])
+        .filter((u): u is string => !!u)
     : [];
   const isCustom = photoCount !== null && activePhotos.length === photoCount;
 

@@ -29,7 +29,7 @@ src/data/
 │   ├── PeriodRepository.ts         : list(), add(), update(), remove()
 │   ├── ConditionRepository.ts      : getByDate(), upsert(), range()
 │   ├── SettingsRepository.ts       : get(), update()
-│   ├── MediaRepository.ts          : getPhotoCount/setPhotoCount, getHomePhoto/setHomePhoto/clearHomePhoto (slot×4),
+│   ├── MediaRepository.ts          : getPhotoCount/setPhotoCount, getHomePhoto/setHomePhoto/clearHomePhoto (slot 0–6, per-count ranges),
 │   │                                 getTextPosition/setTextPosition, getMainText/setMainText,
 │   │                                 getSubText/setSubText, getTextOrder/setTextOrder
 │   └── BookmarkRepository.ts       : list(), add(), remove(), has()
@@ -41,9 +41,9 @@ src/data/
     │   ├── IndexedDBSettingsAdapter.ts
     │   ├── IndexedDBMediaAdapter.ts
     │   ├── IndexedDBBookmarkAdapter.ts
-    │   ├── keys.ts                 ← STORAGE_KEYS / DEPRECATED_KEYS / CURRENT_SCHEMA_VERSION (현재 v4)
-    │   └── migrations.ts           ← v1→v4 순차 실행 (v3: home_hero blob → slot 0 이주)
-    └── supabase/                   ← Supabase로 구현한 어댑터들 (MVP2.2 wiring 예정)
+    │   ├── keys.ts                 ← STORAGE_KEYS / DEPRECATED_KEYS / CURRENT_SCHEMA_VERSION (현재 v5)
+    │   └── migrations.ts           ← v1→v5 순차 실행 (v3: home_hero blob → slot 0 이주, v5: slot 0–3 공유 → count별 범위 분리)
+    └── supabase/                   ← Supabase로 구현한 어댑터들 (MVP2.2 wiring 완료 — 인증 사용자에게 활성)
         ├── client.ts
         ├── SupabasePeriodAdapter.ts
         ├── SupabaseConditionAdapter.ts
@@ -191,7 +191,7 @@ import type { PeriodLog } from '@/types';
 - `.claude/rules/storage.md` — 저장소 규칙 가드레일
 - `src/data/index.ts` — 단일 진입점
 - `src/data/repositories/*.ts` — Repository 인터페이스 (Period / Condition / Settings / Media / Bookmark)
-- `src/data/adapters/indexeddb/*.ts` — 로컬 구현 (현재 wiring, schema v4)
+- `src/data/adapters/indexeddb/*.ts` — 로컬 구현 (현재 wiring, schema v5)
 - `src/data/adapters/supabase/*.ts` — 원격 구현 (MVP2.2 wiring 예정)
 - `src/domain/home/decor.ts` — PhotoCount / PhotoSlot / TextPosition / TextOrder 타입·상수
 - `src/store/mediaStore.ts` — MediaRepository 소비 store

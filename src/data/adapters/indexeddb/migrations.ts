@@ -1,5 +1,13 @@
 import { del, get, set } from 'idb-keyval';
-import { STORAGE_KEYS, DEPRECATED_KEYS, CURRENT_SCHEMA_VERSION } from './keys';
+import {
+  STORAGE_KEYS,
+  DEPRECATED_KEYS,
+  CURRENT_SCHEMA_VERSION,
+  LEGACY_PHOTO_SLOTS,
+  legacyMediaPhotoKey,
+  type LegacyPhotoSlot,
+} from './keys';
+import { slotsForCount, type PhotoCount } from '@/domain/home/decor';
 
 type Migration = () => Promise<void>;
 
@@ -22,6 +30,30 @@ const migrations: Record<number, Migration> = {
   },
   4: async () => {
     /* Adds text-position + main/sub text keys. No data to migrate. */
+  },
+  5: async () => {
+    // Split the shared slot 0..3 storage into per-count slot ranges so that
+    // switching photo counts preserves each set (count=1→[0], 2→[1,2], 4→[3..6]).
+    // Existing blobs move to the range matching whatever count they were saved under.
+    const legacyBlobs = new Map<LegacyPhotoSlot, Blob | undefined>();
+    for (const s of LEGACY_PHOTO_SLOTS) {
+      const blob = await get<Blob>(legacyMediaPhotoKey(s));
+      if (blob) legacyBlobs.set(s, blob);
+    }
+    if (legacyBlobs.size === 0) return;
+
+    const rawCount = await get<number>(STORAGE_KEYS.mediaPhotoCount);
+    const count: PhotoCount = rawCount === 2 || rawCount === 4 ? rawCount : 1;
+    const targetSlots = slotsForCount(count);
+
+    for (const legacySlot of LEGACY_PHOTO_SLOTS) {
+      await del(legacyMediaPhotoKey(legacySlot));
+    }
+    for (let i = 0; i < targetSlots.length; i++) {
+      const legacyBlob = legacyBlobs.get(i as LegacyPhotoSlot);
+      if (!legacyBlob) continue;
+      await set(STORAGE_KEYS.mediaPhoto(targetSlots[i]!), legacyBlob);
+    }
   },
 };
 
