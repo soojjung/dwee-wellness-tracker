@@ -140,7 +140,7 @@ See [`.claude/`](./.claude/) for implementation details.
 | Layer              | Tool                  | Coverage                                                                                     |
 | ------------------ | --------------------- | -------------------------------------------------------------------------------------------- |
 | Pure domain logic  | Vitest                | `domain/cycle/*`, `lib/insight/*`, `lib/date/*`. Each spec paired with a `*.cases.md` table. |
-| Visual regression  | Playwright            | 5 phases × 2 locales across Home, /log, Customize, Photo Edit.                               |
+| Visual regression  | Playwright            | 5 phases × 2 locales across Home, /log, Magazine, Customize, Photo Edit.                     |
 | Runtime guardrails | Playwright            | Console / pageerror guard fails on any unhandled error.                                      |
 | Types              | `tsc --noEmit` strict | Zero `any` in prod code; missing i18n keys fail the build.                                   |
 

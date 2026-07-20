@@ -2,6 +2,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEscToClose } from '@/hooks/useEscToClose';
 
 const OUTPUT_SIZE = 1280;
 const MIN_USER_SCALE = 1;
@@ -25,6 +27,9 @@ export function CropDialog({
   const t = useT();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [viewport, setViewport] = useState(0);
+
+  useBodyScrollLock();
+  useEscToClose(onCancel);
 
   const [userScale, setUserScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });

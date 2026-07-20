@@ -50,6 +50,8 @@ const config: Config = {
           gray800: '#585657',
           gray900: '#353434',
           white: '#FFFDFE',
+          lavender100: '#D1C5EE',
+          lavender400: '#7D5ACF',
         },
         nav: {
           pillBg: 'rgba(255,253,254,0.8)',

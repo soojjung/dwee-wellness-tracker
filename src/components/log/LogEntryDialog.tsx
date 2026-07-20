@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEscToClose } from '@/hooks/useEscToClose';
 import { usePeriodStore } from '@/store/periodStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
@@ -94,6 +96,9 @@ export function LogEntryDialog({
     if (submitting) return;
     onClose();
   }
+
+  useBodyScrollLock();
+  useEscToClose(handleClose);
 
   return (
     <div

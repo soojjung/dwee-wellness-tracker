@@ -89,6 +89,20 @@ export const en = {
     dDaySuffix: 'd',
     dDayNone: 'Prediction pending',
     weekdays: { sun: 'S', mon: 'M', tue: 'T', wed: 'W', thu: 'T', fri: 'F', sat: 'S' },
+    weekdaysLong: {
+      sun: 'Sunday',
+      mon: 'Monday',
+      tue: 'Tuesday',
+      wed: 'Wednesday',
+      thu: 'Thursday',
+      fri: 'Friday',
+      sat: 'Saturday',
+    },
+    stateLabel: {
+      actualPeriod: 'Period day',
+      predictedPeriod: 'Predicted period',
+      predictedFertile: 'Fertile window',
+    },
     phaseAdvice: {
       menstrual: 'You might need a little extra rest today',
       follicular: 'Your energy is starting to pick up',

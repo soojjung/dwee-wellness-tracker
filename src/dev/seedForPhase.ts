@@ -24,6 +24,10 @@ const DAYS_AGO_BY_PHASE: Record<PhaseKind, number | null> = {
 
 export async function seedForPhase(phase: PhaseKind, locale: Locale = 'en') {
   if (process.env.NODE_ENV === 'production') return;
+  // AuthGuard redirects to /login when no user is present. Synthesize an anon
+  // user directly in state (see ensureAnon.ts for why we skip Supabase).
+  const { ensureAnon } = await import('./ensureAnon');
+  await ensureAnon();
   await ensureMigrations();
   await resetAllUserData();
   await settingsRepo.update({

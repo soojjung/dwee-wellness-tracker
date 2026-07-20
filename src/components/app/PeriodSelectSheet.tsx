@@ -4,6 +4,8 @@ import { addMonths, format, getDay, getDaysInMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEscToClose } from '@/hooks/useEscToClose';
 import { addDaysISO, fromISO, toISO, type ISODate } from '@/lib/date';
 import { CancelIcon } from '@/components/ui/icons/CancelIcon';
 import { CheckIcon } from '@/components/ui/icons/CheckIcon';
@@ -108,6 +110,9 @@ export function PeriodSelectSheet({
     currentMonthRef.current?.scrollIntoView({ block: 'center' });
   }, []);
 
+  useBodyScrollLock();
+  useEscToClose(handleCancel);
+
   function handleCellClick(date: ISODate) {
     if (date > today) return;
 
@@ -196,11 +201,11 @@ export function PeriodSelectSheet({
           </button>
         </div>
 
-        <div className="flex justify-center gap-1.5 bg-brand-white px-4 py-2 text-[12px] font-medium text-brand-gray700">
+        <div className="mx-auto grid w-full max-w-[358px] grid-cols-7 gap-1.5 bg-brand-white px-4 py-2 text-[12px] font-medium text-brand-gray700">
           {WEEKDAY_KEYS.map((k, i) => (
             <span
               key={k}
-              className={`w-[46px] text-center ${i === 0 || i === 6 ? 'text-brand-gray500' : ''}`}
+              className={`text-center ${i === 0 || i === 6 ? 'text-brand-gray500' : ''}`}
             >
               {t.home.weekdays[k]}
             </span>
@@ -214,7 +219,7 @@ export function PeriodSelectSheet({
             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0, black 40px)',
           }}
         >
-          <div className="mx-auto flex w-[358px] flex-col gap-6">
+          <div className="mx-auto flex w-full max-w-[358px] flex-col gap-6">
             {months.map((m, idx) => {
               const isCurrent = idx === months.length - 1;
               return (
@@ -228,7 +233,7 @@ export function PeriodSelectSheet({
                   </p>
                   <div className="flex flex-col gap-3">
                     {m.weeks.map((week, wi) => (
-                      <div key={wi} className="flex justify-center gap-1.5">
+                      <div key={wi} className="grid grid-cols-7 gap-1.5">
                         {week.map((cell, ci) => (
                           <DayCell
                             key={ci}
@@ -261,7 +266,7 @@ interface DayCellProps {
 }
 
 function DayCell({ date, today, recordedSet, pendingStart, onClick }: DayCellProps) {
-  if (!date) return <div className="h-10 w-[46px]" aria-hidden />;
+  if (!date) return <div className="h-10 w-full" aria-hidden />;
   const day = Number(date.slice(-2));
   const isToday = date === today;
   const isFuture = date > today;
@@ -294,7 +299,7 @@ function DayCell({ date, today, recordedSet, pendingStart, onClick }: DayCellPro
       onClick={() => onClick(date)}
       disabled={isFuture}
       aria-pressed={isRecorded || isPendingStart}
-      className={`flex h-10 w-[46px] items-center justify-center text-[16px] font-medium ${
+      className={`flex h-10 w-full items-center justify-center text-[16px] font-medium ${
         isFuture ? 'cursor-default' : 'cursor-pointer'
       } focus-visible:outline-none`}
     >

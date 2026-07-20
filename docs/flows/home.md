@@ -97,12 +97,17 @@ flowchart LR
 
 ## WeekStrip 색상 분기
 
-| 날짜 유형 | 배경 | 텍스트 |
-|-----------|------|--------|
-| 실제 생리 기록 | `brand-pink100` | `brand-pink900` |
-| 예측 생리일 | `brand-pink50` | `brand-pink800` |
-| 오늘 (isEmpty) | `brand-pink50` | `brand-pink800` |
-| 오늘 (데이터 있음) | 위 분류 우선, 없으면 강조 원 | — |
+WeekStrip은 날짜마다 `CycleState`(`'actualPeriod' | 'predictedPeriod' | 'predictedFertile' | null`)를 계산하고 우선순위 순(실제 생리 > 예측 생리 > 예측 가임기 > 기본)으로 스타일을 적용합니다.
+
+| 날짜 유형 (`CycleState`) | 외곽선 | 배경 | 텍스트 |
+|--------------------------|--------|------|--------|
+| `actualPeriod` — 실제 생리 기록 | 없음 | `brand-pink100` (fill) | `brand-pink900` |
+| `predictedPeriod` — 예측 생리일 | `brand-pink100` (outline) | 없음 | `brand-pink800` |
+| `predictedFertile` — 예측 가임기 | `brand-lavender100` (outline) | 없음 | `brand-lavender400` |
+| `null` / 오늘 (isEmpty) | 없음 | `brand-pink50` (today circle) | `brand-pink800` |
+| `null` / 오늘 (데이터 있음, 해당 없음) | 강조 원 | 위 분류 우선 | — |
+
+가임기 예측은 `domain/cycle/fertile.ts`의 `predictFertileWindow(predictedDate, predictionConfidence)` 순수 함수가 담당하며, `predictionConfidence`가 낮으면 null을 반환해 weekeStrip에 표시하지 않습니다.
 
 ## ActivitySuggestions / FoodSuggestions 구조
 

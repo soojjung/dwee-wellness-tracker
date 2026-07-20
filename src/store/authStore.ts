@@ -53,6 +53,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   async hydrate() {
     if (get().hydrated || get().loading) return;
+    // Dev-only test bypass: e2e tests set this flag via addInitScript so every
+    // navigation replays a synthetic anon user without hitting Supabase (which
+    // rate-limits anonymous sign-ups). See src/dev/ensureAnon.ts.
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      typeof window !== 'undefined' &&
+      (window as unknown as { __dweeTestAnon?: boolean }).__dweeTestAnon
+    ) {
+      const { ensureAnon } = await import('@/dev/ensureAnon');
+      await ensureAnon();
+      await applyRepoMode('local');
+      set({ hydrated: true, loading: false });
+      return;
+    }
     if (!isSupabaseConfigured) {
       set({ error: 'missingConfig', hydrated: true });
       return;

@@ -42,6 +42,9 @@ function attachErrorGuards(page: Page) {
 }
 
 async function seedAndOpenPhotoEdit(page: Page, locale: Locale) {
+  await page.addInitScript(() => {
+    (window as unknown as { __dweeTestAnon?: boolean }).__dweeTestAnon = true;
+  });
   await page.goto('/');
   await page.waitForFunction(
     () =>
@@ -54,6 +57,9 @@ async function seedAndOpenPhotoEdit(page: Page, locale: Locale) {
     await window.__dweeSeedPhase!('unknown', locale);
     await window.__dweeSeedPhotos!(4);
   }, { locale });
+  // LoginScreen auto-redirects to `/` when it detects a user. Wait for that
+  // redirect to settle before the next goto so navigation isn't interrupted.
+  await page.waitForURL((url) => url.pathname === '/', { timeout: 5_000 }).catch(() => {});
   await page.goto('/home/customize/edit-photos');
   await page.waitForSelector(`text=${TITLE[locale]}`, { timeout: 15_000 });
   await page.waitForTimeout(800);

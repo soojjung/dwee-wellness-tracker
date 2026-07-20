@@ -79,6 +79,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 ├── rules/                   도메인별 규약 (CLAUDE.md 가 80줄 넘으면 여기로 이전)
 │   ├── cycle-logic.md       주기 도메인 계산 규칙
 │   ├── health-copy.md       헬스 카피 톤 / 의료 단언 금지
+│   ├── modals.md            모달·다이얼로그·바텀시트 작성 규칙 (훅 2개 필수, 백드롭, a11y, z-index)
 │   ├── screens.md           화면 분리 / hydrate 패턴
 │   └── storage.md           Repository · Adapter 패턴
 │
@@ -101,6 +102,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 | `tests/home.spec.ts` | 홈 | Figma "Snapshots (ko)" 자동 동기화 대상 |
 | `tests/customize.spec.ts` | 홈 커스터마이즈 | e2e baseline 전용 |
 | `tests/log.spec.ts` | 생리 기록(/log) | e2e baseline 전용 |
+| `tests/magazine.spec.ts` | 매거진 | e2e baseline 전용 |
 | `tests/photo-edit.spec.ts` | 사진 편집 | **skipped** — Playwright WebKit이 IndexedDB에 Blob을 저장할 때 null DOMException을 던지는 Playwright-only 버그. 실제 Safari/WKWebView·Chromium은 정상 동작. |
 
 ```mermaid
@@ -229,16 +231,21 @@ src/
 │   └── index.ts                  단일 진입점
 │
 ├── domain/
-│   ├── cycle/                    순수 함수: aggregate, predictor, phase
+│   ├── cycle/                    순수 함수: aggregate, predictor, phase, fertile window
 │   └── home/                     decor 타입·상수 (PhotoCount, TextPosition 등)
 ├── lib/
 │   ├── date/                     날짜 유틸
 │   ├── insight/                  rule-based 인사이트 생성
 │   └── cn.ts                     clsx + tailwind-merge
 │
+├── hooks/                        재사용 커스텀 훅
+│   ├── useBodyScrollLock.ts      모달 오픈 시 body 스크롤 잠금 (count-based, 중첩 OK)
+│   └── useEscToClose.ts          Esc 키로 모달 닫기
 ├── i18n/                         ko / en 사전 + useT()
 ├── constants/                    공용 상수 (copy 등)
-├── dev/                          개발/테스트 전용 시드 헬퍼
+├── dev/                          개발/테스트 전용 시드 헬퍼 (프로덕션 번들 제외)
+│   ├── DevBridge.tsx             e2e 테스트용 window 브릿지 (dev only)
+│   ├── ensureAnon.ts             e2e 익명 세션 보장 헬퍼
 │   ├── seedData.ts               샘플 데이터 (수동 dev 사용)
 │   ├── seedForPhase.ts           Playwright phase 시드 (window.__dweeSeedPhase)
 │   └── seedPhotos.ts             Playwright 사진 시드 (window.__dweeSeedPhotos)

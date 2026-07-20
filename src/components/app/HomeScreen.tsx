@@ -139,6 +139,7 @@ export function HomeScreen() {
           today={today}
           periods={periods}
           predictedDate={prediction.predictedDate}
+          predictionConfidence={prediction.confidence}
           daysUntilNext={daysUntilNext}
           averagePeriodLength={settings.averagePeriodLength}
           isEmpty={isEmpty}
