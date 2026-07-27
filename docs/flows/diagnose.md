@@ -72,10 +72,10 @@ stateDiagram-v2
 
 | 탭 | 내용 |
 |----|------|
-| **체형 탭** (BodyTab) | 키워드 뱃지 · 주요 특징 · 골격(frame) 단락들(bone visibility / shoulders / collarbones / skin texture / muscle tone / waist/hip position / center of gravity) · 비율(proportions) |
-| **스타일 가이드 탭** (StyleTab) | 가로 스크롤 clothing card 4장 (tops · bottoms · dresses · outerwear), fit criteria (good/bad), 스타일 details 그리드 (neckline · sleeves · waistDetail · length), materials (recommended/avoid) |
+| **체형 탭** (BodyTab) | "핵심 특징" 섹션 (이모지 불릿 keyTraits + 해시태그 chips) + 5개 단락 (골격 / 살성 / 라인 / 비율 / 시각적 무게중심) |
+| **스타일 가이드 탭** (StyleTab) | 체형별 정적 요약 블록 (quote + 포인트 3줄 + 해시태그 3개, `styleSummary.*` i18n 키) + 의류 카드 4장 (tops · bottoms · dresses · outerwear) + 스타일 카드 2장 (materials · fit) + 디테일 2×2 그리드 (neckline · sleeves · waistDetail · length) |
 
-상단 Hero 영역은 핑크 배경 + 체형 PNG 이미지(`straight.png` / `wave.png` / `natural.png`) + 체형명·typeSuffix·keyTrait 첫 줄.
+상단 Hero 영역은 어두운 배경(`brand-gray900`) + 우측에 크롭/줌된 컷아웃 초상 이미지(`straight-cutout.png` / `wave-cutout.png` / `natural-cutout.png`) + 체형명·typeSubtitle·keyTrait 첫 줄. 헤더에는 우측 상단 다운로드 아이콘 오버레이가 있으며, 다시하기 pill 은 `ReportView` 내부에 배치됩니다.
 
 ---
 
@@ -149,4 +149,5 @@ flowchart TD
 - `supabase/migrations/0003_body_type_calls.sql` — 일일 호출 카운터 테이블 + RLS
 - `docs/components/modal.md` — ConsentModal 이 따르는 공통 모달 설계 규칙
 - `supabase/README.md` — Edge Function 배포·시크릿 설정 절차
-- `public/magazine/personal-body-type/{straight,wave,natural}.png` — 체형별 히어로 이미지
+- `public/magazine/personal-body-type/{straight,wave,natural}.png` — 체형별 전신 배경 이미지
+- `public/magazine/personal-body-type/{straight,wave,natural}-cutout.png` — Hero 우측 컷아웃 초상 이미지
