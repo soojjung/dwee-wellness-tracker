@@ -279,6 +279,44 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 
 `PeriodChange[]`는 `HomeScreen.handlePeriodChanges`가 소비해 remove → update → add 순서로 store 메서드를 호출합니다.
 
+## classifyCycleStatus — 주기 상태 판정
+
+파일: `src/domain/cycle/status.ts` (+ `status.test.ts`, `status.cases.md`)
+
+`/log` 화면의 주기리포트에서 최근 기록을 바탕으로 7단계 상태 코드 중 하나를 반환하는 순수 함수.
+
+### 반환 타입
+
+```typescript
+interface CycleStatusResult {
+  status: CycleStatus;          // 7단계 코드 (아래 표)
+  confidence: Confidence;       // 'unknown' | 'low' | 'medium' | 'high'
+  averageCycleDays: number | null;
+  cycleRangeDays: number | null;
+  latestPeriodLengthDays: number | null;
+}
+```
+
+### 판정 우선순위
+
+| 우선순위 | status | 기준 |
+|---|---|---|
+| 1 | `insufficient` | `periods.length < 3` |
+| 2 | `shortPeriod` | 최근 완료 기간 ≤ 2일 |
+| 3 | `longPeriod` | 최근 완료 기간 ≥ 8일 |
+| 4 | `irregular` | 주기 변동폭 ≥ 15일 |
+| 5 | `slightlyIrregular` | 주기 변동폭 8~14일 |
+| 6 | `stable` | 기간 3~7일 + 주기 21~35일 + 변동폭 ≤ 7일 |
+| 7 | `regular` | 위 조건 외 나머지 |
+
+- 이상치 필터: 주기 `[15, 60]일`, 기간 `[1, 14]일` — aggregate.ts 와 동일.
+- `confidence`: gap 수 기준 — 0개: `unknown`, 1개: `low`, 2개: `medium`, 3개+: `high`.
+- 표시 문자열은 화면이 `t.report.status[status]` 로 조립. 이 함수는 문자열 반환 금지.
+
+상세 판정 기준: `.claude/rules/cycle-logic.md §8`
+
+---
+
 ## 변경 이력
 
 | 날짜 | 변경 | 영향 범위 | 상태 |
@@ -287,6 +325,7 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 | 2026-06-04 | 황체기 phase advice 카피 완충 어조로 조정 ("휴식을 추천해요" → "잠시 쉬어가도 좋아요" / "rest is recommended" → "taking it easy may help") | `home.phaseAdvice.luteal` ko/en | 완료 |
 | 2026-06-16 | `evaluateNewStart` + `SHORT_CYCLE_THRESHOLD_DAYS` 신규. shortGap 시 ShortCycleConfirmDialog 분기 (extend / replace / saveAnyway). `recordPolicy.ts` 8개 테스트 추가. | `domain/cycle/recordPolicy.ts`, `periodStore.ts` (replace, extendThrough 메서드) | 완료 |
 | 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). `PeriodSelectSheet` + `PeriodSelectSheet`가 소비. | `domain/cycle/periodEdit.ts`, `components/app/PeriodSelectSheet.tsx` | 완료 |
+| 2026-07-28 | `classifyCycleStatus` 신규 — 7단계 주기 상태 판정. 10개 Vitest 케이스. `/log` 화면 주기리포트(CycleReportScreen)에서 소비. | `domain/cycle/status.ts`, `components/report/StatusBadge.tsx` | 완료 |
 
 ## 향후 계획
 

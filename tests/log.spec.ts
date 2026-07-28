@@ -3,8 +3,8 @@ import { test, expect, type Page } from '@playwright/test';
 const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal', 'unknown'] as const;
 
 const TITLE: Record<'en' | 'ko', string> = {
-  en: 'My period log',
-  ko: '내 생리 기록',
+  en: 'Cycle report',
+  ko: '주기리포트',
 };
 
 type Phase = (typeof PHASES)[number];

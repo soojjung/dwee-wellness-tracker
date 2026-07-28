@@ -101,7 +101,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 |------|------|------|
 | `tests/home.spec.ts` | 홈 | Figma "Snapshots (ko)" 자동 동기화 대상 |
 | `tests/customize.spec.ts` | 홈 커스터마이즈 | e2e baseline 전용 |
-| `tests/log.spec.ts` | 생리 기록(/log) | e2e baseline 전용 |
+| `tests/log.spec.ts` | 주기리포트(/log) | e2e baseline 전용 |
 | `tests/magazine.spec.ts` | 매거진 | e2e baseline 전용 |
 | `tests/photo-edit.spec.ts` | 사진 편집 | **skipped** — Playwright WebKit이 IndexedDB에 Blob을 저장할 때 null DOMException을 던지는 Playwright-only 버그. 실제 Safari/WKWebView·Chromium은 정상 동작. |
 
@@ -202,7 +202,7 @@ src/
 │   │   └── login/
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
-│   │   ├── log/                  생리 기록 이력 + 컨디션·생리 통합 입력
+│   │   ├── log/                  주기리포트 (CycleReportScreen) — 상태 배지 + 차트 + 최근 주기 목록
 │   │   ├── calendar/             캘린더
 │   │   ├── magazine/             매거진 글 목록
 │   │   └── settings/             설정 (언어 등)

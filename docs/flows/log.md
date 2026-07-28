@@ -1,17 +1,21 @@
-# /log 화면 플로우
+# /log 화면 플로우 — 주기리포트
 
-> 위치: `src/app/(app)/log/page.tsx`, `src/components/log/`
+> 위치: `src/app/(app)/log/page.tsx`, `src/components/report/`
 
 AppShell + BottomTabNav 아래의 `(app)` 라우트 그룹에 속합니다.
+하단 탭 레이블: **Diary / 다이어리** (이전: Today / 오늘).
 
 ---
 
 ## 화면 구조
 
-`/log` 는 두 영역으로 구성됩니다.
+`/log` 는 `<CycleReportScreen />` 을 렌더합니다. 구성 요소:
 
-1. **PeriodHistorySection** — 생리 기록 이력 조회 (캘린더 / 목록 전환 가능, 읽기 전용).
-2. **LogEntryFab + LogEntryDialog** — 생리 기간 + 오늘 컨디션을 한 번에 기록.
+1. **ReportHeader** — 화면 제목 + 우상단 새 기록 버튼 (LogEntryDialog 트리거).
+2. **StatusBadge** — `classifyCycleStatus()` 결과를 7단계 코드(`stable` / `regular` / `slightlyIrregular` / `irregular` / `shortPeriod` / `longPeriod` / `insufficient`)로 표시. 탭하면 StatusTooltip이 열림.
+3. **CycleChart** — 최근 주기 길이 시계열 차트.
+4. **RecentCyclesCard** — 최근 생리 기록 목록 (날짜 + 기간).
+5. **CycleReportEmpty** — 기록이 없을 때 안내.
 
 ---
 
@@ -19,72 +23,62 @@ AppShell + BottomTabNav 아래의 `(app)` 라우트 그룹에 속합니다.
 
 ```mermaid
 flowchart TD
-  Mount["LogPage 마운트"] --> PHS["PeriodHistorySection\n(항상 노출)"]
-  Mount --> FAB["LogEntryFab\n(항상 노출, 우하단 고정)"]
+    Mount(["CycleReportScreen 마운트"])
+    HasPeriods{periods > 0?}
+    Empty["CycleReportEmpty\n(기록 없음 안내)"]
+    Report["ReportHeader\n+ StatusBadge\n+ CycleChart\n+ RecentCyclesCard"]
+    Tooltip["StatusTooltip\n(StatusBadge 탭)"]
+    Dialog["LogEntryDialog\n(기록 버튼 탭)"]
 
-  FAB -->|"탭"| Dialog["LogEntryDialog 오픈\nopen = true"]
-  Dialog -->|"onClose / 배경 탭"| Closed["Dialog 닫힘\nopen = false"]
-  Dialog -->|"onSaved"| Closed
+    Mount --> HasPeriods
+    HasPeriods -- no --> Empty
+    HasPeriods -- yes --> Report
+    Report -->|"배지 탭"| Tooltip
+    Report -->|"+ 버튼"| Dialog
+    Dialog -->|"onSaved / onClose"| Report
 
-  classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
-  classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
-  class Mount,PHS,FAB,Dialog,Closed ui;
+    classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
+    classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+    class Mount,Empty,Report,Tooltip,Dialog ui;
+    class HasPeriods logic;
 ```
 
 ---
 
-## PeriodHistorySection — 뷰 전환
+## StatusBadge — 상태 판정 흐름
 
-```mermaid
-stateDiagram-v2
-  [*] --> Calendar : 기본 진입 (view = 'calendar')
-  Calendar --> List : 목록 탭 클릭
-  List --> Calendar : 캘린더 탭 클릭
-  Calendar --> Calendar : ‹ / › 월 이동 (hydrateRange 재호출)
-  Calendar --> Calendar : "오늘로" 버튼 (오늘 월 아닐 때만 표시)
-```
+상태 코드는 `classifyCycleStatus(periods)` 순수 함수가 반환합니다.
+표시 문자열은 화면이 `t.report.status[status]` 로 조립하며 도메인은 문자열을 반환하지 않습니다.
 
-- 캘린더 뷰는 읽기 전용입니다. 셀 탭 → no-op (편집은 `/calendar` 탭에서).
-- 목록 뷰는 `PeriodHistoryList`가 periods 배열을 오름차순으로 렌더합니다.
-- 월 이동 시 `conditionStore.hydrateRange`를 다시 호출합니다 (캘린더 뷰일 때만).
+판정 우선순위:
 
----
+| 우선순위 | 코드 | 판정 기준 |
+|---|---|---|
+| 1 | `insufficient` | 기록 3회 미만 |
+| 2 | `shortPeriod` | 최근 완료 기간 ≤ 2일 |
+| 3 | `longPeriod` | 최근 완료 기간 ≥ 8일 |
+| 4 | `irregular` | 주기 변동폭 ≥ 15일 |
+| 5 | `slightlyIrregular` | 주기 변동폭 8~14일 |
+| 6 | `stable` | 기간 3~7일, 주기 21~35일, 변동폭 ≤ 7일 |
+| 7 | `regular` | 위 조건 외 나머지 |
 
-## LogEntryDialog 상태
-
-```mermaid
-flowchart TD
-  Open["Dialog 열림\nstartDate = today\nendDate = defaultPeriodEndDate(today, periodLength)"] --> EditPeriod["생리 날짜 입력\nstartDate / endDate"]
-  Open --> EditCond["컨디션 선택\nmood · energy · pain · bloating · appetite · skin · memo"]
-
-  EditPeriod -->|"startDate 변경 (endDirty = false)"| AutoEnd["endDate 자동 재계산\ndefaultPeriodEndDate(newStart, periodLength)"]
-  EditPeriod -->|"endDate 직접 수정"| DirtyEnd["endDirty = true\n이후 startDate 변경해도 endDate 유지"]
-
-  EditPeriod --> Valid{"periodValid?\nstartDate && endDate\n&& startDate ≤ today\n&& endDate ≥ startDate"}
-  Valid -- no --> Disabled["저장 버튼 비활성"]
-  Valid -- yes --> SaveBtn["저장 버튼 활성"]
-
-  SaveBtn -->|"탭"| Submit["periodStore.add\n+ conditionStore.upsert (컨디션 있을 때만)"]
-  Submit --> onSaved["onSaved() → Dialog 닫힘"]
-
-  classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
-  classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
-  class Open,EditPeriod,EditCond,Disabled,SaveBtn,onSaved ui;
-  class AutoEnd,DirtyEnd,Valid,Submit logic;
-```
-
-- `defaultPeriodEndDate` 는 `src/domain/cycle/recordPolicy.ts` 의 순수 함수입니다.
-- 컨디션은 선택 사항입니다. 하나도 선택 안 해도 생리 기록만 저장됩니다.
-- `conditionStore.upsert` 의 `date` 는 항상 **today** (기록 당일) 고정입니다.
+카피 톤: 의료 단언 금지. 모든 레이블에 "패턴/추정" 뉘앙스 유지.
+(상세 기준: [`.claude/rules/cycle-logic.md §8`](../../.claude/rules/cycle-logic.md))
 
 ---
 
 ## 관련 파일·문서
 
-- `src/app/(app)/log/page.tsx` — 최소 래퍼 (open 상태만 관리)
-- `src/components/log/PeriodHistorySection.tsx` — 이력 조회 + 뷰 전환
-- `src/components/log/PeriodHistoryList.tsx` — 목록 렌더
-- `src/components/log/LogEntryFab.tsx` — FAB 버튼
-- `src/components/log/LogEntryDialog.tsx` — 생리 + 컨디션 통합 입력 다이얼로그
-- `src/domain/cycle/recordPolicy.ts` — `defaultPeriodEndDate`, `reconcileForNewStart`
-- `docs/flows/calendar.md` — 캘린더 편집 플로우 (DayDetailSheet 액션 버튼)
+- `src/app/(app)/log/page.tsx` — 최소 래퍼
+- `src/components/report/CycleReportScreen.tsx` — 최상위 화면 컴포넌트
+- `src/components/report/ReportHeader.tsx` — 헤더 + 새 기록 버튼
+- `src/components/report/StatusBadge.tsx` — 상태 코드 → 뱃지 UI
+- `src/components/report/StatusTooltip.tsx` — 상태 설명 툴팁
+- `src/components/report/CycleChart.tsx` — 주기 차트
+- `src/components/report/RecentCyclesCard.tsx` — 최근 기록 목록
+- `src/components/report/CycleReportEmpty.tsx` — 빈 상태 안내
+- `src/components/report/CycleReportCard.tsx` — 공용 카드 래퍼
+- `src/domain/cycle/status.ts` — `classifyCycleStatus()` 순수 함수
+- `src/domain/cycle/status.test.ts` — 10개 Vitest 케이스
+- `src/domain/cycle/status.cases.md` — 케이스 테이블
+- `docs/domain/cycle.md` — 주기 도메인 전체 로직 (4-phase, recordPolicy, periodEdit, cycleStatus)
