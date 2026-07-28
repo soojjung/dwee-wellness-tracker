@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
+import { BackIcon, DownloadIcon } from '@/components/ui/icons';
 import type { BodyTypeReport } from '@/types';
 import { ReportView } from './ReportView';
 import { exportReportAsPng } from './exportReport';
@@ -69,39 +70,25 @@ export function DiagnoseResultScreen() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-brand-gray50">
-      <Link
-        href={ARTICLE_HREF}
-        aria-label={t.magazine.diagnose.backToArticle}
-        className="absolute left-4 top-3 z-20 grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
-      >
-        ←
-      </Link>
-      <ReportView ref={reportRef} report={report} />
-      <div className="flex flex-col gap-3 px-4 pb-10">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={tryAgain}
-            className="flex-1 rounded-2xl border border-brand-gray300 px-4 py-3 text-sm font-semibold text-brand-gray800 hover:bg-brand-gray200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
-          >
-            {r.tryAgain}
-          </button>
-          <button
-            type="button"
-            onClick={saveAsImage}
-            disabled={saving}
-            className="flex-1 rounded-2xl bg-brand-pink200 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-pink800 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
-          >
-            {saving ? r.savingImage : r.saveAsImage}
-          </button>
-        </div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto flex w-full max-w-md items-center justify-between px-4 pt-3">
         <Link
           href={ARTICLE_HREF}
-          className="self-center text-xs font-medium text-brand-gray700 hover:text-brand-gray900"
+          aria-label={t.magazine.diagnose.backToArticle}
+          className="pointer-events-auto grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray50 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
         >
-          {r.backToArticle}
+          <BackIcon className="size-10" />
         </Link>
+        <button
+          type="button"
+          onClick={saveAsImage}
+          disabled={saving}
+          aria-label={saving ? r.savingImage : r.saveImageAria}
+          className="pointer-events-auto grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray50 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400 disabled:opacity-60"
+        >
+          <DownloadIcon className="size-10" />
+        </button>
       </div>
+      <ReportView ref={reportRef} report={report} onRetry={tryAgain} />
     </div>
   );
 }
