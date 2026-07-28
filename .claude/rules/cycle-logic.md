@@ -43,3 +43,38 @@ paths:
 ## 7) 데이터 흐름
 
 → 다이어그램: [docs/architecture/insight-flow.md](../../docs/architecture/insight-flow.md)
+
+## 8) 주기 상태(cycle status) 판정 기준
+
+주기리포트에서 최근 기록을 바탕으로 아래 7단계 중 하나를 반환한다. 라벨 자체가 아니라 "상태 코드"만 도메인에서 결정하고 표시 문자열은 화면이 `useT()`로 조립.
+
+우선순위 (위에서부터 먼저 매칭되는 것 채택):
+
+1. **insufficient** — `periods.length < 3` (기록 3회 미만). 나머지 계산 스킵.
+2. **shortPeriod** — 최근 종료된 기록의 기간이 2일 이하.
+3. **longPeriod** — 최근 종료된 기록의 기간이 8일 이상.
+4. **irregular** — 최근 주기 변동폭(range) 15일 이상. (변동폭 = max cycle − min cycle)
+5. **slightlyIrregular** — 최근 주기 변동폭 8~14일.
+6. **stable** — 기간 3~7일, 주기 21~35일, 변동 ±7일 이내(변동폭 ≤ 7일) 모두 만족.
+7. **regular** — 위 조건 어디에도 해당하지 않는 나머지 (주기는 짧거나 길지만 일정하게 반복).
+
+계산 세부:
+
+- 주기 길이 계산은 `averageCycleLength` 와 동일하게 이상치(15~60일 밖) 제외 후 남은 gap 배열 사용.
+- `shortPeriod`/`longPeriod` 는 이상치 제외(1~14일)한 뒤에도 최근 완료된 기록이 있어야 판정. 그렇지 않으면 스킵.
+- 반환값은 `{ status, confidence }` — `confidence` 는 `.claude/rules/cycle-logic.md` §2 규칙과 동일하게 `'unknown' | 'low' | 'medium' | 'high'`.
+- 표시 색상/카피는 화면에서 `t.report.status[status]` 로 조립. 도메인은 문자열 반환 금지.
+
+카피 톤(예시, en source-of-truth · ko 번역):
+
+| status | 조건 요약 | ko 예시 |
+|---|---|---|
+| stable | 기간 3~7일, 주기 21~35일, 변동 ±7일 | 현재 생리 패턴이 비교적 일정한 편이에요. |
+| regular | 주기가 조금 짧거나 길지만 일정하게 반복 | 일정한 리듬으로 생리하고 있어요. |
+| slightlyIrregular | 주기 변동 8~14일 | 최근 주기가 조금 달라지고 있어요. 컨디션을 함께 살펴보세요. |
+| irregular | 주기 변동 15일 이상 | 최근 생리 주기의 변화가 큰 편이에요. 조금 더 지켜보는 것을 추천해요. |
+| shortPeriod | 최근 기간 2일 이하 | 생리 기간이 평소보다 짧은 편이에요. |
+| longPeriod | 최근 기간 8일 이상 | 생리 기간이 다소 긴 편이에요. |
+| insufficient | 기록 3회 미만 | 조금 더 기록하면 패턴을 분석해 볼 수 있어요. |
+
+의료적 단언은 여전히 금지(§5). 모든 표시 문자열에 "패턴/추정" 뉘앙스 유지.
