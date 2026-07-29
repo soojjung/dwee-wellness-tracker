@@ -7,6 +7,11 @@ const TITLE: Record<'en' | 'ko', string> = {
   ko: '주기리포트',
 };
 
+const REPORT_TOGGLE_ARIA: Record<'en' | 'ko', string> = {
+  en: 'Cycle report view',
+  ko: '주기리포트 보기',
+};
+
 type Phase = (typeof PHASES)[number];
 type Locale = 'en' | 'ko';
 
@@ -60,6 +65,7 @@ async function seedAndOpenLog(page: Page, phase: Phase, locale: Locale) {
   // redirect to settle before the next goto so navigation isn't interrupted.
   await page.waitForURL((url) => url.pathname === '/', { timeout: 5_000 }).catch(() => {});
   await page.goto('/log');
+  await page.getByRole('tab', { name: REPORT_TOGGLE_ARIA[locale] }).click();
   await page.waitForSelector(`text=${TITLE[locale]}`, { timeout: 15_000 });
   await page.waitForTimeout(400);
 }

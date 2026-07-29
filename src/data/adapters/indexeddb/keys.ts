@@ -12,6 +12,11 @@ export const STORAGE_KEYS = {
   mediaSubText: 'dwee:media:sub_text',
   mediaTextOrder: 'dwee:media:text_order',
   bookmarks: 'dwee:bookmarks',
+  eventCategories: 'dwee:event_categories',
+  events: 'dwee:events',
+  diaryStickers: 'dwee:diary:stickers',
+  diaryStickerBlob: (id: string) => `dwee:diary:sticker_blob:${id}` as const,
+  diaryStickerPlacements: 'dwee:diary:sticker_placements',
 } as const;
 
 export const ALL_MEDIA_PHOTO_KEYS = PHOTO_SLOTS.map((s) => STORAGE_KEYS.mediaPhoto(s));
@@ -37,4 +42,4 @@ export const DEPRECATED_KEYS = {
   mediaHomeHero: 'dwee:media:home_hero',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 9;

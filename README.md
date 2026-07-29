@@ -40,7 +40,7 @@ device without an explicit decision.
                  └─────┬──────┘
                        ▼
         ┌──────────────────────────┐    Repository interfaces
-        │ data/repositories/       │    Period · Condition · Settings · Media · Bookmark
+        │ data/repositories/       │    Period · Condition · Settings · Media · Bookmark · Event · EventCategory · DiarySticker · DiaryStickerPlacement
         └────────┬───────────┬─────┘
                  │           │
        ┌─────────▼──┐   ┌────▼──────────┐
@@ -165,6 +165,8 @@ Solo project. End-to-end ownership of:
 - **Type-safe i18n** — `Dictionary = typeof en` setup, en/ko dictionaries.
 - **Testing pipeline** — Playwright visual matrix, Vitest convention with paired `*.cases.md`.
 - **Magazine feature** — article data module, fullscreen article/bookmark routes, BookmarkRepository + IndexedDB adapter + Zustand store wired end-to-end.
+- **Diary + Event domain** — `/log` Diary/Report segmented toggle; EventCategory (built-in seed + user-defined) + EventLog (title/memo/date range/category/period-mark toggle that auto-creates/deletes a linked PeriodLog); full repository/adapter/store stack for IndexedDB and Supabase.
+- **Diary sticker customization** — `DiarySticker` (photo import → 1:1/4:3 crop) + `DiaryStickerPlacement` (drag/resize/rotate/delete on calendar); `/log/customize` fullscreen route; migrations 0006–0009; IndexedDB schema v9.
 - **Supabase Edge Function** — `body-type-analyze` (Vision, no image retention, per-user rate limit).
 - **`.claude/` engineering harness** — `/commit` gate, six sub-agents, four rule files.
 
@@ -173,7 +175,7 @@ Solo project. End-to-end ownership of:
 ## Future Scalability Considerations
 
 - **Conflict policy:** LWW is fine for one user × few devices. Multi-author records (partner view) would need per-field merge or CRDTs.
-- **Schema migrations:** IndexedDB is on schema v5, versioned but untested under real data drift. A real rollout needs a forward-only migration log with failure telemetry.
+- **Schema migrations:** IndexedDB is on schema v9, versioned but untested under real data drift. A real rollout needs a forward-only migration log with failure telemetry.
 - **Observability:** no production error pipeline yet. Sentry or a Supabase log table is the first step before opening signups.
 - **Multi-region:** Supabase region is fixed. For international launch I'd evaluate edge caching for magazine content (the hot read path) before sharding user data.
 
@@ -181,7 +183,7 @@ Solo project. End-to-end ownership of:
 
 ## Status & Stack
 
-**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase auth is live — login gate on every cold start, Apple and Google OAuth active, anonymous → OAuth migration wired, 4-store rehydrate on mode switch. Background sync and multi-device conflict resolution are next.
+**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase auth is live — login gate on every cold start, Apple and Google OAuth active, anonymous → OAuth migration wired, 4-store rehydrate on mode switch. Diary tab with event/일정 domain (EventCategory + EventLog, period-mark toggle) and diary sticker customization (`/log/customize` — photo import, 1:1/4:3 crop, drag/resize/rotate placement) are also shipped. IndexedDB schema at v9; Supabase migrations through 0009. Background sync and multi-device conflict resolution are next.
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript strict · Zustand · IndexedDB (`idb-keyval`) · Supabase (Postgres + Auth + Edge Functions) · Tailwind · react-hook-form · Vitest · Playwright · Capacitor 6 (iOS).
 

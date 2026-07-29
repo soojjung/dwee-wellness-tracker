@@ -4,6 +4,7 @@ import { usePeriodStore } from '@/store/periodStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { todayISO } from '@/lib/date';
 import { LogEntryDialog } from '@/components/log/LogEntryDialog';
+import type { LogView } from '@/components/diary/LogViewToggle';
 import { ReportHeader } from './ReportHeader';
 import { CycleReportCard } from './CycleReportCard';
 import { RecentCyclesCard } from './RecentCyclesCard';
@@ -11,7 +12,12 @@ import { CycleReportEmpty } from './CycleReportEmpty';
 
 const MONTHS_ON_CHART = 6;
 
-export function CycleReportScreen() {
+interface CycleReportScreenProps {
+  currentView: LogView;
+  onViewChange: (view: LogView) => void;
+}
+
+export function CycleReportScreen({ currentView, onViewChange }: CycleReportScreenProps) {
   const periods = usePeriodStore((s) => s.periods);
   const hydrated = usePeriodStore((s) => s.hydrated);
   const hydrate = usePeriodStore((s) => s.hydrate);
@@ -38,7 +44,12 @@ export function CycleReportScreen() {
 
   return (
     <>
-      <ReportHeader year={now.getFullYear()} onAddClick={() => setEntryOpen(true)} />
+      <ReportHeader
+        year={now.getFullYear()}
+        onAddClick={() => setEntryOpen(true)}
+        currentView={currentView}
+        onViewChange={onViewChange}
+      />
       {showFullEmpty ? (
         <CycleReportEmpty onLogClick={() => setEntryOpen(true)} />
       ) : (

@@ -202,12 +202,13 @@ src/
 │   │   └── login/
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
-│   │   ├── log/                  주기리포트 (CycleReportScreen) — 상태 배지 + 차트 + 최근 주기 목록
+│   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환
 │   │   ├── calendar/             캘린더
 │   │   ├── magazine/             매거진 글 목록
 │   │   └── settings/             설정 (언어 등)
 │   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
 │       ├── home/customize/       홈 커스터마이즈 + 사진 편집
+│       ├── log/customize/        다이어리 스티커 라이브러리 + 배치 편집
 │       └── magazine/
 │           ├── [slug]/           글 상세 (풀스크린)
 │           ├── bookmarks/        북마크 목록
@@ -219,14 +220,17 @@ src/
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
 │   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, ReportView, exportReport
+│   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, AddQuickSheet, EventFormSheet, EventDetailSheet 등
+│   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
+│   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
 │   ├── auth/                     LoginScreen, AuthGuard
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer
 │
-├── store/                        Zustand: period / condition / settings / media / auth / bookmark
+├── store/                        Zustand: period / condition / settings / media / auth / bookmark / event / diarySticker / diaryPlacement
 │
 ├── data/                         어댑터 패턴
-│   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark)
-│   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v5, 현재 wiring)
+│   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement)
+│   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v9, 현재 wiring)
 │   ├── adapters/supabase/        원격 구현 (Supabase JS, 인증 사용자에게 wiring 완료)
 │   └── index.ts                  단일 진입점
 │
@@ -302,7 +306,9 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 
 - [x] **MVP2.1 — Supabase 기반 셋업** (auth store, 익명 로그인, 어댑터 src/ 이동)
 - [x] **MVP2.2 — Supabase 어댑터 wiring + 로그인 게이트** (`data/index.ts` 분기 완료, Apple/Google OAuth 활성화, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 강제, 로그아웃 후 `/login` 복귀, 4 스토어 rehydrate)
-- [ ] MVP2.3~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
+- [x] **MVP2.3 — Diary & Event 도메인** — `/log` 탭을 Diary(기본)/Report segmented toggle 구조로 전환. EventCategory (built-in 4종 + 사용자 추가) + EventLog (제목/메모/날짜범위/카테고리/생리마크 토글) 도메인 신설. 생리마크 ON/OFF 시 PeriodLog 자동 생성/삭제. Supabase migrations 0006–0007. IndexedDB schema v9.
+- [x] **MVP2.4 — Diary 스티커 커스터마이즈** — `DiarySticker` (앨범 사진 import + 1:1/4:3 crop) + `DiaryStickerPlacement` (캘린더 위 drag/resize/rotate/delete). `/log/customize` 풀스크린 라우트. Supabase migrations 0008–0009.
+- [ ] MVP2.5~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 
 ### 매거진 (MVP 병행)
 

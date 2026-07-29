@@ -1,15 +1,33 @@
-# /log 화면 플로우 — 주기리포트
+# /log 화면 플로우 — 다이어리 / 주기리포트
 
-> 위치: `src/app/(app)/log/page.tsx`, `src/components/report/`
+> 위치: `src/app/(app)/log/page.tsx`, `src/components/diary/`, `src/components/report/`
 
 AppShell + BottomTabNav 아래의 `(app)` 라우트 그룹에 속합니다.
 하단 탭 레이블: **Diary / 다이어리** (이전: Today / 오늘).
 
 ---
 
-## 화면 구조
+## 뷰 전환 (STEP 10.1)
 
-`/log` 는 `<CycleReportScreen />` 을 렌더합니다. 구성 요소:
+`/log` 진입 시 **Diary 탭이 기본**. 헤더 우측 2-아이콘 segmented toggle 로 Report ↔ Diary 전환.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Diary
+    Diary --> Report: chart 아이콘 탭
+    Report --> Diary: dot-grid 아이콘 탭
+```
+
+- `LogPage` 는 `useState<LogView>('diary')` 상태만 보유하고 조건부로 두 화면 중 하나를 렌더 (얇은 래퍼).
+- `LogViewToggle` (`src/components/diary/LogViewToggle.tsx`) — 두 헤더에서 재사용. 흰 정사각형 슬라이더가 좌우 이동.
+- STEP 10.2 완료: `+` 버튼 바텀시트(생리/일정), `▼` 연·월 wheel picker, 일정(이벤트) 배지 (AddQuickSheet, EventFormSheet, EventDetailSheet, YearMonthWheelPicker, InlineDatePicker, CategoryChip/Selector, EventCategoryFormSheet).
+- STEP 10.3 완료: edit-star 아이콘 → `/log/customize` 풀스크린 (StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer).
+
+---
+
+## Report 화면 구조
+
+Report 탭이 활성화되면 `<CycleReportScreen />` 을 렌더합니다. 구성 요소:
 
 1. **ReportHeader** — 화면 제목 + 우상단 새 기록 버튼 (LogEntryDialog 트리거).
 2. **StatusBadge** — `classifyCycleStatus()` 결과를 7단계 코드(`stable` / `regular` / `slightlyIrregular` / `irregular` / `shortPeriod` / `longPeriod` / `insufficient`)로 표시. 탭하면 StatusTooltip이 열림.
@@ -69,7 +87,43 @@ flowchart TD
 
 ## 관련 파일·문서
 
-- `src/app/(app)/log/page.tsx` — 최소 래퍼
+- `src/app/(app)/log/page.tsx` — 최소 래퍼, 뷰 상태 보유
+- `src/components/diary/DiaryScreen.tsx` — 다이어리 탭 최상위 (MonthGrid 재사용, 생리일 핑크 + 오늘 검정 마커)
+- `src/components/diary/DiaryHeader.tsx` — 다이어리 헤더 (title + edit-star + 월 셀렉터 + 토글 + `+`)
+- `src/components/diary/LogViewToggle.tsx` — 재사용 가능한 2-아이콘 segmented toggle
+- `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx` — 다이어리용 캘린더 (생리 마커 + 이벤트 배지, STEP 10.2a)
+- `src/components/diary/AddQuickSheet.tsx` — `+` 버튼 chooser: 생리 추가 / 일정 추가 (STEP 10.2a)
+- `src/components/diary/EventFormSheet.tsx` — 일정 등록/편집 공통 폼 시트 (STEP 10.2b, mode = 'add' | 'edit', inline date picker 포함)
+- `src/components/diary/EventDetailSheet.tsx` — 일정 상세 (제목·메모·카테고리·생리 토글·삭제, STEP 10.2b)
+- `src/components/diary/InlineDatePicker.tsx` — 시작/종료 날짜 확장 시 나타나는 인라인 미니 캘린더 (STEP 10.2b)
+- `src/components/diary/YearMonthWheelPicker.tsx` — 연·월 선택 wheel picker 바텀시트 (STEP 10.2b, DiaryHeader ▼ + InlineDatePicker 에서 재사용)
+- `src/components/diary/CategoryChip.tsx`, `CategorySelector.tsx` — 팔레트 기반 카테고리 UI (10.2c 부터 편집·추가 진입점 활성)
+- `src/components/diary/EventCategoryFormSheet.tsx` — 일정 유형 추가/편집 시트 (STEP 10.2c, name + 색상 팔레트 선택)
+- `src/components/diary/ColorPaletteSelector.tsx` — 7색 팔레트 확장 셀렉터
+- `src/store/eventStore.ts` — 이벤트/카테고리 Zustand 스토어. `addEvent`/`updateEvent`/`removeEvent`/`addCategory`/`updateCategory`/`linkPeriodMark`/`unlinkPeriodMark`
+
+### Diary 커스터마이즈 (STEP 10.3a/10.3b — 완료)
+
+`edit-star` 아이콘 → `/log/customize` fullscreen 라우트로 이동.
+- 데이터: `DiarySticker` (id, storageRef, ratio 1:1|4:3, source photo|sticker, createdAt).
+- 저장소: IndexedDB `dwee:diary:stickers` + blob per id. Supabase `diary_stickers` 테이블 + `media` bucket 경로 `{user_id}/diary_stickers/{id}.{ext}` (RLS anon lockout).
+- 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기(준비 중)) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
+- 10.3b 포함: 캘린더 위에 스티커 배치 (drag/select/resize/rotate/delete). 라이브러리 썸네일 탭 → 화면 중앙 근처에 draft placement 생성. 커스터마이즈 화면은 draft 상태를 유지하며 완료 시 diff → repo 반영, 뒤로 시 폐기.
+- 다음 스텝: 10.3c 카메라, 10.3d AI 배경제거 + 편집 모드 (다중 선택 · 스티커 삭제).
+
+관련 파일:
+- `src/app/(fullscreen)/log/customize/page.tsx`
+- `src/components/diary-customize/{DiaryCustomizeScreen,StickerLibrarySheet,PhotoImportModal,PlacedStickerLayer,PlacedSticker}.tsx`
+- `src/store/{diaryStickerStore,diaryPlacementStore}.ts`
+- `src/data/{repositories,adapters/indexeddb,adapters/supabase}` 에 `DiaryStickerRepository`, `DiaryStickerPlacementRepository`
+- `supabase/migrations/0008_diary_stickers.sql`, `supabase/migrations/0009_diary_sticker_placements.sql`
+
+### 생리 토글 연동 (STEP 10.2c)
+
+EventDetailSheet 의 생리 토글은 `eventStore.linkPeriodMark(id)` / `unlinkPeriodMark(id)` 를 호출:
+- ON: `periodStore.add({ startDate, endDate })` → 반환된 PeriodLog.id 를 `event.linkedPeriodId` 로 저장.
+- OFF: 저장된 `linkedPeriodId` 로 `periodStore.remove()` → event.linkedPeriodId 제거, `hasPeriodMark=false`.
+- Supabase `event_logs.linked_period_id` 컬럼 (`supabase/migrations/0007_event_period_link.sql`, `on delete set null`) 이 캘린더에서 직접 삭제된 경우도 커버.
 - `src/components/report/CycleReportScreen.tsx` — 최상위 화면 컴포넌트
 - `src/components/report/ReportHeader.tsx` — 헤더 + 새 기록 버튼
 - `src/components/report/StatusBadge.tsx` — 상태 코드 → 뱃지 UI
