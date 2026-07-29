@@ -55,6 +55,25 @@ const migrations: Record<number, Migration> = {
       await set(STORAGE_KEYS.mediaPhoto(targetSlots[i]!), legacyBlob);
     }
   },
+  6: async () => {
+    /* event_categories + events keys introduced. Built-in seeding runs on
+       first hydrate of eventStore, not here — the seed shape depends on
+       repo mode (local vs remote) which is only settled after auth. */
+  },
+  7: async () => {
+    /* EventLog.linkedPeriodId is optional and additive on the JSON blob;
+       nothing to backfill locally. Supabase counterpart lives in
+       supabase/migrations/0007_event_period_link.sql. */
+  },
+  8: async () => {
+    /* Diary sticker library keys introduced. Nothing to backfill — the
+       list starts empty. Supabase counterpart lives in
+       supabase/migrations/0008_diary_stickers.sql. */
+  },
+  9: async () => {
+    /* Diary sticker placements key introduced. Supabase counterpart lives
+       in supabase/migrations/0009_diary_sticker_placements.sql. */
+  },
 };
 
 export async function runMigrations(): Promise<void> {

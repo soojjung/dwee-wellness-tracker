@@ -258,7 +258,11 @@ EOF
   STEP 7 푸시 직후 `git rev-parse HEAD` 의 short SHA (7자 이상) 를 캡처해 모든 이미지 URL 에 박음. PR 에 추가 커밋이 푸시돼도 기존 URL 은 그대로 유효 (해당 SHA 가 트리에 영구 보존). 머지 후에도 동일하게 작동.
 - **Test plan = 이 PR 에서 이미 검증된 항목의 로그** — 사용자에게 떠넘기는 체크리스트가 아님. 과거형/완료형 (`Ran ...`, `Verified ...`, `Manually tested ...`). **이미 검증된 항목은 `- [x]` 체크된 체크박스** 로 ("done" 시각 표현). 검증하지 못한 항목만 `- [ ] **Not yet verified:** <item>` 로 빈 체크박스 사용 — 이 경우 PR 본문 안에서 한눈에 미검증 항목이 드러남.
 
-## STEP 8 — Figma 스냅샷 동기화 (dwee 전용)
+<!--
+## STEP 8 — Figma 스냅샷 동기화 (dwee 전용) [DISABLED 2026-07-29]
+
+비활성화 사유: 사용자 요청으로 자동 Figma 스냅샷 업로드 제거 (수동 동기화로 전환).
+필요 시 이 주석 블록의 내용을 원래대로 복원하면 다시 활성화됨.
 
 `tests/snapshots/ko/*.png` 변경이 **방금 만든 커밋 (STEP 6) 안에** 있으면 Figma "Snapshots (ko)" 페이지의 frame 들을 자동 갱신. 트리거 없으면 skip.
 
@@ -322,8 +326,9 @@ fi
 - upload URL 은 single-use, 10분 만료 — 받자마자 바로 POST.
 - Step B (`use_figma` 로 fill 적용) 누락은 갱신 케이스의 가장 흔한 실패 모드. 보고 단계에서 "Step C verify 통과" 까지 확인했다고 명시할 것.
 - 신규 frame 의 page 이동·rename·resize 누락도 흔한 실수 — Step A 직후 반드시 `use_figma` 정리 수반.
+-->
 
-## STEP 9 — 결과 보고
+## STEP 8 — 결과 보고
 
 다음 정보를 짧게 보고:
 
@@ -332,7 +337,6 @@ fi
 - PR URL (gh 출력에서)
 - (STEP 2.5 에서 삭제 있었으면) 정리한 로컬 브랜치 이름 목록 + 자동 main 이동 여부
 - (STEP 5 에서 docs 갱신 있었으면) curator 가 추가/수정한 문서 파일 개수
-- (STEP 8 에서 Figma sync 있었으면) 동기화된 phase 목록 + 새로 만든 frame 수 (있으면)
 - (필요 시) 다음 단계 안내 (예: "리뷰 받고 머지하세요")
 
 ## 안전 규칙

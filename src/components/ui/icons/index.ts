@@ -4,3 +4,7 @@ export { CheckIcon } from './CheckIcon';
 export { BookmarkIcon } from './BookmarkIcon';
 export { AlertCircleIcon } from './AlertCircleIcon';
 export { DownloadIcon } from './DownloadIcon';
+export { EditStarIcon } from './EditStarIcon';
+export { ChartIcon } from './ChartIcon';
+export { DotGridIcon } from './DotGridIcon';
+export { ChevronDownIcon } from './ChevronDownIcon';

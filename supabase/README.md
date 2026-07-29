@@ -17,6 +17,20 @@ supabase/
     0004_anon_lockout.sql
                          — defensive RLS: 익명 user 의 Supabase 데이터 테이블
                            쓰기/읽기 차단. body_type_calls 는 익명 호출 유지.
+    0005_home_photos_slot_widen.sql
+                         — home_photos 슬롯 범위 확장
+    0006_events.sql      — event_categories (built-in seed 4종 포함) +
+                           event_logs (title, memo, start_date, end_date,
+                           category_id) 신규 생성. RLS anon lockout.
+    0007_event_period_link.sql
+                         — event_logs.linked_period_id (→ period_logs,
+                           on delete set null) 컬럼 추가
+    0008_diary_stickers.sql
+                         — diary_stickers (storageRef, ratio, source) +
+                           media bucket 경로 규약 신규. RLS anon lockout.
+    0009_diary_sticker_placements.sql
+                         — diary_sticker_placements (sticker_id, year, month,
+                           x, y, scale, rotation) 신규. RLS anon lockout.
   functions/
     body-type-analyze/   — 매거진 퍼스널 체형 진단 Edge Function.
                            사진 base64 입력 → gpt-4o Vision 호출 →
@@ -36,6 +50,13 @@ src/data/adapters/supabase/
                                     · home_decor_settings 테이블: photo_count /
                                       text_position / text_order /
                                       main_text / sub_text
+  SupabaseEventCategoryAdapter.ts — EventCategoryRepository 구현 (event_categories)
+  SupabaseEventAdapter.ts         — EventRepository 구현 (event_logs)
+  SupabaseDiaryStickerAdapter.ts  — DiaryStickerRepository 구현
+                                    (diary_stickers + media bucket)
+  SupabaseDiaryStickerPlacementAdapter.ts
+                                  — DiaryStickerPlacementRepository 구현
+                                    (diary_sticker_placements)
 ```
 
 ## Supabase 활성화 순서
@@ -49,7 +70,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 env 가 비어있으면 `isSupabaseConfigured === false` → `data/index.ts` 가 IndexedDB 로 자동 fallback. dev/CI 환경에서는 그대로 두어도 됨.
 
 ### 2. 마이그레이션 적용
-0001 → 0002 → 0003 → 0004 순서.
+0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 순서.
 
 **옵션 A (Supabase CLI):**
 ```bash
@@ -57,7 +78,7 @@ brew install supabase/tap/supabase
 supabase link --project-ref <ref>
 supabase db push
 ```
-**옵션 B (대시보드 SQL Editor):** 각 `migrations/000*_*.sql` 파일을 순서대로 붙여넣고 RUN.
+**옵션 B (대시보드 SQL Editor):** 각 `migrations/000*_*.sql` 파일을 0001부터 0009까지 순서대로 붙여넣고 RUN.
 
 ### 3. Auth provider 활성화 (Supabase 대시보드 → Authentication → Providers)
 - **Email** — enable. "Confirm email" 은 MVP 단계에서는 off 권장 (signUp 직후 세션 발급되어야 STEP 2.2 흐름이 즉시 로그인됨).

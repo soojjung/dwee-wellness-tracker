@@ -3,3 +3,7 @@ export * from './periodLog';
 export * from './conditionLog';
 export * from './insight';
 export * from './bodyType';
+export * from './eventCategory';
+export * from './eventLog';
+export * from './diarySticker';
+export * from './diaryStickerPlacement';
