@@ -155,13 +155,19 @@ cp .env.example .env.local
 
 `.env.local` 이 비어 있어도 dev/build 는 통과합니다(placeholder fallback). 단 익명 로그인은 실패하며 `auth.error.missingConfig` 토스트가 뜹니다.
 
-### Edge Function (체형 진단) 설정 — 선택사항
+### Edge Functions 설정 — 선택사항
 
-매거진 퍼스널 체형 진단 기능을 사용하려면 Supabase Edge Function 배포 및 OpenAI 시크릿 설정이 필요합니다. 상세 절차는 [`supabase/README.md`](./supabase/README.md#edge-functions) 참고.
+상세 절차는 [`supabase/README.md`](./supabase/README.md#edge-functions) 참고.
 
+**체형 진단 (`body-type-analyze`)** — OpenAI API 키 필요:
 ```bash
 supabase secrets set OPENAI_API_KEY=sk-...
 supabase functions deploy body-type-analyze
+```
+
+**회원 탈퇴 (`delete-account`)** — 환경 변수는 Supabase가 자동 주입:
+```bash
+supabase functions deploy delete-account
 ```
 
 ### 로컬 개발
@@ -250,7 +256,6 @@ src/
 ├── dev/                          개발/테스트 전용 시드 헬퍼 (프로덕션 번들 제외)
 │   ├── DevBridge.tsx             e2e 테스트용 window 브릿지 (dev only)
 │   ├── ensureAnon.ts             e2e 익명 세션 보장 헬퍼
-│   ├── seedData.ts               샘플 데이터 (수동 dev 사용)
 │   ├── seedForPhase.ts           Playwright phase 시드 (window.__dweeSeedPhase)
 │   └── seedPhotos.ts             Playwright 사진 시드 (window.__dweeSeedPhotos)
 └── types/                        도메인 타입
@@ -308,7 +313,8 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] **MVP2.2 — Supabase 어댑터 wiring + 로그인 게이트** (`data/index.ts` 분기 완료, Apple/Google OAuth 활성화, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 강제, 로그아웃 후 `/login` 복귀, 4 스토어 rehydrate)
 - [x] **MVP2.3 — Diary & Event 도메인** — `/log` 탭을 Diary(기본)/Report segmented toggle 구조로 전환. EventCategory (built-in 4종 + 사용자 추가) + EventLog (제목/메모/날짜범위/카테고리/생리마크 토글) 도메인 신설. 생리마크 ON/OFF 시 PeriodLog 자동 생성/삭제. Supabase migrations 0006–0007. IndexedDB schema v9.
 - [x] **MVP2.4 — Diary 스티커 커스터마이즈** — `DiarySticker` (앨범 사진 import + 1:1/4:3 crop) + `DiaryStickerPlacement` (캘린더 위 drag/resize/rotate/delete). `/log/customize` 풀스크린 라우트. Supabase migrations 0008–0009.
-- [ ] MVP2.5~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
+- [x] **MVP2.5 — 계정 관리** — 회원 탈퇴 엔드-투-엔드 구현. `delete-account` Edge Function (media 버킷 재귀 삭제 → `auth.admin.deleteUser`, cascade 로 DB 행 자동 삭제). 이중 확인 모달 + 응답 유실 시 세션 재확인으로 하드닝. 마이페이지에서 평균 생리 주기 편집 UI·시드 데이터 주입 UI 제거(도메인 로직·e2e 시드는 유지).
+- [ ] MVP2.6~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 
 ### 매거진 (MVP 병행)
 

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/data/adapters/supabase/client';
 import { getRepoMode, setRepoMode, resetAllUserData, type RepoMode } from '@/data';
+import { deleteAccount as deleteAccountRequest, type DeleteAccountError } from '@/data/services/accountService';
 import { rehydrateAllData } from './rehydrateAll';
 
 export type AuthErrorKind = 'anonFailed' | 'networkOffline' | 'missingConfig' | 'oauthFailed';
@@ -28,6 +29,7 @@ interface AuthState {
   signInAnonymously: () => Promise<void>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{ ok: true } | { ok: false; error: DeleteAccountError }>;
 }
 
 let subscribed = false;
@@ -42,6 +44,16 @@ async function applyRepoMode(nextMode: RepoMode): Promise<void> {
   const prev = getRepoMode();
   setRepoMode(nextMode);
   if (prev !== nextMode) await rehydrateAllData();
+}
+
+async function isSessionAlive(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) return false;
+    return !!data.user;
+  } catch {
+    return false;
+  }
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -141,5 +153,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ session: null, user: null });
     await resetAllUserData();
     await applyRepoMode('local');
+  },
+
+  async deleteAccount() {
+    const result = await deleteAccountRequest();
+    if (!result.ok) {
+      // Response may have been lost after the server-side delete succeeded.
+      // If our token no longer resolves to a user, the account is already
+      // gone — finish the local cleanup so we don't strand the user in an
+      // "error" screen for an account that no longer exists.
+      const stillAlive = await isSessionAlive();
+      if (stillAlive) return result;
+    }
+    await supabase.auth.signOut().catch(() => undefined);
+    set({ session: null, user: null });
+    await resetAllUserData();
+    await applyRepoMode('local');
+    return { ok: true };
   },
 }));

@@ -5,9 +5,7 @@ import { PageContainer } from '@/components/ui/PageContainer';
 import { ChoiceGroup } from '@/components/ui/ChoiceGroup';
 import type { Locale } from '@/types';
 import { NotificationToggle } from '@/components/settings/NotificationToggle';
-import { CycleLengthEditor } from '@/components/settings/CycleLengthEditor';
 import { DataResetSection } from '@/components/settings/DataResetSection';
-import { DevSeedSection } from '@/components/settings/DevSeedSection';
 import { AccountSection } from '@/components/settings/AccountSection';
 import { APP_VERSION } from '@/constants/app';
 
@@ -35,15 +33,11 @@ export default function SettingsPage() {
         />
       </section>
 
-      <CycleLengthEditor />
-
       <NotificationToggle />
 
       <AccountSection />
 
       <DataResetSection />
-
-      <DevSeedSection />
 
       <section className="flex items-center justify-between border-t border-brand-gray300 pt-4 text-sm">
         <span className="text-brand-gray600">{t.settings.versionLabel}</span>
