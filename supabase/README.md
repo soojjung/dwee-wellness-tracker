@@ -35,6 +35,12 @@ supabase/
     body-type-analyze/   — 매거진 퍼스널 체형 진단 Edge Function.
                            사진 base64 입력 → gpt-4o Vision 호출 →
                            구조화 JSON 반환. 사진은 저장 X (in-memory).
+    delete-account/      — 회원 탈퇴 Edge Function.
+                           호출자 JWT 로 본인 확인 → service_role 로
+                           media 버킷 오브젝트 재귀 삭제 →
+                           auth.admin.deleteUser 호출.
+                           public.* 테이블 rows 는 auth.users 의
+                           on delete cascade 로 자동 삭제.
 ```
 
 어댑터 코드 위치: `src/data/adapters/supabase/`
@@ -149,6 +155,23 @@ console.log(r.error); // 익명 user 면 정책 위반이어야 함
 - Hard delete 사용 중. 다기기에서 "기기 A 에서 삭제 → 기기 B 에서 다시 보임" 문제 발생 시 `deleted_at` 컬럼 추가하여 soft delete 로 전환.
 
 ## Edge Functions
+
+### delete-account
+
+계정 영구 삭제. 클라이언트 → `supabase.functions.invoke('delete-account')` → Edge Function이 다음 순서로 처리.
+
+1. 호출자 JWT 검증 (`userClient.auth.getUser()`)
+2. `service_role` 클라이언트로 `media/{userId}/…` 오브젝트 재귀 열거 + `storage.remove()`
+3. `auth.admin.deleteUser(userId)` — `public.*` 행은 `on delete cascade`로 자동 삭제
+
+**응답 유실 대비:** 클라이언트(`accountService.ts`)는 응답 수신 실패 시 세션을 재확인하여 서버 삭제 성공을 감지, 로컬 세션을 정리한다.
+
+환경 변수: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (자동 주입 — 별도 `secrets set` 불필요).
+
+배포:
+```bash
+supabase functions deploy delete-account
+```
 
 ### body-type-analyze (M2)
 
