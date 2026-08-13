@@ -3,8 +3,10 @@ import type { MediaRepository } from '../../repositories/MediaRepository';
 import {
   TEXT_ORDERS,
   TEXT_POSITIONS,
+  isPhotoTransform,
   type PhotoCount,
   type PhotoSlot,
+  type PhotoTransform,
   type TextOrder,
   type TextPosition,
 } from '@/domain/home/decor';
@@ -35,6 +37,17 @@ export const indexedDBMediaAdapter: MediaRepository = {
   },
   async clearHomePhoto(slot: PhotoSlot) {
     await del(STORAGE_KEYS.mediaPhoto(slot));
+  },
+
+  async getPhotoTransform(slot: PhotoSlot) {
+    const v = await get<unknown>(STORAGE_KEYS.mediaPhotoTransform(slot));
+    return isPhotoTransform(v) ? v : null;
+  },
+  async setPhotoTransform(slot: PhotoSlot, transform: PhotoTransform) {
+    await set(STORAGE_KEYS.mediaPhotoTransform(slot), transform);
+  },
+  async clearPhotoTransform(slot: PhotoSlot) {
+    await del(STORAGE_KEYS.mediaPhotoTransform(slot));
   },
 
   async getTextPosition() {

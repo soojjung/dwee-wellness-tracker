@@ -74,6 +74,11 @@ const migrations: Record<number, Migration> = {
     /* Diary sticker placements key introduced. Supabase counterpart lives
        in supabase/migrations/0009_diary_sticker_placements.sql. */
   },
+  10: async () => {
+    /* PhotoTransform keys introduced (per-slot). Nothing to backfill — existing
+       photos default to identity transform when the key is absent. Supabase
+       counterpart lives in supabase/migrations/0010_home_photo_transform.sql. */
+  },
 };
 
 export async function runMigrations(): Promise<void> {

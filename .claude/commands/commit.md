@@ -93,13 +93,13 @@ gh pr list --state merged --head <branch> --json number,mergedAt --limit 1
 
 ## STEP 4 — 검증 (블로킹)
 
-단일 게이트로 lint + typecheck + Vitest unit + Playwright e2e (visual baseline + 런타임 에러 가드) 를 순차 실행.
+lint + typecheck + Vitest unit 을 순차 실행. Playwright e2e 는 별도 (`pnpm test:e2e`) — `pnpm test` 에 포함되지 않음.
 
 ```bash
 pnpm test < /dev/null 2>&1
 ```
 
-내부 체인 (`package.json` 의 `"test"` script): `pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:e2e`.
+내부 체인 (`package.json` 의 `"test"` script): `pnpm lint && pnpm typecheck && pnpm test:unit`.
 
 - 어느 단계든 실패하면 즉시 중단하고 사용자에게 에러 출력 + 원인 보고.
 - `pnpm lint` 가 interactive 프롬프트로 실패하면 (Next.js ESLint 마이그레이션 안내 등): "lint 설정이 필요해요 — 일단 건너뛰고 진행할까요?" 라고 사용자에게 묻고 답에 따라 진행/중단.

@@ -17,6 +17,7 @@ export function HomeHero({ isEmpty = false }: HomeHeroProps) {
 
   const photoCount = useMediaStore((s) => s.photoCount);
   const photoUrls = useMediaStore((s) => s.photoUrls);
+  const photoTransforms = useMediaStore((s) => s.photoTransforms);
   const mainText = useMediaStore((s) => s.mainText);
   const subText = useMediaStore((s) => s.subText);
   const hydrated = useMediaStore((s) => s.hydrated);
@@ -27,11 +28,9 @@ export function HomeHero({ isEmpty = false }: HomeHeroProps) {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
 
-  const activePhotos = photoCount
-    ? slotsForCount(photoCount)
-        .map((s) => photoUrls[s])
-        .filter((u): u is string => !!u)
-    : [];
+  const activeSlots = photoCount ? slotsForCount(photoCount) : [];
+  const activePhotos = activeSlots.map((s) => photoUrls[s]).filter((u): u is string => !!u);
+  const activeTransforms = activeSlots.map((s) => photoTransforms[s] ?? null);
   const isCustom = photoCount !== null && activePhotos.length === photoCount;
 
   return (
@@ -56,7 +55,13 @@ export function HomeHero({ isEmpty = false }: HomeHeroProps) {
       </div>
 
       <div className="relative -mx-4 aspect-square overflow-hidden bg-brand-gray300">
-        {isCustom ? <PhotoLayout count={photoCount} urls={activePhotos} /> : null}
+        {isCustom ? (
+          <PhotoLayout
+            count={photoCount}
+            urls={activePhotos}
+            transforms={activeTransforms}
+          />
+        ) : null}
 
         <HomeHeroText />
 

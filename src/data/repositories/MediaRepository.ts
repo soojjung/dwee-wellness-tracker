@@ -1,4 +1,10 @@
-import type { PhotoCount, PhotoSlot, TextOrder, TextPosition } from '@/domain/home/decor';
+import type {
+  PhotoCount,
+  PhotoSlot,
+  PhotoTransform,
+  TextOrder,
+  TextPosition,
+} from '@/domain/home/decor';
 
 export interface MediaRepository {
   getPhotoCount(): Promise<PhotoCount | null>;
@@ -6,6 +12,10 @@ export interface MediaRepository {
   getHomePhoto(slot: PhotoSlot): Promise<Blob | null>;
   setHomePhoto(slot: PhotoSlot, blob: Blob): Promise<void>;
   clearHomePhoto(slot: PhotoSlot): Promise<void>;
+
+  getPhotoTransform(slot: PhotoSlot): Promise<PhotoTransform | null>;
+  setPhotoTransform(slot: PhotoSlot, transform: PhotoTransform): Promise<void>;
+  clearPhotoTransform(slot: PhotoSlot): Promise<void>;
 
   getTextPosition(): Promise<TextPosition | null>;
   setTextPosition(position: TextPosition): Promise<void>;

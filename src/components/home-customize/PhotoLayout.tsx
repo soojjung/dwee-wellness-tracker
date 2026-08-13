@@ -1,9 +1,11 @@
 import { cn } from '@/lib/cn';
-import type { PhotoCount, PhotoSlot } from '@/domain/home/decor';
+import type { PhotoCount, PhotoSlot, PhotoTransform } from '@/domain/home/decor';
+import { TransformedPhoto } from './TransformedPhoto';
 
 interface PhotoLayoutProps {
   count: PhotoCount;
   urls: string[];
+  transforms?: (PhotoTransform | null)[];
   selectedSlot?: PhotoSlot | null;
   onSlotClick?: (slot: PhotoSlot) => void;
   slotAriaLabel?: string;
@@ -13,6 +15,7 @@ interface PhotoLayoutProps {
 export function PhotoLayout({
   count,
   urls,
+  transforms,
   selectedSlot = null,
   onSlotClick,
   slotAriaLabel,
@@ -33,6 +36,7 @@ export function PhotoLayout({
           key={slot}
           slot={slot}
           url={urls[slot]}
+          transform={transforms?.[slot] ?? null}
           isSelected={selectedSlot === slot}
           onClick={onSlotClick}
           slotAriaLabel={slotAriaLabel}
@@ -46,21 +50,32 @@ export function PhotoLayout({
 interface SlotProps {
   slot: PhotoSlot;
   url: string | undefined;
+  transform: PhotoTransform | null;
   isSelected: boolean;
   onClick?: (slot: PhotoSlot) => void;
   slotAriaLabel?: string;
   selectedAriaLabel?: string;
 }
 
-function Slot({ slot, url, isSelected, onClick, slotAriaLabel, selectedAriaLabel }: SlotProps) {
+function Slot({
+  slot,
+  url,
+  transform,
+  isSelected,
+  onClick,
+  slotAriaLabel,
+  selectedAriaLabel,
+}: SlotProps) {
   if (!url) return <div aria-hidden />;
   const ring = isSelected ? 'ring-2 ring-inset ring-brand-pink200' : '';
 
   if (!onClick) {
     return (
-      <div className={cn('relative h-full w-full overflow-hidden', ring)}>
-        <img src={url} alt="" aria-hidden className="h-full w-full object-cover" />
-      </div>
+      <TransformedPhoto
+        url={url}
+        transform={transform}
+        className={cn('relative h-full w-full overflow-hidden', ring)}
+      />
     );
   }
 
@@ -76,7 +91,7 @@ function Slot({ slot, url, isSelected, onClick, slotAriaLabel, selectedAriaLabel
         ring,
       )}
     >
-      <img src={url} alt="" aria-hidden className="h-full w-full object-cover" />
+      <TransformedPhoto url={url} transform={transform} />
     </button>
   );
 }

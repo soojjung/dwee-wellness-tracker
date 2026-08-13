@@ -3,8 +3,10 @@ import type { MediaRepository } from '@/data/repositories/MediaRepository';
 import {
   TEXT_ORDERS,
   TEXT_POSITIONS,
+  isPhotoTransform,
   type PhotoCount,
   type PhotoSlot,
+  type PhotoTransform,
   type TextOrder,
   type TextPosition,
 } from '@/domain/home/decor';
@@ -41,6 +43,7 @@ interface PhotoRow {
   user_id: string;
   slot: number;
   storage_path: string;
+  transform?: unknown;
 }
 
 interface SettingsRow {
@@ -118,6 +121,40 @@ export const supabaseMediaAdapter: MediaRepository = {
       .maybeSingle();
     if (row) await supabase.storage.from(BUCKET).remove([(row as PhotoRow).storage_path]);
     await supabase.from('home_photos').delete().eq('user_id', userId).eq('slot', slot);
+  },
+
+  async getPhotoTransform(slot: PhotoSlot) {
+    const userId = await requireUserId();
+    const { data } = await supabase
+      .from('home_photos')
+      .select('transform')
+      .eq('user_id', userId)
+      .eq('slot', slot)
+      .maybeSingle();
+    const raw = (data as { transform?: unknown } | null)?.transform;
+    return isPhotoTransform(raw) ? raw : null;
+  },
+
+  async setPhotoTransform(slot: PhotoSlot, transform: PhotoTransform) {
+    const userId = await requireUserId();
+    // Requires a home_photos row to exist (photo must be uploaded first);
+    // callers always upload the blob before persisting a transform.
+    const { error } = await supabase
+      .from('home_photos')
+      .update({ transform })
+      .eq('user_id', userId)
+      .eq('slot', slot);
+    if (error) throw error;
+  },
+
+  async clearPhotoTransform(slot: PhotoSlot) {
+    const userId = await requireUserId();
+    const { error } = await supabase
+      .from('home_photos')
+      .update({ transform: null })
+      .eq('user_id', userId)
+      .eq('slot', slot);
+    if (error) throw error;
   },
 
   async getTextPosition() {

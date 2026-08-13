@@ -49,8 +49,8 @@ src/data/
     │   ├── IndexedDBEventAdapter.ts
     │   ├── IndexedDBDiaryStickerAdapter.ts
     │   ├── IndexedDBDiaryStickerPlacementAdapter.ts
-    │   ├── keys.ts                 ← STORAGE_KEYS / DEPRECATED_KEYS / CURRENT_SCHEMA_VERSION (현재 v9)
-    │   └── migrations.ts           ← v1→v9 순차 실행 (v3: home_hero blob → slot 0 이주, v5: slot 0–3 공유 → count별 범위 분리, v6–v9: event/sticker 도메인 추가)
+    │   ├── keys.ts                 ← STORAGE_KEYS / DEPRECATED_KEYS / CURRENT_SCHEMA_VERSION (현재 v10)
+    │   └── migrations.ts           ← v1→v10 순차 실행 (v3: home_hero blob → slot 0 이주, v5: slot 0–3 공유 → count별 범위 분리, v6–v9: event/sticker 도메인 추가, v10: photo_transform 키 추가)
     └── supabase/                   ← Supabase로 구현한 어댑터들 (wiring 완료 — 인증 사용자에게 활성)
         ├── client.ts
         ├── SupabasePeriodAdapter.ts
@@ -203,7 +203,7 @@ import type { PeriodLog } from '@/types';
 - `.claude/rules/storage.md` — 저장소 규칙 가드레일
 - `src/data/index.ts` — 단일 진입점
 - `src/data/repositories/*.ts` — Repository 인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement)
-- `src/data/adapters/indexeddb/*.ts` — 로컬 구현 (현재 wiring, schema v9)
+- `src/data/adapters/indexeddb/*.ts` — 로컬 구현 (현재 wiring, schema v10)
 - `src/data/adapters/supabase/*.ts` — 원격 구현 (wiring 완료)
 - `src/domain/home/decor.ts` — PhotoCount / PhotoSlot / TextPosition / TextOrder 타입·상수
 - `src/store/mediaStore.ts` — MediaRepository 소비 store
