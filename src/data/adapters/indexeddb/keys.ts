@@ -7,6 +7,8 @@ export const STORAGE_KEYS = {
   conditions: 'dwee:conditions',
   mediaPhotoCount: 'dwee:media:photo_count',
   mediaPhoto: (slot: PhotoSlot) => `dwee:media:photo:${slot}` as const,
+  mediaPhotoTransform: (slot: PhotoSlot) =>
+    `dwee:media:photo_transform:${slot}` as const,
   mediaTextPosition: 'dwee:media:text_position',
   mediaMainText: 'dwee:media:main_text',
   mediaSubText: 'dwee:media:sub_text',
@@ -20,6 +22,10 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const ALL_MEDIA_PHOTO_KEYS = PHOTO_SLOTS.map((s) => STORAGE_KEYS.mediaPhoto(s));
+
+export const ALL_MEDIA_PHOTO_TRANSFORM_KEYS = PHOTO_SLOTS.map((s) =>
+  STORAGE_KEYS.mediaPhotoTransform(s),
+);
 
 // Slot 0..3 layout that predates count-scoped storage (schema < 5). Only used
 // by migration v5 to relocate old blobs into their per-count slots.
@@ -42,4 +48,4 @@ export const DEPRECATED_KEYS = {
   mediaHomeHero: 'dwee:media:home_hero',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 9;
+export const CURRENT_SCHEMA_VERSION = 10;

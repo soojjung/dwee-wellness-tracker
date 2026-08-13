@@ -1,37 +1,22 @@
 'use client';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { useMediaStore } from '@/store/mediaStore';
-import { slotsForCount, type PhotoSlot } from '@/domain/home/decor';
+import { useMediaCustomizeView } from '@/store/useMediaCustomizeView';
+import {
+  DEFAULT_PHOTO_TRANSFORM,
+  clampPhotoTransform,
+  computePhotoRender,
+  isPhotoTransformEdited,
+  photoTransformEqual,
+  slotsForCount,
+  type PhotoSlot,
+  type PhotoTransform,
+  type RenderSize,
+} from '@/domain/home/decor';
 import { CancelEditDialog } from './CancelEditDialog';
-
-interface Transform {
-  offsetX: number;
-  offsetY: number;
-  scale: number;
-}
-
-interface NaturalSize {
-  w: number;
-  h: number;
-}
-
-interface CellSize {
-  w: number;
-  h: number;
-}
-
-const DEFAULT_TX: Transform = { offsetX: 0, offsetY: 0, scale: 1 };
-const MIN_SCALE = 1;
-const MAX_SCALE = 4;
-const OUTPUT_LONG = 1280;
-
-function isEdited(tx: Transform | undefined): boolean {
-  if (!tx) return false;
-  return tx.offsetX !== 0 || tx.offsetY !== 0 || tx.scale !== 1;
-}
 
 interface PhotoEditDetailScreenProps {
   initialSlot: PhotoSlot;
@@ -44,37 +29,103 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
 
   const hydrated = useMediaStore((s) => s.hydrated);
   const hydrate = useMediaStore((s) => s.hydrate);
-  const photoCount = useMediaStore((s) => s.photoCount);
-  const photoUrls = useMediaStore((s) => s.photoUrls);
-  const setPhoto = useMediaStore((s) => s.setPhoto);
+  const draftSetPhoto = useMediaStore((s) => s.draftSetPhoto);
+  const draftSetPhotoTransform = useMediaStore((s) => s.draftSetPhotoTransform);
+  const view = useMediaCustomizeView();
+  const photoCount = view.photoCount;
+  const photoUrls = view.photoUrls;
+  const photoTransforms = view.photoTransforms;
+  const draftActive = view.draftActive;
 
   const [activeSlot, setActiveSlot] = useState<PhotoSlot>(initialSlot);
-  const [transforms, setTransforms] = useState<Record<number, Transform>>({});
-  const [naturals, setNaturals] = useState<Record<number, NaturalSize>>({});
-  const [cellSizes, setCellSizes] = useState<Record<number, CellSize>>({});
+  // Local pan/zoom state. Seeded from the store the first time hydration
+  // completes for a slot, then edited freely — nothing is persisted until
+  // the user taps the confirm (✓) button.
+  const [transforms, setTransforms] = useState<Record<number, PhotoTransform>>({});
+  const [naturals, setNaturals] = useState<Record<number, RenderSize>>({});
+  const [cellSizes, setCellSizes] = useState<Record<number, RenderSize>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const seededRef = useRef(false);
+  // Session-scoped file picks. "Replace photo" writes here instead of pushing
+  // straight to the draft, so ✓ / X consistently mean "commit this slot's
+  // session edits to draft" / "throw away this slot's session edits".
+  const [localPicks, setLocalPicks] = useState<Record<number, { blob: Blob; url: string }>>({});
+  const ownedUrlsRef = useRef<Set<string>>(new Set());
+
+  // Revoke any leftover object URLs when this screen unmounts. Individual
+  // URLs are also revoked as they're consumed (on ✓) or dropped (on X + dialog
+  // confirm, and when replaced by another pick for the same slot).
+  useEffect(() => {
+    const owned = ownedUrlsRef.current;
+    return () => {
+      owned.forEach((u) => URL.revokeObjectURL(u));
+      owned.clear();
+    };
+  }, []);
 
   useEffect(() => {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
 
+  // Bail out (before any redirects) if the URL slot doesn't belong to the
+  // current photoCount — e.g. someone hits /edit-photos/2 while count=4.
+  const validSlots = useMemo(
+    () => (photoCount ? slotsForCount(photoCount) : []),
+    [photoCount],
+  );
+  const initialSlotValid = validSlots.includes(initialSlot);
+
   useEffect(() => {
-    if (hydrated && (!photoCount || photoUrls.slice(0, photoCount).some((u) => !u))) {
+    if (!hydrated) return;
+    // The draft session is the only owner of the customize flow's blob URLs
+    // and transforms. If it isn't active (e.g. deep-linked here directly),
+    // bounce back to /home/customize so beginPhotoDraft can seed it.
+    if (!draftActive) {
       router.replace('/home/customize');
+      return;
     }
-  }, [hydrated, photoCount, photoUrls, router]);
+    if (!photoCount || validSlots.some((s) => !photoUrls[s])) {
+      router.replace('/home/customize');
+      return;
+    }
+    if (!initialSlotValid) {
+      router.replace('/home/customize/edit-photos');
+    }
+  }, [
+    hydrated,
+    draftActive,
+    photoCount,
+    photoUrls,
+    validSlots,
+    initialSlotValid,
+    router,
+  ]);
+
+  // Seed local transforms from the store exactly once per hydration cycle so
+  // the user can undo their gesture by comparing against the stored value.
+  useEffect(() => {
+    if (!hydrated || seededRef.current) return;
+    if (!photoCount) return;
+    const seeded: Record<number, PhotoTransform> = {};
+    for (const slot of slotsForCount(photoCount)) {
+      seeded[slot] = photoTransforms[slot] ?? DEFAULT_PHOTO_TRANSFORM;
+    }
+    setTransforms(seeded);
+    seededRef.current = true;
+  }, [hydrated, photoCount, photoTransforms]);
 
   const handleTransform = useCallback(
-    (s: PhotoSlot, tx: Transform) => setTransforms((prev) => ({ ...prev, [s]: tx })),
+    (s: PhotoSlot, tx: PhotoTransform) =>
+      setTransforms((prev) => ({ ...prev, [s]: tx })),
     [],
   );
   const handleNatural = useCallback(
-    (s: PhotoSlot, n: NaturalSize) => setNaturals((prev) => ({ ...prev, [s]: n })),
+    (s: PhotoSlot, n: RenderSize) => setNaturals((prev) => ({ ...prev, [s]: n })),
     [],
   );
   const handleCellSize = useCallback(
-    (s: PhotoSlot, size: CellSize) =>
+    (s: PhotoSlot, size: RenderSize) =>
       setCellSizes((prev) => {
         const cur = prev[s];
         if (cur && cur.w === size.w && cur.h === size.h) return prev;
@@ -83,12 +134,11 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
     [],
   );
 
+  if (!draftActive) return null;
   if (!photoCount) return null;
-  const activeUrls = photoUrls.slice(0, photoCount).filter((u): u is string => !!u);
-  if (activeUrls.length !== photoCount) return null;
-  if (initialSlot >= photoCount) {
-    return null;
-  }
+  const filledInValidSlots = validSlots.filter((s) => !!photoUrls[s]).length;
+  if (filledInValidSlots !== photoCount) return null;
+  if (!initialSlotValid) return null;
 
   const slots = slotsForCount(photoCount);
   const wrapperClass = cn(
@@ -97,13 +147,30 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
     photoCount === 4 && 'grid-cols-2 grid-rows-2 gap-px bg-brand-gray400',
   );
 
-  const anyEdited = slots.some((s) => isEdited(transforms[s]));
+  // "dirty" = any session edit exists (crop gesture or file pick). Empty local
+  // maps (pre-seed) count as clean.
+  const anyDirty =
+    Object.keys(localPicks).length > 0 ||
+    slots.some((s) => {
+      const local = transforms[s];
+      if (!local) return false;
+      return !photoTransformEqual(local, photoTransforms[s] ?? null);
+    });
 
-  async function handleFilesPicked(files: FileList) {
+  function handleFilesPicked(files: FileList) {
     const [file] = Array.from(files);
     if (!file) return;
-    await setPhoto(activeSlot, file);
-    setTransforms((prev) => ({ ...prev, [activeSlot]: DEFAULT_TX }));
+    // Buffer locally — do NOT push to draft yet. ✓ commits; X + dialog
+    // discards. Revoke any prior local URL held for this slot.
+    const prior = localPicks[activeSlot];
+    if (prior) {
+      URL.revokeObjectURL(prior.url);
+      ownedUrlsRef.current.delete(prior.url);
+    }
+    const url = URL.createObjectURL(file);
+    ownedUrlsRef.current.add(url);
+    setLocalPicks((prev) => ({ ...prev, [activeSlot]: { blob: file, url } }));
+    setTransforms((prev) => ({ ...prev, [activeSlot]: DEFAULT_PHOTO_TRANSFORM }));
     setNaturals((prev) => {
       const rest = { ...prev };
       delete rest[activeSlot];
@@ -111,19 +178,33 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
     });
   }
 
-  async function handleConfirm() {
-    if (submitting || !anyEdited) return;
+  function handleConfirm() {
+    if (submitting || !anyDirty) return;
     setSubmitting(true);
     try {
+      // 1) File picks first. draftSetPhoto also resets the slot's transform
+      // in the draft, so we won't rewrite it below.
+      const pickedSlots = new Set<number>();
+      for (const [slotStr, pick] of Object.entries(localPicks)) {
+        const slot = Number(slotStr) as PhotoSlot;
+        draftSetPhoto(slot, pick.blob);
+        URL.revokeObjectURL(pick.url);
+        ownedUrlsRef.current.delete(pick.url);
+        pickedSlots.add(slot);
+      }
+      setLocalPicks({});
+
+      // 2) Crop gestures. For slots we just replaced, the pick reset draft
+      // transform to null — so compare local against null (not the old value)
+      // to catch panning that happened AFTER the file replace.
       for (const slot of slots) {
-        const tx = transforms[slot];
-        if (!isEdited(tx)) continue;
-        const natural = naturals[slot];
-        const cell = cellSizes[slot];
-        const url = photoUrls[slot];
-        if (!tx || !natural || !cell || !url) continue;
-        const blob = await renderCroppedBlob({ srcUrl: url, natural, cell, transform: tx });
-        if (blob) await setPhoto(slot, blob);
+        const local = transforms[slot];
+        if (!local) continue;
+        const stored = pickedSlots.has(slot)
+          ? null
+          : (photoTransforms[slot] ?? null);
+        if (photoTransformEqual(local, stored)) continue;
+        draftSetPhotoTransform(slot, local);
       }
       router.push('/home/customize/edit-photos');
     } finally {
@@ -132,7 +213,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
   }
 
   function handleCancel() {
-    if (anyEdited) {
+    if (anyDirty) {
       setShowCancelDialog(true);
       return;
     }
@@ -140,6 +221,13 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
   }
 
   function handleDialogConfirm() {
+    // Discard session picks (revoke owned URLs) — draft is untouched, so
+    // nothing else to undo.
+    for (const pick of Object.values(localPicks)) {
+      URL.revokeObjectURL(pick.url);
+      ownedUrlsRef.current.delete(pick.url);
+    }
+    setLocalPicks({});
     setShowCancelDialog(false);
     router.push('/home/customize/edit-photos');
   }
@@ -159,12 +247,12 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!anyEdited || submitting}
+            disabled={!anyDirty || submitting}
             aria-label={t.home.customize.photoEditDetail.confirmAriaLabel}
             className={cn(
               'inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
-              anyEdited && !submitting
+              anyDirty && !submitting
                 ? 'bg-brand-pink200 text-brand-pink50'
                 : 'cursor-default bg-brand-gray300 text-brand-gray500',
             )}
@@ -180,10 +268,11 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
                 <PhotoCell
                   key={slot}
                   slot={slot}
-                  url={photoUrls[slot] ?? null}
+                  url={localPicks[slot]?.url ?? photoUrls[slot] ?? null}
                   active={activeSlot === slot}
-                  transform={transforms[slot] ?? DEFAULT_TX}
+                  transform={transforms[slot] ?? DEFAULT_PHOTO_TRANSFORM}
                   natural={naturals[slot]}
+                  cellSize={cellSizes[slot] ?? { w: 0, h: 0 }}
                   onSelect={setActiveSlot}
                   onTransformChange={handleTransform}
                   onNaturalLoad={handleNatural}
@@ -203,6 +292,10 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
               {t.home.customize.photoEditDetail.changePhoto}
             </button>
           </div>
+
+          <p className="mt-4 px-8 text-center text-xs leading-[1.5] text-brand-gray800">
+            {t.home.customize.photoEditDetail.draftHint}
+          </p>
         </main>
       </div>
 
@@ -232,12 +325,13 @@ interface PhotoCellProps {
   slot: PhotoSlot;
   url: string | null;
   active: boolean;
-  transform: Transform;
-  natural: NaturalSize | undefined;
+  transform: PhotoTransform;
+  natural: RenderSize | undefined;
+  cellSize: RenderSize;
   onSelect: (slot: PhotoSlot) => void;
-  onTransformChange: (slot: PhotoSlot, tx: Transform) => void;
-  onNaturalLoad: (slot: PhotoSlot, size: NaturalSize) => void;
-  onCellSize: (slot: PhotoSlot, size: CellSize) => void;
+  onTransformChange: (slot: PhotoSlot, tx: PhotoTransform) => void;
+  onNaturalLoad: (slot: PhotoSlot, size: RenderSize) => void;
+  onCellSize: (slot: PhotoSlot, size: RenderSize) => void;
 }
 
 function PhotoCell({
@@ -246,17 +340,18 @@ function PhotoCell({
   active,
   transform,
   natural,
+  cellSize,
   onSelect,
   onTransformChange,
   onNaturalLoad,
   onCellSize,
 }: PhotoCellProps) {
   const cellRef = useRef<HTMLDivElement | null>(null);
-  const [cellSize, setCellSize] = useState<CellSize>({ w: 0, h: 0 });
 
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const gestureRef = useRef<{
-    baseTx: Transform;
+    baseTx: PhotoTransform;
+    baseCell: RenderSize;
     pinchDist: number | null;
     dragStart: { x: number; y: number } | null;
   } | null>(null);
@@ -266,9 +361,7 @@ function PhotoCell({
     if (!el) return;
     function update() {
       const rect = el!.getBoundingClientRect();
-      const next = { w: rect.width, h: rect.height };
-      setCellSize(next);
-      onCellSize(slot, next);
+      onCellSize(slot, { w: rect.width, h: rect.height });
     }
     update();
     const ro = new ResizeObserver(update);
@@ -278,25 +371,12 @@ function PhotoCell({
 
   if (!url) return <div className="bg-brand-gray300" aria-hidden />;
 
-  const baseScale =
-    natural && cellSize.w > 0 ? Math.max(cellSize.w / natural.w, cellSize.h / natural.h) : 0;
-  const k = baseScale * transform.scale;
-  const renderedW = natural ? natural.w * k : cellSize.w;
-  const renderedH = natural ? natural.h * k : cellSize.h;
+  const ready = !!natural && cellSize.w > 0 && cellSize.h > 0;
+  const rendered = ready ? computePhotoRender(transform, natural!, cellSize) : null;
 
-  function clampTx(t: Transform): Transform {
-    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, t.scale));
-    if (!natural || cellSize.w <= 0) return { ...t, scale };
-    const newK = baseScale * scale;
-    const newRW = natural.w * newK;
-    const newRH = natural.h * newK;
-    const maxX = Math.max(0, (newRW - cellSize.w) / 2);
-    const maxY = Math.max(0, (newRH - cellSize.h) / 2);
-    return {
-      scale,
-      offsetX: Math.min(maxX, Math.max(-maxX, t.offsetX)),
-      offsetY: Math.min(maxY, Math.max(-maxY, t.offsetY)),
-    };
+  function clamp(next: PhotoTransform): PhotoTransform {
+    if (!natural || cellSize.w <= 0) return { ...next, scale: Math.max(1, Math.min(4, next.scale)) };
+    return clampPhotoTransform(next, natural, cellSize);
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
@@ -309,6 +389,7 @@ function PhotoCell({
     if (pointers.current.size === 1) {
       gestureRef.current = {
         baseTx: transform,
+        baseCell: cellSize,
         pinchDist: null,
         dragStart: { x: e.clientX, y: e.clientY },
       };
@@ -318,6 +399,7 @@ function PhotoCell({
       const p2 = values[1]!;
       gestureRef.current = {
         baseTx: transform,
+        baseCell: cellSize,
         pinchDist: pointDistance(p1, p2),
         dragStart: null,
       };
@@ -329,14 +411,16 @@ function PhotoCell({
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const g = gestureRef.current;
     if (pointers.current.size === 1 && g.dragStart) {
-      const dx = e.clientX - g.dragStart.x;
-      const dy = e.clientY - g.dragStart.y;
+      const dxPx = e.clientX - g.dragStart.x;
+      const dyPx = e.clientY - g.dragStart.y;
+      const cw = g.baseCell.w || 1;
+      const ch = g.baseCell.h || 1;
       onTransformChange(
         slot,
-        clampTx({
+        clamp({
           scale: g.baseTx.scale,
-          offsetX: g.baseTx.offsetX + dx,
-          offsetY: g.baseTx.offsetY + dy,
+          offsetXNorm: g.baseTx.offsetXNorm + dxPx / cw,
+          offsetYNorm: g.baseTx.offsetYNorm + dyPx / ch,
         }),
       );
     } else if (pointers.current.size === 2 && g.pinchDist) {
@@ -347,10 +431,10 @@ function PhotoCell({
       const multiplier = dist / g.pinchDist;
       onTransformChange(
         slot,
-        clampTx({
+        clamp({
           scale: g.baseTx.scale * multiplier,
-          offsetX: g.baseTx.offsetX,
-          offsetY: g.baseTx.offsetY,
+          offsetXNorm: g.baseTx.offsetXNorm,
+          offsetYNorm: g.baseTx.offsetYNorm,
         }),
       );
     }
@@ -367,6 +451,7 @@ function PhotoCell({
       const remaining = [...pointers.current.values()][0]!;
       gestureRef.current = {
         baseTx: transform,
+        baseCell: cellSize,
         pinchDist: null,
         dragStart: { x: remaining.x, y: remaining.y },
       };
@@ -392,6 +477,7 @@ function PhotoCell({
       className={cn(
         'relative h-full w-full touch-none select-none overflow-hidden bg-brand-gray300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink200',
         active && 'ring-2 ring-inset ring-brand-pink200',
+        isPhotoTransformEdited(transform) && !active && 'opacity-100',
       )}
       style={{ cursor: active ? 'grab' : 'pointer' }}
     >
@@ -405,11 +491,15 @@ function PhotoCell({
           onNaturalLoad(slot, { w: img.naturalWidth, h: img.naturalHeight });
         }}
         className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
-        style={{
-          width: natural && cellSize.w > 0 ? renderedW : '100%',
-          height: natural && cellSize.h > 0 ? renderedH : '100%',
-          transform: `translate(calc(-50% + ${transform.offsetX}px), calc(-50% + ${transform.offsetY}px))`,
-        }}
+        style={
+          rendered
+            ? {
+                width: rendered.renderedW,
+                height: rendered.renderedH,
+                transform: `translate(calc(-50% + ${rendered.offsetPxX}px), calc(-50% + ${rendered.offsetPxY}px))`,
+              }
+            : { width: '100%', height: '100%', objectFit: 'cover' as const }
+        }
       />
     </div>
   );
@@ -418,46 +508,6 @@ function PhotoCell({
 
 function pointDistance(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-interface RenderArgs {
-  srcUrl: string;
-  natural: NaturalSize;
-  cell: CellSize;
-  transform: Transform;
-}
-
-async function renderCroppedBlob({ srcUrl, natural, cell, transform }: RenderArgs): Promise<Blob | null> {
-  const img = await loadImage(srcUrl);
-  const baseScale = Math.max(cell.w / natural.w, cell.h / natural.h);
-  const k = baseScale * transform.scale;
-  const renderedW = natural.w * k;
-  const renderedH = natural.h * k;
-  const cellLeftInImg = (renderedW - cell.w) / 2 - transform.offsetX;
-  const cellTopInImg = (renderedH - cell.h) / 2 - transform.offsetY;
-  const sx = cellLeftInImg / k;
-  const sy = cellTopInImg / k;
-  const sw = cell.w / k;
-  const sh = cell.h / k;
-  const aspect = cell.w / cell.h;
-  const outputW = aspect >= 1 ? OUTPUT_LONG : Math.round(OUTPUT_LONG * aspect);
-  const outputH = aspect >= 1 ? Math.round(OUTPUT_LONG / aspect) : OUTPUT_LONG;
-  const canvas = document.createElement('canvas');
-  canvas.width = outputW;
-  canvas.height = outputH;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outputW, outputH);
-  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.95));
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
 }
 
 function CloseIcon() {

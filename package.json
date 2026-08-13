@@ -16,7 +16,7 @@
     "test:e2e:update": "playwright test --update-snapshots",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "test": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:e2e"
+    "test": "pnpm lint && pnpm typecheck && pnpm test:unit"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",

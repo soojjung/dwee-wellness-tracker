@@ -17,9 +17,13 @@ type: project
 - `.claude/rules/screens.md` — flow registry (links to all `docs/flows/*.md`). Must be updated when a new flow doc is added.
 - `supabase/README.md` — Supabase migration + adapter guide. Adapter code lives at `src/data/adapters/supabase/` (already moved from `supabase/adapters/`).
 
-## Active repositories (as of schema v4)
+## Active repositories and schema versions
 
-Period / Condition / Settings / Media / Bookmark. Each of the first four has both IndexedDB and Supabase adapter implementations. `BookmarkRepository` has only an IndexedDB adapter (`IndexedDBBookmarkAdapter`) — no Supabase adapter yet. `data/index.ts` currently wires IndexedDB for all; Supabase wiring is MVP2.2.
+Period / Condition / Settings / Media / Bookmark / EventCategory / Event / DiarySticker / DiaryStickerPlacement. IndexedDB schema v10 (added `dwee:media:photo_transform:{slot}` keys 0–6). Supabase migrations through 0010 (`home_photos.transform jsonb` column). `data/index.ts` wires IndexedDB or Supabase per auth mode.
+
+## pnpm test script (as of refactor/home-customize-flow)
+
+`pnpm test` = `lint && typecheck && test:unit` only. e2e is now a separate step (`pnpm test:e2e`). `.claude/commands/commit.md` STEP 4 and README harness descriptions must reflect this — do not describe `pnpm test` as including e2e.
 
 ## Route groups (fullscreen added)
 
@@ -75,6 +79,17 @@ Four states: `'actualPeriod' | 'predictedPeriod' | 'predictedFertile' | null`. P
 - `domain/cycle/periodEdit.ts` — pure functions for draft mutation (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). Has paired `periodEdit.test.ts` + `periodEdit.cases.md`. No store/adapter imports — must stay pure.
 - `domain/cycle/recordPolicy.ts` — pure functions `defaultPeriodEndDate` and `reconcileForNewStart`. Companion to the older dialog flow.
 - `SupabaseMediaAdapter.ts` now fully implements `getTextOrder`/`setTextOrder` via `home_decor_settings.text_order`. The old "no-op TODO" note was removed from `data-layer.md`.
+
+## Home customize flow (as of refactor/home-customize-flow, 2026-08-13)
+
+- Draft mode: `beginPhotoDraft()` on mount; all changes go to `draft*` fields in `mediaStore`. `commitPhotoDraft()` on "설정 완료"; `discardPhotoDraft()` on back/cancel.
+- `picksConfirmed` gate: "설정 완료" only active when `allFilled && picksConfirmed`. `picksConfirmed` is set by "선택하기" on PhotoEditScreen and reset on any pick change.
+- `PhotoTransform = { scale, offsetXNorm, offsetYNorm }` stored per slot. Original blob never rewritten. Rendered via CSS in `TransformedPhoto` component.
+- Text customization UI is currently commented out. `TextSettingsSection` import exists but is unused in `HomeCustomizeScreen`.
+- Photo removal: empty slots allowed in PhotoEditScreen; × button clears a filled slot and resets `picksConfirmed`.
+- New shared components: `TransformedPhoto.tsx`, `DiscardDraftDialog.tsx`.
+- New hook: `useMediaCustomizeView.ts` (merges draft/committed; exports `useIsPhotoDraftDirty` + `isPhotoDraftDirty` pure predicate).
+- `docs/flows/customize.md` is the authoritative flow doc — fully rewritten 2026-08-13.
 
 ## Auth gate pattern (2026-07-15, C4 decision)
 

@@ -93,7 +93,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 **`/commit` 가 자동으로 해주는 것**
 
-브랜치 정리 → 검증 게이트 (`lint → typecheck → test:unit → test:e2e`) → 단위 테스트 보강 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
+브랜치 정리 → 검증 게이트 (`lint → typecheck → test:unit`) → e2e (`pnpm test:e2e` 별도) → 단위 테스트 보강 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
 
 `test:e2e` 는 5개 phase × 2개 locale(en/ko) 매트릭스로 시각 스냅샷을 찍습니다. 현재 커버리지:
 
@@ -184,7 +184,7 @@ pnpm build              # Next.js production build
 pnpm typecheck          # tsc --noEmit (strict)
 pnpm lint               # eslint
 pnpm format             # prettier --write
-pnpm test               # lint → typecheck → unit → e2e (단일 게이트, /commit 이 호출)
+pnpm test               # lint → typecheck → unit (e2e 는 별도: pnpm test:e2e)
 pnpm test:unit          # Vitest (src/domain, src/lib 순수 함수)
 pnpm test:e2e           # Playwright 시각 스냅샷 + 런타임 에러 가드
 pnpm test:e2e:update    # baseline PNG 갱신 (의도된 UI 변경 후)
@@ -236,7 +236,7 @@ src/
 │
 ├── data/                         어댑터 패턴
 │   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement)
-│   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v9, 현재 wiring)
+│   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v10, 현재 wiring)
 │   ├── adapters/supabase/        원격 구현 (Supabase JS, 인증 사용자에게 wiring 완료)
 │   └── index.ts                  단일 진입점
 │
@@ -314,6 +314,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] **MVP2.3 — Diary & Event 도메인** — `/log` 탭을 Diary(기본)/Report segmented toggle 구조로 전환. EventCategory (built-in 4종 + 사용자 추가) + EventLog (제목/메모/날짜범위/카테고리/생리마크 토글) 도메인 신설. 생리마크 ON/OFF 시 PeriodLog 자동 생성/삭제. Supabase migrations 0006–0007. IndexedDB schema v9.
 - [x] **MVP2.4 — Diary 스티커 커스터마이즈** — `DiarySticker` (앨범 사진 import + 1:1/4:3 crop) + `DiaryStickerPlacement` (캘린더 위 drag/resize/rotate/delete). `/log/customize` 풀스크린 라우트. Supabase migrations 0008–0009.
 - [x] **MVP2.5 — 계정 관리** — 회원 탈퇴 엔드-투-엔드 구현. `delete-account` Edge Function (media 버킷 재귀 삭제 → `auth.admin.deleteUser`, cascade 로 DB 행 자동 삭제). 이중 확인 모달 + 응답 유실 시 세션 재확인으로 하드닝. 마이페이지에서 평균 생리 주기 편집 UI·시드 데이터 주입 UI 제거(도메인 로직·e2e 시드는 유지).
+- [x] **홈 커스터마이즈 개편** — 비파괴 사진 편집: 슬롯마다 `PhotoTransform` 메타데이터 저장, 원본 blob 덮어쓰기 금지. 드래프트 모드: 모든 변경을 draft* 필드에 버퍼링 → "설정 완료" 시 `commitPhotoDraft()` 일괄 반영. `picksConfirmed` 게이트: edit-photos 그리드에서 "선택하기" 탭 후에만 "설정 완료" 활성. 슬롯별 사진 삭제(× 버튼). `DiscardDraftDialog` (dirty 뒤로가기). `TransformedPhoto` 공유 렌더 컴포넌트. 텍스트 커스터마이즈 일시 비활성. IndexedDB schema v10; Supabase migration 0010.
 - [ ] MVP2.6~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 
 ### 매거진 (MVP 병행)

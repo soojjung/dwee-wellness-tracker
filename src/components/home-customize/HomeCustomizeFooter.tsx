@@ -5,9 +5,16 @@ import { cn } from '@/lib/cn';
 interface HomeCustomizeFooterProps {
   enabled: boolean;
   onSubmit: () => void;
+  /** Optional inline hint shown above the button (used when the submit is
+   * disabled specifically because picks haven't been confirmed yet). */
+  hint?: string;
 }
 
-export function HomeCustomizeFooter({ enabled, onSubmit }: HomeCustomizeFooterProps) {
+export function HomeCustomizeFooter({
+  enabled,
+  onSubmit,
+  hint,
+}: HomeCustomizeFooterProps) {
   const t = useT();
   return (
     <footer
@@ -16,6 +23,16 @@ export function HomeCustomizeFooter({ enabled, onSubmit }: HomeCustomizeFooterPr
         enabled ? 'bg-brand-gray900' : 'bg-brand-gray400',
       )}
     >
+      {hint ? (
+        <p
+          className={cn(
+            'mb-2 text-center text-xs leading-[1.4]',
+            enabled ? 'text-brand-pink100/70' : 'text-brand-gray200',
+          )}
+        >
+          {hint}
+        </p>
+      ) : null}
       <button
         type="button"
         disabled={!enabled}

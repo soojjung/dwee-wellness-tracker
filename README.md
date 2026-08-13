@@ -166,7 +166,8 @@ Solo project. End-to-end ownership of:
 - **Testing pipeline** — Playwright visual matrix, Vitest convention with paired `*.cases.md`.
 - **Magazine feature** — article data module, fullscreen article/bookmark routes, BookmarkRepository + IndexedDB adapter + Zustand store wired end-to-end.
 - **Diary + Event domain** — `/log` Diary/Report segmented toggle; EventCategory (built-in seed + user-defined) + EventLog (title/memo/date range/category/period-mark toggle that auto-creates/deletes a linked PeriodLog); full repository/adapter/store stack for IndexedDB and Supabase.
-- **Diary sticker customization** — `DiarySticker` (photo import → 1:1/4:3 crop) + `DiaryStickerPlacement` (drag/resize/rotate/delete on calendar); `/log/customize` fullscreen route; migrations 0006–0009; IndexedDB schema v9.
+- **Diary sticker customization** — `DiarySticker` (photo import → 1:1/4:3 crop) + `DiaryStickerPlacement` (drag/resize/rotate/delete on calendar); `/log/customize` fullscreen route; migrations 0006–0009.
+- **Home customize overhaul** — non-destructive photo editing: `PhotoTransform` metadata stored per slot, original blob never rewritten. Draft mode: all mutations buffer in `mediaStore` draft state and only reach the repo on "설정 완료" (`commitPhotoDraft`). `picksConfirmed` gate forces explicit confirmation on the edit-photos overview before submit. Slot-level photo removal (× button on filled cells). `DiscardDraftDialog` on dirty back. `TransformedPhoto` shared render component. `useMediaCustomizeView` hook merges draft/committed state. IndexedDB schema v10; Supabase migration 0010.
 - **Supabase Edge Functions** — `body-type-analyze` (Vision, no image retention, per-user rate limit); `delete-account` (storage cleanup + `auth.admin.deleteUser`, response-loss safe).
 - **`.claude/` engineering harness** — `/commit` gate, six sub-agents, four rule files.
 
@@ -175,7 +176,7 @@ Solo project. End-to-end ownership of:
 ## Future Scalability Considerations
 
 - **Conflict policy:** LWW is fine for one user × few devices. Multi-author records (partner view) would need per-field merge or CRDTs.
-- **Schema migrations:** IndexedDB is on schema v9, versioned but untested under real data drift. A real rollout needs a forward-only migration log with failure telemetry.
+- **Schema migrations:** IndexedDB is on schema v10, versioned but untested under real data drift. A real rollout needs a forward-only migration log with failure telemetry.
 - **Observability:** no production error pipeline yet. Sentry or a Supabase log table is the first step before opening signups.
 - **Multi-region:** Supabase region is fixed. For international launch I'd evaluate edge caching for magazine content (the hot read path) before sharding user data.
 
@@ -183,7 +184,7 @@ Solo project. End-to-end ownership of:
 
 ## Status & Stack
 
-**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase auth is live — login gate on every cold start, Apple and Google OAuth active, anonymous → OAuth migration wired, 4-store rehydrate on mode switch. Diary tab with event/일정 domain (EventCategory + EventLog, period-mark toggle) and diary sticker customization (`/log/customize` — photo import, 1:1/4:3 crop, drag/resize/rotate placement) are also shipped. Account deletion is implemented end-to-end: a `delete-account` Edge Function removes all storage objects then calls `auth.admin.deleteUser`; the client handles response-loss edge cases by re-checking the session. IndexedDB schema at v9; Supabase migrations through 0009. Background sync and multi-device conflict resolution are next.
+**Status:** local-only flow (record · predict · calendar · condition log · insights · i18n), magazine (4 articles, fullscreen reader, bookmarks), and the body-type analysis flow are shipped. Supabase auth is live — login gate on every cold start, Apple and Google OAuth active, anonymous → OAuth migration wired, 4-store rehydrate on mode switch. Diary tab with event/일정 domain (EventCategory + EventLog, period-mark toggle) and diary sticker customization (`/log/customize` — photo import, 1:1/4:3 crop, drag/resize/rotate placement) are also shipped. Account deletion is implemented end-to-end: a `delete-account` Edge Function removes all storage objects then calls `auth.admin.deleteUser`; the client handles response-loss edge cases by re-checking the session. Home customize flow overhauled: non-destructive pan/zoom edits stored as `PhotoTransform` metadata per slot, full draft mode (all mutations buffered until "설정 완료"), `picksConfirmed` gate on the overview screen, slot-level photo removal, and text customization temporarily hidden. IndexedDB schema at v10; Supabase migrations through 0010. Background sync and multi-device conflict resolution are next.
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript strict · Zustand · IndexedDB (`idb-keyval`) · Supabase (Postgres + Auth + Edge Functions) · Tailwind · react-hook-form · Vitest · Playwright · Capacitor 6 (iOS).
 
@@ -193,7 +194,7 @@ Solo project. End-to-end ownership of:
 pnpm install
 cp .env.example .env.local      # Supabase URL + anon key
 pnpm dev                        # http://localhost:3000
-pnpm test                       # lint → typecheck → unit → e2e
+pnpm test                       # lint → typecheck → unit (e2e is separate: pnpm test:e2e)
 ```
 
 Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).

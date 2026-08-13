@@ -20,6 +20,7 @@ import { runMigrations } from './adapters/indexeddb/migrations';
 import {
   STORAGE_KEYS,
   ALL_MEDIA_PHOTO_KEYS,
+  ALL_MEDIA_PHOTO_TRANSFORM_KEYS,
   ALL_MEDIA_TEXT_KEYS,
   DEPRECATED_KEYS,
 } from './adapters/indexeddb/keys';
@@ -153,6 +154,9 @@ export const mediaRepo: MediaRepository = {
   getHomePhoto: (slot) => pickMedia().getHomePhoto(slot),
   setHomePhoto: (slot, blob) => pickMedia().setHomePhoto(slot, blob),
   clearHomePhoto: (slot) => pickMedia().clearHomePhoto(slot),
+  getPhotoTransform: (slot) => pickMedia().getPhotoTransform(slot),
+  setPhotoTransform: (slot, transform) => pickMedia().setPhotoTransform(slot, transform),
+  clearPhotoTransform: (slot) => pickMedia().clearPhotoTransform(slot),
   getTextPosition: () => pickMedia().getTextPosition(),
   setTextPosition: (position) => pickMedia().setTextPosition(position),
   getMainText: () => pickMedia().getMainText(),
@@ -182,6 +186,7 @@ export async function resetAllUserData(): Promise<void> {
     del(STORAGE_KEYS.diaryStickers),
     del(STORAGE_KEYS.diaryStickerPlacements),
     ...ALL_MEDIA_PHOTO_KEYS.map((k) => del(k)),
+    ...ALL_MEDIA_PHOTO_TRANSFORM_KEYS.map((k) => del(k)),
     ...ALL_MEDIA_TEXT_KEYS.map((k) => del(k)),
     del(DEPRECATED_KEYS.mediaHomeHero),
     del(DEPRECATED_KEYS.mediaHomeOverlays),

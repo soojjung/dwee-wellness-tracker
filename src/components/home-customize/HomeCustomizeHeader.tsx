@@ -1,17 +1,22 @@
-import Link from 'next/link';
+'use client';
 import { useT } from '@/i18n/useT';
 
-export function HomeCustomizeHeader() {
+interface HomeCustomizeHeaderProps {
+  onBack: () => void;
+}
+
+export function HomeCustomizeHeader({ onBack }: HomeCustomizeHeaderProps) {
   const t = useT();
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 bg-brand-gray50 px-4">
-      <Link
-        href="/"
+      <button
+        type="button"
+        onClick={onBack}
         aria-label={t.home.customize.back}
         className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
       >
         <BackIcon />
-      </Link>
+      </button>
       <h1 className="text-lg font-semibold leading-6 text-brand-gray900">{t.home.customize.title}</h1>
     </header>
   );
