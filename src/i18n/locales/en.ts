@@ -30,7 +30,7 @@ export const en = {
     log: 'Diary',
     calendar: 'Calendar',
     magazine: 'Magazine',
-    settings: 'Settings',
+    settings: 'My page',
   },
   home: {
     nextPeriodTitle: 'Predicted next period',
@@ -816,6 +816,52 @@ export const en = {
     errorMissingDate: 'Please pick a start date.',
     errorFutureDate: 'Please pick a date today or earlier.',
     errorCycleRange: 'Please enter a value between 15 and 60 days.',
+  },
+  myPage: {
+    title: 'My page',
+    authCard: {
+      loggedOutCta: 'Sign in / Sign up',
+      loggedInAriaLabel: 'Open account details',
+    },
+    cycle: {
+      title: 'My cycle',
+      insufficient:
+        "Not enough cycle data yet. We need at least 3 period records to spot your pattern!",
+      averagePrefix: 'Average ',
+      averageSuffix: ' days',
+    },
+    settings: {
+      title: 'Preferences',
+      notifications: 'Notifications',
+      language: 'Language',
+    },
+    support: {
+      title: 'Support',
+      notices: 'Notices',
+      qna: 'Q&A',
+      terms: 'Terms of service',
+      privacy: 'Privacy policy',
+    },
+    accountManagement: {
+      title: 'Account',
+      signOut: 'Sign out',
+      delete: 'Delete account',
+    },
+    version: {
+      prefix: 'Version ',
+      separator: ' | ',
+      upToDate: 'Up to date',
+    },
+    account: {
+      closeAriaLabel: 'Close',
+      saveAriaLabel: 'Save',
+      emailLabel: 'Email',
+      nicknameLabel: 'Nickname',
+      nicknamePlaceholder: 'Enter your nickname',
+      savedToast: 'Nickname saved',
+      saveFailedToast: 'Couldn’t save. Please try again.',
+    },
+    comingSoon: 'Coming soon',
   },
   settings: {
     title: 'Settings',

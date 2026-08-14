@@ -31,7 +31,7 @@ export const ko: Dictionary = {
     log: '다이어리',
     calendar: '캘린더',
     magazine: '매거진',
-    settings: '설정',
+    settings: '마이페이지',
   },
   home: {
     nextPeriodTitle: '다음 생리 예상일',
@@ -817,6 +817,51 @@ export const ko: Dictionary = {
     errorMissingDate: '시작일을 골라주세요.',
     errorFutureDate: '오늘 이전 날짜를 골라주세요.',
     errorCycleRange: '15일에서 60일 사이로 입력해주세요.',
+  },
+  myPage: {
+    title: '마이페이지',
+    authCard: {
+      loggedOutCta: '로그인/회원가입',
+      loggedInAriaLabel: '내 계정 정보 열기',
+    },
+    cycle: {
+      title: '나의 생리 주기',
+      insufficient: '아직 주기 데이터가 부족해요.\n최소 3회 이상의 생리 기록이 필요해요!',
+      averagePrefix: '평균 ',
+      averageSuffix: '일',
+    },
+    settings: {
+      title: '설정',
+      notifications: '알림',
+      language: '언어',
+    },
+    support: {
+      title: '고객 지원',
+      notices: '공지사항',
+      qna: 'Q&A',
+      terms: '이용약관',
+      privacy: '개인정보처리방침',
+    },
+    accountManagement: {
+      title: '계정 관리',
+      signOut: '로그아웃',
+      delete: '탈퇴하기',
+    },
+    version: {
+      prefix: '앱 버전 ',
+      separator: ' | ',
+      upToDate: '최신버전',
+    },
+    account: {
+      closeAriaLabel: '닫기',
+      saveAriaLabel: '완료',
+      emailLabel: '이메일',
+      nicknameLabel: '닉네임',
+      nicknamePlaceholder: '닉네임을 입력해주세요',
+      savedToast: '닉네임을 저장했어요',
+      saveFailedToast: '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    },
+    comingSoon: '준비 중이에요',
   },
   settings: {
     title: '설정',

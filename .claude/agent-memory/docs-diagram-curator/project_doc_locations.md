@@ -11,6 +11,7 @@ type: project
 - `docs/flows/customize.md` — fullscreen customize flow (HomeCustomize + PhotoEdit).
 - `docs/flows/log.md` — /log page flow: PeriodHistorySection (calendar/list toggle) + LogEntryDialog (period + condition combined). Added in period-record-rewrite PR.
 - `docs/flows/diagnose.md` — DiagnoseScreen state machine (picker → preview → loading → result | error) for `/magazine/personal-body-type/diagnose`. Added in M2.0–M2.3 magazine PR.
+- `docs/flows/settings.md` — MyPage (`/settings`) flow: auth-card variants, CycleSummaryCard, sub-page stub route map, AccountEditScreen anonymous bounce + save logic. Added in feat/my-page.
 - `docs/architecture/data-layer.md` — dependency direction + repository inventory. Must be updated when any new Repository interface is added.
 - `docs/product/mvp1-spec.md` — original product spec with persona, KPI, condition enums.
 - `.claude/rules/health-copy.md` — copy tone rules (diet/medical copy restrictions).
@@ -27,7 +28,7 @@ Period / Condition / Settings / Media / Bookmark / EventCategory / Event / Diary
 
 ## Route groups (fullscreen added)
 
-Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscreen)` group hosts immersive editing screens with no AppShell or BottomTabNav. Currently: `/home/customize`, `/home/customize/edit-photos`, `/magazine/[slug]` (article reader), `/magazine/bookmarks`, `/magazine/personal-body-type/diagnose`, `/magazine/personal-body-type/diagnose/result`.
+Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscreen)` group hosts immersive editing screens with no AppShell or BottomTabNav. Currently: `/home/customize`, `/home/customize/edit-photos`, `/magazine/[slug]` (article reader), `/magazine/bookmarks`, `/magazine/personal-body-type/diagnose`, `/magazine/personal-body-type/diagnose/result`, `/settings/account` (AccountEditScreen — nickname edit, anonymous bounce).
 
 ## Magazine feature (M2.0–M2.2)
 
