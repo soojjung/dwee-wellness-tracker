@@ -42,6 +42,12 @@ export function DiagnoseScreen() {
     consented: false,
   });
   const [remaining, setRemaining] = useState<number | null>(null);
+  // Cancel + mount guards for the in-flight analyze call. Without these
+  // an unmounted screen would still setState (React warns) and — worse —
+  // still call router.push(RESULT_HREF), yanking the user out of whatever
+  // screen they navigated to while the request was in flight.
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     if (!settingsHydrated) hydrateSettings();
@@ -51,6 +57,34 @@ export function DiagnoseScreen() {
     if (step.kind !== 'loading') return;
     const url = step.blurUrl;
     return () => URL.revokeObjectURL(url);
+  }, [step]);
+
+  // On unmount: abort the analyze request and flip mounted flag so any
+  // still-pending resolution is a no-op. `mountedRef.current = true` in
+  // the effect body is required because React StrictMode (Next.js dev)
+  // runs cleanup once immediately after mount to test unmount safety —
+  // without the reset, mountedRef stays `false` forever and the guard
+  // below silently drops every successful reading.
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  // Browser tab close / refresh while loading: show the native confirm so
+  // the user doesn't accidentally drop an in-flight reading (server-side
+  // rate limit still charges, but at least they get a chance to stay).
+  useEffect(() => {
+    if (step.kind !== 'loading') return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Modern browsers ignore custom text but still show a generic dialog.
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [step]);
 
   function setSlot(slot: Slot, data: Photo | null) {
@@ -82,22 +116,38 @@ export function DiagnoseScreen() {
   async function startAnalysis(photos: Photos) {
     const front = photos.front;
     if (!front) return;
+    // Fresh controller per attempt — abort() on unmount cancels the
+    // in-flight fetch inside supabase.functions.invoke.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setStep({ kind: 'loading', blurUrl: front.previewUrl });
     let imageBase64: string;
     try {
       imageBase64 = await fileToBase64(front.file);
     } catch (err) {
       console.error('[diagnose] fileToBase64 failed', err);
-      setStep({ kind: 'error', code: 'missing_image' });
+      if (mountedRef.current) setStep({ kind: 'error', code: 'missing_image' });
       return;
     }
+    if (controller.signal.aborted) return;
+
     const result = await analyzeBodyType({
       imageBase64,
       imageMediaType: front.mediaType,
       shotType: 'full-body',
       locale,
+      signal: controller.signal,
     });
+
+    // User navigated away mid-request — silently drop the result.
+    if (!mountedRef.current || controller.signal.aborted) return;
+
     if (!result.ok) {
+      // `aborted` is the caller's own cancel — no UI needed since we're
+      // about to unmount anyway. Bail before the error screen renders.
+      if (result.error === 'aborted') return;
       console.error('[diagnose] analyzeBodyType failed', result.error);
       setStep({ kind: 'error', code: result.error });
       return;
@@ -432,6 +482,9 @@ function LoadingView({ blurUrl }: { blurUrl: string }) {
         <div className="flex flex-col items-center gap-1 text-center">
           <p className="text-2xl font-semibold leading-normal text-brand-gray50">{l.title}</p>
           <p className="text-base leading-normal text-brand-gray200">{l.body}</p>
+          <p className="mt-4 whitespace-pre-line text-sm leading-[1.5] text-brand-pink100">
+            {l.stayWarning}
+          </p>
         </div>
       </div>
     </div>
@@ -489,6 +542,10 @@ function ErrorView({ code, onRetry }: { code: BodyTypeAnalyzeError; onRetry: () 
     openai_failed: e.openaiFailed,
     openai_unreachable: e.openaiUnreachable,
     report_parse_failed: e.openaiFailed,
+    // `aborted` should never reach this UI — startAnalysis skips ErrorView
+    // when the request was cancelled by the caller. Kept for type
+    // exhaustiveness and to fall back gracefully if the guard ever misses.
+    aborted: e.unknown,
     unknown: e.unknown,
   };
   return (

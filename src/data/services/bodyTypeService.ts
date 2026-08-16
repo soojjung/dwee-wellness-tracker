@@ -13,6 +13,9 @@ interface AnalyzeInput {
   imageMediaType: SupportedImageMediaType;
   shotType: ShotType;
   locale: Locale;
+  /** Optional AbortSignal so the caller can cancel the in-flight fetch when
+   * the user navigates away from the diagnose screen. */
+  signal?: AbortSignal;
 }
 
 export interface AnalyzeSuccess {
@@ -62,12 +65,17 @@ export async function analyzeBodyType(input: AnalyzeInput): Promise<AnalyzeResul
     return { ok: false, error: 'unauthenticated' };
   }
 
+  const { signal, ...body } = input;
   const { data, error } = await supabase.functions.invoke<EdgeResponse>(
     'body-type-analyze',
-    { body: input },
+    { body, signal },
   );
 
   if (error) {
+    // AbortError is the caller's own signal (user navigated away). Surface
+    // it as a dedicated sentinel so the screen can skip its normal error
+    // UI and just quietly drop the result.
+    if (isAbortError(error)) return { ok: false, error: 'aborted' };
     console.error('[bodyTypeService] invoke error', error);
     return { ok: false, error: await extractFunctionError(error) };
   }
@@ -76,4 +84,12 @@ export async function analyzeBodyType(input: AnalyzeInput): Promise<AnalyzeResul
     return { ok: false, error: data?.error ?? 'unknown' };
   }
   return { ok: true, data: data.data };
+}
+
+function isAbortError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const name = (err as { name?: string }).name;
+  if (name === 'AbortError') return true;
+  const cause = (err as { cause?: unknown }).cause;
+  return !!cause && typeof cause === 'object' && (cause as { name?: string }).name === 'AbortError';
 }

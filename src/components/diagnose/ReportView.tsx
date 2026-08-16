@@ -35,7 +35,7 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
         image={TYPE_IMAGE[type]}
       />
 
-      <div className="relative z-10 -mt-6 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-14 pt-4">
+      <div className="relative z-10 -mt-10 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-14 pt-4">
         <TabPills active={tab} onChange={setTab} bodyLabel={r.bodyTab} styleLabel={r.styleTab} />
 
         {tab === 'body' ? (
@@ -62,17 +62,20 @@ function Hero({
   image: string;
 }) {
   return (
-    <div className="relative h-[358px] w-full overflow-hidden">
-      {/* Cutout portrait: scaled up ~2.5× and shifted upward so the head is
-          cropped out — matches Figma where only the torso and legs occupy the
-          right side of the dark hero. The crop box ends above the hero bottom
-          to leave clearance for the white card's rounded corners overlap. */}
-      <div className="pointer-events-none absolute right-0 top-0 h-[322px] w-[260px] overflow-hidden">
+    <div className="relative h-[372px] w-full overflow-hidden">
+      {/* Cutout portrait sized against Figma: source is 401×1382 (very tall).
+          Rendered at h-[720px] the natural width is ~209px, so the person
+          appears at a moderate scale (not filling the whole right side).
+          Top offset -[130px] shifts the head out of frame; combined with
+          h-[322px] the crop lands at roughly neck stub → mid-thigh, matching
+          the reference. The box stops 8px shy of the hero bottom to keep
+          clearance for the white card's rounded-corner overlap. */}
+      <div className="pointer-events-none absolute right-0 top-0 h-[372px] w-[260px] overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image}
           alt=""
-          className="absolute -top-[110px] right-0 h-[780px] w-auto max-w-none"
+          className="absolute -top-[72px] right-0 h-[700px] w-auto max-w-none"
         />
       </div>
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[168px] bg-gradient-to-b from-brand-gray900 via-brand-gray900/80 to-transparent" />
@@ -286,15 +289,7 @@ function CategoryStrip({ title, children }: { title: string; children: React.Rea
   );
 }
 
-function StyleCard({
-  label,
-  section,
-  r,
-}: {
-  label: string;
-  section: StyleSection;
-  r: ResultCopy;
-}) {
+function StyleCard({ label, section, r }: { label: string; section: StyleSection; r: ResultCopy }) {
   return (
     <div className="flex w-[280px] shrink-0 snap-start flex-col gap-4 rounded-2xl bg-brand-gray100 p-5">
       <p className="text-lg font-semibold leading-normal text-brand-gray900">{label}</p>
