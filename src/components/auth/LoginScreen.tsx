@@ -5,11 +5,15 @@ import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 import { useAuthStore, type OAuthProvider } from '@/store/authStore';
+import { consumeAppToast } from '@/lib/appToast';
 
 export function LoginScreen() {
   const t = useT();
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
+  // Post-logout / cross-route confirmation toasts render as top-confirm
+  // (015_8) while `notice` stays as the auth-error bottom pill.
+  const [confirmToast, setConfirmToast] = useState<string | null>(null);
   const [pending, setPending] = useState<OAuthProvider | null>(null);
   const [guestPending, setGuestPending] = useState(false);
   const authHydrate = useAuthStore((s) => s.hydrate);
@@ -25,9 +29,28 @@ export function LoginScreen() {
     if (!authHydrated) authHydrate();
   }, [authHydrate, authHydrated]);
 
+  // Anonymous users must be able to reach this screen (they arrive from
+  // MyPage → "로그인/회원가입" to promote to a real OAuth account). Only
+  // send fully-authenticated sessions straight through to home — treating
+  // an anonymous session as "already signed in" here silently traps
+  // anonymous users in guest mode with no way to sign in.
   useEffect(() => {
-    if (authHydrated && user) router.replace('/');
+    if (authHydrated && user && !user.is_anonymous) router.replace('/');
   }, [authHydrated, user, router]);
+
+  // Pick up cross-route notifications (post-logout toast lands here when
+  // AuthGuard bounces the signed-out user to /login).
+  useEffect(() => {
+    const queued = consumeAppToast();
+    if (queued) setConfirmToast(queued);
+  }, []);
+
+  // Auto-dismiss the top confirm toast after a short window.
+  useEffect(() => {
+    if (!confirmToast) return;
+    const id = setTimeout(() => setConfirmToast(null), 2400);
+    return () => clearTimeout(id);
+  }, [confirmToast]);
 
   useEffect(() => {
     if (!authError) return;
@@ -106,6 +129,7 @@ export function LoginScreen() {
       </div>
 
       <Toast message={notice} />
+      <Toast message={confirmToast} variant="topConfirm" />
     </main>
   );
 }

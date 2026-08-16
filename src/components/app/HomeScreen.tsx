@@ -23,6 +23,7 @@ import { ScratchKeywordCard } from './ScratchKeywordCard';
 import { ActivitySuggestions } from './ActivitySuggestions';
 import { FoodSuggestions } from './FoodSuggestions';
 import { EmptyHintCard } from './EmptyHintCard';
+import { consumeAppToast } from '@/lib/appToast';
 
 const TOAST_MS = 2400;
 const INSIGHT_LOOKBACK_DAYS = 90;
@@ -50,6 +51,10 @@ export function HomeScreen() {
   const hydrateRange = useConditionStore((s) => s.hydrateRange);
 
   const [toast, setToast] = useState<string | null>(null);
+  // Queued cross-route toasts (e.g. post-logout) render as the top-confirm
+  // style (015_8). Kept in its own slot so an inline "저장됐어요" bottom
+  // toast can coexist without stepping on it.
+  const [confirmToast, setConfirmToast] = useState<string | null>(null);
   const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -67,6 +72,20 @@ export function HomeScreen() {
     const id = setTimeout(() => setToast(null), TOAST_MS);
     return () => clearTimeout(id);
   }, [toast]);
+
+  useEffect(() => {
+    if (!confirmToast) return;
+    const id = setTimeout(() => setConfirmToast(null), TOAST_MS);
+    return () => clearTimeout(id);
+  }, [confirmToast]);
+
+  // Cross-route notifications (e.g. "signed out") land here. Run once on
+  // mount so a message queued right before navigation appears the moment
+  // Home renders. Empty queue is a no-op.
+  useEffect(() => {
+    const queued = consumeAppToast();
+    if (queued) setConfirmToast(queued);
+  }, []);
 
   const conditions = useMemo(() => Object.values(conditionMap), [conditionMap]);
 
@@ -199,6 +218,7 @@ export function HomeScreen() {
       </div>
 
       <Toast message={toast} />
+      <Toast message={confirmToast} variant="topConfirm" />
 
       {periodDialogOpen ? (
         <PeriodSelectSheet
