@@ -27,7 +27,7 @@ export function CancelEditDialog({ onCancel, onConfirm }: CancelEditDialogProps)
       >
         <div className="flex flex-col items-center gap-3 px-6 pb-5 pt-6">
           <span
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-pink50 text-brand-pink300"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-pink50 text-brand-pink300"
             aria-hidden
           >
             <ExclamationIcon />
@@ -66,14 +66,14 @@ function ExclamationIcon() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-4 w-4"
+      className="h-6 w-6"
       aria-hidden
     >
-      <path d="M12 8v5" />
-      <circle cx="12" cy="16.5" r="0.75" fill="currentColor" stroke="none" />
+      <path d="M12 6v8" />
+      <circle cx="12" cy="17.5" r="1.1" fill="currentColor" stroke="none" />
     </svg>
   );
 }

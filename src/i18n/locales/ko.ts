@@ -847,6 +847,18 @@ export const ko: Dictionary = {
       signOut: '로그아웃',
       delete: '탈퇴하기',
     },
+    signOutDialog: {
+      title: '정말 로그아웃 하시겠어요?',
+      cancel: '취소',
+      confirm: '로그아웃',
+    },
+    signOutToast: '로그아웃 했어요',
+    language: {
+      title: '언어',
+      backAriaLabel: '뒤로',
+      koreanLabel: '한국어',
+      englishLabel: 'English',
+    },
     version: {
       prefix: '앱 버전 ',
       separator: ' | ',

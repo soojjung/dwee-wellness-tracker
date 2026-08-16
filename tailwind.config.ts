@@ -60,6 +60,18 @@ const config: Config = {
           activePillBorder: '#FDE2EF',
         },
       },
+      keyframes: {
+        // Top confirm toast (015_8): slides in from just above the viewport
+        // and settles at its resting top offset. Paired with a subtle
+        // fade for a softer feel.
+        slideDownFade: {
+          '0%': { transform: 'translateY(-120%)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+      animation: {
+        slideDownFade: 'slideDownFade 280ms cubic-bezier(0.16, 1, 0.3, 1)',
+      },
     },
   },
   plugins: [],

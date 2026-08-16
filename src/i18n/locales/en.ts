@@ -847,6 +847,18 @@ export const en = {
       signOut: 'Sign out',
       delete: 'Delete account',
     },
+    signOutDialog: {
+      title: 'Sign out for real?',
+      cancel: 'Cancel',
+      confirm: 'Sign out',
+    },
+    signOutToast: 'Signed out',
+    language: {
+      title: 'Language',
+      backAriaLabel: 'Back',
+      koreanLabel: '한국어',
+      englishLabel: 'English',
+    },
     version: {
       prefix: 'Version ',
       separator: ' | ',

@@ -3,18 +3,23 @@ import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 
-interface DiscardDraftDialogProps {
+interface LogoutConfirmDialogProps {
   onCancel: () => void;
   onConfirm: () => void;
+  submitting?: boolean;
 }
 
 /**
- * Whole-session discard confirmation for the customize flow. Fired from the
- * HomeCustomize header back arrow when the draft has any dirty change —
- * confirming here throws away every photo pick and crop in the current
- * session, so the copy leans stronger than the slot-level cancel dialog.
+ * 015_7 sign-out confirmation. Matches the shape of DiscardDraftDialog /
+ * CancelEditDialog (pink alert badge, single question line, cancel + dark
+ * confirm button pair). Copy is intentionally short — the post-logout toast
+ * (`myPage.signOutToast`) provides the follow-up confirmation.
  */
-export function DiscardDraftDialog({ onCancel, onConfirm }: DiscardDraftDialogProps) {
+export function LogoutConfirmDialog({
+  onCancel,
+  onConfirm,
+  submitting = false,
+}: LogoutConfirmDialogProps) {
   const t = useT();
   useBodyScrollLock();
   useEscToClose(onCancel);
@@ -23,9 +28,9 @@ export function DiscardDraftDialog({ onCancel, onConfirm }: DiscardDraftDialogPr
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="discard-draft-dialog-title"
+      aria-labelledby="sign-out-dialog-title"
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-6"
-      onClick={onCancel}
+      onClick={submitting ? undefined : onCancel}
     >
       <div
         className="w-full max-w-[300px] overflow-hidden rounded-2xl bg-brand-white shadow-[0_8px_32px_0_rgba(0,0,0,0.18)]"
@@ -39,29 +44,28 @@ export function DiscardDraftDialog({ onCancel, onConfirm }: DiscardDraftDialogPr
             <ExclamationIcon />
           </span>
           <p
-            id="discard-draft-dialog-title"
+            id="sign-out-dialog-title"
             className="text-center text-sm font-medium leading-[1.5] text-brand-gray900"
           >
-            {t.home.customize.discardDialog.title}
-          </p>
-          <p className="text-center text-xs leading-[1.5] text-brand-gray800">
-            {t.home.customize.discardDialog.body}
+            {t.myPage.signOutDialog.title}
           </p>
         </div>
         <div className="grid grid-cols-2 border-t border-brand-gray300">
           <button
             type="button"
             onClick={onCancel}
-            className="py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900"
+            disabled={submitting}
+            className="py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900 disabled:opacity-60"
           >
-            {t.home.customize.discardDialog.cancel}
+            {t.myPage.signOutDialog.cancel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="bg-brand-gray900 py-3.5 text-sm font-medium text-brand-white transition-colors hover:bg-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-white"
+            disabled={submitting}
+            className="bg-brand-gray900 py-3.5 text-sm font-medium text-brand-white transition-colors hover:bg-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-white disabled:opacity-60"
           >
-            {t.home.customize.discardDialog.confirm}
+            {t.myPage.signOutDialog.confirm}
           </button>
         </div>
       </div>
