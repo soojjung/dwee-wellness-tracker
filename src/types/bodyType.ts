@@ -75,4 +75,5 @@ export type BodyTypeAnalyzeError =
   | 'openai_failed'
   | 'openai_unreachable'
   | 'report_parse_failed'
+  | 'aborted'
   | 'unknown';

@@ -52,13 +52,13 @@ export function CycleSummaryCard() {
       }
     >
       {isInsufficient || result.averageCycleDays === null ? (
-        <div className="flex min-h-[80px] items-center justify-center rounded-xl bg-brand-gray50 px-4 py-6">
-          <p className="text-center text-sm leading-[1.5] text-brand-gray700 whitespace-pre-line">
+        <div className="flex min-h-[80px] items-center justify-center rounded-xl bg-brand-gray200 px-4 py-6">
+          <p className="whitespace-pre-line text-center text-sm leading-[1.5] text-brand-gray700">
             {t.myPage.cycle.insufficient}
           </p>
         </div>
       ) : (
-        <div className="flex min-h-[80px] items-center justify-center rounded-xl bg-brand-gray50 px-4 py-6">
+        <div className="flex min-h-[80px] items-center justify-center rounded-xl bg-brand-gray200 px-4 py-6">
           <p className="text-lg font-semibold text-brand-gray900">
             {t.myPage.cycle.averagePrefix}
             {result.averageCycleDays}
