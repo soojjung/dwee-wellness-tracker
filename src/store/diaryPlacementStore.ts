@@ -118,7 +118,13 @@ export const useDiaryPlacementStore = create<DiaryPlacementState>()((set, get) =
   },
 }));
 
+// Stable empty-array reference for months with no placements yet. Returning
+// a fresh `[]` from the selector each render would give Zustand's
+// useSyncExternalStore a new getSnapshot value every time, triggering an
+// infinite re-render loop ("The result of getSnapshot should be cached").
+const EMPTY_PLACEMENTS: DiaryStickerPlacement[] = [];
+
 export function selectPlacementsForMonth(year: number, monthIndex: number) {
   return (s: DiaryPlacementState): DiaryStickerPlacement[] =>
-    s.byMonth[monthKey(year, monthIndex)] ?? [];
+    s.byMonth[monthKey(year, monthIndex)] ?? EMPTY_PLACEMENTS;
 }

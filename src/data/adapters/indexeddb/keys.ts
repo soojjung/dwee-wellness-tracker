@@ -19,6 +19,10 @@ export const STORAGE_KEYS = {
   diaryStickers: 'dwee:diary:stickers',
   diaryStickerBlob: (id: string) => `dwee:diary:sticker_blob:${id}` as const,
   diaryStickerPlacements: 'dwee:diary:sticker_placements',
+  // Device-scoped flag: true once we've attempted to seed the built-in
+  // sticker set into the user's library. Prevents re-seeding after the
+  // user manually deletes any of the defaults.
+  diaryDefaultStickersSeeded: 'dwee:diary:default_stickers_seeded',
 } as const;
 
 export const ALL_MEDIA_PHOTO_KEYS = PHOTO_SLOTS.map((s) => STORAGE_KEYS.mediaPhoto(s));

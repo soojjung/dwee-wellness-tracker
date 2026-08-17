@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useT } from '@/i18n/useT';
 import type { PeriodLog } from '@/types';
 import { fromISO, daysBetween } from '@/lib/date';
+import { niceScale, clampOverlayX } from '@/domain/cycle/chartScale';
 
 interface CycleChartProps {
   periods: PeriodLog[];
@@ -57,7 +58,10 @@ export function CycleChart({ periods, months, averageCycleDays }: CycleChartProp
   const withData = points.filter((p): p is Point & { cycle: number } => p.cycle !== null);
   const dataMin = withData.length ? Math.min(...withData.map((p) => p.cycle)) : 25;
   const dataMax = withData.length ? Math.max(...withData.map((p) => p.cycle)) : 31;
-  const { yMin, yMax, tickStepValue } = niceScale(dataMin, dataMax);
+  // Pad the data window by ±2 so a single-point (or narrow) range doesn't
+  // collapse to a two-tick scale where the line sits on the plot floor.
+  // niceScale still clamps to HARD_MIN/HARD_MAX and picks tick step.
+  const { yMin, yMax, tickStepValue } = niceScale(dataMin - 2, dataMax + 2);
   const yTicks: number[] = [];
   for (let v = yMax; v >= yMin; v -= tickStepValue) yTicks.push(v);
 
@@ -171,24 +175,41 @@ export function CycleChart({ periods, months, averageCycleDays }: CycleChartProp
         )}
       </svg>
 
-      {points.map((p, i) => (
-        <span
-          key={i}
-          className={`absolute -translate-x-1/2 text-[12px] leading-[1.5] ${
-            p.isCurrent ? 'font-medium text-brand-gray900' : 'text-brand-gray600'
-          }`}
-          style={{ left: `${colX(i)}px`, top: `${PLOT_BOTTOM_ZERO + 15}px` }}
-        >
-          {p.monthLabel}
-        </span>
-      ))}
+      {points.map((p, i) => {
+        // Edge-anchor the first / last month labels so they don't
+        // overflow the card. Middle labels center on their tick.
+        const isFirst = i === 0;
+        const isLast = i === points.length - 1;
+        const translate = isFirst
+          ? 'translate-x-0'
+          : isLast
+            ? '-translate-x-full'
+            : '-translate-x-1/2';
+        return (
+          <span
+            key={i}
+            className={`absolute whitespace-nowrap text-[12px] leading-[1.5] ${translate} ${
+              p.isCurrent ? 'font-medium text-brand-gray900' : 'text-brand-gray600'
+            }`}
+            style={{ left: `${colX(i)}px`, top: `${PLOT_BOTTOM_ZERO + 15}px` }}
+          >
+            {p.monthLabel}
+          </span>
+        );
+      })}
 
       {averageCycleDays !== null && avgY !== null ? (
         <div
           className="pointer-events-none absolute -translate-x-1/2"
-          style={{ left: `${avgPillX}px`, top: `${Math.max(avgY - 30, 4)}px` }}
+          style={{
+            // Clamp so the pill doesn't slip past the plot edges — with a
+            // single data point at the far right the pill would otherwise
+            // sit on the boundary and wrap character-by-character.
+            left: `${clampOverlayX(avgPillX, gridXStart, gridXEnd, 30)}px`,
+            top: `${Math.max(avgY - 30, 4)}px`,
+          }}
         >
-          <div className="relative rounded-full bg-brand-pink300 px-2 py-1.5 text-[12px] font-medium leading-none text-brand-white shadow-[0_2px_6px_0_rgba(241,88,160,0.24)]">
+          <div className="relative whitespace-nowrap rounded-full bg-brand-pink300 px-2 py-1.5 text-[12px] font-medium leading-none text-brand-white shadow-[0_2px_6px_0_rgba(241,88,160,0.24)]">
             {t.report.chartAveragePrefix}
             {averageCycleDays}
             {t.report.chartAverageSuffix}
@@ -238,28 +259,3 @@ function pickAvgPillX(coords: { x: number; y: number | null }[], min: number, ma
   return mid.x;
 }
 
-/**
- * 데이터 min/max 를 7개 이하의 tick 으로 담을 수 있는 nice step (1|2|5) 을 고르고,
- * yMin/yMax 를 그 step 배수로 반올림한다. 시각적으로 촘촘함을 방지.
- */
-function niceScale(
-  dataMin: number,
-  dataMax: number,
-): { yMin: number; yMax: number; tickStepValue: number } {
-  const MAX_TICKS = 7;
-  const HARD_MIN = 15;
-  const HARD_MAX = 60;
-  const rawMin = Math.max(Math.floor(dataMin), HARD_MIN);
-  const rawMax = Math.min(Math.ceil(dataMax === dataMin ? dataMax + 1 : dataMax), HARD_MAX);
-  const candidates = [1, 2, 5, 10];
-  for (const step of candidates) {
-    const yMin = Math.floor(rawMin / step) * step;
-    const yMax = Math.ceil(rawMax / step) * step;
-    const ticks = (yMax - yMin) / step + 1;
-    if (ticks <= MAX_TICKS) return { yMin: Math.max(yMin, 0), yMax, tickStepValue: step };
-  }
-  const step = 10;
-  const yMin = Math.floor(rawMin / step) * step;
-  const yMax = Math.ceil(rawMax / step) * step;
-  return { yMin: Math.max(yMin, 0), yMax, tickStepValue: step };
-}

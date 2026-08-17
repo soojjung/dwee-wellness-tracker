@@ -4,7 +4,6 @@ import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { Button } from '@/components/ui/Button';
 import { formatMonthLabel, fromISO } from '@/lib/date';
 import type { EventCategory, EventLog } from '@/types';
 import { ChevronDownIcon } from '@/components/ui/icons';
@@ -116,25 +115,39 @@ export function EventFormSheet({
       onClick={handleClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-brand-white shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:rounded-3xl"
+        className="flex h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-brand-gray200 shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-brand-gray200 px-6 py-4">
-          <h2 className="text-base font-semibold text-brand-gray900">
-            {headerTitle}
-          </h2>
+        {/* Figma 012_2 header: circular X (left), centered title, circular
+            confirm ✓ (right — pink when canSave, gray400 when disabled). */}
+        <header className="relative flex items-center justify-between px-4 pt-4 pb-3">
           <button
             type="button"
             aria-label={t.report.diary.eventSheet.close}
             disabled={submitting}
             onClick={handleClose}
-            className="text-xl text-brand-gray800"
+            className="grid size-9 place-items-center rounded-full bg-brand-gray100 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-60"
           >
-            ×
+            <CloseIcon />
+          </button>
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-brand-gray900">
+            {headerTitle}
+          </h2>
+          <button
+            type="button"
+            aria-label={t.report.diary.eventSheet.save}
+            disabled={!canSave}
+            onClick={handleSave}
+            className={
+              'grid size-9 place-items-center rounded-full text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+              (canSave ? 'bg-brand-pink200' : 'bg-brand-gray400')
+            }
+          >
+            <CheckIcon />
           </button>
         </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto bg-brand-gray200 px-4 py-5">
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-6 pt-2">
           <div className="overflow-hidden rounded-2xl bg-brand-white">
             <input
               type="text"
@@ -212,27 +225,6 @@ export function EventFormSheet({
             </div>
           ) : null}
         </div>
-
-        <footer className="flex gap-2 border-t border-brand-gray200 px-6 py-4">
-          <Button
-            variant="ghost"
-            size="md"
-            fullWidth
-            disabled={submitting}
-            onClick={handleClose}
-          >
-            {t.home.cancel}
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            fullWidth
-            disabled={!canSave}
-            onClick={handleSave}
-          >
-            {t.report.diary.eventSheet.save}
-          </Button>
-        </footer>
       </div>
     </div>
   );
@@ -259,7 +251,7 @@ function DateRow({ label, value, locale, expanded, onToggle }: DateRowProps) {
       <span
         className={
           'flex items-center gap-2 text-base font-medium ' +
-          (expanded ? 'text-brand-pink800' : 'text-brand-gray900')
+          (expanded ? 'text-brand-pink300' : 'text-brand-gray900')
         }
       >
         <span>{formatted}</span>
@@ -282,6 +274,39 @@ function formatDateShort(iso: string, locale: 'en' | 'ko'): string {
     return `${y}.${m}.${day}`;
   }
   return `${formatMonthLabel(d, 'en')} ${d.getDate()}`;
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      className="h-4 w-4"
+      aria-hidden
+    >
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+      aria-hidden
+    >
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
 }
 
 function TrashIcon() {

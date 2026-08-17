@@ -1,12 +1,16 @@
 'use client';
 import { useState } from 'react';
 import { useT } from '@/i18n/useT';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Button } from '@/components/ui/Button';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { usePeriodStore } from '@/store/periodStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
+import { formatMonthLabel, fromISO } from '@/lib/date';
+import { ChevronDownIcon } from '@/components/ui/icons';
+import { InlineDatePicker } from '@/components/diary/InlineDatePicker';
 import {
   MOOD_VALUES,
   ENERGY_VALUES,
@@ -27,6 +31,8 @@ interface LogEntryDialogProps {
   onSaved: () => void;
 }
 
+type ExpandedField = 'none' | 'start' | 'end';
+
 export function LogEntryDialog({
   today,
   defaultPeriodLength,
@@ -34,6 +40,7 @@ export function LogEntryDialog({
   onSaved,
 }: LogEntryDialogProps) {
   const t = useT();
+  const locale = useSettingsStore((s) => s.settings.locale);
   const addPeriod = usePeriodStore((s) => s.add);
   const upsertCondition = useConditionStore((s) => s.upsert);
 
@@ -42,6 +49,7 @@ export function LogEntryDialog({
     defaultPeriodEndDate(today, defaultPeriodLength),
   );
   const [endDirty, setEndDirty] = useState(false);
+  const [expanded, setExpanded] = useState<ExpandedField>('none');
 
   const [mood, setMood] = useState<Mood | null>(null);
   const [energy, setEnergy] = useState<Energy | null>(null);
@@ -108,10 +116,10 @@ export function LogEntryDialog({
       onClick={handleClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-brand-white shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:rounded-3xl"
+        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-brand-gray200 shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-brand-gray200 px-6 py-4">
+        <header className="flex items-center justify-between px-6 py-4">
           <h2 className="text-base font-semibold text-brand-gray900">
             {t.log.addEntryTitle}
           </h2>
@@ -126,38 +134,54 @@ export function LogEntryDialog({
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <section className="flex flex-col gap-3">
-            <h3 className="text-sm font-medium text-brand-gray800">
-              {t.log.periodSectionLabel}
-            </h3>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs text-brand-gray800">
-                {t.home.startPeriodStartLabel}
-              </span>
-              <input
-                type="date"
-                value={startDate}
-                max={today}
-                onChange={(e) => handleStartChange(e.target.value)}
-                className="h-11 w-full rounded-lg border border-brand-gray300 bg-brand-white px-3 text-base text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-1"
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
+          {/* Period date card — matches EventFormSheet's date rows: tap
+              label to expand an inline calendar underneath, pink accent
+              on the active row. Replaces the native `<input type="date">`
+              browser picker which read as raw / unstyled. */}
+          <div className="overflow-hidden rounded-2xl bg-brand-white">
+            <DateRow
+              label={t.home.startPeriodStartLabel}
+              value={startDate}
+              locale={locale}
+              expanded={expanded === 'start'}
+              onToggle={() =>
+                setExpanded((v) => (v === 'start' ? 'none' : 'start'))
+              }
+            />
+            {expanded === 'start' ? (
+              <InlineDatePicker
+                selectedDate={startDate}
+                maxDate={today}
+                onSelect={(d) => {
+                  handleStartChange(d);
+                  setExpanded('none');
+                }}
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs text-brand-gray800">
-                {t.home.startPeriodEndLabel}
-              </span>
-              <input
-                type="date"
-                value={endDate}
-                min={startDate}
-                onChange={(e) => handleEndChange(e.target.value)}
-                className="h-11 w-full rounded-lg border border-brand-gray300 bg-brand-white px-3 text-base text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-1"
+            ) : null}
+            <div className="border-t border-brand-gray300" />
+            <DateRow
+              label={t.home.startPeriodEndLabel}
+              value={endDate}
+              locale={locale}
+              expanded={expanded === 'end'}
+              onToggle={() =>
+                setExpanded((v) => (v === 'end' ? 'none' : 'end'))
+              }
+            />
+            {expanded === 'end' ? (
+              <InlineDatePicker
+                selectedDate={endDate}
+                minDate={startDate}
+                onSelect={(d) => {
+                  handleEndChange(d);
+                  setExpanded('none');
+                }}
               />
-            </label>
-          </section>
+            ) : null}
+          </div>
 
-          <section className="mt-6 flex flex-col gap-4">
+          <section className="space-y-4 rounded-2xl bg-brand-white p-4">
             <h3 className="text-sm font-medium text-brand-gray800">
               {t.log.conditionSectionLabel}
             </h3>
@@ -208,12 +232,12 @@ export function LogEntryDialog({
               maxLength={MEMO_MAX}
               placeholder={t.log.memoPlaceholder}
               onChange={(e) => setMemo(e.target.value)}
-              className="min-h-[72px] resize-none rounded-2xl border border-brand-gray300 px-4 py-3 text-sm text-brand-gray900 placeholder:text-brand-gray600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2"
+              className="min-h-[72px] w-full resize-none rounded-2xl border border-brand-gray300 px-4 py-3 text-sm text-brand-gray900 placeholder:text-brand-gray600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2"
             />
           </section>
         </div>
 
-        <footer className="flex gap-2 border-t border-brand-gray200 px-6 py-4">
+        <footer className="flex gap-2 border-t border-brand-gray300 bg-brand-gray200 px-6 py-4">
           <Button
             variant="ghost"
             size="md"
@@ -236,4 +260,50 @@ export function LogEntryDialog({
       </div>
     </div>
   );
+}
+
+interface DateRowProps {
+  label: string;
+  value: string;
+  locale: 'en' | 'ko';
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function DateRow({ label, value, locale, expanded, onToggle }: DateRowProps) {
+  const formatted = formatDateShort(value, locale);
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className="flex w-full items-center justify-between px-4 py-3 text-left"
+    >
+      <span className="text-sm text-brand-gray700">{label}</span>
+      <span
+        className={
+          'flex items-center gap-2 text-base font-medium ' +
+          (expanded ? 'text-brand-pink300' : 'text-brand-gray900')
+        }
+      >
+        <span>{formatted}</span>
+        <ChevronDownIcon
+          className={
+            'h-2 w-3 transition-transform ' + (expanded ? 'rotate-180' : '')
+          }
+        />
+      </span>
+    </button>
+  );
+}
+
+function formatDateShort(iso: string, locale: 'en' | 'ko'): string {
+  const d = fromISO(iso);
+  if (locale === 'ko') {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}.${m}.${day}`;
+  }
+  return `${formatMonthLabel(d, 'en')} ${d.getDate()}`;
 }

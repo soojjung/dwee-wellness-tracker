@@ -44,20 +44,29 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
 
   return (
     <>
-      <ReportHeader
-        year={now.getFullYear()}
-        onAddClick={() => setEntryOpen(true)}
-        currentView={currentView}
-        onViewChange={onViewChange}
+      {/* Match diary: fixed gray200 backdrop under the whole viewport so
+          the header + gutter share the same tinted background regardless
+          of content height, and content sits above via z-10. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 bg-brand-gray200"
       />
-      {showFullEmpty ? (
-        <CycleReportEmpty onLogClick={() => setEntryOpen(true)} />
-      ) : (
-        <div className="flex flex-col gap-4 px-4 pt-4">
-          <CycleReportCard periods={periods} months={months} />
-          <RecentCyclesCard periods={periods} />
-        </div>
-      )}
+      <div className="relative z-10">
+        <ReportHeader
+          year={now.getFullYear()}
+          onAddClick={() => setEntryOpen(true)}
+          currentView={currentView}
+          onViewChange={onViewChange}
+        />
+        {showFullEmpty ? (
+          <CycleReportEmpty onLogClick={() => setEntryOpen(true)} />
+        ) : (
+          <div className="flex flex-col gap-4 px-4 pt-4">
+            <CycleReportCard periods={periods} months={months} />
+            <RecentCyclesCard periods={periods} />
+          </div>
+        )}
+      </div>
       {entryOpen ? (
         <LogEntryDialog
           today={today}

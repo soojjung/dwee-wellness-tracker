@@ -793,6 +793,44 @@ export const en = {
         placement: 'Placed sticker',
         deletePlacement: 'Remove sticker',
         resizePlacement: 'Resize and rotate',
+        newStickerBadge: 'Just added',
+        editEnter: 'Edit',
+        editExit: 'Done',
+        deleteCta: 'Delete stickers',
+        deleteSelectAriaLabel: 'Select for deletion',
+        deleteDialog: {
+          title: 'Delete the selected stickers?',
+          cancel: 'Cancel',
+          confirm: 'Delete',
+        },
+        discardDialog: {
+          title: 'Discard your changes?',
+          body: 'Sticker placements added in this session will be lost.',
+          cancel: 'Keep editing',
+          confirm: 'Discard',
+        },
+      },
+      camera: {
+        close: 'Close camera',
+        shutter: 'Take photo',
+        openAlbum: 'Open album',
+        flip: 'Flip camera',
+        modePhoto: 'Photo',
+        modeSticker: 'Sticker',
+        ratio1x1: '1:1',
+        ratio4x3: '4:3',
+        permissionDenied:
+          'Camera access is required. Please allow it in your browser settings and try again.',
+        unavailable: 'Camera is not available on this device. Choose from your album instead.',
+        openAlbumFallback: 'Open album',
+      },
+      scan: {
+        progress: '✨ Scanning… hold tight!',
+      },
+      cutout: {
+        close: 'Close',
+        retake: 'Retake photo',
+        confirm: 'Save sticker',
       },
       photoImport: {
         title: 'Preview',
@@ -1229,7 +1267,7 @@ export const en = {
     },
   },
   condition: {
-    mood: { great: 'Great', good: 'Good', neutral: 'Okay', down: 'Down', low: 'Tough' },
+    mood: { great: 'Happy', good: 'Calm', neutral: 'Neutral', down: 'Gloomy', low: 'Anxious' },
     energy: { high: 'High', medium: 'Steady', low: 'Low' },
     pain: { none: 'None', mild: 'Mild', moderate: 'Moderate', severe: 'Severe' },
     bloating: { none: 'None', mild: 'Slight', severe: 'Heavy' },

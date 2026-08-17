@@ -102,19 +102,27 @@ flowchart TD
 - `src/components/diary/ColorPaletteSelector.tsx` — 7색 팔레트 확장 셀렉터
 - `src/store/eventStore.ts` — 이벤트/카테고리 Zustand 스토어. `addEvent`/`updateEvent`/`removeEvent`/`addCategory`/`updateCategory`/`linkPeriodMark`/`unlinkPeriodMark`
 
-### Diary 커스터마이즈 (STEP 10.3a/10.3b — 완료)
+### Diary 커스터마이즈 (STEP 10.3a–10.3d — 완료)
 
 `edit-star` 아이콘 → `/log/customize` fullscreen 라우트로 이동.
 - 데이터: `DiarySticker` (id, storageRef, ratio 1:1|4:3, source photo|sticker, createdAt).
 - 저장소: IndexedDB `dwee:diary:stickers` + blob per id. Supabase `diary_stickers` 테이블 + `media` bucket 경로 `{user_id}/diary_stickers/{id}.{ext}` (RLS anon lockout).
-- 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기(준비 중)) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
-- 10.3b 포함: 캘린더 위에 스티커 배치 (drag/select/resize/rotate/delete). 라이브러리 썸네일 탭 → 화면 중앙 근처에 draft placement 생성. 커스터마이즈 화면은 draft 상태를 유지하며 완료 시 diff → repo 반영, 뒤로 시 폐기.
-- 다음 스텝: 10.3c 카메라, 10.3d AI 배경제거 + 편집 모드 (다중 선택 · 스티커 삭제).
+- 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
+- 10.3b 포함: 캘린더 위에 스티커 배치 (drag/select/resize/rotate/delete). 라이브러리 썸네일 탭 → 화면 중앙 근처에 draft placement 생성. 커스터마이즈 화면은 draft 상태를 유지하며 완료 시 diff → repo 반영, 뒤로 시 `DiscardDialog` → 폐기.
+- 10.3c 포함: `CameraSheet` — Capacitor Camera 플러그인으로 촬영 후 crop 진입. `DraggableBottomSheet` — 스티커 라이브러리를 snap 2단계(collapsed/expanded) 바텀시트로 감쌈.
+- 10.3d 포함: `StickerScanScreen` + `CutoutConfirmScreen` — rembg 누끼 처리 결과 확인 → 보관함 저장. `DeleteStickersDialog` — 스티커 다중 선택 삭제 확인. `DiaryStickerViewLayer` — 다이어리 달력 위에 확정된 배치를 read-only 렌더하는 레이어(커스터마이즈 화면 밖에서도 표시).
+- **기본 스티커 시드**: `src/domain/diary/defaultStickers.ts` 에 5개 기본 스티커 정의 (airpods-max / avocado-toast / glass-lemon / matcha / workout). `ensureDefaultStickersSeeded()` (`src/data/index.ts`)가 첫 앱 로드 시 `diaryDefaultStickersSeeded` 플래그를 확인하고, 미시드 상태면 `public/stickers/default/*.png` 블롭을 repo에 일괄 삽입.
 
 관련 파일:
 - `src/app/(fullscreen)/log/customize/page.tsx`
-- `src/components/diary-customize/{DiaryCustomizeScreen,StickerLibrarySheet,PhotoImportModal,PlacedStickerLayer,PlacedSticker}.tsx`
+- `src/components/diary-customize/{DiaryCustomizeScreen,StickerLibrarySheet,PhotoImportModal,PlacedStickerLayer,PlacedSticker,CameraSheet,StickerScanScreen,CutoutConfirmScreen,DeleteStickersDialog}.tsx`
+- `src/components/diary/DiaryStickerViewLayer.tsx` — 다이어리 탭 캘린더 위 read-only 오버레이
+- `src/components/ui/DraggableBottomSheet.tsx`
 - `src/store/{diaryStickerStore,diaryPlacementStore}.ts`
+- `src/domain/diary/defaultStickers.ts` — 기본 스티커 메타 정의
+- `public/stickers/default/*.png` — 5개 rembg 누끼 처리 이미지
+- `src/data/index.ts` — `ensureDefaultStickersSeeded()` 진입점
+- `src/data/adapters/indexeddb/keys.ts` — `diaryDefaultStickersSeeded` 플래그 키
 - `src/data/{repositories,adapters/indexeddb,adapters/supabase}` 에 `DiaryStickerRepository`, `DiaryStickerPlacementRepository`
 - `supabase/migrations/0008_diary_stickers.sql`, `supabase/migrations/0009_diary_sticker_placements.sql`
 
@@ -135,4 +143,5 @@ EventDetailSheet 의 생리 토글은 `eventStore.linkPeriodMark(id)` / `unlinkP
 - `src/domain/cycle/status.ts` — `classifyCycleStatus()` 순수 함수
 - `src/domain/cycle/status.test.ts` — 10개 Vitest 케이스
 - `src/domain/cycle/status.cases.md` — 케이스 테이블
+- `src/domain/cycle/chartScale.ts` — `computeChartScale()` 순수 함수 (y-축 min/max/step 계산). `chartScale.test.ts` + `chartScale.cases.md` 쌍 포함.
 - `docs/domain/cycle.md` — 주기 도메인 전체 로직 (4-phase, recordPolicy, periodEdit, cycleStatus)

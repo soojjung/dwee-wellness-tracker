@@ -1,6 +1,6 @@
 'use client';
 import { create } from 'zustand';
-import { diaryStickerRepo, ensureMigrations } from '@/data';
+import { diaryStickerRepo, ensureDefaultStickersSeeded, ensureMigrations } from '@/data';
 import type { NewDiaryStickerInput } from '@/data';
 import type { DiarySticker } from '@/types';
 
@@ -32,6 +32,7 @@ export const useDiaryStickerStore = create<DiaryStickerState>()((set, get) => ({
     set({ loading: true, error: null });
     try {
       await ensureMigrations();
+      await ensureDefaultStickersSeeded();
       const stickers = await diaryStickerRepo.list();
       const urls: Record<string, string> = {};
       for (const s of stickers) {

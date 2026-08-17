@@ -68,9 +68,26 @@ const config: Config = {
           '0%': { transform: 'translateY(-120%)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        // Diary sticker "scanning" animation (013_3): a soft pink bar
+        // sweeps top→bottom over the captured photo to signal "processing".
+        stickerScan: {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
+        // Diary onboarding nudge (spec 8): the calendar pulls slightly to
+        // the left and returns, hinting that horizontal swipe changes the
+        // month. Runs once per app session when the tab is opened.
+        diaryNudge: {
+          '0%': { transform: 'translateX(0)' },
+          '35%': { transform: 'translateX(-14px)' },
+          '65%': { transform: 'translateX(-14px)' },
+          '100%': { transform: 'translateX(0)' },
+        },
       },
       animation: {
         slideDownFade: 'slideDownFade 280ms cubic-bezier(0.16, 1, 0.3, 1)',
+        stickerScan: 'stickerScan 1.4s ease-in-out',
+        diaryNudge: 'diaryNudge 900ms ease-in-out',
       },
     },
   },
