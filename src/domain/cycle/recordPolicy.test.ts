@@ -3,6 +3,7 @@ import {
   defaultPeriodEndDate,
   evaluateNewStart,
   reconcileForNewStart,
+  resolvePeriodEndOnStartChange,
   SHORT_CYCLE_THRESHOLD_DAYS,
 } from './recordPolicy';
 import type { PeriodLog } from '@/types';
@@ -123,6 +124,91 @@ describe('defaultPeriodEndDate', () => {
 
   it('crosses year boundary correctly', () => {
     expect(defaultPeriodEndDate('2025-12-30', 5)).toBe('2026-01-03');
+  });
+});
+
+describe('resolvePeriodEndOnStartChange', () => {
+  const LEN = 5;
+
+  it('always auto-adjusts end when the user has not touched it (endDirty=false)', () => {
+    const next = resolvePeriodEndOnStartChange({
+      newStart: '2026-02-10',
+      currentEnd: '2026-02-05',
+      endDirty: false,
+      defaultPeriodLength: LEN,
+    });
+    expect(next).toBe('2026-02-14');
+  });
+
+  it('respects the user-picked end when the new start is still on or before it', () => {
+    // User picked start=Feb 1, end=Feb 8 (long period). Then moved start to
+    // Feb 3 — still within the range, so their custom Feb 8 end stays.
+    const next = resolvePeriodEndOnStartChange({
+      newStart: '2026-02-03',
+      currentEnd: '2026-02-08',
+      endDirty: true,
+      defaultPeriodLength: LEN,
+    });
+    expect(next).toBe('2026-02-08');
+  });
+
+  it('snaps end forward via default length when the user-picked end fell before the new start', () => {
+    // Regression: user picked start=Feb 1, end=Feb 3 (short period), then
+    // moved start to Feb 10 — the old end=Feb 3 is now before start. Snap
+    // forward so the UI never shows end < start.
+    const next = resolvePeriodEndOnStartChange({
+      newStart: '2026-02-10',
+      currentEnd: '2026-02-03',
+      endDirty: true,
+      defaultPeriodLength: LEN,
+    });
+    expect(next).toBe('2026-02-14');
+  });
+
+  it('treats a new start equal to the user-picked end as still valid (same day)', () => {
+    const next = resolvePeriodEndOnStartChange({
+      newStart: '2026-02-08',
+      currentEnd: '2026-02-08',
+      endDirty: true,
+      defaultPeriodLength: LEN,
+    });
+    expect(next).toBe('2026-02-08');
+  });
+
+  it('handles period length of 1 (single-day auto)', () => {
+    const next = resolvePeriodEndOnStartChange({
+      newStart: '2026-02-10',
+      currentEnd: '2026-02-05',
+      endDirty: false,
+      defaultPeriodLength: 1,
+    });
+    expect(next).toBe('2026-02-10');
+  });
+
+  it('handles start moving across a month boundary while overwriting an invalid end', () => {
+    const next = resolvePeriodEndOnStartChange({
+      newStart: '2026-03-01',
+      currentEnd: '2026-02-27',
+      endDirty: true,
+      defaultPeriodLength: LEN,
+    });
+    expect(next).toBe('2026-03-05');
+  });
+
+  it('is idempotent — running the reconciler twice yields the same result', () => {
+    const first = resolvePeriodEndOnStartChange({
+      newStart: '2026-02-10',
+      currentEnd: '2026-02-03',
+      endDirty: true,
+      defaultPeriodLength: LEN,
+    });
+    const second = resolvePeriodEndOnStartChange({
+      newStart: '2026-02-10',
+      currentEnd: first,
+      endDirty: true,
+      defaultPeriodLength: LEN,
+    });
+    expect(second).toBe(first);
   });
 });
 

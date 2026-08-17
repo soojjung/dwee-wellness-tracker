@@ -7,27 +7,24 @@ import { queueAppToast } from '@/lib/appToast';
 import { MyPageCard } from './MyPageCard';
 import { MyPageRow } from './MyPageRow';
 import { LogoutConfirmDialog } from './LogoutConfirmDialog';
-import { DeleteAccountDialog } from '@/components/settings/DeleteAccountDialog';
-import { AccountAlertDialog, type AccountAlertVariant } from '@/components/settings/AccountAlertDialog';
+import { WithdrawConfirmDialog } from './WithdrawConfirmDialog';
 
 /**
  * `계정 관리` card. Only rendered for authenticated (non-anonymous) users.
- * Uses the existing signOut / deleteAccount infra from the previous
- * settings screen — the dedicated 015_7 / 015_9 popup designs replace
- * these dialogs in the next batch.
+ * Sign-out uses the existing dialog + toast handoff; account deletion
+ * routes through the two-step 015_9 confirm → 015_10~14 reason screen
+ * flow (`/settings/withdraw`), so this card no longer touches the
+ * `deleteAccount` action directly.
  */
 export function AccountManagementCard() {
   const t = useT();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
-  const deleteAccount = useAuthStore((s) => s.deleteAccount);
 
   const [signOutDialogOpen, setSignOutDialogOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [alertVariant, setAlertVariant] = useState<AccountAlertVariant | null>(null);
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
 
   const isAuthenticated = !!user && !user.is_anonymous;
   if (!isAuthenticated) return null;
@@ -35,36 +32,18 @@ export function AccountManagementCard() {
   async function handleSignOutConfirm() {
     if (signingOut) return;
     setSigningOut(true);
-    // Navigate first, cleanup after. Previously we awaited the entire
-    // signOut() (network round-trip + IDB resets + rehydrate) plus a
-    // duplicate rehydrate before pushing — during which the settings
-    // AuthGuard blanked out (user became null mid-await). Routing to
-    // /login up front unmounts /settings immediately, so the blank
-    // never appears. signOut() below still runs (fire-and-forget)
-    // but the user is already on LoginScreen when it finishes.
-    // The rehydrate that used to sit here is redundant — signOut's
-    // internal applyRepoMode('local') already rehydrates every store.
+    // Navigate first, cleanup after (see previous refactor commit for
+    // why: the settings AuthGuard used to blank out mid-await if we
+    // held here until signOut() finished).
     queueAppToast(t.myPage.signOutToast);
     setSignOutDialogOpen(false);
     router.push('/login');
     void signOut();
   }
 
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      const result = await deleteAccount();
-      setDialogOpen(false);
-      setAlertVariant(result.ok ? 'success' : 'failure');
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  function closeAlert() {
-    const wasSuccess = alertVariant === 'success';
-    setAlertVariant(null);
-    if (wasSuccess && typeof window !== 'undefined') window.location.assign('/');
+  function handleWithdrawConfirm() {
+    setWithdrawDialogOpen(false);
+    router.push('/settings/withdraw');
   }
 
   return (
@@ -77,7 +56,7 @@ export function AccountManagementCard() {
           />
           <MyPageRow
             label={t.myPage.accountManagement.delete}
-            onClick={() => setDialogOpen(true)}
+            onClick={() => setWithdrawDialogOpen(true)}
           />
         </div>
       </MyPageCard>
@@ -89,15 +68,11 @@ export function AccountManagementCard() {
           submitting={signingOut}
         />
       ) : null}
-      {dialogOpen ? (
-        <DeleteAccountDialog
-          onConfirm={handleDelete}
-          onCancel={() => setDialogOpen(false)}
-          submitting={deleting}
+      {withdrawDialogOpen ? (
+        <WithdrawConfirmDialog
+          onCancel={() => setWithdrawDialogOpen(false)}
+          onConfirm={handleWithdrawConfirm}
         />
-      ) : null}
-      {alertVariant ? (
-        <AccountAlertDialog variant={alertVariant} onClose={closeAlert} />
       ) : null}
     </>
   );
