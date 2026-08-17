@@ -48,7 +48,15 @@ export function PlacedStickerLayer({
       data-diary-canvas="true"
       className="relative"
       onPointerDown={(e) => {
-        if (e.target === e.currentTarget) onSelect(null);
+        // Spec 8: tap outside any placed sticker → clear selection. The
+        // strict `target === currentTarget` check we had before never
+        // fired because the calendar tree sits inside the layer and
+        // captures all target values. `closest` walks up from the actual
+        // event target, matching only when the tap did NOT land on a
+        // placed sticker.
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('[data-placed-sticker="true"]')) return;
+        onSelect(null);
       }}
     >
       {children}

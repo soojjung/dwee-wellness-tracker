@@ -72,7 +72,8 @@ export function DiaryMonthGrid({
         <div
           key={ri}
           className={
-            'grid grid-cols-7' + (ri > 0 ? ' border-t border-brand-gray300' : '')
+            'grid grid-cols-7' +
+            (ri > 0 ? ' border-t-[0.75px] border-brand-gray400' : '')
           }
         >
           {row.map((cell) => (

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
@@ -13,10 +13,19 @@ interface PhotoImportModalProps {
 
 export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalProps) {
   const t = useT();
-  const previewUrl = useMemo(() => URL.createObjectURL(file), [file]);
+  // Create the blob URL inside an effect (rather than useMemo) so React's
+  // StrictMode double-mount can't leave the rendered <img> pointing at a
+  // URL that was already revoked by the simulated cleanup. Rendering is
+  // gated on `previewUrl` being non-null.
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   useEffect(() => {
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+    const u = URL.createObjectURL(file);
+    setPreviewUrl(u);
+    return () => {
+      URL.revokeObjectURL(u);
+      setPreviewUrl(null);
+    };
+  }, [file]);
 
   const [ratio, setRatio] = useState<StickerRatio>('1:1');
   const [submitting, setSubmitting] = useState(false);
@@ -36,7 +45,8 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
     }
   }
 
-  const aspectRatio = ratio === '1:1' ? '1 / 1' : '4 / 3';
+  // "4:3" label maps to portrait 3:4 (Figma preview shows taller frames).
+  const aspectRatio = ratio === '1:1' ? '1 / 1' : '3 / 4';
 
   return (
     <div
@@ -69,16 +79,26 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
       </header>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4">
+        {/* Reserve the tallest ratio's footprint (portrait 3:4) so that
+            switching between 1:1 and 4:3 doesn't push the toggle and CTA
+            row up/down. The actual preview centers within this box. */}
         <div
-          className="w-full max-w-xs overflow-hidden rounded-lg bg-brand-gray200"
-          style={{ aspectRatio }}
+          className="flex w-full max-w-xs items-center justify-center"
+          style={{ aspectRatio: '3 / 4' }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
+          <div
+            className="w-full overflow-hidden rounded-lg bg-brand-gray200"
+            style={{ aspectRatio }}
+          >
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : null}
+          </div>
         </div>
 
         <RatioToggle value={ratio} onChange={setRatio} />
@@ -89,22 +109,21 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
             onClick={onClose}
             disabled={submitting}
             aria-label={t.report.diary.photoImport.retake}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-gray400/40 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden fill="none">
-              <path
-                d="M3 9a6 6 0 1010-4.5"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
-              <path
-                d="M13 1v3.5H9.5"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+              aria-hidden
+            >
+              {/* Lucide rotate-ccw — full CCW loop, tail in upper-left. */}
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
             </svg>
           </button>
           <button
@@ -112,17 +131,10 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
             onClick={handleConfirm}
             disabled={submitting}
             aria-label={t.report.diary.photoImport.confirm}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-pink300 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 disabled:opacity-60"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-pink200 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 disabled:opacity-60"
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
-              <path
-                d="M3 9l4 4 8-10"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
+              <path d="M5 12.5l4.5 4.5L19 7.5" />
             </svg>
           </button>
         </div>
@@ -140,20 +152,20 @@ function RatioToggle({ value, onChange }: RatioToggleProps) {
   const t = useT();
   const is1x1 = value === '1:1';
   return (
-    <div className="relative flex items-center gap-2 rounded-full bg-brand-gray200 p-1">
+    <div className="relative flex items-center gap-2 rounded-full border border-brand-gray200 bg-brand-white p-1">
       <span
         aria-hidden
-        className="absolute top-1 h-8 w-16 rounded-full bg-brand-pink50 transition-transform duration-200 ease-out"
-        style={{ transform: is1x1 ? 'translateX(0)' : 'translateX(64px)' }}
+        className="absolute left-1 top-1 h-8 w-16 rounded-full bg-brand-pink50 transition-transform duration-200 ease-out"
+        style={{ transform: is1x1 ? 'translateX(0)' : 'translateX(calc(100% + 0.5rem))' }}
       />
+      {/* Both labels always render as semibold gray900 so the button
+          footprints stay pixel-identical regardless of selection — only
+          the sliding pink pill behind them signals the active option. */}
       <button
         type="button"
         onClick={() => onChange('1:1')}
         aria-pressed={is1x1}
-        className={
-          'relative z-10 h-8 w-16 rounded-full text-sm font-medium ' +
-          (is1x1 ? 'text-brand-pink800' : 'text-brand-gray700')
-        }
+        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
       >
         {t.report.diary.photoImport.ratio1x1}
       </button>
@@ -161,10 +173,7 @@ function RatioToggle({ value, onChange }: RatioToggleProps) {
         type="button"
         onClick={() => onChange('4:3')}
         aria-pressed={!is1x1}
-        className={
-          'relative z-10 h-8 w-16 rounded-full text-sm font-medium ' +
-          (!is1x1 ? 'text-brand-pink800' : 'text-brand-gray700')
-        }
+        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
       >
         {t.report.diary.photoImport.ratio4x3}
       </button>
@@ -174,7 +183,8 @@ function RatioToggle({ value, onChange }: RatioToggleProps) {
 
 async function cropToRatio(file: File, ratio: StickerRatio): Promise<Blob | null> {
   const bitmap = await loadImage(file);
-  const targetAspect = ratio === '1:1' ? 1 : 4 / 3;
+  // "4:3" label = portrait 3:4 aspect (width:height = 3:4).
+  const targetAspect = ratio === '1:1' ? 1 : 3 / 4;
   const srcAspect = bitmap.width / bitmap.height;
   let sx = 0;
   let sy = 0;

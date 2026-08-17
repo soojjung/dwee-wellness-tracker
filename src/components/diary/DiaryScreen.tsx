@@ -1,15 +1,21 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { usePeriodStore } from '@/store/periodStore';
 import { useEventStore } from '@/store/eventStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useDiaryStickerStore } from '@/store/diaryStickerStore';
+import {
+  useDiaryPlacementStore,
+  selectPlacementsForMonth,
+} from '@/store/diaryPlacementStore';
 import { todayISO } from '@/lib/date';
 import { LogEntryDialog } from '@/components/log/LogEntryDialog';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
+import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
 import { AddQuickSheet } from './AddQuickSheet';
 import { EventFormSheet, type EventFormInput } from './EventFormSheet';
 import { EventDetailSheet } from './EventDetailSheet';
@@ -59,11 +65,21 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
 
   const periodLength = useSettingsStore((s) => s.settings.averagePeriodLength);
 
+  const stickers = useDiaryStickerStore((s) => s.stickers);
+  const stickerUrls = useDiaryStickerStore((s) => s.urls);
+  const stickersHydrated = useDiaryStickerStore((s) => s.hydrated);
+  const hydrateStickers = useDiaryStickerStore((s) => s.hydrate);
+
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), monthIndex: now.getMonth() };
   });
   const [sheet, setSheet] = useState<ActiveSheet>({ kind: 'none' });
+
+  const placements = useDiaryPlacementStore(
+    selectPlacementsForMonth(cursor.year, cursor.monthIndex),
+  );
+  const hydratePlacementMonth = useDiaryPlacementStore((s) => s.hydrateMonth);
 
   useEffect(() => {
     if (!periodsHydrated) hydratePeriods();
@@ -72,6 +88,14 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   useEffect(() => {
     if (!eventsHydrated) hydrateEvents();
   }, [eventsHydrated, hydrateEvents]);
+
+  useEffect(() => {
+    if (!stickersHydrated) hydrateStickers();
+  }, [stickersHydrated, hydrateStickers]);
+
+  useEffect(() => {
+    hydratePlacementMonth(cursor.year, cursor.monthIndex);
+  }, [cursor.year, cursor.monthIndex, hydratePlacementMonth]);
 
   const builtinNamer = useCallback(
     (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
@@ -171,34 +195,163 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       ? categories.find((c) => c.id === sheet.categoryId) ?? null
       : null;
 
+  const swipeContainerRef = useRef<HTMLDivElement>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swipeAnimating, setSwipeAnimating] = useState(false);
+  const dragRef = useRef<{ id: number; startX: number; startY: number; captured: boolean } | null>(
+    null,
+  );
+
+  // Spec 8: onboarding nudge — the calendar pulls slightly left and returns
+  // on first mount of the diary tab in this session, hinting that swipe
+  // changes the month. `sessionStorage` so tab switches within a session
+  // don't retrigger, but a page reload does (matches "onboarding").
+  const [nudgeOnMount, setNudgeOnMount] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const key = 'dwee:diary_nudge_shown';
+    if (window.sessionStorage.getItem(key)) return;
+    setNudgeOnMount(true);
+    window.sessionStorage.setItem(key, '1');
+    const t = window.setTimeout(() => setNudgeOnMount(false), 1000);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  function commitSwipe(direction: -1 | 0 | 1, containerWidth: number) {
+    if (direction === 0) {
+      setSwipeAnimating(true);
+      setSwipeOffset(0);
+      return;
+    }
+    // Slide fully out of view in the swipe direction, then swap month +
+    // instantly snap the new month in from the opposite side (offset 0).
+    setSwipeAnimating(true);
+    setSwipeOffset(direction * -containerWidth);
+    window.setTimeout(() => {
+      setCursor((c) => {
+        const total = c.year * 12 + c.monthIndex + direction;
+        return { year: Math.floor(total / 12), monthIndex: ((total % 12) + 12) % 12 };
+      });
+      setSwipeAnimating(false);
+      setSwipeOffset(0);
+    }, 220);
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragRef.current = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      captured: false,
+    };
+    setSwipeAnimating(false);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const s = dragRef.current;
+    if (!s || s.id !== e.pointerId) return;
+    const dx = e.clientX - s.startX;
+    const dy = e.clientY - s.startY;
+    if (!s.captured) {
+      // Only start owning the gesture once horizontal intent dominates so
+      // vertical scrolls (calendar list, page scroll) still work.
+      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
+      s.captured = true;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    }
+    setSwipeOffset(dx);
+  }
+
+  function handlePointerEnd(e: React.PointerEvent<HTMLDivElement>) {
+    const s = dragRef.current;
+    if (!s || s.id !== e.pointerId) return;
+    dragRef.current = null;
+    if (!s.captured) return;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    const width = swipeContainerRef.current?.getBoundingClientRect().width ?? 0;
+    const threshold = Math.max(60, width * 0.2);
+    if (swipeOffset <= -threshold) commitSwipe(1, width);
+    else if (swipeOffset >= threshold) commitSwipe(-1, width);
+    else commitSwipe(0, width);
+  }
+
   return (
     <>
-      <DiaryHeader
-        year={cursor.year}
-        monthIndex={cursor.monthIndex}
-        currentView={currentView}
-        onViewChange={onViewChange}
-        onMonthClick={() => setSheet({ kind: 'monthPicker' })}
-        onAddClick={() => setSheet({ kind: 'quick' })}
+      {/* Diary page background: because <main> has `pb-32` for the fixed
+          bottom-nav overlay and its own bg is transparent, the AppShell's
+          gray50 would show through below the calendar. A fixed backdrop
+          scoped to this component paints the whole viewport in gray200
+          (matches Figma 012_1 page bg variable) and unmounts cleanly
+          when the user leaves the diary tab. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 bg-brand-gray200"
       />
-      <div className="px-4 pt-4">
-        <div className="rounded-2xl bg-brand-white/95 px-2 py-2 backdrop-blur-sm">
-          <DiaryMonthGrid
-            year={cursor.year}
-            monthIndex={cursor.monthIndex}
-            weekStartsOn={WEEK_STARTS_ON}
-            today={today}
-            periods={periods}
-            events={events}
-            categories={categories}
-            onSelect={() => {
-              /* Day surrounding area — reserved for STEP 10.2b+ list view */
-            }}
-            onSelectEvent={(ev) => setSheet({ kind: 'detail', eventId: ev.id })}
-          />
+      <div className="relative z-10">
+        <DiaryHeader
+          year={cursor.year}
+          monthIndex={cursor.monthIndex}
+          currentView={currentView}
+          onViewChange={onViewChange}
+          onMonthClick={() => setSheet({ kind: 'monthPicker' })}
+          onAddClick={() => setSheet({ kind: 'quick' })}
+        />
+        {/* Padding gutter lives OUTSIDE the overflow-hidden layer so the
+            left/right margin stays visible even while the swipe transform
+            drags the calendar past its resting position. */}
+        <div className="px-4 pt-4">
+        <div
+          ref={swipeContainerRef}
+          // `select-none` prevents mouse-drag text selection from
+          // hijacking the swipe gesture on desktop; `touch-pan-y`
+          // lets vertical page scroll still work on mobile.
+          className="relative touch-pan-y select-none overflow-hidden"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerEnd}
+          onPointerCancel={handlePointerEnd}
+        >
+          {/* Two nested divs so nudge (CSS keyframe transform on the outer)
+              and swipe (inline transform on the inner) don't collide on
+              the same property. */}
+          <div className={nudgeOnMount ? 'animate-diaryNudge' : undefined}>
+            <div
+              style={{
+                transform: `translateX(${swipeOffset}px)`,
+                transition: swipeAnimating ? 'transform 220ms ease-out' : 'none',
+              }}
+            >
+              <DiaryStickerViewLayer
+                placements={placements}
+                stickers={stickers}
+                urls={stickerUrls}
+              >
+                <div className="rounded-2xl bg-brand-white/95 py-2 backdrop-blur-sm">
+                  <DiaryMonthGrid
+                    year={cursor.year}
+                    monthIndex={cursor.monthIndex}
+                    weekStartsOn={WEEK_STARTS_ON}
+                    today={today}
+                    periods={periods}
+                    events={events}
+                    categories={categories}
+                    onSelect={() => {
+                      /* Day surrounding area — reserved for STEP 10.2b+ list view */
+                    }}
+                    onSelectEvent={(ev) => setSheet({ kind: 'detail', eventId: ev.id })}
+                  />
+                </div>
+              </DiaryStickerViewLayer>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
 
+      {/* + button routes through AddQuickSheet: 생리일 기록 →
+          LogEntryDialog (same modal 주기리포트 uses), 일정 등록 →
+          EventFormSheet. */}
       {sheet.kind === 'quick' ? (
         <AddQuickSheet
           onSelectPeriod={() => setSheet({ kind: 'period' })}

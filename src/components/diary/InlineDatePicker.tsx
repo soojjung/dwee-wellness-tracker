@@ -13,12 +13,14 @@ interface InlineDatePickerProps {
   selectedDate: string;
   onSelect: (date: string) => void;
   minDate?: string;
+  maxDate?: string;
 }
 
 export function InlineDatePicker({
   selectedDate,
   onSelect,
   minDate,
+  maxDate,
 }: InlineDatePickerProps) {
   const t = useT();
   const locale = useSettingsStore((s) => s.settings.locale);
@@ -59,10 +61,10 @@ export function InlineDatePicker({
           type="button"
           onClick={() => setWheelOpen(true)}
           aria-label={t.report.diary.inlineDate.openYearMonth}
-          className="flex items-center gap-1 text-sm font-medium text-brand-pink800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800"
+          className="flex items-center gap-1 text-sm font-medium text-brand-pink300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink300"
         >
           <span>{monthLabel}</span>
-          <ChevronDownIcon className="h-2 w-3 -rotate-90 text-brand-pink800" />
+          <ChevronDownIcon className="h-2 w-3 -rotate-90 text-brand-pink300" />
         </button>
         <div className="flex items-center gap-3 text-brand-gray900">
           <button
@@ -103,17 +105,26 @@ export function InlineDatePicker({
           const day = fromISO(cell.date).getDate();
           const isSelected = cell.date === selectedDate;
           const isToday = cell.date === today;
-          const disabled = !!minDate && cell.date < minDate;
+          const disabled =
+            (!!minDate && cell.date < minDate) ||
+            (!!maxDate && cell.date > maxDate);
 
+          // Figma spec 12/13:
+          //   - Today's date: Pink/300 text, no background circle.
+          //   - Selected (non-today) date: Pink/50 background circle,
+          //     Pink/300 text.
+          //   - Today + selected: overlay both — pink50 bg with pink300 text.
+          const bg = isSelected ? 'bg-brand-pink50' : '';
+          const color = disabled
+            ? 'text-brand-gray400'
+            : isSelected || isToday
+              ? 'text-brand-pink300'
+              : 'text-brand-gray900';
           const classes =
-            'flex h-9 w-9 items-center justify-center rounded-full text-sm mx-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
-            (isToday
-              ? 'bg-brand-pink300 text-brand-white'
-              : isSelected
-                ? 'border border-brand-pink300 text-brand-pink800'
-                : disabled
-                  ? 'text-brand-gray400'
-                  : 'text-brand-gray900');
+            'flex h-9 w-9 items-center justify-center rounded-full text-sm mx-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink300 ' +
+            bg +
+            ' ' +
+            color;
 
           return (
             <button

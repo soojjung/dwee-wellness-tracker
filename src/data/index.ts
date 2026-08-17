@@ -1,4 +1,5 @@
-import { del } from 'idb-keyval';
+import { del, get, set } from 'idb-keyval';
+import { DEFAULT_STICKERS, defaultStickerUrl } from '@/domain/diary/defaultStickers';
 import { indexedDBSettingsAdapter } from './adapters/indexeddb/IndexedDBSettingsAdapter';
 import { indexedDBPeriodAdapter } from './adapters/indexeddb/IndexedDBPeriodAdapter';
 import { indexedDBConditionAdapter } from './adapters/indexeddb/IndexedDBConditionAdapter';
@@ -174,6 +175,40 @@ export async function ensureMigrations(): Promise<void> {
   migrationsRan = true;
 }
 
+/**
+ * Seeds the built-in sticker set (Figma frame 2563:1601) into the user's
+ * library on first use. Runs at most once per device — a subsequent call
+ * (after the user deletes any of the defaults) is a no-op so we don't
+ * resurrect stickers the user intentionally removed. If the library
+ * already contains stickers when we first look, we mark seeded without
+ * inserting so cross-device sync (Supabase) doesn't duplicate.
+ */
+let seedRan = false;
+export async function ensureDefaultStickersSeeded(): Promise<void> {
+  if (seedRan || typeof window === 'undefined') return;
+  seedRan = true;
+  const flag = await get<boolean>(STORAGE_KEYS.diaryDefaultStickersSeeded);
+  if (flag) return;
+
+  const existing = await diaryStickerRepo.list();
+  if (existing.length > 0) {
+    await set(STORAGE_KEYS.diaryDefaultStickersSeeded, true);
+    return;
+  }
+
+  for (const seed of DEFAULT_STICKERS) {
+    try {
+      const res = await fetch(defaultStickerUrl(seed.filename));
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      await diaryStickerRepo.add({ blob, ratio: seed.ratio, source: 'sticker' });
+    } catch {
+      // Skip a single failed asset — don't block the rest of the seed.
+    }
+  }
+  await set(STORAGE_KEYS.diaryDefaultStickersSeeded, true);
+}
+
 export async function resetAllUserData(): Promise<void> {
   await Promise.all([
     del(STORAGE_KEYS.settings),
@@ -185,10 +220,14 @@ export async function resetAllUserData(): Promise<void> {
     del(STORAGE_KEYS.events),
     del(STORAGE_KEYS.diaryStickers),
     del(STORAGE_KEYS.diaryStickerPlacements),
+    // Clear the seed flag so a fresh account on the same device gets the
+    // built-in stickers again on next hydrate.
+    del(STORAGE_KEYS.diaryDefaultStickersSeeded),
     ...ALL_MEDIA_PHOTO_KEYS.map((k) => del(k)),
     ...ALL_MEDIA_PHOTO_TRANSFORM_KEYS.map((k) => del(k)),
     ...ALL_MEDIA_TEXT_KEYS.map((k) => del(k)),
     del(DEPRECATED_KEYS.mediaHomeHero),
     del(DEPRECATED_KEYS.mediaHomeOverlays),
   ]);
+  seedRan = false;
 }

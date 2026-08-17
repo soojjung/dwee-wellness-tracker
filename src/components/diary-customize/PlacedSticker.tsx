@@ -45,7 +45,8 @@ export function PlacedSticker({
   const t = useT();
   const scaleFactor = containerWidth / PLACEMENT_NOMINAL_WIDTH;
   const baseW = PLACEMENT_BASE_SIZE * placement.scale;
-  const baseH = ratio === '1:1' ? baseW : baseW * 0.75;
+  // "4:3" label = portrait 3:4 aspect → height is longer than width.
+  const baseH = ratio === '1:1' ? baseW : baseW * (4 / 3);
   const renderX = placement.x * scaleFactor;
   const renderY = placement.y * scaleFactor;
   const renderW = baseW * scaleFactor;
@@ -127,6 +128,7 @@ export function PlacedSticker({
 
   return (
     <div
+      data-placed-sticker="true"
       className="absolute touch-none select-none"
       style={{
         left: renderX,

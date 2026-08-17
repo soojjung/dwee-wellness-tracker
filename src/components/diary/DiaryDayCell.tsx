@@ -39,14 +39,14 @@ export function DiaryDayCell({
 
   return (
     <div
-      className="flex min-h-[64px] flex-col items-stretch gap-1 py-1"
+      className="flex min-h-[92px] flex-col items-stretch gap-1 pb-4 pt-2"
       onClick={() => onSelect(date)}
       role="presentation"
     >
       <div className="flex justify-center">
         <span
           className={
-            'inline-flex h-[19px] w-8 items-center justify-center text-sm font-medium leading-none ' +
+            'inline-flex h-[19px] w-8 items-center justify-center text-base font-medium leading-none ' +
             (isMarked ? 'rounded-2xl ' : '') +
             numberBg
           }
@@ -66,8 +66,8 @@ export function DiaryDayCell({
                 e.stopPropagation();
                 onSelectEvent?.(ev);
               }}
-              className="block w-full truncate rounded-sm px-1 text-left text-[11px] font-medium leading-tight focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink800"
-              style={{ backgroundColor: p.bg, color: p.fg }}
+              className="block w-full truncate rounded px-1 py-[2px] text-left text-[12px] font-medium leading-none text-brand-gray900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink800"
+              style={{ backgroundColor: p.bg }}
             >
               {truncateTitle(ev.title)}
             </button>
