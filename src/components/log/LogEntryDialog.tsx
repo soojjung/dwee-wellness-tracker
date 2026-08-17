@@ -7,7 +7,10 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { usePeriodStore } from '@/store/periodStore';
 import { useConditionStore } from '@/store/conditionStore';
-import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
+import {
+  defaultPeriodEndDate,
+  resolvePeriodEndOnStartChange,
+} from '@/domain/cycle/recordPolicy';
 import { formatMonthLabel, fromISO } from '@/lib/date';
 import { ChevronDownIcon } from '@/components/ui/icons';
 import { InlineDatePicker } from '@/components/diary/InlineDatePicker';
@@ -62,10 +65,19 @@ export function LogEntryDialog({
   const [submitting, setSubmitting] = useState(false);
 
   function handleStartChange(v: string) {
-    setStartDate(v);
-    if (!endDirty && v) {
-      setEndDate(defaultPeriodEndDate(v, defaultPeriodLength));
+    if (!v) {
+      setStartDate(v);
+      return;
     }
+    setStartDate(v);
+    setEndDate(
+      resolvePeriodEndOnStartChange({
+        newStart: v,
+        currentEnd: endDate,
+        endDirty,
+        defaultPeriodLength,
+      }),
+    );
   }
 
   function handleEndChange(v: string) {

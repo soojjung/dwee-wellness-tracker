@@ -202,11 +202,11 @@ export function StickerLibrarySheet({
                   aria-pressed={editing ? isSelectedForDelete : undefined}
                   className={cn(
                     'relative overflow-hidden rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 disabled:cursor-default',
-                    isSelectedForDelete
-                      ? 'ring-2 ring-brand-pink300'
-                      : isPicked
-                        ? 'bg-brand-gray300 p-1.5'
-                        : 'bg-brand-gray200 active:bg-brand-gray300',
+                    // No cell background — stickers are transparent PNGs
+                    // and the gray box was reading as a chip around them.
+                    // Press state now conveyed via `scale-90` on the img.
+                    isSelectedForDelete && 'ring-2 ring-brand-pink300',
+                    isPicked && 'p-1.5',
                   )}
                   style={{ aspectRatio: s.ratio === '1:1' ? '1 / 1' : '3 / 4' }}
                 >

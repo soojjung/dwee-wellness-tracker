@@ -112,6 +112,57 @@ flowchart TD
 
 ---
 
+## Account deletion flow (015_9 → 015_14)
+
+### Confirm dialog (015_9)
+
+Tapping "계정 삭제" in `AccountManagementCard` opens `WithdrawConfirmDialog` (pink alert badge, same visual language as `LogoutConfirmDialog`). On confirm, the user is pushed to the withdrawal reason screen instead of triggering deletion immediately.
+
+### Reason collection screen (015_10–015_14)
+
+Route: `(fullscreen)/settings/withdraw` — rendered by `WithdrawReasonScreen`.
+
+The user selects one or more reasons from a fixed list (`ReasonKey` union — nine preset keys + `'other'`). Selecting `'other'` reveals a free-text input (capped at 100 chars in UI, 500 chars in the DB). The "탈퇴하기" confirm button is disabled until at least one reason is selected.
+
+On confirm:
+
+1. `withdrawalFeedbackService.submit(reasons, otherText)` — inserts an anonymous row into `public.withdrawal_feedbacks` via the Supabase client. The table has no `user_id` column; the row survives the account cascade and is readable only by `service_role`.
+2. `deleteAccount()` from `authStore` — calls the `delete-account` Edge Function (storage cleanup → `auth.admin.deleteUser`).
+3. On success, `router.replace('/login')` with a `withdrawDoneToast`.
+
+```mermaid
+flowchart TD
+    Tap[Tap 계정 삭제]
+    Confirm[WithdrawConfirmDialog\n015_9]
+    Cancel[dismiss]
+    ReasonScreen[WithdrawReasonScreen\n/settings/withdraw]
+    Select[Select reason(s)\n± free-text]
+    Submit[탈퇴하기]
+    Feedback[withdrawalFeedbackService.submit\nanonymous insert → withdrawal_feedbacks]
+    Delete[deleteAccount\ndelete-account Edge Function]
+    Login[router.replace /login\n+ withdrawDoneToast]
+
+    Tap --> Confirm
+    Confirm -->|취소| Cancel
+    Confirm -->|확인| ReasonScreen
+    ReasonScreen --> Select
+    Select --> Submit
+    Submit --> Feedback
+    Feedback --> Delete
+    Delete --> Login
+
+    classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
+    classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+    classDef storage fill:#F0E8FD,stroke:#BDA8E5,color:#4A3A5C;
+    class Tap,Confirm,Cancel,ReasonScreen,Select,Submit,Login ui;
+    class Delete logic;
+    class Feedback storage;
+```
+
+**`withdrawal_feedbacks` table** (migration 0011): anonymous, INSERT-only from authenticated non-anonymous clients (RLS blocks reads via anon key). `reasons text[]`, optional `other_text text`, `created_at timestamptz`. No `user_id` — deliberate; rows survive the account deletion cascade for analytics.
+
+---
+
 ## Language settings screen (015_7)
 
 Route: `(app)/settings/language` — rendered by `LanguageSettingsScreen`.
@@ -125,6 +176,7 @@ Two radio-style rows (English / 한국어). Tapping a row immediately calls `set
 | Route | Figma | Status |
 |---|---|---|
 | `/settings/language` | 015_15 | live — `LanguageSettingsScreen` |
+| `/settings/withdraw` | 015_10–14 | live — `WithdrawReasonScreen` (fullscreen) |
 | `/settings/notices` | 015_4 | stub |
 | `/settings/qna` | 015_5 | stub |
 | `/settings/terms` | 015_16 | stub |
@@ -141,5 +193,8 @@ All copy lives under `myPage.*` in `src/i18n/locales/{en,ko}.ts`. New keys from 
 - `myPage.signOutDialog.*` — logout confirm dialog title, body, confirm button
 - `myPage.signOutToast` — post-logout confirmation message shown on `/login`
 - `myPage.language.*` — language settings screen title and locale labels
+- `myPage.withdrawDialog.*` — withdrawal confirm dialog title, body, confirm button
+- `myPage.withdraw.*` — reason-collection screen title, reason labels, free-text placeholder, submit button
+- `myPage.withdrawDoneToast` — post-deletion confirmation message shown on `/login`
 
 Nickname fallback logic (email local-part) is in `AuthCard.getNickname()` — not an i18n key.

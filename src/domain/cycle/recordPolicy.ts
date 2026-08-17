@@ -74,6 +74,30 @@ export function defaultPeriodEndDate(startDate: string, periodLength: number): s
   return addDaysISO(startDate, periodLength - 1);
 }
 
+/**
+ * 사용자가 시작일을 변경했을 때 유지할 종료일을 결정한다. LogEntryDialog 처럼
+ * 시작/종료 두 필드를 함께 보여주는 UI에서, 시작일을 밀었을 때 종료일이 자동으로
+ * 따라오지 않으면 `종료일 < 시작일` 상태가 화면에 남아 어색해지고 저장 버튼만
+ * 조용히 비활성화된다.
+ *
+ * 규칙:
+ * 1. 사용자가 종료일을 손대지 않았으면 (`endDirty=false`) 항상 기본 길이로 재산정.
+ * 2. 사용자가 종료일을 명시적으로 골랐지만 (`endDirty=true`) 새 시작일이 기존
+ *    종료일을 넘어섰으면 — 사용자의 선택이 무효화됐으므로 기본 길이로 재산정.
+ * 3. 새 시작일이 기존 종료일 이하면 사용자의 선택을 유지.
+ */
+export function resolvePeriodEndOnStartChange(input: {
+  newStart: string;
+  currentEnd: string;
+  endDirty: boolean;
+  defaultPeriodLength: number;
+}): string {
+  const { newStart, currentEnd, endDirty, defaultPeriodLength } = input;
+  if (!endDirty) return defaultPeriodEndDate(newStart, defaultPeriodLength);
+  if (newStart > currentEnd) return defaultPeriodEndDate(newStart, defaultPeriodLength);
+  return currentEnd;
+}
+
 export function reconcileForNewStart(
   existing: PeriodLog[],
   newStart: string,

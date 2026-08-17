@@ -2,7 +2,7 @@
 
 대상: `src/domain/cycle/recordPolicy.ts`
 
-Last run: 2026-06-16 — 23/23 passed
+Last run: 2026-08-17 — 30/30 passed
 
 ## `reconcileForNewStart(existing, newStart)`
 
@@ -55,3 +55,22 @@ Last run: 2026-06-16 — 23/23 passed
 - 행 20: 간격이 정확히 15일이면 임계치 이상이므로 `ok` (경계값 포함 확인).
 - 행 21: 여러 이전 기록이 있을 때 가장 가까운(최근) 것과 비교해야 한다.
 - 행 23: `SHORT_CYCLE_THRESHOLD_DAYS` 상수가 `aggregate.ts` 이상치 필터(`gap >= 15`)와 같은 값(15)으로 고정되어 있는지 sanity check.
+
+## `resolvePeriodEndOnStartChange({ newStart, currentEnd, endDirty, defaultPeriodLength })`
+
+| # | 설명 (`it` title) | 입력 | 기대 결과 | 결과 |
+|---|---|---|---|---|
+| 24 | always auto-adjusts end when the user has not touched it (endDirty=false) | `newStart='2026-02-10'`, `currentEnd='2026-02-05'`, `endDirty=false`, `len=5` | `'2026-02-14'` | ✅ |
+| 25 | respects the user-picked end when the new start is still on or before it | `newStart='2026-02-03'`, `currentEnd='2026-02-08'`, `endDirty=true`, `len=5` | `'2026-02-08'` | ✅ |
+| 26 | snaps end forward via default length when the user-picked end fell before the new start | `newStart='2026-02-10'`, `currentEnd='2026-02-03'`, `endDirty=true`, `len=5` | `'2026-02-14'` | ✅ |
+| 27 | treats a new start equal to the user-picked end as still valid (same day) | `newStart='2026-02-08'`, `currentEnd='2026-02-08'`, `endDirty=true`, `len=5` | `'2026-02-08'` | ✅ |
+| 28 | handles period length of 1 (single-day auto) | `newStart='2026-02-10'`, `currentEnd='2026-02-05'`, `endDirty=false`, `len=1` | `'2026-02-10'` | ✅ |
+| 29 | handles start moving across a month boundary while overwriting an invalid end | `newStart='2026-03-01'`, `currentEnd='2026-02-27'`, `endDirty=true`, `len=5` | `'2026-03-05'` | ✅ |
+| 30 | is idempotent — running the reconciler twice yields the same result | first: `newStart='2026-02-10'`, `currentEnd='2026-02-03'`, `endDirty=true`; second: same newStart, `currentEnd=first` | `second === first` | ✅ |
+
+**Notes**
+- Branch 1 (line 96): `!endDirty` — rows 24, 28.
+- Branch 2 (line 97): `endDirty && newStart > currentEnd` — rows 26, 29.
+- Branch 3 (line 98): `endDirty && newStart <= currentEnd` — rows 25, 27, 30.
+- 행 27: `newStart === currentEnd` 경계값. `>` 비교이므로 같을 때는 Branch 3(유지).
+- 행 30: 두 번째 실행에서 `newStart <= first`이므로 Branch 3 → `second === first`. 상태 안정 후 재산정 없음을 확인.
