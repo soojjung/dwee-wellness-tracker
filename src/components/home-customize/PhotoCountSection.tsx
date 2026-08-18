@@ -11,10 +11,10 @@ const COUNT_TO_KEY: Record<PhotoCount, 'one' | 'two' | 'four'> = {
 
 interface PhotoCountSectionProps {
   selected: PhotoCount | null;
-  onSelect: (count: PhotoCount) => void;
+  onPick: (count: PhotoCount, files: FileList) => void;
 }
 
-export function PhotoCountSection({ selected, onSelect }: PhotoCountSectionProps) {
+export function PhotoCountSection({ selected, onPick }: PhotoCountSectionProps) {
   const t = useT();
   return (
     <section className="px-4 pt-4">
@@ -23,26 +23,35 @@ export function PhotoCountSection({ selected, onSelect }: PhotoCountSectionProps
       <ul className="mt-4 grid grid-cols-3 gap-2">
         {PHOTO_COUNTS.map((count) => {
           const isSelected = selected === count;
+          const label = t.home.customize.photo.count[COUNT_TO_KEY[count]];
           return (
             <li key={count}>
-              <button
-                type="button"
-                onClick={() => onSelect(count)}
+              <label
+                role="button"
                 aria-pressed={isSelected}
-                aria-label={t.home.customize.photo.count[COUNT_TO_KEY[count]]}
+                aria-label={label}
                 className={cn(
-                  'flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl py-4 transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
+                  'flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl py-4 transition-colors',
+                  'focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-gray900 focus-within:ring-offset-2',
                   isSelected
                     ? 'border-[0.75px] border-brand-pink200 bg-brand-pink50'
                     : 'border-[0.75px] border-brand-gray400 bg-transparent hover:bg-brand-gray200',
                 )}
               >
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple={count > 1}
+                  className="sr-only"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length) onPick(count, files);
+                    e.target.value = '';
+                  }}
+                />
                 <PhotoLayoutIcon count={count} />
-                <span className="text-xs font-semibold text-brand-gray900">
-                  {t.home.customize.photo.count[COUNT_TO_KEY[count]]}
-                </span>
-              </button>
+                <span className="text-xs font-semibold text-brand-gray900">{label}</span>
+              </label>
             </li>
           );
         })}

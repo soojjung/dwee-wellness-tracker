@@ -299,8 +299,10 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
         />
         {/* Padding gutter lives OUTSIDE the overflow-hidden layer so the
             left/right margin stays visible even while the swipe transform
-            drags the calendar past its resting position. */}
-        <div className="px-4 pt-4">
+            drags the calendar past its resting position. Extra pb keeps the
+            6th calendar row clear of the fixed BottomTabNav on short mobile
+            viewports (Safari with URL bar visible). */}
+        <div className="px-4 pb-24 pt-4">
         <div
           ref={swipeContainerRef}
           // `select-none` prevents mouse-drag text selection from

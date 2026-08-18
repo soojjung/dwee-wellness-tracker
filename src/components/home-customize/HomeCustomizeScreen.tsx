@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
@@ -25,8 +25,6 @@ import { DiscardDraftDialog } from './DiscardDraftDialog';
 export function HomeCustomizeScreen() {
   const t = useT();
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement | null>(null);
-  const pickTargetRef = useRef<PhotoCount | null>(null);
 
   const hydrated = useMediaStore((s) => s.hydrated);
   const hydrate = useMediaStore((s) => s.hydrate);
@@ -102,39 +100,17 @@ export function HomeCustomizeScreen() {
   //   }
   // }, [periodsHydrated, settingsHydrated, autoCopy.main, autoCopy.sub, localMain, localSub]);
 
-  function handleSelectCount(count: PhotoCount) {
+  function handlePick(count: PhotoCount, files: FileList) {
     draftSetPhotoCount(count);
     const targetSlots = slotsForCount(count);
-    const missing = targetSlots.some((s) => !photoUrls[s]);
-    if (!missing) {
-      // Already have photos in every slot — jump to overview so the user can
-      // review, replace, or remove from there.
-      router.push('/home/customize/edit-photos');
-      return;
-    }
-    pickTargetRef.current = count;
-    fileRef.current?.click();
-  }
-
-  function handleFilesPicked(files: FileList) {
-    const target = pickTargetRef.current;
-    pickTargetRef.current = null;
-    if (!target) return;
-    const targetSlots = slotsForCount(target);
-    const picked = Array.from(files).slice(0, target);
+    const picked = Array.from(files).slice(0, count);
     // Fill only the slots the user picked a file for. Any un-picked slot is
     // left as-is (may be empty or hold a previously-committed photo) — the
     // overview screen shows a "+" placeholder for empty slots so the user can
-    // finish there. This avoids destroying existing photos when the user
-    // picks fewer files than the target count.
+    // finish there.
     for (let i = 0; i < picked.length; i++) {
-      const slot = targetSlots[i]!;
-      const file = picked[i]!;
-      draftSetPhoto(slot, file);
+      draftSetPhoto(targetSlots[i]!, picked[i]!);
     }
-    // Always land on the overview after a pick attempt (even if the user
-    // cancelled with 0 picks). Overview is where the customize flow's photo
-    // management lives.
     router.push('/home/customize/edit-photos');
   }
 
@@ -175,7 +151,7 @@ export function HomeCustomizeScreen() {
       <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">
         <HomeCustomizeHeader onBack={handleBack} />
         <main className="flex-1">
-          <PhotoCountSection selected={photoCount} onSelect={handleSelectCount} />
+          <PhotoCountSection selected={photoCount} onPick={handlePick} />
           {allFilled && photoCount ? (
             <div className="px-4">
               <PhotoPreviewGrid
@@ -214,19 +190,6 @@ export function HomeCustomizeScreen() {
           hint={allFilled && !picksConfirmed ? t.home.customize.confirmPicksHint : undefined}
         />
       </div>
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          const files = e.target.files;
-          if (files && files.length) handleFilesPicked(files);
-          e.target.value = '';
-        }}
-      />
 
       {showDiscardDialog ? (
         <DiscardDraftDialog

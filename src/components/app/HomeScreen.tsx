@@ -149,7 +149,7 @@ export function HomeScreen() {
 
   return (
     <PageContainer className="gap-0 pb-10">
-      <HomeHero isEmpty={isEmpty} />
+      <HomeHero />
 
       <div className="flex flex-col gap-5 pt-12">
         <TodayDateHeading date={today} onCalendarClick={() => setPeriodDialogOpen(true)} />

@@ -120,11 +120,11 @@ function ActivityToneCard({ tone, emoji, title, description, durationLabel }: Ac
       <div className="flex flex-col gap-1.5">
         <p
           className={cn(
-            'flex items-center gap-1.5 text-lg font-semibold leading-snug',
+            'flex items-center gap-1 text-base font-semibold leading-snug',
             dark ? 'text-brand-white' : 'text-brand-gray900',
           )}
         >
-          <span>{title}</span>
+          <span className="whitespace-nowrap">{title}</span>
           <span aria-hidden>{emoji}</span>
         </p>
         <p
