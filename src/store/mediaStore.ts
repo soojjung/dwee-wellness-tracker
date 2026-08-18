@@ -281,7 +281,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
     // mutation below flips it back off.
     set({
       draftActive: true,
-      draftPhotoCount: state.photoCount ?? 1,
+      draftPhotoCount: state.photoCount,
       draftPhotoUrls: state.photoUrls.slice(),
       draftPhotoTransforms: state.photoTransforms.slice(),
       draftPendingBlobs: emptyBlobs(),

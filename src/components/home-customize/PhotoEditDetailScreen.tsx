@@ -261,7 +261,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
           </button>
         </header>
 
-        <main className="flex flex-1 flex-col items-center justify-center">
+        <main className="flex flex-1 flex-col items-center justify-start">
           <div className="aspect-square w-full max-h-full overflow-hidden">
             <div className={wrapperClass}>
               {slots.map((slot) => (

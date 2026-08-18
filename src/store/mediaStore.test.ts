@@ -124,9 +124,9 @@ describe('beginPhotoDraft', () => {
     expect(s.draftOwnedUrls).toEqual([]);
   });
 
-  it('defaults draft photoCount to 1 when nothing is committed', () => {
+  it('leaves draft photoCount null when nothing is committed', () => {
     useMediaStore.getState().beginPhotoDraft();
-    expect(useMediaStore.getState().draftPhotoCount).toBe(1);
+    expect(useMediaStore.getState().draftPhotoCount).toBeNull();
   });
 
   it('is idempotent — a second call while active is a no-op (preserves picks)', () => {
@@ -204,8 +204,9 @@ describe('draftSetPhotoCount', () => {
   });
 
   it('does nothing when count already matches (preserves picksConfirmed)', () => {
+    seedCommitted({ photoCount: 1, photoUrls: nullArray<string | null>(null) });
     useMediaStore.getState().beginPhotoDraft();
-    // Fresh draft: picksConfirmed=true, draftPhotoCount defaulted to 1.
+    // Fresh draft mirrors committed count (1), so re-setting to 1 is a no-op.
     useMediaStore.getState().draftSetPhotoCount(1);
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(true);
   });

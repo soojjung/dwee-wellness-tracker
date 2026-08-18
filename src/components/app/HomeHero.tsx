@@ -8,11 +8,7 @@ import { PhotoLayout } from '@/components/home-customize/PhotoLayout';
 import { EditStarIcon } from '@/components/ui/icons';
 import { HomeHeroText } from './HomeHeroText';
 
-interface HomeHeroProps {
-  isEmpty?: boolean;
-}
-
-export function HomeHero({ isEmpty = false }: HomeHeroProps) {
+export function HomeHero() {
   const t = useT();
 
   const photoCount = useMediaStore((s) => s.photoCount);
@@ -65,7 +61,7 @@ export function HomeHero({ isEmpty = false }: HomeHeroProps) {
 
         <HomeHeroText />
 
-        {isEmpty && !isCustom && !hasUserText ? (
+        {!isCustom && !hasUserText ? (
           <div
             className="pointer-events-none absolute right-4 top-4 z-10 flex flex-col items-end gap-1.5"
             aria-hidden

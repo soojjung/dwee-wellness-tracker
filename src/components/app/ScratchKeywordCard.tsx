@@ -9,7 +9,7 @@ interface ScratchKeywordCardProps {
 }
 
 const SCRATCH_RADIUS = 28;
-const REVEAL_THRESHOLD = 0.42;
+const REVEAL_THRESHOLD = 0.2;
 const STORAGE_PREFIX = 'dwee:ui:home_scratch:';
 
 export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
