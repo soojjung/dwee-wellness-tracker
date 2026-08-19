@@ -1,4 +1,8 @@
-# Calendar 화면 흐름
+# Calendar 흐름 (DiaryScreen 내장)
+
+> 독립 `/calendar` 라우트와 `CalendarScreen` 컴포넌트는 제거됨.
+> 캘린더는 `DiaryScreen` (`/log` 탭 Diary 뷰) 안에 `DiaryMonthGrid`로 통합되어 있습니다.
+> 관련 파일: `src/components/diary/DiaryScreen.tsx`, `src/components/calendar/`.
 
 ## 셀 상태 결정 트리
 
@@ -26,34 +30,37 @@ flowchart TD
 ```mermaid
 sequenceDiagram
   participant U as User
-  participant C as CalendarScreen
+  participant D as DiaryScreen
   participant CS as conditionStore
   participant PS as periodStore
 
-  U->>C: 마운트
-  C->>PS: hydrate() (최초 1회)
-  C->>CS: hydrateRange(이번달 1일~말일)
-  CS-->>C: byDate 업데이트
-  PS-->>C: periods 업데이트
-  C->>C: deriveCellMarkers + predictNextPeriod
-  C-->>U: MonthGrid 렌더
+  U->>D: /log 진입 (Diary 뷰)
+  D->>PS: hydrate() (최초 1회)
+  D->>CS: hydrateRange(이번달 1일~말일)
+  CS-->>D: byDate 업데이트
+  PS-->>D: periods 업데이트
+  D->>D: deriveCellMarkers + predictNextPeriod
+  D-->>U: DiaryMonthGrid 렌더
 
-  U->>C: ‹ 또는 › 클릭
-  C->>C: cursor = shiftMonth(cursor, ±1)
-  C->>CS: hydrateRange(새 월 범위)
-  CS-->>C: byDate merge
-  C-->>U: 새 MonthGrid 렌더
+  U->>D: ‹ 또는 › 클릭
+  D->>D: cursor = shiftMonth(cursor, ±1)
+  D->>CS: hydrateRange(새 월 범위)
+  CS-->>D: byDate merge
+  D-->>U: 새 DiaryMonthGrid 렌더
 
-  U->>C: DayCell tap
-  C->>C: selectedDate = date
-  C-->>U: DayDetailSheet 오픈
-  U->>C: 시트 외부 클릭/Esc
-  C->>C: selectedDate = null
+  U->>D: DayCell tap
+  D->>D: selectedDate = date
+  D-->>U: DayDetailSheet 오픈
+  U->>D: 시트 외부 클릭/Esc
+  D->>D: selectedDate = null
 ```
 
 ## DayDetailSheet 액션 버튼
 
 `selectedDate`와 `periods` 상태에 따라 버튼이 조건부로 노출됩니다.
+
+> 이벤트(일정) 배지를 탭하면 `EventDetailSheet` 없이 `EventFormSheet` 편집 모드가 바로 열립니다.
+> 삭제·생리 토글도 편집 폼 내부에 있습니다.
 
 ```mermaid
 flowchart TD

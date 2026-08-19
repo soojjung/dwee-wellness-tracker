@@ -22,7 +22,7 @@
   - 주기 +/- 동작 (15~60 clamp)
   - 정상 입력 + 저장 → 화면이 **즉시** main 상태로 flip (페이지 리다이렉트 없이)
 - [ ] /log, /insights 도 데이터 있는 상태로 정상 표시
-- [ ] /calendar 에 생리 셀 / 예측 ring 출력
+- [ ] /log (Diary 뷰) 에 생리 셀 / 예측 ring 출력
 
 ### 자동 점검됨
 - LoginScreen → `/` href 확정 (grep: 0건의 `/onboarding` 참조)
@@ -36,7 +36,7 @@
 - [ ] **HomeScreen** (periods=1): main 상태 진입. 하지만 cycleRegularity 카드는 안 보임 (avg 계산 불가). data_needed insight 만 노출 (룰 진입은 periods<2)
 - [ ] **InsightsScreen** (periods=0): `data_needed` 카드 1개 (룰이 항상 트리거). `noInsights` 메시지는 표시되지 않음
 - [ ] **InsightsScreen** (periods≥2, conditions=0): cycle_regularity + cycle_phase 만. pain/mood 룰은 conditions 없으면 null 반환
-- [ ] **CalendarScreen** (periods=0): 빈 그리드. 셀에 background 없음. `emptyMonth` 노티스 출력
+- [ ] **DiaryScreen — Diary 뷰** (periods=0): 빈 그리드. 셀에 background 없음. `emptyMonth` 노티스 출력
 - [ ] **ConditionForm** (오늘 기록 없음): 모든 ChoiceGroup 미선택 상태 (`value: null`), 배지 없음
 
 ### 자동 점검됨
@@ -76,7 +76,7 @@
 ### 기대 동작
 - [ ] PeriodLog 타입: `endDate?: string` 이라 undefined 허용
 - [ ] `isPeriodDate()`: endDate 있으면 range, 없으면 startDate 만 매치 (단일 일자)
-- [ ] CalendarScreen: 해당 startDate 셀만 menstrual 배경, 나머지는 default
+- [ ] DiaryScreen (Diary 뷰): 해당 startDate 셀만 menstrual 배경, 나머지는 default
 - [ ] WeekStrip: 동일 (startDate 하루만)
 - [ ] averagePeriodLength: 해당 row 제외하고 계산 진행
 - [ ] 다음 주기 시작 기록도 정상 진행 (StartPeriodControl 으로 추가)
@@ -90,7 +90,7 @@
 ## 5. 언어 전환 (ko ↔ en)
 
 ### 기대 동작
-- [ ] /settings → 언어 → `English` 탭 → 화면 전체 텍스트 영어로 교체 (HomeScreen, ConditionForm, CalendarScreen, InsightsScreen, BottomTabNav 라벨 모두)
+- [ ] /settings → 언어 → `English` 탭 → 화면 전체 텍스트 영어로 교체 (HomeScreen, ConditionForm, DiaryScreen, InsightsScreen, BottomTabNav 라벨 모두)
 - [ ] 다시 `한국어` 탭 → 한국어로 교체
 - [ ] 전환 후 새로고침 → 선택 locale 유지 (`settings.locale` IndexedDB 영속)
 - [ ] InsightCard 본문 동적 보간(`averageDays`, `count`) 도 locale 따라 prefix/suffix 교체

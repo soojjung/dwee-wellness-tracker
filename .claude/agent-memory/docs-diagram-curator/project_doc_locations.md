@@ -7,7 +7,7 @@ type: project
 ## Key doc locations
 
 - `docs/flows/home.md` — home screen state machine + data flow. Must be updated when HomeScreen.tsx flow changes.
-- `docs/flows/calendar.md` — calendar screen flow including DayDetailSheet action buttons + PeriodRangeDialog from calendar.
+- `docs/flows/calendar.md` — calendar cell-state logic + DayDetailSheet action buttons. Standalone `/calendar` route and `CalendarScreen` were deleted; calendar is now embedded inside `DiaryScreen` (`/log` Diary view). Doc updated to reflect this.
 - `docs/flows/customize.md` — fullscreen customize flow (HomeCustomize + PhotoEdit).
 - `docs/flows/log.md` — /log page flow: PeriodHistorySection (calendar/list toggle) + LogEntryDialog (period + condition combined). Added in period-record-rewrite PR.
 - `docs/flows/diagnose.md` — DiagnoseScreen state machine (picker → preview → loading → result | error) for `/magazine/personal-body-type/diagnose`. Added in M2.0–M2.3 magazine PR.
@@ -76,7 +76,7 @@ Four states: `'actualPeriod' | 'predictedPeriod' | 'predictedFertile' | null`. P
 ## Period-record components — current active pattern (2026-07-15)
 
 - `PeriodSelectSheet` (`src/components/app/PeriodSelectSheet.tsx`) — **active** bottom-sheet calendar grid. Replaces `PeriodRangeDialog` + `ShortCycleConfirmDialog` as the home-screen entry point. Tap-per-day interface; delegates draft state mutations to `domain/cycle/periodEdit.ts` pure functions.
-- `PeriodRangeDialog` / `ShortCycleConfirmDialog` — files still exist in `src/components/app/` but are **not used** by `HomeScreen`. `CalendarScreen` may still use `PeriodRangeDialog` — verify before removing files.
+- `PeriodRangeDialog` / `ShortCycleConfirmDialog` — files still exist in `src/components/app/` but are **not used** by `HomeScreen`. `CalendarScreen` was deleted; verify `PeriodRangeDialog` usage before removing (it may be referenced from `DayDetailSheet`).
 - `domain/cycle/periodEdit.ts` — pure functions for draft mutation (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). Has paired `periodEdit.test.ts` + `periodEdit.cases.md`. No store/adapter imports — must stay pure.
 - `domain/cycle/recordPolicy.ts` — pure functions `defaultPeriodEndDate` and `reconcileForNewStart`. Companion to the older dialog flow.
 - `SupabaseMediaAdapter.ts` now fully implements `getTextOrder`/`setTextOrder` via `home_decor_settings.text_order`. The old "no-op TODO" note was removed from `data-layer.md`.
@@ -91,6 +91,14 @@ Four states: `'actualPeriod' | 'predictedPeriod' | 'predictedFertile' | null`. P
 - New shared components: `TransformedPhoto.tsx`, `DiscardDraftDialog.tsx`.
 - New hook: `useMediaCustomizeView.ts` (merges draft/committed; exports `useIsPhotoDraftDirty` + `isPhotoDraftDirty` pure predicate).
 - `docs/flows/customize.md` is the authoritative flow doc — fully rewritten 2026-08-13.
+
+## BottomTabNav tab count (as of 2026-08-19)
+
+4 tabs: home / log / magazine / settings. The `calendar` tab was removed — calendar functionality is now embedded in `/log` (DiaryScreen, Diary view). `.claude/rules/screens.md §8` now reads "4개 탭" and names `home/log/magazine/settings`. Any doc claiming 5 tabs or listing `calendar` as a tab is stale.
+
+## Event-tap UX pattern (as of 2026-08-19)
+
+Tapping an event badge on the diary opens `EventFormSheet` in edit mode directly. There is no intermediate `EventDetailSheet`. Delete and period-mark toggle live inside the edit form. `EventDetailSheet` component was deleted. Docs referencing `EventDetailSheet` in the log/calendar flow are stale.
 
 ## Auth gate pattern (2026-07-15, C4 decision)
 

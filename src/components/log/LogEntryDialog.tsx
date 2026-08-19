@@ -256,6 +256,7 @@ export function LogEntryDialog({
             fullWidth
             disabled={submitting}
             onClick={handleClose}
+            className="bg-brand-white text-brand-gray900"
           >
             {t.home.cancel}
           </Button>

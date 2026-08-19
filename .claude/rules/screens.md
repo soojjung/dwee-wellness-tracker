@@ -10,7 +10,7 @@ paths:
 ## 0) 화면 플로우 다이어그램
 
 - 분기/state machine을 가진 화면은 `docs/flows/<name>.md`에 Mermaid로 기록.
-- 현재 등록: [onboarding](../../docs/flows/onboarding.md), [home](../../docs/flows/home.md), [calendar](../../docs/flows/calendar.md), [customize](../../docs/flows/customize.md), [log](../../docs/flows/log.md), [diagnose](../../docs/flows/diagnose.md), [settings (MyPage)](../../docs/flows/settings.md)
+- 현재 등록: [onboarding](../../docs/flows/onboarding.md), [home](../../docs/flows/home.md), [calendar (DiaryScreen 내장)](../../docs/flows/calendar.md), [customize](../../docs/flows/customize.md), [log](../../docs/flows/log.md), [diagnose](../../docs/flows/diagnose.md), [settings (MyPage)](../../docs/flows/settings.md)
 
 ## 1) 라우트 그룹
 
@@ -60,6 +60,6 @@ paths:
 
 ## 8) BottomTabNav
 
-- 5개 탭(home/log/calendar/magazine/settings) 외 추가는 사용자 결정 사항.
-- 탭 라우트 변경 시 `BottomTabNav.tsx`의 `TABS` 배열만 수정.
+- 4개 탭(home/log/magazine/settings). calendar 탭은 없음 — 캘린더는 `/log` Diary 뷰 안에 통합.
+- 탭 추가/삭제는 `BottomTabNav.tsx`의 `TABS` 배열만 수정.
 - 활성 탭 판정: 루트(`/`)는 정확 일치, 그 외는 `startsWith`.

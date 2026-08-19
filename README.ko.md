@@ -208,8 +208,7 @@ src/
 │   │   └── login/
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
-│   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환
-│   │   ├── calendar/             캘린더
+│   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환 (캘린더 포함)
 │   │   ├── magazine/             매거진 글 목록
 │   │   └── settings/             마이페이지 + 서브 라우트 (language/notices/qna/terms/privacy — stub)
 │   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
@@ -228,7 +227,7 @@ src/
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
 │   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, ReportView
-│   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, AddQuickSheet, EventFormSheet, EventDetailSheet 등
+│   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DayDetailSheet, AddQuickSheet, EventFormSheet 등
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
 │   ├── auth/                     LoginScreen, AuthGuard

@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { useT } from '@/i18n/useT';
 import { calendarGrid, type WeekStartsOn } from '@/lib/date';
-import type { PeriodLog, EventLog, EventCategory } from '@/types';
+import type { PeriodLog, EventLog, EventCategory, DailyConditionLog } from '@/types';
 import { deriveCellMarkers } from '@/components/calendar/cellState';
 import { pickBadgesForDay } from '@/domain/event/badges';
 import { DiaryDayCell } from './DiaryDayCell';
@@ -15,6 +15,8 @@ interface DiaryMonthGridProps {
   periods: PeriodLog[];
   events: EventLog[];
   categories: EventCategory[];
+  conditionByDate?: Record<string, DailyConditionLog>;
+  predictedDate?: string | null;
   onSelect: (date: string) => void;
   onSelectEvent?: (event: EventLog) => void;
 }
@@ -29,6 +31,8 @@ export function DiaryMonthGrid({
   periods,
   events,
   categories,
+  conditionByDate,
+  predictedDate,
   onSelect,
   onSelectEvent,
 }: DiaryMonthGridProps) {
@@ -85,8 +89,8 @@ export function DiaryMonthGrid({
                 date: cell.date,
                 today,
                 periods,
-                conditionByDate: {},
-                predictedDate: null,
+                conditionByDate: conditionByDate ?? {},
+                predictedDate: predictedDate ?? null,
               })}
               events={cell.inCurrentMonth ? pickBadgesForDay(events, cell.date) : []}
               categoriesById={categoriesById}

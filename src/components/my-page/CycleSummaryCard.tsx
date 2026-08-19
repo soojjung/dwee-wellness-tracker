@@ -34,7 +34,12 @@ export function CycleSummaryCard() {
   }, [hydrated, hydrate]);
 
   const result = classifyCycleStatus(periods);
-  const isInsufficient = result.status === 'insufficient';
+  // Any case where we don't have a usable average (either <3 records, or
+  // 3+ records but every cycle gap was filtered as an outlier) should
+  // suppress the status chip — otherwise the "규칙적" tone reads as an
+  // assertion on top of the "not enough data" body copy.
+  const showInsufficientBody =
+    result.status === 'insufficient' || result.averageCycleDays === null;
   const badgeCopy = t.report.status[result.status].badge;
   const chipTone = CHIP_TONE[result.status];
 
@@ -42,7 +47,7 @@ export function CycleSummaryCard() {
     <MyPageCard
       title={t.myPage.cycle.title}
       headerRight={
-        !isInsufficient ? (
+        !showInsufficientBody ? (
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${chipTone.bg} ${chipTone.text}`}
           >
@@ -51,7 +56,7 @@ export function CycleSummaryCard() {
         ) : undefined
       }
     >
-      {isInsufficient || result.averageCycleDays === null ? (
+      {showInsufficientBody ? (
         <div className="flex min-h-[80px] items-center justify-center rounded-xl bg-brand-gray200 px-4 py-6">
           <p className="whitespace-pre-line text-center text-sm leading-[1.5] text-brand-gray700">
             {t.myPage.cycle.insufficient}

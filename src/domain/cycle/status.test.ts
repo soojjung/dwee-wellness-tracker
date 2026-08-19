@@ -115,4 +115,58 @@ describe('classifyCycleStatus', () => {
     expect(result.status).not.toBe('insufficient');
     expect(result.averageCycleDays).not.toBeNull();
   });
+
+  it('returns averageCycleDays=null when all gaps are longer than 60 days (records still ≥3)', () => {
+    // 3 records with consecutive gaps of ~90 days each — all filtered out
+    // as outliers. Records ≥ 3 so classifier does NOT return `insufficient`;
+    // it falls through to `regular` with avg/range null. This is the edge
+    // case that surfaced as the CycleSummaryCard badge/body mismatch bug.
+    const result = classifyCycleStatus([
+      log('a', '2026-01-01', '2026-01-05'),
+      log('b', '2026-04-01', '2026-04-05'),
+      log('c', '2026-07-01', '2026-07-05'),
+    ]);
+    expect(result.status).toBe('regular');
+    expect(result.averageCycleDays).toBeNull();
+    expect(result.cycleRangeDays).toBeNull();
+    // Confidence is 'low' since 0 gaps survived filtering.
+    expect(result.confidence).toBe('low');
+  });
+
+  it('returns averageCycleDays=null when all gaps are shorter than 15 days', () => {
+    // Three records ~10 days apart each — all under CYCLE_MIN and filtered.
+    const result = classifyCycleStatus([
+      log('a', '2026-01-01', '2026-01-04'),
+      log('b', '2026-01-11', '2026-01-14'),
+      log('c', '2026-01-21', '2026-01-24'),
+    ]);
+    expect(result.status).toBe('regular');
+    expect(result.averageCycleDays).toBeNull();
+    expect(result.cycleRangeDays).toBeNull();
+  });
+
+  it('shortPeriod still wins over regular-fallback when all gaps are filtered', () => {
+    // Latest period length = 2d (shortPeriod). All gaps are >60d so avg is
+    // null, but shortPeriod is evaluated first — priority is preserved.
+    const result = classifyCycleStatus([
+      log('a', '2026-01-01', '2026-01-04'),
+      log('b', '2026-04-01', '2026-04-04'),
+      log('c', '2026-07-01', '2026-07-02'),
+    ]);
+    expect(result.status).toBe('shortPeriod');
+    expect(result.averageCycleDays).toBeNull();
+    expect(result.latestPeriodLengthDays).toBe(2);
+  });
+
+  it('longPeriod still wins over regular-fallback when all gaps are filtered', () => {
+    // Latest period length = 9d (longPeriod). Same all-gaps-filtered setup.
+    const result = classifyCycleStatus([
+      log('a', '2026-01-01', '2026-01-04'),
+      log('b', '2026-04-01', '2026-04-04'),
+      log('c', '2026-07-01', '2026-07-09'),
+    ]);
+    expect(result.status).toBe('longPeriod');
+    expect(result.averageCycleDays).toBeNull();
+    expect(result.latestPeriodLengthDays).toBe(9);
+  });
 });

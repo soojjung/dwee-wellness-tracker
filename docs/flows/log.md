@@ -20,7 +20,7 @@ stateDiagram-v2
 
 - `LogPage` 는 `useState<LogView>('diary')` 상태만 보유하고 조건부로 두 화면 중 하나를 렌더 (얇은 래퍼).
 - `LogViewToggle` (`src/components/diary/LogViewToggle.tsx`) — 두 헤더에서 재사용. 흰 정사각형 슬라이더가 좌우 이동.
-- STEP 10.2 완료: `+` 버튼 바텀시트(생리/일정), `▼` 연·월 wheel picker, 일정(이벤트) 배지 (AddQuickSheet, EventFormSheet, EventDetailSheet, YearMonthWheelPicker, InlineDatePicker, CategoryChip/Selector, EventCategoryFormSheet).
+- STEP 10.2 완료: `+` 버튼 바텀시트(생리/일정), `▼` 연·월 wheel picker, 일정(이벤트) 배지 (AddQuickSheet, EventFormSheet, YearMonthWheelPicker, InlineDatePicker, CategoryChip/Selector, EventCategoryFormSheet). 이벤트 배지 탭 시 `EventFormSheet` 편집 모드를 바로 열림 (별도 상세 시트 없음).
 - STEP 10.3 완료: edit-star 아이콘 → `/log/customize` 풀스크린 (StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer).
 
 ---
@@ -93,8 +93,7 @@ flowchart TD
 - `src/components/diary/LogViewToggle.tsx` — 재사용 가능한 2-아이콘 segmented toggle
 - `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx` — 다이어리용 캘린더 (생리 마커 + 이벤트 배지, STEP 10.2a)
 - `src/components/diary/AddQuickSheet.tsx` — `+` 버튼 chooser: 생리 추가 / 일정 추가 (STEP 10.2a)
-- `src/components/diary/EventFormSheet.tsx` — 일정 등록/편집 공통 폼 시트 (STEP 10.2b, mode = 'add' | 'edit', inline date picker 포함)
-- `src/components/diary/EventDetailSheet.tsx` — 일정 상세 (제목·메모·카테고리·생리 토글·삭제, STEP 10.2b)
+- `src/components/diary/EventFormSheet.tsx` — 일정 등록/편집 공통 폼 시트 (mode = 'add' | 'edit', inline date picker, 삭제·생리 토글 포함)
 - `src/components/diary/InlineDatePicker.tsx` — 시작/종료 날짜 확장 시 나타나는 인라인 미니 캘린더 (STEP 10.2b)
 - `src/components/diary/YearMonthWheelPicker.tsx` — 연·월 선택 wheel picker 바텀시트 (STEP 10.2b, DiaryHeader ▼ + InlineDatePicker 에서 재사용)
 - `src/components/diary/CategoryChip.tsx`, `CategorySelector.tsx` — 팔레트 기반 카테고리 UI (10.2c 부터 편집·추가 진입점 활성)
@@ -128,7 +127,7 @@ flowchart TD
 
 ### 생리 토글 연동 (STEP 10.2c)
 
-EventDetailSheet 의 생리 토글은 `eventStore.linkPeriodMark(id)` / `unlinkPeriodMark(id)` 를 호출:
+`EventFormSheet` 편집 모드의 생리 토글은 `eventStore.linkPeriodMark(id)` / `unlinkPeriodMark(id)` 를 호출:
 - ON: `periodStore.add({ startDate, endDate })` → 반환된 PeriodLog.id 를 `event.linkedPeriodId` 로 저장.
 - OFF: 저장된 `linkedPeriodId` 로 `periodStore.remove()` → event.linkedPeriodId 제거, `hasPeriodMark=false`.
 - Supabase `event_logs.linked_period_id` 컬럼 (`supabase/migrations/0007_event_period_link.sql`, `on delete set null`) 이 캘린더에서 직접 삭제된 경우도 커버.
