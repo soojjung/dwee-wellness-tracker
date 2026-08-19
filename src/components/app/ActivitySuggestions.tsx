@@ -88,24 +88,26 @@ interface ActivityToneCardProps {
   durationLabel: string;
 }
 
-function ActivityToneCard({ tone, emoji, title, description, durationLabel }: ActivityToneCardProps) {
+function ActivityToneCard({
+  tone,
+  emoji,
+  title,
+  description,
+  durationLabel,
+}: ActivityToneCardProps) {
   const dark = tone === 'dark';
   const bg =
-    tone === 'gray'
-      ? 'bg-brand-gray300'
-      : tone === 'pink'
-      ? 'bg-brand-pink50'
-      : 'bg-brand-gray900';
+    tone === 'gray' ? 'bg-brand-gray300' : tone === 'pink' ? 'bg-brand-pink50' : 'bg-brand-gray900';
   const durationPill =
     tone === 'gray'
       ? 'bg-brand-gray500 text-brand-white'
       : tone === 'pink'
-      ? 'bg-brand-pink100 text-brand-white'
-      : 'bg-brand-gray800 text-brand-white';
+        ? 'bg-brand-pink100 text-brand-white'
+        : 'bg-brand-gray800 text-brand-white';
   return (
     <div
       className={cn(
-        'flex w-[170px] shrink-0 flex-col justify-between gap-8 rounded-2xl p-4',
+        'flex w-[170px] shrink-0 flex-col justify-between gap-4 rounded-2xl px-3.5 py-4',
         bg,
       )}
     >
@@ -120,11 +122,11 @@ function ActivityToneCard({ tone, emoji, title, description, durationLabel }: Ac
       <div className="flex flex-col gap-1.5">
         <p
           className={cn(
-            'flex items-center gap-1 text-base font-semibold leading-snug',
+            'flex items-center gap-1 whitespace-nowrap text-[15px] font-semibold leading-snug',
             dark ? 'text-brand-white' : 'text-brand-gray900',
           )}
         >
-          <span className="whitespace-nowrap">{title}</span>
+          <span>{title}</span>
           <span aria-hidden>{emoji}</span>
         </p>
         <p

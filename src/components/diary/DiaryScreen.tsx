@@ -1,16 +1,25 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { usePeriodStore } from '@/store/periodStore';
 import { useEventStore } from '@/store/eventStore';
+import { useConditionStore } from '@/store/conditionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
 import {
   useDiaryPlacementStore,
   selectPlacementsForMonth,
 } from '@/store/diaryPlacementStore';
-import { todayISO } from '@/lib/date';
+import { todayISO, toISO } from '@/lib/date';
 import { LogEntryDialog } from '@/components/log/LogEntryDialog';
+import { DayDetailSheet } from '@/components/calendar/DayDetailSheet';
+import { isPeriodDate } from '@/components/calendar/cellState';
+import {
+  PeriodRangeDialog,
+  type AddPeriodInput,
+} from '@/components/app/PeriodRangeDialog';
+import { Toast } from '@/components/ui/Toast';
+import { predictNextPeriod } from '@/domain/cycle/predictor';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
 import { DiaryHeader } from './DiaryHeader';
@@ -18,7 +27,6 @@ import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
 import { AddQuickSheet } from './AddQuickSheet';
 import { EventFormSheet, type EventFormInput } from './EventFormSheet';
-import { EventDetailSheet } from './EventDetailSheet';
 import {
   EventCategoryFormSheet,
   type CategoryFormInput,
@@ -27,6 +35,7 @@ import { YearMonthWheelPicker } from './YearMonthWheelPicker';
 import type { LogView } from './LogViewToggle';
 
 const WEEK_STARTS_ON = 0;
+const TOAST_MS = 2400;
 
 interface DiaryScreenProps {
   currentView: LogView;
@@ -39,7 +48,6 @@ type ActiveSheet =
   | { kind: 'quick' }
   | { kind: 'period' }
   | { kind: 'addEvent' }
-  | { kind: 'detail'; eventId: string }
   | { kind: 'editEvent'; eventId: string }
   | { kind: 'monthPicker' }
   | { kind: 'addCategory'; prev: EventPrev }
@@ -52,6 +60,14 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const periods = usePeriodStore((s) => s.periods);
   const periodsHydrated = usePeriodStore((s) => s.hydrated);
   const hydratePeriods = usePeriodStore((s) => s.hydrate);
+  const addPeriod = usePeriodStore((s) => s.add);
+  const removePeriod = usePeriodStore((s) => s.remove);
+  const updatePeriod = usePeriodStore((s) => s.update);
+
+  const conditionByDate = useConditionStore((s) => s.byDate);
+  const hydrateConditionRange = useConditionStore((s) => s.hydrateRange);
+
+  const settings = useSettingsStore((s) => s.settings);
 
   const events = useEventStore((s) => s.events);
   const categories = useEventStore((s) => s.categories);
@@ -60,6 +76,9 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const seedBuiltinsIfEmpty = useEventStore((s) => s.seedBuiltinsIfEmpty);
   const addEvent = useEventStore((s) => s.addEvent);
   const updateEvent = useEventStore((s) => s.updateEvent);
+  const removeEvent = useEventStore((s) => s.removeEvent);
+  const linkPeriodMark = useEventStore((s) => s.linkPeriodMark);
+  const unlinkPeriodMark = useEventStore((s) => s.unlinkPeriodMark);
   const addCategory = useEventStore((s) => s.addCategory);
   const updateCategory = useEventStore((s) => s.updateCategory);
 
@@ -75,6 +94,9 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     return { year: now.getFullYear(), monthIndex: now.getMonth() };
   });
   const [sheet, setSheet] = useState<ActiveSheet>({ kind: 'none' });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [rangeStartSeed, setRangeStartSeed] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const placements = useDiaryPlacementStore(
     selectPlacementsForMonth(cursor.year, cursor.monthIndex),
@@ -97,6 +119,61 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     hydratePlacementMonth(cursor.year, cursor.monthIndex);
   }, [cursor.year, cursor.monthIndex, hydratePlacementMonth]);
 
+  useEffect(() => {
+    const start = toISO(new Date(cursor.year, cursor.monthIndex, 1));
+    const end = toISO(new Date(cursor.year, cursor.monthIndex + 1, 0));
+    hydrateConditionRange(start, end);
+  }, [cursor.year, cursor.monthIndex, hydrateConditionRange]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), TOAST_MS);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  const prediction = useMemo(
+    () => predictNextPeriod(periods, settings),
+    [periods, settings],
+  );
+
+  const startMatchId = useMemo(
+    () =>
+      selectedDate ? periods.find((p) => p.startDate === selectedDate)?.id ?? null : null,
+    [periods, selectedDate],
+  );
+  const openRecordId = useMemo(() => {
+    if (!selectedDate) return null;
+    let latest: { id: string; startDate: string } | null = null;
+    for (const p of periods) {
+      if (p.endDate) continue;
+      if (p.startDate > selectedDate) continue;
+      if (!latest || p.startDate > latest.startDate) latest = { id: p.id, startDate: p.startDate };
+    }
+    return latest?.id ?? null;
+  }, [periods, selectedDate]);
+  const canAddOnSelected =
+    !!selectedDate && !startMatchId && selectedDate <= today;
+
+  function handleAddPeriodOnDate(startDate: string) {
+    setSelectedDate(null);
+    setRangeStartSeed(startDate);
+  }
+  async function handleRangeSubmit(input: AddPeriodInput) {
+    await addPeriod(input);
+    setRangeStartSeed(null);
+    setToast(t.calendar.detail.added);
+  }
+  async function handleRemovePeriod(id: string) {
+    await removePeriod(id);
+    setSelectedDate(null);
+    setToast(t.calendar.detail.removed);
+  }
+  async function handleMarkEnd(id: string, endDate: string) {
+    await updatePeriod(id, { endDate });
+    setSelectedDate(null);
+    setToast(t.calendar.detail.endMarked);
+  }
+
   const builtinNamer = useCallback(
     (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
     [t],
@@ -108,11 +185,9 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   }, [eventsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
 
   const activeEvent: EventLog | null =
-    sheet.kind === 'detail' || sheet.kind === 'editEvent'
+    sheet.kind === 'editEvent'
       ? events.find((e) => e.id === sheet.eventId) ?? null
       : null;
-  const activeCategory =
-    activeEvent ? categories.find((c) => c.id === activeEvent.categoryId) : undefined;
 
   async function handleAddEvent(input: EventFormInput): Promise<boolean> {
     const log = await addEvent({
@@ -338,10 +413,10 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                     periods={periods}
                     events={events}
                     categories={categories}
-                    onSelect={() => {
-                      /* Day surrounding area — reserved for STEP 10.2b+ list view */
-                    }}
-                    onSelectEvent={(ev) => setSheet({ kind: 'detail', eventId: ev.id })}
+                    conditionByDate={conditionByDate}
+                    predictedDate={prediction.predictedDate}
+                    onSelect={setSelectedDate}
+                    onSelectEvent={(ev) => setSheet({ kind: 'editEvent', eventId: ev.id })}
                   />
                 </div>
               </DiaryStickerViewLayer>
@@ -380,22 +455,25 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           onAddCategory={openAddCategoryFromEvent}
         />
       ) : null}
-      {sheet.kind === 'detail' && activeEvent ? (
-        <EventDetailSheet
-          event={activeEvent}
-          category={activeCategory}
-          onClose={() => setSheet({ kind: 'none' })}
-          onEdit={() => setSheet({ kind: 'editEvent', eventId: activeEvent.id })}
-        />
-      ) : null}
       {sheet.kind === 'editEvent' && activeEvent ? (
         <EventFormSheet
           mode="edit"
           categories={categories}
           initial={activeEvent}
           defaultDate={activeEvent.startDate}
-          onClose={() => setSheet({ kind: 'detail', eventId: activeEvent.id })}
+          onClose={() => setSheet({ kind: 'none' })}
           onSubmit={(input) => handleUpdateEvent(activeEvent.id, input)}
+          onDelete={async () => {
+            await removeEvent(activeEvent.id);
+            setSheet({ kind: 'none' });
+          }}
+          onTogglePeriodMark={async () => {
+            if (activeEvent.hasPeriodMark) {
+              await unlinkPeriodMark(activeEvent.id);
+            } else {
+              await linkPeriodMark(activeEvent.id);
+            }
+          }}
           onEditCategory={openEditCategoryFromEvent}
           onAddCategory={openAddCategoryFromEvent}
         />
@@ -428,6 +506,34 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           }}
         />
       ) : null}
+
+      {selectedDate ? (
+        <DayDetailSheet
+          date={selectedDate}
+          onClose={() => setSelectedDate(null)}
+          hasPeriod={isPeriodDate(selectedDate, periods)}
+          isPredicted={prediction.predictedDate === selectedDate}
+          condition={conditionByDate[selectedDate] ?? null}
+          startMatchId={startMatchId}
+          openRecordId={openRecordId}
+          canAdd={canAddOnSelected}
+          onAdd={handleAddPeriodOnDate}
+          onRemove={handleRemovePeriod}
+          onMarkEnd={handleMarkEnd}
+        />
+      ) : null}
+
+      {rangeStartSeed ? (
+        <PeriodRangeDialog
+          initialStartDate={rangeStartSeed}
+          defaultPeriodLength={periodLength}
+          today={today}
+          onSubmit={handleRangeSubmit}
+          onCancel={() => setRangeStartSeed(null)}
+        />
+      ) : null}
+
+      <Toast message={toast} />
     </>
   );
 }

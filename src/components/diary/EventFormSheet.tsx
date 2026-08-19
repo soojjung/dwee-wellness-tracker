@@ -27,7 +27,8 @@ interface EventFormSheetProps {
   defaultDate: string;
   onClose: () => void;
   onSubmit: (input: EventFormInput) => Promise<boolean>;
-  onDelete?: () => void;
+  onDelete?: () => void | Promise<void>;
+  onTogglePeriodMark?: () => void | Promise<void>;
   onEditCategory?: (category: EventCategory) => void;
   onAddCategory?: () => void;
 }
@@ -42,6 +43,7 @@ export function EventFormSheet({
   onClose,
   onSubmit,
   onDelete,
+  onTogglePeriodMark,
   onEditCategory,
   onAddCategory,
 }: EventFormSheetProps) {
@@ -57,6 +59,29 @@ export function EventFormSheet({
   );
   const [expanded, setExpanded] = useState<ExpandedField>('none');
   const [submitting, setSubmitting] = useState(false);
+  const [togglingPeriod, setTogglingPeriod] = useState(false);
+  const hasPeriodMark = initial?.hasPeriodMark ?? false;
+
+  async function handleTogglePeriodMark() {
+    if (togglingPeriod || !onTogglePeriodMark) return;
+    setTogglingPeriod(true);
+    try {
+      await onTogglePeriodMark();
+    } finally {
+      setTogglingPeriod(false);
+    }
+  }
+
+  function handleDelete() {
+    if (submitting || !onDelete) return;
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(t.report.diary.eventDetail.deleteConfirm)
+    ) {
+      return;
+    }
+    void onDelete();
+  }
 
   const trimmedTitle = title.trim();
   const trimmedMemo = memo.trim();
@@ -211,11 +236,38 @@ export function EventFormSheet({
             onAddCategory={onAddCategory}
           />
 
+          {mode === 'edit' && onTogglePeriodMark ? (
+            <div className="flex items-center justify-between rounded-2xl bg-brand-white px-4 py-3">
+              <span className="text-sm text-brand-gray700">
+                {t.report.diary.eventDetail.periodToggle}
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={hasPeriodMark}
+                onClick={handleTogglePeriodMark}
+                disabled={togglingPeriod}
+                className={
+                  'relative h-6 w-11 rounded-full transition-colors ' +
+                  (hasPeriodMark ? 'bg-brand-pink300' : 'bg-brand-gray400')
+                }
+              >
+                <span
+                  aria-hidden
+                  className={
+                    'absolute top-0.5 h-5 w-5 rounded-full bg-brand-white shadow transition-transform ' +
+                    (hasPeriodMark ? 'translate-x-[22px]' : 'translate-x-0.5')
+                  }
+                />
+              </button>
+            </div>
+          ) : null}
+
           {mode === 'edit' && onDelete ? (
             <div className="flex justify-center pt-2">
               <button
                 type="button"
-                onClick={onDelete}
+                onClick={handleDelete}
                 disabled={submitting}
                 className="flex items-center gap-2 rounded-full bg-brand-white px-5 py-2 text-sm font-medium text-brand-pink600 shadow-[0_2px_8px_0_rgba(0,0,0,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink600 disabled:opacity-60"
               >

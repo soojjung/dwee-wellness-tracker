@@ -117,6 +117,11 @@ export function DiaryCustomizeScreen() {
   // Session-scoped: the id of the sticker most recently added via this
   // customize session, used to paint the "just added" red dot (spec 12).
   const [newStickerId, setNewStickerId] = useState<string | null>(null);
+  // Session-scoped: any add/remove on the library this session. Used to
+  // enable the header "done" check even when the calendar placements
+  // themselves are unchanged (library edits are already persisted, so
+  // confirming just navigates back).
+  const [libraryTouched, setLibraryTouched] = useState(false);
 
   useEffect(() => {
     if (!periodsHydrated) hydratePeriods();
@@ -225,6 +230,7 @@ export function DiaryCustomizeScreen() {
     setCaptured(null);
     if (created?.id) {
       setNewStickerId(created.id);
+      setLibraryTouched(true);
       setSheetSnap('medium');
     }
   }
@@ -245,13 +251,22 @@ export function DiaryCustomizeScreen() {
     // Any freshly-added sticker that just got deleted shouldn't keep
     // wearing the red "just added" dot the next mount either.
     setNewStickerId((prev) => (prev && doomed.has(prev) ? null : prev));
+    setLibraryTouched(true);
   }
 
+  // "Done" is meaningful when either the calendar placements changed OR
+  // the library was touched (add/remove) this session — library edits
+  // are already persisted via the sticker repo, so the commit itself is
+  // skipped in that path and we just navigate back.
+  const canConfirm = isDirty || libraryTouched;
+
   async function handleCommit() {
-    if (committing || !isDirty) return;
+    if (committing || !canConfirm) return;
     setCommitting(true);
     try {
-      await commit(cursor.year, cursor.monthIndex, draft);
+      if (isDirty) {
+        await commit(cursor.year, cursor.monthIndex, draft);
+      }
       router.push('/log');
     } finally {
       setCommitting(false);
@@ -281,11 +296,11 @@ export function DiaryCustomizeScreen() {
         <button
           type="button"
           onClick={handleCommit}
-          disabled={!isDirty || committing}
+          disabled={!canConfirm || committing}
           aria-label={t.report.diary.customize.done}
           className={
             'flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
-            (isDirty && !committing
+            (canConfirm && !committing
               ? 'bg-brand-pink300 text-brand-white'
               : 'bg-brand-gray400/60 text-brand-gray50')
           }
@@ -336,7 +351,16 @@ export function DiaryCustomizeScreen() {
         </PlacedStickerLayer>
       </div>
 
-      <DraggableBottomSheet snap={sheetSnap} onSnapChange={setSheetSnap}>
+      {/* Peek is intentionally very shallow (top edge at 85dvh) so the
+          calendar's last week stays visible for sticker placement previews;
+          the sheet default of 70dvh covered the 5th/6th rows on tall
+          months. Users still see the drag handle + toolbar and can pull
+          the sheet up when they want the full library. */}
+      <DraggableBottomSheet
+        snap={sheetSnap}
+        onSnapChange={setSheetSnap}
+        snapHeightsDvh={{ peek: 85, medium: 45, full: 10 }}
+      >
         <StickerLibrarySheet
           stickers={stickers}
           urls={urls}
@@ -397,7 +421,10 @@ export function DiaryCustomizeScreen() {
           onSaved={async (blob, ratio) => {
             const created = await addSticker({ blob, ratio, source: 'photo' });
             setImportPickedFile(null);
-            if (created?.id) setNewStickerId(created.id);
+            if (created?.id) {
+              setNewStickerId(created.id);
+              setLibraryTouched(true);
+            }
           }}
         />
       ) : null}
