@@ -29,10 +29,11 @@ const MODE_ORDER: readonly CameraMode[] = ['photo', 'sticker'];
 
 /**
  * In-app camera (013_2). Live MediaDevices preview + shutter + flip.
- * Bottom pill toggles capture MODE (photo vs sticker) — this batch treats
- * both the same (raw JPEG); the sticker-mode background-removal wires up
- * in a later batch. Top pill toggles the aspect RATIO (1:1 / 4:3) which
- * clips the captured frame before returning to the parent.
+ * Bottom pill toggles capture MODE (photo vs sticker) — the parent
+ * branches: 'photo' saves the raw JPEG directly, 'sticker' runs it
+ * through the sticker-cutout edge function (remove.bg). Top pill toggles
+ * the aspect RATIO (1:1 / 4:3) which clips the captured frame before
+ * returning to the parent.
  *
  * Rendered as an overlay above DiaryCustomizeScreen — no route change, so
  * the sticker draft state stays intact if the user backs out.

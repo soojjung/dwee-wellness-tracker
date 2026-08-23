@@ -131,8 +131,12 @@ export function DraggableBottomSheet({
 
   return (
     <div
+      // overflow-hidden + overscroll-contain make the sheet its own scroll
+      // container, so a wheel over the non-scrolling header (title bar) is
+      // absorbed here instead of chaining up to scroll the calendar
+      // underneath.
       className={cn(
-        'fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md flex-col rounded-t-3xl bg-brand-white shadow-[0_-8px_32px_0_rgba(0,0,0,0.08)]',
+        'fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md flex-col overflow-hidden overscroll-contain rounded-t-3xl bg-brand-white shadow-[0_-8px_32px_0_rgba(0,0,0,0.08)]',
         !isDragging && 'transition-[top] duration-200 ease-out',
         className,
       )}

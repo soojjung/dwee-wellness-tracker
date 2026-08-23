@@ -4,11 +4,17 @@ import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import type { StickerRatio } from '@/types';
+import type { CameraMode } from './CameraSheet';
 
 interface PhotoImportModalProps {
   file: File;
   onClose: () => void;
-  onSaved: (blob: Blob, ratio: StickerRatio) => Promise<void> | void;
+  /**
+   * Fires with the cropped blob + user-chosen ratio + mode. `mode: 'photo'`
+   * means "save as-is"; `mode: 'sticker'` means "run the background
+   * removal cutout flow" — the parent decides where to route next.
+   */
+  onSaved: (blob: Blob, ratio: StickerRatio, mode: CameraMode) => Promise<void> | void;
 }
 
 export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalProps) {
@@ -28,6 +34,7 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
   }, [file]);
 
   const [ratio, setRatio] = useState<StickerRatio>('1:1');
+  const [mode, setMode] = useState<CameraMode>('photo');
   const [submitting, setSubmitting] = useState(false);
 
   useBodyScrollLock();
@@ -39,7 +46,7 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
     try {
       const cropped = await cropToRatio(file, ratio);
       if (!cropped) return;
-      await onSaved(cropped, ratio);
+      await onSaved(cropped, ratio, mode);
     } finally {
       setSubmitting(false);
     }
@@ -101,7 +108,10 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
           </div>
         </div>
 
-        <RatioToggle value={ratio} onChange={setRatio} />
+        <div className="flex flex-col items-center gap-3">
+          <RatioToggle value={ratio} onChange={setRatio} />
+          <ModeToggle value={mode} onChange={setMode} />
+        </div>
 
         <div className="flex items-center gap-4">
           <button
@@ -176,6 +186,41 @@ function RatioToggle({ value, onChange }: RatioToggleProps) {
         className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
       >
         {t.report.diary.photoImport.ratio4x3}
+      </button>
+    </div>
+  );
+}
+
+interface ModeToggleProps {
+  value: CameraMode;
+  onChange: (v: CameraMode) => void;
+}
+
+function ModeToggle({ value, onChange }: ModeToggleProps) {
+  const t = useT();
+  const isPhoto = value === 'photo';
+  return (
+    <div className="relative flex items-center gap-2 rounded-full border border-brand-gray200 bg-brand-white p-1">
+      <span
+        aria-hidden
+        className="absolute left-1 top-1 h-8 w-16 rounded-full bg-brand-pink50 transition-transform duration-200 ease-out"
+        style={{ transform: isPhoto ? 'translateX(0)' : 'translateX(calc(100% + 0.5rem))' }}
+      />
+      <button
+        type="button"
+        onClick={() => onChange('photo')}
+        aria-pressed={isPhoto}
+        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
+      >
+        {t.report.diary.photoImport.modePhoto}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('sticker')}
+        aria-pressed={!isPhoto}
+        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
+      >
+        {t.report.diary.photoImport.modeCutout}
       </button>
     </div>
   );

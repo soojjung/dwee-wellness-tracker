@@ -5,9 +5,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 
 interface CutoutConfirmScreenProps {
-  /** Result blob to preview. In photo-mode this is the raw capture; in
-   * sticker-mode it's the background-removed cutout (currently mocked as
-   * the raw capture until the real service lands). */
+  /** Transparent PNG returned by the sticker-cutout edge function. */
   blob: Blob;
   onClose: () => void;
   onRetake: () => void;
@@ -16,8 +14,8 @@ interface CutoutConfirmScreenProps {
 
 /**
  * 013_4 — final preview before saving to the sticker library. Shows the
- * result on a soft checker background (so any transparency reads as
- * removed area once background removal is wired up).
+ * cutout PNG on a soft checker background so the transparent areas read
+ * as removed.
  */
 export function CutoutConfirmScreen({
   blob,
