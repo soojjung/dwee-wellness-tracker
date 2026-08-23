@@ -234,7 +234,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
 
   return (
     <div className="flex min-h-dvh flex-col bg-brand-white">
-      <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">
+      <div className="mx-auto flex w-full flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between bg-brand-white px-4">
           <button
             type="button"
