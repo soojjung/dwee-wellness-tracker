@@ -1,6 +1,6 @@
 import type { SupportedImageMediaType } from '@/types';
 
-export async function fileToBase64(file: File): Promise<string> {
+export async function fileToBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {

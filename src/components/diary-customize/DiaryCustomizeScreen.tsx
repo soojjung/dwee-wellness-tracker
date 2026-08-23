@@ -18,6 +18,7 @@ import {
   PLACEMENT_NOMINAL_WIDTH,
   type DiaryStickerPlacement,
   type DiarySticker,
+  type StickerRatio,
 } from '@/types';
 import { BackIcon } from '@/components/ui/icons';
 import { DiaryMonthGrid } from '@/components/diary/DiaryMonthGrid';
@@ -114,6 +115,10 @@ export function DiaryCustomizeScreen() {
     'idle',
   );
   const [captured, setCaptured] = useState<CameraCapture | null>(null);
+  // Populated by StickerScanScreen once the cutout API returns a PNG.
+  // CutoutConfirmScreen then shows and (on confirm) persists this blob
+  // as source: 'sticker'.
+  const [cutoutBlob, setCutoutBlob] = useState<Blob | null>(null);
   // Session-scoped: the id of the sticker most recently added via this
   // customize session, used to paint the "just added" red dot (spec 12).
   const [newStickerId, setNewStickerId] = useState<string | null>(null);
@@ -202,6 +207,7 @@ export function DiaryCustomizeScreen() {
   function closeCameraFlow() {
     setCameraMode('idle');
     setCaptured(null);
+    setCutoutBlob(null);
   }
 
   function handleAlbumFromCamera() {
@@ -210,29 +216,41 @@ export function DiaryCustomizeScreen() {
     cameraFallbackFileRef.current?.click();
   }
 
-  function handleCapture(cap: CameraCapture) {
-    setCaptured(cap);
-    setCameraMode('scan');
-  }
-
-  async function handleCutoutConfirm() {
-    if (!captured) return;
-    // Mock background removal: photo-mode and sticker-mode both save the raw
-    // JPEG for now. When a real removal service lands, sticker-mode should
-    // hand off `captured.blob` to the API + swap `blob` on the payload
-    // below.
-    const created = await addSticker({
-      blob: captured.blob,
-      ratio: captured.ratio,
-      source: 'photo',
-    });
+  async function saveAndClose(input: {
+    blob: Blob;
+    ratio: StickerRatio;
+    source: 'photo' | 'sticker';
+  }) {
+    const created = await addSticker(input);
     setCameraMode('idle');
     setCaptured(null);
+    setCutoutBlob(null);
     if (created?.id) {
       setNewStickerId(created.id);
       setLibraryTouched(true);
       setSheetSnap('medium');
     }
+  }
+
+  async function handleCapture(cap: CameraCapture) {
+    // Photo mode skips the scan/confirm dance entirely — the raw capture
+    // becomes a source: 'photo' sticker immediately. Sticker mode runs
+    // the cutout API via the scan overlay.
+    if (cap.mode === 'photo') {
+      await saveAndClose({ blob: cap.blob, ratio: cap.ratio, source: 'photo' });
+      return;
+    }
+    setCaptured(cap);
+    setCameraMode('scan');
+  }
+
+  async function handleCutoutConfirm() {
+    if (!captured || !cutoutBlob) return;
+    await saveAndClose({
+      blob: cutoutBlob,
+      ratio: captured.ratio,
+      source: 'sticker',
+    });
   }
 
   async function handleDeleteStickers(ids: readonly string[]) {
@@ -382,15 +400,32 @@ export function DiaryCustomizeScreen() {
       {cameraMode === 'scan' && captured ? (
         <StickerScanScreen
           blob={captured.blob}
-          onDone={() => setCameraMode('confirm')}
+          mediaType={
+            captured.blob.type === 'image/png' || captured.blob.type === 'image/webp'
+              ? captured.blob.type
+              : 'image/jpeg'
+          }
+          onCutoutReady={(png) => {
+            setCutoutBlob(png);
+            setCameraMode('confirm');
+          }}
+          onSaveAsPhoto={async () => {
+            await saveAndClose({
+              blob: captured.blob,
+              ratio: captured.ratio,
+              source: 'photo',
+            });
+          }}
+          onCancel={closeCameraFlow}
         />
       ) : null}
-      {cameraMode === 'confirm' && captured ? (
+      {cameraMode === 'confirm' && captured && cutoutBlob ? (
         <CutoutConfirmScreen
-          blob={captured.blob}
+          blob={cutoutBlob}
           onClose={closeCameraFlow}
           onRetake={() => {
             setCaptured(null);
+            setCutoutBlob(null);
             setCameraMode('camera');
           }}
           onConfirm={handleCutoutConfirm}
@@ -418,13 +453,18 @@ export function DiaryCustomizeScreen() {
         <PhotoImportModal
           file={importPickedFile}
           onClose={() => setImportPickedFile(null)}
-          onSaved={async (blob, ratio) => {
-            const created = await addSticker({ blob, ratio, source: 'photo' });
+          onSaved={async (blob, ratio, mode) => {
             setImportPickedFile(null);
-            if (created?.id) {
-              setNewStickerId(created.id);
-              setLibraryTouched(true);
+            if (mode === 'photo') {
+              await saveAndClose({ blob, ratio, source: 'photo' });
+              return;
             }
+            // Cutout mode: reuse the camera scan/confirm overlay by
+            // staging the cropped blob as `captured` and jumping to
+            // scan. The scan screen calls the API, then hands the PNG
+            // to CutoutConfirmScreen.
+            setCaptured({ blob, ratio, mode: 'sticker' });
+            setCameraMode('scan');
           }}
         />
       ) : null}

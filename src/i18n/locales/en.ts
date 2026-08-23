@@ -826,11 +826,21 @@ export const en = {
       },
       scan: {
         progress: '✨ Scanning… hold tight!',
+        cancel: 'Cancel',
       },
       cutout: {
         close: 'Close',
         retake: 'Retake photo',
         confirm: 'Save sticker',
+        errorTitle: 'Couldn’t remove the background',
+        errorNetwork: 'Network hiccup. Check your connection and try again.',
+        errorQuota: 'Daily cutout limit reached. Try again tomorrow.',
+        errorRefused: 'This photo can’t be processed. Try a clearer subject.',
+        errorTooLarge: 'This photo is too large. Try a smaller one.',
+        errorUnknown: 'Something went wrong. Try again.',
+        errorRetry: 'Try again',
+        errorSaveAsPhoto: 'Save as photo instead',
+        errorCancel: 'Cancel',
       },
       photoImport: {
         title: 'Preview',
@@ -839,6 +849,8 @@ export const en = {
         retake: 'Retake',
         ratio1x1: '1:1',
         ratio4x3: '4:3',
+        modePhoto: 'Photo',
+        modeCutout: 'Cutout',
       },
     },
     status: {

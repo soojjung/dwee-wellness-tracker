@@ -109,7 +109,7 @@ flowchart TD
 - 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
 - 10.3b 포함: 캘린더 위에 스티커 배치 (drag/select/resize/rotate/delete). 라이브러리 썸네일 탭 → 화면 중앙 근처에 draft placement 생성. 커스터마이즈 화면은 draft 상태를 유지하며 완료 시 diff → repo 반영, 뒤로 시 `DiscardDialog` → 폐기.
 - 10.3c 포함: `CameraSheet` — Capacitor Camera 플러그인으로 촬영 후 crop 진입. `DraggableBottomSheet` — 스티커 라이브러리를 snap 2단계(collapsed/expanded) 바텀시트로 감쌈.
-- 10.3d 포함: `StickerScanScreen` + `CutoutConfirmScreen` — rembg 누끼 처리 결과 확인 → 보관함 저장. `DeleteStickersDialog` — 스티커 다중 선택 삭제 확인. `DiaryStickerViewLayer` — 다이어리 달력 위에 확정된 배치를 read-only 렌더하는 레이어(커스터마이즈 화면 밖에서도 표시).
+- 10.3d 포함: `StickerScanScreen` + `CutoutConfirmScreen` — `sticker-cutout` edge function (remove.bg 프록시) 을 호출해 배경 제거된 PNG 를 받아 미리보기 → 보관함 저장 (`source: 'sticker'`). API 실패 시 같은 화면에서 재시도 · 사진 그대로 저장 · 취소 선택 가능. `DeleteStickersDialog` — 스티커 다중 선택 삭제 확인. `DiaryStickerViewLayer` — 다이어리 달력 위에 확정된 배치를 read-only 렌더하는 레이어(커스터마이즈 화면 밖에서도 표시).
 - **기본 스티커 시드**: `src/domain/diary/defaultStickers.ts` 에 5개 기본 스티커 정의 (airpods-max / avocado-toast / glass-lemon / matcha / workout). `ensureDefaultStickersSeeded()` (`src/data/index.ts`)가 첫 앱 로드 시 `diaryDefaultStickersSeeded` 플래그를 확인하고, 미시드 상태면 `public/stickers/default/*.png` 블롭을 repo에 일괄 삽입.
 
 관련 파일:
@@ -124,6 +124,40 @@ flowchart TD
 - `src/data/adapters/indexeddb/keys.ts` — `diaryDefaultStickersSeeded` 플래그 키
 - `src/data/{repositories,adapters/indexeddb,adapters/supabase}` 에 `DiaryStickerRepository`, `DiaryStickerPlacementRepository`
 - `supabase/migrations/0008_diary_stickers.sql`, `supabase/migrations/0009_diary_sticker_placements.sql`
+
+### 스티커 업로드 분기 — 사진 그대로 vs 누끼
+
+앨범(`PhotoImportModal`) 과 카메라(`CameraSheet`) 모두 확정 전에 **모드 토글** (Photo / Cutout) 을 제공. 부모(`DiaryCustomizeScreen`) 가 분기:
+
+```mermaid
+flowchart TD
+    Pick(["파일 선택 / 촬영"])
+    Mode{"모드"}
+    SaveRaw["addSticker(source='photo')"]
+    Scan["StickerScanScreen\n(sticker-cutout 호출)"]
+    Confirm["CutoutConfirmScreen\n(누끼 PNG 미리보기)"]
+    SaveCut["addSticker(source='sticker')"]
+    Err{{"API 실패"}}
+    Retry["재시도"]
+    Fallback["사진 그대로 저장"]
+    Cancel["취소 → 라이브러리로 복귀"]
+
+    Pick --> Mode
+    Mode -- photo --> SaveRaw
+    Mode -- sticker --> Scan
+    Scan -- 성공 --> Confirm
+    Confirm -- 확정 --> SaveCut
+    Scan -- 실패 --> Err
+    Err --> Retry
+    Err --> Fallback --> SaveRaw
+    Err --> Cancel
+```
+
+관련:
+- Edge function: `supabase/functions/sticker-cutout/index.ts` — remove.bg API 프록시. Auth = Supabase JWT, 일일 20회 제한 (`sticker_cutout_calls` 테이블).
+- Client service: `src/data/services/stickerCutoutService.ts` — `removeStickerBackground({blob, mediaType, signal})`.
+- Pure helper: `src/lib/cutout/base64ToBlob.ts` (+ 테스트/케이스 표).
+- Env: `REMOVE_BG_API_KEY` (edge function secret) 필요. Supabase Dashboard → Functions → Secrets 에서 설정.
 
 ### 생리 토글 연동 (STEP 10.2c)
 

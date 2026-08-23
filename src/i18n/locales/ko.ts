@@ -827,11 +827,21 @@ export const ko: Dictionary = {
       },
       scan: {
         progress: '✨ 스캔 중이에요! 잠시만 기다려~',
+        cancel: '취소',
       },
       cutout: {
         close: '닫기',
         retake: '다시 촬영',
         confirm: '스티커로 저장',
+        errorTitle: '누끼를 따지 못했어요',
+        errorNetwork: '연결이 잠깐 끊긴 것 같아요. 다시 시도해 주세요.',
+        errorQuota: '오늘 사용할 수 있는 누끼 횟수를 다 썼어요. 내일 다시 시도해 주세요.',
+        errorRefused: '이 사진은 처리하기 어려워요. 피사체가 뚜렷한 사진으로 다시 시도해 주세요.',
+        errorTooLarge: '사진이 너무 커요. 조금 더 작은 사진으로 시도해 주세요.',
+        errorUnknown: '문제가 생겼어요. 다시 시도해 주세요.',
+        errorRetry: '다시 시도',
+        errorSaveAsPhoto: '사진 그대로 저장',
+        errorCancel: '취소',
       },
       photoImport: {
         title: '사진 미리보기',
@@ -840,6 +850,8 @@ export const ko: Dictionary = {
         retake: '다시 선택',
         ratio1x1: '1:1',
         ratio4x3: '4:3',
+        modePhoto: '사진',
+        modeCutout: '누끼',
       },
     },
     status: {

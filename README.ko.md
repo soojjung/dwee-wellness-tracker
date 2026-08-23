@@ -170,6 +170,13 @@ supabase functions deploy body-type-analyze
 supabase functions deploy delete-account
 ```
 
+**스티커 누끼 (`sticker-cutout`)** — remove.bg API 키 필요:
+```bash
+supabase secrets set REMOVE_BG_API_KEY=...
+supabase db push                          # 0012 마이그레이션
+supabase functions deploy sticker-cutout
+```
+
 ### 로컬 개발
 
 ```bash

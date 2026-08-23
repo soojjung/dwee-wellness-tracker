@@ -35,6 +35,9 @@ supabase/
                          — home_photos.transform jsonb 컬럼 추가. 비파괴
                            크롭(pan/zoom) 메타데이터 저장. 페이로드
                            { scale, offsetXNorm, offsetYNorm }, null = 편집 없음.
+    0012_sticker_cutout_calls.sql
+                         — sticker_cutout_calls (sticker-cutout Edge Function
+                           일일 호출 카운터, 일 20회 limit)
   functions/
     body-type-analyze/   — 매거진 퍼스널 체형 진단 Edge Function.
                            사진 base64 입력 → gpt-4o Vision 호출 →
@@ -45,6 +48,9 @@ supabase/
                            auth.admin.deleteUser 호출.
                            public.* 테이블 rows 는 auth.users 의
                            on delete cascade 로 자동 삭제.
+    sticker-cutout/      — 다이어리 스티커 누끼(배경 제거) Edge Function.
+                           사진 base64 입력 → remove.bg API 호출 →
+                           투명 PNG base64 반환. 사진은 저장 X (in-memory).
 ```
 
 어댑터 코드 위치: `src/data/adapters/supabase/`
@@ -80,7 +86,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 env 가 비어있으면 `isSupabaseConfigured === false` → `data/index.ts` 가 IndexedDB 로 자동 fallback. dev/CI 환경에서는 그대로 두어도 됨.
 
 ### 2. 마이그레이션 적용
-0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 순서.
+0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012 순서.
 
 **옵션 A (Supabase CLI):**
 ```bash
@@ -88,7 +94,7 @@ brew install supabase/tap/supabase
 supabase link --project-ref <ref>
 supabase db push
 ```
-**옵션 B (대시보드 SQL Editor):** 각 `migrations/*.sql` 파일을 0001부터 0010까지 순서대로 붙여넣고 RUN.
+**옵션 B (대시보드 SQL Editor):** 각 `migrations/*.sql` 파일을 0001부터 0012까지 순서대로 붙여넣고 RUN.
 
 ### 3. Auth provider 활성화 (Supabase 대시보드 → Authentication → Providers)
 - **Email** — enable. "Confirm email" 은 MVP 단계에서는 off 권장 (signUp 직후 세션 발급되어야 STEP 2.2 흐름이 즉시 로그인됨).
@@ -210,6 +216,28 @@ supabase functions deploy delete-account
    supabase functions deploy body-type-analyze
    ```
    JWT 검증은 기본 ON. 익명 세션 JWT 도 통과되므로 별도 플래그 불필요.
+
+### sticker-cutout
+
+다이어리 스티커 누끼(배경 제거). 클라이언트 → `supabase.functions.invoke('sticker-cutout', { body })` → Edge Function 이 remove.bg API 호출 → 투명 PNG (base64) 응답. **사진은 어디에도 저장하지 않음** (Storage 사용 X, 함수 내 in-memory 처리 후 폐기).
+
+요청 바디:
+- `imageBase64`: 사진 base64 (최대 12 MB — remove.bg 제한)
+- `imageMediaType`: `'image/jpeg' | 'image/png' | 'image/webp'`
+
+응답 데이터:
+- `pngBase64`: 배경 제거된 PNG base64
+- `remaining`: 오늘 남은 호출 횟수 (일 20회 limit, `sticker_cutout_calls` 테이블)
+
+시크릿 설정 (한 번만):
+1. remove.bg 가입 후 API key 발급: https://www.remove.bg/api → Get API Key. 무료 티어 월 50장.
+2. Supabase 시크릿 등록:
+   ```bash
+   supabase secrets set REMOVE_BG_API_KEY=...
+   supabase db push                          # 0012 마이그레이션 적용
+   supabase functions deploy sticker-cutout
+   ```
+3. 로컬 테스트: `supabase/.env.local` 에 `REMOVE_BG_API_KEY=` 추가 후 `supabase functions serve sticker-cutout --env-file supabase/.env.local`.
 
 ### 타입체크 제외
 
