@@ -62,6 +62,9 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
       aria-label={t.report.diary.photoImport.title}
       className="fixed inset-0 z-50 flex flex-col bg-brand-white"
     >
+      {/* Mobile shell (max-w-md) so the header, preview, toggles, and
+          CTA row stay in a phone-width column on desktop viewports. */}
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <header className="flex items-center justify-between px-4 pb-2 pt-safe">
         <span aria-hidden className="h-8 w-8" />
         <h2 className="text-base font-semibold text-brand-gray900">
@@ -148,6 +151,7 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
             </svg>
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

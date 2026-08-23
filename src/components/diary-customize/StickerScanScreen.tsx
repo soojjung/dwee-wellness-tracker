@@ -91,53 +91,58 @@ export function StickerScanScreen({
       aria-live="polite"
       className="fixed inset-0 z-50 flex flex-col bg-brand-white"
     >
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-        <div className="relative w-full max-w-md overflow-hidden">
-          {url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={url}
-              alt=""
-              aria-hidden
-              className="block h-auto w-full object-contain"
-            />
-          ) : null}
-          {!error ? (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-hidden"
-            >
-              <span className="absolute inset-x-0 top-0 h-1/3 animate-stickerScan bg-gradient-to-b from-transparent via-brand-pink100/70 to-transparent" />
-            </span>
-          ) : null}
+      {/* Mobile shell (max-w-md) — matches the rest of the app so the
+          photo, error card, and progress footer share the same column
+          width on desktop viewports. */}
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+        <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+          <div className="relative w-full overflow-hidden">
+            {url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={url}
+                alt=""
+                aria-hidden
+                className="block h-auto w-full object-contain"
+              />
+            ) : null}
+            {!error ? (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 overflow-hidden"
+              >
+                <span className="absolute inset-x-0 top-0 h-1/3 animate-stickerScan bg-gradient-to-b from-transparent via-brand-pink100/70 to-transparent" />
+              </span>
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      {error ? (
-        <ScanErrorCard
-          error={error}
-          onRetry={() => {
-            setError(null);
-            setAttempt((n) => n + 1);
-          }}
-          onSaveAsPhoto={onSaveAsPhoto}
-          onCancel={onCancel}
-        />
-      ) : (
-        <div className="flex items-center justify-between gap-4 px-6 pb-safe pb-8 pt-6">
-          <span aria-hidden className="h-10 w-16" />
-          <p className="flex-1 text-center text-sm text-brand-gray800">
-            {t.report.diary.scan.progress}
-          </p>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="h-10 w-16 rounded-full text-sm font-medium text-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
-          >
-            {t.report.diary.scan.cancel}
-          </button>
-        </div>
-      )}
+        {error ? (
+          <ScanErrorCard
+            error={error}
+            onRetry={() => {
+              setError(null);
+              setAttempt((n) => n + 1);
+            }}
+            onSaveAsPhoto={onSaveAsPhoto}
+            onCancel={onCancel}
+          />
+        ) : (
+          <div className="flex items-center justify-between gap-4 px-6 pb-safe pb-8 pt-6">
+            <span aria-hidden className="h-10 w-16" />
+            <p className="flex-1 text-center text-sm text-brand-gray800">
+              {t.report.diary.scan.progress}
+            </p>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="h-10 w-16 rounded-full text-sm font-medium text-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+            >
+              {t.report.diary.scan.cancel}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

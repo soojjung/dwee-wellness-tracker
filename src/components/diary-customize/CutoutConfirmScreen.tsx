@@ -47,49 +47,53 @@ export function CutoutConfirmScreen({
       aria-modal="true"
       className="fixed inset-0 z-50 flex flex-col bg-brand-white"
     >
-      <div className="flex items-center justify-end px-4 pt-safe pt-4">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={c.close}
-          className="grid size-10 place-items-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
-        >
-          <CloseIcon />
-        </button>
-      </div>
+      {/* Mobile shell (max-w-md) so the header, preview, and CTA row all
+          share the same column width on desktop viewports. */}
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+        <div className="flex items-center justify-end px-4 pt-safe pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={c.close}
+            className="grid size-10 place-items-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+          >
+            <CloseIcon />
+          </button>
+        </div>
 
-      <div
-        className="mx-4 mt-2 flex flex-1 items-center justify-center rounded-2xl"
-        style={{ backgroundImage: CHECKER_BG, backgroundSize: '18px 18px' }}
-      >
-        {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={url}
-            alt=""
-            aria-hidden
-            className="max-h-full max-w-full object-contain"
-          />
-        ) : null}
-      </div>
+        <div
+          className="mx-4 mt-2 flex flex-1 items-center justify-center rounded-2xl"
+          style={{ backgroundImage: CHECKER_BG, backgroundSize: '18px 18px' }}
+        >
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={url}
+              alt=""
+              aria-hidden
+              className="max-h-full max-w-full object-contain"
+            />
+          ) : null}
+        </div>
 
-      <div className="flex items-center justify-center gap-10 pb-safe pb-8 pt-6">
-        <button
-          type="button"
-          onClick={onRetake}
-          aria-label={c.retake}
-          className="grid size-12 place-items-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
-        >
-          <RetryIcon />
-        </button>
-        <button
-          type="button"
-          onClick={onConfirm}
-          aria-label={c.confirm}
-          className="grid size-12 place-items-center rounded-full bg-brand-pink200 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800"
-        >
-          <CheckIcon />
-        </button>
+        <div className="flex items-center justify-center gap-10 pb-safe pb-8 pt-6">
+          <button
+            type="button"
+            onClick={onRetake}
+            aria-label={c.retake}
+            className="grid size-12 place-items-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+          >
+            <RetryIcon />
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            aria-label={c.confirm}
+            className="grid size-12 place-items-center rounded-full bg-brand-pink200 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800"
+          >
+            <CheckIcon />
+          </button>
+        </div>
       </div>
     </div>
   );
