@@ -11,7 +11,7 @@ const OG_TITLE = 'dwee — Track your cycle and wellness, your way';
 const OG_DESCRIPTION =
   'A gentle diary that treats your cycle as a natural everyday rhythm — styled to your taste.';
 const OG_IMAGE = '/og-image.png';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+const SITE_URL = process.env.SITE_URL ?? 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
