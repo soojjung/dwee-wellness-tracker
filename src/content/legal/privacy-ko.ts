@@ -385,6 +385,11 @@ export const PRIVACY_KO: PrivacyDocument = {
             { label: '위탁 업무', value: '체형 분석 AI 처리' },
             { label: '처리하는 개인정보', value: '체형 분석을 위해 이용자가 제공한 사진' },
             { label: '처리 국가', value: '미국' },
+            {
+              label: '처리 방식',
+              value:
+                'API 요청 시 전송, 분석 완료 후 즉시 삭제. Anthropic 의 abuse monitoring 정책에 따라 최대 30일간 자동 보관될 수 있으며, AI 모델 학습 목적으로는 이용되지 않습니다.',
+            },
           ],
         },
         {
@@ -433,7 +438,11 @@ export const PRIVACY_KO: PrivacyDocument = {
             { label: '이전 국가', value: '미국' },
             { label: '이전 항목', value: '이용자가 체형 분석을 위해 제공한 사진' },
             { label: '이전 목적', value: '체형 분석 AI 모델을 통한 분석 결과 생성' },
-            { label: '보유 및 이용 기간', value: '분석 완료 후 즉시 삭제' },
+            {
+              label: '보유 및 이용 기간',
+              value:
+                '분석 완료 후 즉시 삭제. 단, Anthropic 의 abuse monitoring 정책에 따라 최대 30일간 자동 보관될 수 있으며, AI 모델 학습 목적으로 이용되지 않습니다.',
+            },
             { label: '이전 방법', value: '서버 간 HTTPS(TLS) 암호화 통신으로 전송' },
           ],
         },
