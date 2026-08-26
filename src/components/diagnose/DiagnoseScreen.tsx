@@ -344,7 +344,6 @@ function SlotStrip({
               aria-label={labels[slot]}
             >
               {photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img src={photo.previewUrl} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-1 text-brand-gray700">
@@ -470,7 +469,6 @@ function LoadingView({ blurUrl }: { blurUrl: string }) {
 
   return (
     <div className="fixed inset-0 z-40 flex h-dvh w-full items-center justify-center overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={blurUrl}
         alt=""

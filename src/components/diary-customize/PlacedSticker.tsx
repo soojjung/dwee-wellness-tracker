@@ -151,7 +151,6 @@ export function PlacedSticker({
           (selected ? 'ring-2 ring-brand-pink300' : '')
         }
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
           alt=""

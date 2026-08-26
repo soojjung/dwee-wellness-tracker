@@ -66,7 +66,6 @@ export function CutoutConfirmScreen({
           style={{ backgroundImage: CHECKER_BG, backgroundSize: '18px 18px' }}
         >
           {url ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={url}
               alt=""

@@ -210,7 +210,6 @@ export function StickerLibrarySheet({
                   )}
                   style={{ aspectRatio: s.ratio === '1:1' ? '1 / 1' : '3 / 4' }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={url}
                     alt=""

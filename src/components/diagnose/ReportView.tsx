@@ -71,7 +71,6 @@ function Hero({
           the reference. The box stops 8px shy of the hero bottom to keep
           clearance for the white card's rounded-corner overlap. */}
       <div className="pointer-events-none absolute right-0 top-0 h-[372px] w-[260px] overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image}
           alt=""
