@@ -1185,6 +1185,35 @@ export const ko: Dictionary = {
       averagePrefix: '평균 ',
       averageSuffix: '일',
     },
+    tests: {
+      title: '나의 테스트',
+      bodyTypeResult: '체형 분석 결과',
+      bodyTypeCta: '체형 분석 해보기',
+    },
+    notifications: {
+      backAriaLabel: '뒤로',
+      valueOn: '켜짐',
+      valueOff: '꺼짐',
+      master: '알림',
+      periodDue: {
+        title: '생리 예정일',
+        subtitle: '생리 예정일이 5일 남았어요',
+      },
+      periodDueTiming: '알림 시기',
+      periodDueTimingValuePrefix: '',
+      periodDueTimingValueSuffix: '일 전',
+      periodDueTimingSameDay: '0일 전',
+      periodDueTimingWheelUnit: '일',
+      periodDueTimingWheelTrailing: '전 알림',
+      periodDelay: {
+        title: '생리 지연',
+        subtitle: '생리 예정일이 지났어요! 생리가 시작됐나요?',
+      },
+      fertile: {
+        title: '가임기',
+        subtitle: '가임기가 시작됐어요 / 가임기가 종료됐어요',
+      },
+    },
     settings: {
       title: '설정',
       notifications: '알림',
@@ -1196,6 +1225,15 @@ export const ko: Dictionary = {
       qna: 'Q&A',
       terms: '이용약관',
       privacy: '개인정보처리방침',
+    },
+    qna: {
+      backAriaLabel: '뒤로',
+      cardTitle: '이메일 문의하기',
+      cardDescription:
+        '버그 제보, 기능 요청, 기타 문의 사항을 아래 이메일로 보내주시면 확인 후 답변드릴게요',
+      copyButton: '복사',
+      copyAriaLabel: '이메일 주소 복사',
+      copiedToast: '이메일을 복사했어요',
     },
     accountManagement: {
       title: '계정 관리',

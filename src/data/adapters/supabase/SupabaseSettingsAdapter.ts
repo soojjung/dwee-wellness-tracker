@@ -13,7 +13,11 @@ interface ProfileRow {
 }
 
 function rowToSettings(row: ProfileRow): UserSettings {
+  // Only known Supabase columns are mapped; new notification sub-toggles are
+  // not persisted server-side yet (they live in IndexedDB only until push
+  // infrastructure is wired). Spread defaults so those fields fall back safely.
   return {
+    ...DEFAULT_USER_SETTINGS,
     locale: row.locale,
     averageCycleLength: row.average_cycle_length,
     averagePeriodLength: row.average_period_length,

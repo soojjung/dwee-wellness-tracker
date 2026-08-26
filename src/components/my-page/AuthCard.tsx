@@ -19,7 +19,7 @@ export function AuthCard() {
       <Link
         href="/login"
         className={cn(
-          'flex h-14 w-full items-center justify-between rounded-2xl bg-brand-white px-4',
+          'flex h-14 w-full items-center justify-between rounded-2xl bg-brand-white px-5',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
         )}
       >
@@ -39,7 +39,7 @@ export function AuthCard() {
       href="/settings/account"
       aria-label={t.myPage.authCard.loggedInAriaLabel}
       className={cn(
-        'flex w-full items-center justify-between rounded-2xl bg-brand-gray900 px-4 py-4',
+        'flex w-full items-center justify-between rounded-2xl bg-brand-gray900 px-5 py-4',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
       )}
     >

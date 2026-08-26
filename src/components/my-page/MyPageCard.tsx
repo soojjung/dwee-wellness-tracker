@@ -26,17 +26,17 @@ export function MyPageCard({
   return (
     <section
       className={cn(
-        'rounded-2xl px-4 py-4',
+        'rounded-2xl px-5 pb-3 pt-4',
         dark ? 'bg-brand-gray900 text-brand-white' : 'bg-brand-white',
         className,
       )}
     >
       {title || headerRight ? (
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-1 flex items-center justify-between">
           {title ? (
             <span
               className={cn(
-                'text-xs font-medium',
+                'text-xs font-semibold',
                 dark ? 'text-brand-gray300' : 'text-brand-gray600',
               )}
             >

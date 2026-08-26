@@ -1,8 +1,5 @@
-'use client';
-import { useT } from '@/i18n/useT';
-import { SubPagePlaceholder } from '@/components/my-page/SubPagePlaceholder';
+import { TermsScreen } from '@/components/my-page/TermsScreen';
 
 export default function TermsPage() {
-  const t = useT();
-  return <SubPagePlaceholder title={t.myPage.support.terms} />;
+  return <TermsScreen />;
 }

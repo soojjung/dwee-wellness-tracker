@@ -18,7 +18,7 @@ interface MyPageRowProps {
 }
 
 const rowBase =
-  'flex h-12 w-full items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2';
+  'flex h-14 w-full items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2';
 
 /**
  * Single row inside a MyPageCard — label on the left, optional value + chevron
