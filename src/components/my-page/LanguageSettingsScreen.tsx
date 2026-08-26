@@ -26,9 +26,9 @@ export function LanguageSettingsScreen() {
   const update = useSettingsStore((s) => s.update);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-gray50">
+    <div className="flex min-h-dvh flex-col bg-brand-gray200">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-14 items-center bg-brand-gray50 px-4">
+        <header className="sticky top-0 z-10 flex h-14 items-center bg-brand-gray200 px-4">
           <Link
             href="/settings"
             aria-label={t.myPage.language.backAriaLabel}

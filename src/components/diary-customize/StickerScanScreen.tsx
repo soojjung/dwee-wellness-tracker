@@ -98,7 +98,6 @@ export function StickerScanScreen({
         <div className="relative flex flex-1 items-center justify-center overflow-hidden">
           <div className="relative w-full overflow-hidden">
             {url ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={url}
                 alt=""

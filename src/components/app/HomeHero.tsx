@@ -52,12 +52,15 @@ export function HomeHero() {
 
       <div className="relative -mx-4 aspect-square overflow-hidden bg-brand-gray300">
         {isCustom ? (
-          <PhotoLayout
-            count={photoCount}
-            urls={activePhotos}
-            transforms={activeTransforms}
+          <PhotoLayout count={photoCount} urls={activePhotos} transforms={activeTransforms} />
+        ) : (
+          <img
+            src="/home/default-hero.jpg"
+            alt=""
+            aria-hidden
+            className="h-full w-full object-cover"
           />
-        ) : null}
+        )}
 
         <HomeHeroText />
 
@@ -81,4 +84,3 @@ export function HomeHero() {
     </>
   );
 }
-

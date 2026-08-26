@@ -1190,6 +1190,35 @@ export const en = {
       averagePrefix: 'Average ',
       averageSuffix: ' days',
     },
+    tests: {
+      title: 'My tests',
+      bodyTypeResult: 'Body type result',
+      bodyTypeCta: 'Take the body type test',
+    },
+    notifications: {
+      backAriaLabel: 'Back',
+      valueOn: 'On',
+      valueOff: 'Off',
+      master: 'Notifications',
+      periodDue: {
+        title: 'Period due',
+        subtitle: 'Your period is coming in 5 days',
+      },
+      periodDueTiming: 'Reminder time',
+      periodDueTimingValuePrefix: '',
+      periodDueTimingValueSuffix: ' days before',
+      periodDueTimingSameDay: 'On the day',
+      periodDueTimingWheelUnit: '',
+      periodDueTimingWheelTrailing: 'days before',
+      periodDelay: {
+        title: 'Period delay',
+        subtitle: 'Your period date has passed. Has it started?',
+      },
+      fertile: {
+        title: 'Fertile window',
+        subtitle: 'Your fertile window has started / has ended',
+      },
+    },
     settings: {
       title: 'Preferences',
       notifications: 'Notifications',
@@ -1201,6 +1230,15 @@ export const en = {
       qna: 'Q&A',
       terms: 'Terms of service',
       privacy: 'Privacy policy',
+    },
+    qna: {
+      backAriaLabel: 'Back',
+      cardTitle: 'Email us',
+      cardDescription:
+        'For bug reports, feature requests, or anything else — send us an email and we’ll get back to you.',
+      copyButton: 'Copy',
+      copyAriaLabel: 'Copy email address',
+      copiedToast: 'Email copied',
     },
     accountManagement: {
       title: 'Account',

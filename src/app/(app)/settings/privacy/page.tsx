@@ -1,8 +1,5 @@
-'use client';
-import { useT } from '@/i18n/useT';
-import { SubPagePlaceholder } from '@/components/my-page/SubPagePlaceholder';
+import { PrivacyScreen } from '@/components/my-page/PrivacyScreen';
 
 export default function PrivacyPage() {
-  const t = useT();
-  return <SubPagePlaceholder title={t.myPage.support.privacy} />;
+  return <PrivacyScreen />;
 }

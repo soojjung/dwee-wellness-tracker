@@ -101,7 +101,6 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
             style={{ aspectRatio }}
           >
             {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={previewUrl}
                 alt=""

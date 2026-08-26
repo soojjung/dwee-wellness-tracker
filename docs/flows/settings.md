@@ -13,8 +13,9 @@ MyPage renders a fixed stack of cards, some conditionally visible:
 |---|---|---|
 | `AuthCard` | yes | signed-out → login CTA row; signed-in → dark profile card |
 | `CycleSummaryCard` | yes | shows status chip when data sufficient; "not enough data" copy otherwise |
-| `PreferencesCard` | yes | notification toggle + language row |
-| `SupportCard` | yes | notices / Q&A / terms / privacy rows (stub routes) |
+| `MyTestsCard` | yes | `나의 테스트` — one row per quiz; body-type row shows "결과" link (→ result page) when sessionStorage has a report, "체형 분석 해보기" CTA (→ article intro) otherwise. Skips hydration render to avoid flash. |
+| `PreferencesCard` | yes | notifications row (→ `/settings/notifications`) + language row |
+| `SupportCard` | yes | notices / Q&A / terms / privacy rows |
 | `AccountManagementCard` | signed-in only | sign-out + account deletion rows |
 
 ---
@@ -171,24 +172,41 @@ Two radio-style rows (English / 한국어). Tapping a row immediately calls `set
 
 ---
 
+## Notifications screen
+
+Route: `(app)/settings/notifications` — rendered by `NotificationsScreen`.
+
+Matches Figma 292:2765. One master toggle expands into three per-topic sub-toggles:
+
+| Toggle key | Topic |
+|---|---|
+| `notifPeriodDueEnabled` | Period due reminder |
+| `notifPeriodDelayEnabled` | Period delay alert |
+| `notifFertileEnabled` | Fertile window reminder |
+
+`notifPeriodDueLeadDays` (0–14, persisted to `UserSettings`) controls a 3-row wheel picker for lead time when period-due is enabled. The wheel appears inline under the period-due row; tapping a neighbor row moves one step.
+
+Master-toggle semantics: turning ON enables all three subs; turning OFF disables all subs and collapses the sub-toggle section. When the last enabled sub is individually turned off, master auto-clears. Persisted to IndexedDB via `settingsStore.update()` — no push infrastructure yet; Supabase profiles table has no columns for these fields (uses `DEFAULT_USER_SETTINGS` fallback on load).
+
+---
+
 ## Sub-page routes
 
 | Route | Figma | Status |
 |---|---|---|
 | `/settings/language` | 015_15 | live — `LanguageSettingsScreen` |
 | `/settings/withdraw` | 015_10–14 | live — `WithdrawReasonScreen` (fullscreen) |
+| `/settings/notifications` | 292:2765 | live — `NotificationsScreen` |
+| `/settings/qna` | 015_5 | live — `QnaScreen` (static support email + copy-to-clipboard) |
+| `/settings/terms` | 015_16 | live — `TermsScreen` (제1~15조 + 부칙, Korean-only) |
+| `/settings/privacy` | 015_17 | live — `PrivacyScreen` (제1~17조 + 부칙, Korean-only) |
 | `/settings/notices` | 015_4 | stub |
-| `/settings/qna` | 015_5 | stub |
-| `/settings/terms` | 015_16 | stub |
-| `/settings/privacy` | 015_17 | stub |
-
-Stub routes render `SubPagePlaceholder` with a back link and `myPage.subPage.comingSoon` copy.
 
 ---
 
 ## i18n keys
 
-All copy lives under `myPage.*` in `src/i18n/locales/{en,ko}.ts`. New keys from this batch:
+All copy lives under `myPage.*` in `src/i18n/locales/{en,ko}.ts`. Keys by feature:
 
 - `myPage.signOutDialog.*` — logout confirm dialog title, body, confirm button
 - `myPage.signOutToast` — post-logout confirmation message shown on `/login`
@@ -196,5 +214,7 @@ All copy lives under `myPage.*` in `src/i18n/locales/{en,ko}.ts`. New keys from 
 - `myPage.withdrawDialog.*` — withdrawal confirm dialog title, body, confirm button
 - `myPage.withdraw.*` — reason-collection screen title, reason labels, free-text placeholder, submit button
 - `myPage.withdrawDoneToast` — post-deletion confirmation message shown on `/login`
+- `myPage.notifications.*` — notifications screen title, master toggle, per-topic labels/subtitles, wheel picker strings
+- `myPage.tests.*` — tests card title, body-type CTA label, body-type result label
 
 Nickname fallback logic (email local-part) is in `AuthCard.getNickname()` — not an i18n key.

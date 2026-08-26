@@ -151,6 +151,7 @@ flowchart LR
 ```bash
 cp .env.example .env.local
 # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY 채우기
+# NEXT_PUBLIC_SITE_URL — OG 메타데이터 base URL (배포 시 실제 도메인으로 교체)
 ```
 
 `.env.local` 이 비어 있어도 dev/build 는 통과합니다(placeholder fallback). 단 익명 로그인은 실패하며 `auth.error.missingConfig` 토스트가 뜹니다.
@@ -217,7 +218,7 @@ src/
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환 (캘린더 포함)
 │   │   ├── magazine/             매거진 글 목록
-│   │   └── settings/             마이페이지 + 서브 라우트 (language/notices/qna/terms/privacy — stub)
+│   │   └── settings/             마이페이지 + 서브 라우트 (language/notifications/qna/terms/privacy — 실장; notices — stub)
 │   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
 │       ├── home/customize/       홈 커스터마이즈 + 사진 편집
 │       ├── log/customize/        다이어리 스티커 라이브러리 + 배치 편집
@@ -238,7 +239,7 @@ src/
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
 │   ├── auth/                     LoginScreen, AuthGuard
-│   ├── my-page/                  MyPageScreen, AuthCard, CycleSummaryCard, PreferencesCard, SupportCard, AccountManagementCard, AccountEditScreen, WithdrawConfirmDialog, WithdrawReasonScreen, SubPagePlaceholder
+│   ├── my-page/                  MyPageScreen, AuthCard, CycleSummaryCard, MyTestsCard, PreferencesCard, SupportCard, AccountManagementCard, AccountEditScreen, WithdrawConfirmDialog, WithdrawReasonScreen, NotificationsScreen, TermsScreen, PrivacyScreen, QnaScreen
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer
 │
 ├── store/                        Zustand: period / condition / settings / media / auth / bookmark / event / diarySticker / diaryPlacement
@@ -324,6 +325,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] **MVP2.4 — Diary 스티커 커스터마이즈** — `DiarySticker` (앨범 import + 카메라 촬영 + 1:1/4:3 crop) + `DiaryStickerPlacement` (캘린더 위 drag/resize/rotate/delete). `/log/customize` 풀스크린 라우트. `CameraSheet` (Capacitor Camera), `StickerScanScreen` + `CutoutConfirmScreen` (rembg 누끼 확인 → 저장), `DeleteStickersDialog` (다중 삭제), `DraggableBottomSheet` (2-snap 라이브러리). `DiaryStickerViewLayer`로 다이어리 탭 캘린더 위 배치를 read-only 렌더. 기본 스티커 5개 시드 (`public/stickers/default/`, `ensureDefaultStickersSeeded()`). `CycleChart` y-축 스케일은 `domain/cycle/chartScale.ts` 순수 함수로 분리. Supabase migrations 0008–0009.
 - [x] **MVP2.5 — 계정 관리** — 회원 탈퇴 엔드-투-엔드 구현. `delete-account` Edge Function (media 버킷 재귀 삭제 → `auth.admin.deleteUser`, cascade 로 DB 행 자동 삭제). 탈퇴 흐름을 2단계로 개편: `WithdrawConfirmDialog` (015_9) 확인 → `/settings/withdraw` 의 `WithdrawReasonScreen` (015_10~14) 에서 사유 1개 이상 선택 후 탈퇴. 사유는 `withdrawal_feedbacks` 테이블에 익명(user_id 없음) insert — 삭제 cascade 후에도 잔존하여 분석 가능. 응답 유실 시 세션 재확인으로 하드닝. 마이페이지에서 평균 생리 주기 편집 UI·시드 데이터 주입 UI 제거(도메인 로직·e2e 시드는 유지). Supabase migration 0011.
 - [x] **MVP2.6 — 마이페이지 (MyPage)** — `/settings` 를 Figma 015_1/015_2 기반 MyPage 로 전면 교체. 인증 상태별 AuthCard (비로그인 → /login CTA, 로그인 → 닉네임+이메일 → /settings/account), 주기 요약 카드 (`classifyCycleStatus` 재사용 + 상태 chip), 환경설정·고객지원 카드. 로그아웃은 `LogoutConfirmDialog` (핑크 배지)로 대체 — 확인 후 `appToast` 큐에 메시지 적재 → `router.push('/login')` 즉시 이동 → 백그라운드 `signOut()` 순으로 진행해 빈 화면 대기 없음. `/login` 마운트 시 top-confirm Toast 노출. 언어 설정 화면 (`/settings/language`) 실장 — 2개 라디오 행, 탭 즉시 locale 전환. 계정 편집 화면 (`/settings/account`, fullscreen): 닉네임 수정 → `supabase.auth.updateUser`, 익명 유저 자동 bounce. 서브 라우트 4개(notices/qna/terms/privacy) 스텁 유지. i18n `myPage.*` 서브트리 신설 (`signOutDialog.*`, `signOutToast`, `language.*` 포함); `nav.settings` 레이블 → "My page / 마이페이지".
+- [x] **MVP2.6-polish — 마이페이지 서브 페이지 실장 + 레이아웃 정리** — `MyTestsCard` (나의 테스트: 체형 분석 결과 또는 CTA, sessionStorage 기반) 신설. 알림 설정 화면 (`/settings/notifications`): 마스터 토글 + 3개 항목 토글(생리 예정/생리 지연/가임기) + 3행 휠 피커(알림 시간 0~14일 전); IndexedDB 저장(푸시 인프라 미구현). 법적 문서 실장 (한국 관할): `/settings/terms` (이용약관 제1~15조 + 부칙), `/settings/privacy` (개인정보처리방침 제1~17조 + 부칙); `src/content/legal/` 모듈로 구조화. Q&A 화면(`/settings/qna`): 정적 지원 이메일 + 클립보드 복사 + 상단 토스트. 레이아웃 폴리시: 배경색 `bg-brand-gray200`, 카드 간격 20px, 행 높이 56px, 섹션 제목 `font-semibold`. OG 메타데이터 (`og:title/og:image/og:locale`) 루트 `layout.tsx` 에 추가 — `NEXT_PUBLIC_SITE_URL` 기반. 홈 히어로 기본 이미지 (`public/home/default-hero.jpg`) — 첫 진입 전 회색 플레이스홀더 대체.
 - [x] **홈 커스터마이즈 개편** — 비파괴 사진 편집: 슬롯마다 `PhotoTransform` 메타데이터 저장, 원본 blob 덮어쓰기 금지. 드래프트 모드: 모든 변경을 draft* 필드에 버퍼링 → "설정 완료" 시 `commitPhotoDraft()` 일괄 반영. `picksConfirmed` 게이트: edit-photos 그리드에서 "선택하기" 탭 후에만 "설정 완료" 활성. 슬롯별 사진 삭제(× 버튼). `DiscardDraftDialog` (dirty 뒤로가기). `TransformedPhoto` 공유 렌더 컴포넌트. 텍스트 커스터마이즈 일시 비활성. `CustomizeDraftGuard` 레이아웃 래퍼: 브라우저 뒤로가기·탭 닫기 등 모든 종료 경로에서 잔여 드래프트 자동 정리 (이전에는 누수 발생). IndexedDB schema v10; Supabase migration 0010.
 - [ ] MVP2.7~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 

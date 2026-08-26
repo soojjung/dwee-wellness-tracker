@@ -17,11 +17,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!settingsHydrated) hydrateSettings();
     if (!authHydrated) hydrateAuth();
     if (!bookmarksHydrated) hydrateBookmarks();
-  }, [hydrateSettings, settingsHydrated, hydrateAuth, authHydrated, hydrateBookmarks, bookmarksHydrated]);
+  }, [
+    hydrateSettings,
+    settingsHydrated,
+    hydrateAuth,
+    authHydrated,
+    hydrateBookmarks,
+    bookmarksHydrated,
+  ]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-brand-gray50">
-      <main className="mx-auto w-full max-w-md flex-1 pb-32">{children}</main>
+      <main className="mx-auto w-full max-w-md flex-1 pb-24">{children}</main>
       <BottomTabNav />
     </div>
   );

@@ -1,8 +1,5 @@
-'use client';
-import { useT } from '@/i18n/useT';
-import { SubPagePlaceholder } from '@/components/my-page/SubPagePlaceholder';
+import { QnaScreen } from '@/components/my-page/QnaScreen';
 
 export default function QnaPage() {
-  const t = useT();
-  return <SubPagePlaceholder title={t.myPage.support.qna} />;
+  return <QnaScreen />;
 }
