@@ -9,7 +9,6 @@ import {
   DEFAULT_PHOTO_TRANSFORM,
   clampPhotoTransform,
   computePhotoRender,
-  isPhotoTransformEdited,
   photoTransformEqual,
   slotsForCount,
   type PhotoSlot,
@@ -476,8 +475,7 @@ function PhotoCell({
       }}
       className={cn(
         'relative h-full w-full touch-none select-none overflow-hidden bg-brand-gray300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink200',
-        active && 'ring-2 ring-inset ring-brand-pink200',
-        isPhotoTransformEdited(transform) && !active && 'opacity-100',
+        active && 'z-10',
       )}
       style={{ cursor: active ? 'grab' : 'pointer' }}
     >
@@ -501,6 +499,12 @@ function PhotoCell({
             : { width: '100%', height: '100%', objectFit: 'cover' as const }
         }
       />
+      {active ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-10 border-[3px] border-brand-pink300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.7)]"
+        />
+      ) : null}
     </div>
   );
 }

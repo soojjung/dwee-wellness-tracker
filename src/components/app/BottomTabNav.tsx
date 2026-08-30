@@ -34,39 +34,49 @@ export function BottomTabNav() {
   if (!SHOW_NAV_PATHS.includes(normalized)) return null;
 
   return (
-    <nav
-      aria-label="primary"
-      className="fixed inset-x-0 bottom-6 z-20 flex justify-center px-5"
-    >
-      <ul
+    <>
+      <div
+        aria-hidden
         className={cn(
-          'flex items-center gap-2 rounded-[32px] border-[0.5px] border-nav-pillBorder',
-          'bg-nav-pillBg p-[6px] shadow-[0_0_12px_0_rgba(0,0,0,0.06)] backdrop-blur-[8px]',
+          'pointer-events-none fixed inset-x-0 bottom-0 z-10 mx-auto h-[88px] w-full max-w-md',
+          'bg-gradient-to-t from-[rgba(185,183,184,0.8)] to-[rgba(185,183,184,0)]',
         )}
+      />
+      <nav
+        aria-label="primary"
+        className="fixed inset-x-0 z-20 mx-auto flex w-full max-w-md justify-center px-4"
+        style={{ bottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}
       >
-        {TABS.map((tab) => {
-          const active = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href);
-          return (
-            <li key={tab.key}>
-              <Link
-                href={tab.href}
-                aria-current={active ? 'page' : undefined}
-                aria-label={t.nav[tab.labelKey]}
-                onClick={tab.key === 'log' ? () => pingDiaryToday() : undefined}
-                className={cn(
-                  'flex h-12 w-16 items-center justify-center rounded-[32px] transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',
-                  active
-                    ? 'border-[0.5px] border-nav-activePillBorder bg-nav-activePillBg text-brand-pink200'
-                    : 'text-brand-gray900',
-                )}
-              >
-                <NavIcon icon={tab.key} className="h-6 w-6" />
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+        <ul
+          className={cn(
+            'flex w-full items-center gap-2 rounded-[32px] border-[0.5px] border-nav-pillBorder',
+            'bg-nav-pillBg p-[6px] shadow-[0_0_12px_0_rgba(0,0,0,0.06)] backdrop-blur-[8px]',
+          )}
+        >
+          {TABS.map((tab) => {
+            const active = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href);
+            return (
+              <li key={tab.key} className="flex-1">
+                <Link
+                  href={tab.href}
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={t.nav[tab.labelKey]}
+                  onClick={tab.key === 'log' ? () => pingDiaryToday() : undefined}
+                  className={cn(
+                    'flex h-[52px] w-full items-center justify-center rounded-[32px] transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',
+                    active
+                      ? 'border-[0.5px] border-nav-activePillBorder bg-nav-activePillBg text-brand-pink200'
+                      : 'text-brand-gray900',
+                  )}
+                >
+                  <NavIcon icon={tab.key} className="h-6 w-6" />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </>
   );
 }

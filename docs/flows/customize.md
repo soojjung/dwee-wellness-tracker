@@ -76,7 +76,7 @@ flowchart TD
     Show --> EditCount{"사진 수 선택\n(1 / 2 / 4)"}
     Show --> TapEdit["'사진 편집하기' 탭\n(현재 count 슬롯 전부 채워졌을 때)"]
 
-    EditCount -->|"해당 count 슬롯 미충족"| Pick["파일 picker\n(multiple)"]
+    EditCount -->|"해당 count 슬롯 미충족"| Pick["사진 picker\n(native: Camera.pickImages\n/ web: file input)"]
     Pick -->|"슬롯 채움 → edit-photos 이동"| EditPhotos([PhotoEditScreen])
     EditCount -->|"슬롯 전부 채워짐"| EditPhotos
     TapEdit --> EditPhotos
@@ -95,7 +95,11 @@ flowchart TD
 
 ### picksConfirmed 게이트
 
-"설정 완료" 는 `allFilled && picksConfirmed` 조건이 모두 참일 때만 활성화됩니다. `picksConfirmed` 는 PhotoEditScreen 의 "선택하기" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
+"설정 완료" 는 `allFilled && picksConfirmed` 조건이 모두 참일 때만 활성화됩니다. `picksConfirmed` 는 PhotoEditScreen 의 "편집 완료(Done editing)" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
+
+### beginPhotoDraft 초기 상태
+
+`beginPhotoDraft()` 는 커밋된 사진 blob 이 하나도 없을 경우 `draftPhotoCount = null`, `draftPicksConfirmed = false` 로 초기화합니다. 기본 이미지(default hero) 상태에서 커스터마이즈를 열어도 카운트 타일이 pre-select 되지 않습니다. hydrate 시에도 `count ?? null` 로 초기화되어 첫 진입 사용자에게 "1장" 이 자동 선택되지 않습니다.
 
 ---
 
@@ -108,7 +112,7 @@ stateDiagram-v2
     [*] --> Idle : 진입
     Idle --> Detail : 채워진 셀 탭 → /edit-photos/[slot]
     Idle --> FilePicker : 빈 셀(플레이스홀더) 탭
-    FilePicker --> Idle : 사진 선택 → 슬롯 업데이트
+    FilePicker --> Idle : 사진 선택 → 슬롯 업데이트 (onPick: Blob[])
     Idle --> Idle : × 버튼 탭 → 해당 슬롯 지움\npicksConfirmed 리셋
     Idle --> [*] : "선택하기" 탭 → picksConfirmed=true → /home/customize
     Idle --> [*] : "뒤로" → /home/customize

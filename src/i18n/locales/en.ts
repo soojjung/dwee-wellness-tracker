@@ -163,7 +163,7 @@ export const en = {
         swapAriaLabel: 'Swap main and sub text',
       },
       submit: 'Save & apply',
-      confirmPicksHint: 'Tap Confirm selection to lock in your photos first.',
+      confirmPicksHint: 'Tap Done editing to lock in your photos first.',
       discardDialog: {
         title: 'Discard your changes?',
         body: 'Your photo picks and crops so far will be lost.',
@@ -178,7 +178,7 @@ export const en = {
         addPhoto: 'Add photo',
         addAriaLabel: 'Add photo to this slot',
         removeAriaLabel: 'Remove this photo',
-        submit: 'Confirm selection',
+        submit: 'Done editing',
         slotAriaLabel: 'Edit this photo',
       },
       photoEditDetail: {

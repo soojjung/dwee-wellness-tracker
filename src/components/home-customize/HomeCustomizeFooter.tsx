@@ -20,14 +20,14 @@ export function HomeCustomizeFooter({
     <footer
       className={cn(
         'px-4 pb-8 pt-5 transition-colors',
-        enabled ? 'bg-brand-gray900' : 'bg-brand-gray400',
+        enabled ? 'bg-brand-gray900' : 'bg-brand-gray300',
       )}
     >
       {hint ? (
         <p
           className={cn(
             'mb-2 text-center text-xs leading-[1.4]',
-            enabled ? 'text-brand-pink100/70' : 'text-brand-gray200',
+            enabled ? 'text-brand-pink100/70' : 'text-brand-gray600',
           )}
         >
           {hint}
@@ -39,7 +39,7 @@ export function HomeCustomizeFooter({
         onClick={onSubmit}
         className={cn(
           'block w-full text-center text-xl font-semibold leading-[normal] transition-colors',
-          enabled ? 'text-brand-pink100' : 'cursor-default text-brand-gray200',
+          enabled ? 'text-brand-pink100' : 'cursor-not-allowed text-brand-gray500',
         )}
       >
         {t.home.customize.submit}

@@ -105,10 +105,10 @@ beforeEach(() => {
 // ========================================================================
 // beginPhotoDraft
 // ========================================================================
-
 describe('beginPhotoDraft', () => {
   it('activates the draft and snapshots committed state', () => {
-    seedCommitted({ photoCount: 2, photoUrls: nullArray<string | null>(null) });
+    const urls: (string | null)[] = ['committed-url-a', 'committed-url-b', null, null, null, null, null];
+    seedCommitted({ photoCount: 2, photoUrls: urls });
     useMediaStore.getState().beginPhotoDraft();
 
     const s = useMediaStore.getState();
@@ -117,7 +117,7 @@ describe('beginPhotoDraft', () => {
     // Committed photos were previously confirmed, so the draft starts as
     // confirmed too — the top-level submit stays active for unchanged sessions.
     expect(s.draftPicksConfirmed).toBe(true);
-    expect(s.draftPhotoUrls).toEqual(nullArray<string | null>(null));
+    expect(s.draftPhotoUrls).toEqual(urls);
     expect(s.draftPhotoTransforms).toEqual(nullArray<PhotoTransform | null>(null));
     expect(s.draftPendingBlobs).toEqual(nullArray<Blob | null>(null));
     expect(s.draftClearedPhotos).toEqual(nullArray(false));
@@ -127,6 +127,17 @@ describe('beginPhotoDraft', () => {
   it('leaves draft photoCount null when nothing is committed', () => {
     useMediaStore.getState().beginPhotoDraft();
     expect(useMediaStore.getState().draftPhotoCount).toBeNull();
+    expect(useMediaStore.getState().draftPicksConfirmed).toBe(false);
+  });
+
+  it('starts a fresh draft when photoCount is stale but no photos are committed', () => {
+    // Stale state: prior sessions left photoCount=1 with no photo blobs.
+    // Home hero is still on the default image, so the customize screen
+    // must not pre-select "1장".
+    seedCommitted({ photoCount: 1, photoUrls: nullArray<string | null>(null) });
+    useMediaStore.getState().beginPhotoDraft();
+    expect(useMediaStore.getState().draftPhotoCount).toBeNull();
+    expect(useMediaStore.getState().draftPicksConfirmed).toBe(false);
   });
 
   it('is idempotent — a second call while active is a no-op (preserves picks)', () => {
@@ -204,7 +215,10 @@ describe('draftSetPhotoCount', () => {
   });
 
   it('does nothing when count already matches (preserves picksConfirmed)', () => {
-    seedCommitted({ photoCount: 1, photoUrls: nullArray<string | null>(null) });
+    seedCommitted({
+      photoCount: 1,
+      photoUrls: ['committed-url', null, null, null, null, null, null],
+    });
     useMediaStore.getState().beginPhotoDraft();
     // Fresh draft mirrors committed count (1), so re-setting to 1 is a no-op.
     useMediaStore.getState().draftSetPhotoCount(1);
@@ -332,6 +346,10 @@ describe('draftSetPhotoTransform', () => {
   });
 
   it('stores the transform and leaves picksConfirmed untouched', () => {
+    seedCommitted({
+      photoCount: 1,
+      photoUrls: ['committed-url', null, null, null, null, null, null],
+    });
     useMediaStore.getState().beginPhotoDraft(); // picksConfirmed=true
     const tx: PhotoTransform = { scale: 1.5, offsetXNorm: 0.2, offsetYNorm: 0 };
     useMediaStore.getState().draftSetPhotoTransform(3 as PhotoSlot, tx);
@@ -348,6 +366,10 @@ describe('draftClearPhotoTransform', () => {
   });
 
   it('resets the transform slot without touching picksConfirmed', () => {
+    seedCommitted({
+      photoCount: 1,
+      photoUrls: ['committed-url', null, null, null, null, null, null],
+    });
     useMediaStore.getState().beginPhotoDraft();
     useMediaStore
       .getState()

@@ -1,4 +1,7 @@
 'use client';
+import { useRef } from 'react';
+import { Camera } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { PHOTO_COUNTS, type PhotoCount } from '@/domain/home/decor';
@@ -11,11 +14,38 @@ const COUNT_TO_KEY: Record<PhotoCount, 'one' | 'two' | 'four'> = {
 
 interface PhotoCountSectionProps {
   selected: PhotoCount | null;
-  onPick: (count: PhotoCount, files: FileList) => void;
+  onPick: (count: PhotoCount, blobs: Blob[]) => void;
 }
 
 export function PhotoCountSection({ selected, onPick }: PhotoCountSectionProps) {
   const t = useT();
+  const inputRefs = useRef<Record<PhotoCount, HTMLInputElement | null>>({
+    1: null,
+    2: null,
+    4: null,
+  });
+
+  async function handleClick(count: PhotoCount) {
+    // Native (Capacitor): open the OS photo-library picker directly — no
+    // camera / file browser options. Album permission is the only prompt.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const result = await Camera.pickImages({ limit: count, quality: 90 });
+        const blobs: Blob[] = [];
+        for (const photo of result.photos.slice(0, count)) {
+          if (!photo.webPath) continue;
+          const res = await fetch(photo.webPath);
+          blobs.push(await res.blob());
+        }
+        if (blobs.length) onPick(count, blobs);
+      } catch {
+        // User cancelled or picker unavailable — no-op.
+      }
+      return;
+    }
+    inputRefs.current[count]?.click();
+  }
+
   return (
     <section className="px-4 pt-4">
       <h2 className="text-lg font-semibold text-brand-gray900">{t.home.customize.photo.title}</h2>
@@ -26,32 +56,36 @@ export function PhotoCountSection({ selected, onPick }: PhotoCountSectionProps) 
           const label = t.home.customize.photo.count[COUNT_TO_KEY[count]];
           return (
             <li key={count}>
-              <label
-                role="button"
+              <button
+                type="button"
                 aria-pressed={isSelected}
                 aria-label={label}
+                onClick={() => handleClick(count)}
                 className={cn(
                   'flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl py-4 transition-colors',
-                  'focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-gray900 focus-within:ring-offset-2',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2',
                   isSelected
                     ? 'border-[0.75px] border-brand-pink200 bg-brand-pink50'
                     : 'border-[0.75px] border-brand-gray400 bg-transparent hover:bg-brand-gray200',
                 )}
               >
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple={count > 1}
-                  className="sr-only"
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files && files.length) onPick(count, files);
-                    e.target.value = '';
-                  }}
-                />
                 <PhotoLayoutIcon count={count} />
                 <span className="text-xs font-semibold text-brand-gray900">{label}</span>
-              </label>
+              </button>
+              <input
+                ref={(el) => {
+                  inputRefs.current[count] = el;
+                }}
+                type="file"
+                accept="image/*"
+                multiple={count > 1}
+                className="sr-only"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files && files.length) onPick(count, Array.from(files));
+                  e.target.value = '';
+                }}
+              />
             </li>
           );
         })}

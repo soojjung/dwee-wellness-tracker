@@ -164,7 +164,7 @@ export const ko: Dictionary = {
         swapAriaLabel: '메인과 서브 문구 순서 변경',
       },
       submit: '설정 완료',
-      confirmPicksHint: '먼저 [선택하기]로 사진을 확정해주세요.',
+      confirmPicksHint: '먼저 [편집 완료]로 사진을 확정해주세요.',
       discardDialog: {
         title: '변경사항을 버릴까요?',
         body: '선택한 사진과 편집 내용이 모두 사라져요.',
@@ -179,7 +179,7 @@ export const ko: Dictionary = {
         addPhoto: '사진 추가',
         addAriaLabel: '이 슬롯에 사진 추가',
         removeAriaLabel: '이 사진 제거',
-        submit: '선택하기',
+        submit: '편집 완료',
         slotAriaLabel: '이 사진 편집',
       },
       photoEditDetail: {

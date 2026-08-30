@@ -100,10 +100,10 @@ export function HomeCustomizeScreen() {
   //   }
   // }, [periodsHydrated, settingsHydrated, autoCopy.main, autoCopy.sub, localMain, localSub]);
 
-  function handlePick(count: PhotoCount, files: FileList) {
+  function handlePick(count: PhotoCount, blobs: Blob[]) {
     draftSetPhotoCount(count);
     const targetSlots = slotsForCount(count);
-    const picked = Array.from(files).slice(0, count);
+    const picked = blobs.slice(0, count);
     // Fill only the slots the user picked a file for. Any un-picked slot is
     // left as-is (may be empty or hold a previously-committed photo) — the
     // overview screen shows a "+" placeholder for empty slots so the user can
