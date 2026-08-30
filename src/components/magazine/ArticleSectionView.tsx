@@ -9,9 +9,7 @@ interface ArticleSectionViewProps {
 export function ArticleSectionView({ section }: ArticleSectionViewProps) {
   switch (section.kind) {
     case 'paragraph':
-      return (
-        <p className="px-4 text-base leading-relaxed text-brand-gray800">{section.text}</p>
-      );
+      return <p className="px-4 text-base leading-relaxed text-brand-gray800">{section.text}</p>;
 
     case 'heading':
       return (
@@ -40,7 +38,7 @@ function ExamplesRow({ items }: { items: readonly ArticleExample[] }) {
   return (
     <div className="overflow-x-auto">
       <div
-        className="flex gap-2 px-4 pb-1 snap-x snap-mandatory"
+        className="flex snap-x snap-mandatory gap-2 px-4 pb-1"
         style={{ scrollbarWidth: 'none' }}
       >
         {items.map((ex) => (
@@ -53,7 +51,7 @@ function ExamplesRow({ items }: { items: readonly ArticleExample[] }) {
               alt={ex.imageAlt}
               fill
               sizes="260px"
-              className="object-cover"
+              className="object-cover object-top"
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-black/60" />
             <figcaption className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-3">

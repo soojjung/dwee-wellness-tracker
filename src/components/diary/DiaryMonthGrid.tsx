@@ -17,6 +17,9 @@ interface DiaryMonthGridProps {
   categories: EventCategory[];
   conditionByDate?: Record<string, DailyConditionLog>;
   predictedDate?: string | null;
+  // Bumped by the parent whenever the today cell should replay its
+  // pulse-ring + "오늘" bubble animation (log-tab tap, initial mount).
+  todayPulseKey?: number;
   onSelect: (date: string) => void;
   onSelectEvent?: (event: EventLog) => void;
 }
@@ -33,6 +36,7 @@ export function DiaryMonthGrid({
   categories,
   conditionByDate,
   predictedDate,
+  todayPulseKey,
   onSelect,
   onSelectEvent,
 }: DiaryMonthGridProps) {
@@ -94,6 +98,7 @@ export function DiaryMonthGrid({
               })}
               events={cell.inCurrentMonth ? pickBadgesForDay(events, cell.date) : []}
               categoriesById={categoriesById}
+              todayPulseKey={cell.date === today ? todayPulseKey : undefined}
               onSelect={onSelect}
               onSelectEvent={onSelectEvent}
             />

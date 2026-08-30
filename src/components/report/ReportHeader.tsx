@@ -9,12 +9,7 @@ interface ReportHeaderProps {
   onViewChange: (view: LogView) => void;
 }
 
-export function ReportHeader({
-  year,
-  onAddClick,
-  currentView,
-  onViewChange,
-}: ReportHeaderProps) {
+export function ReportHeader({ year, onAddClick, currentView, onViewChange }: ReportHeaderProps) {
   const t = useT();
   return (
     <div className="sticky top-0 z-10 flex flex-col bg-brand-gray200/95 backdrop-blur-sm">
@@ -23,7 +18,7 @@ export function ReportHeader({
           {t.report.title}
         </h1>
       </div>
-      <div className="flex items-center justify-between px-4 pb-3 pt-2">
+      <div className="flex items-center justify-between px-4">
         <span className="text-xl font-semibold leading-normal text-brand-gray900">
           {year}
           {t.report.yearSuffix}

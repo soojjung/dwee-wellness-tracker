@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
+import { useDiaryFocusStore } from '@/store/diaryFocusStore';
 import { NavIcon, type NavIconKey } from './NavIcon';
 
 type TabKey = NavIconKey;
@@ -26,6 +27,7 @@ const SHOW_NAV_PATHS = ['/', '/log', '/magazine', '/settings'];
 export function BottomTabNav() {
   const t = useT();
   const pathname = usePathname();
+  const pingDiaryToday = useDiaryFocusStore((s) => s.pingToday);
 
   // next.config sets trailingSlash: true → normalize before allowlist check.
   const normalized = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
@@ -50,6 +52,7 @@ export function BottomTabNav() {
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
                 aria-label={t.nav[tab.labelKey]}
+                onClick={tab.key === 'log' ? () => pingDiaryToday() : undefined}
                 className={cn(
                   'flex h-12 w-16 items-center justify-center rounded-[32px] transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',

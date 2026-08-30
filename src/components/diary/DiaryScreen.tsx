@@ -6,6 +6,7 @@ import { useEventStore } from '@/store/eventStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
+import { useDiaryFocusStore } from '@/store/diaryFocusStore';
 import {
   useDiaryPlacementStore,
   selectPlacementsForMonth,
@@ -93,6 +94,10 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     const now = new Date();
     return { year: now.getFullYear(), monthIndex: now.getMonth() };
   });
+  // Ticked whenever we want the today cell to briefly pulse + show its "오늘"
+  // bubble. Bumped on mount and on every log-tab tap so consecutive taps
+  // replay the animation.
+  const [todayPulseKey, setTodayPulseKey] = useState(0);
   const [sheet, setSheet] = useState<ActiveSheet>({ kind: 'none' });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [rangeStartSeed, setRangeStartSeed] = useState<string | null>(null);
@@ -130,6 +135,15 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     const id = setTimeout(() => setToast(null), TOAST_MS);
     return () => clearTimeout(id);
   }, [toast]);
+
+  // Log-tab tap → jump to today's month + pulse the today cell. Also fires
+  // once on mount so a fresh navigation into the diary shows the same cue.
+  const focusPing = useDiaryFocusStore((s) => s.focusPing);
+  useEffect(() => {
+    const now = new Date();
+    setCursor({ year: now.getFullYear(), monthIndex: now.getMonth() });
+    setTodayPulseKey((k) => k + 1);
+  }, [focusPing]);
 
   const prediction = useMemo(
     () => predictNextPeriod(periods, settings),
@@ -415,6 +429,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                     categories={categories}
                     conditionByDate={conditionByDate}
                     predictedDate={prediction.predictedDate}
+                    todayPulseKey={todayPulseKey}
                     onSelect={setSelectedDate}
                     onSelectEvent={(ev) => setSheet({ kind: 'editEvent', eventId: ev.id })}
                   />

@@ -931,6 +931,7 @@ export const en = {
     emptyMonth: 'No entries yet this month',
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
+    todayLabel: 'Today',
     weekdays: { sun: 'S', mon: 'M', tue: 'T', wed: 'W', thu: 'T', fri: 'F', sat: 'S' },
     detail: {
       periodMark: 'Period logged',
