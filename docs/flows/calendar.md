@@ -15,7 +15,7 @@ flowchart TD
   N --> P
   P -- yes --> R[predicted=true]
   P -- no --> S[predicted=false]
-  R --> T{conditionByDate[date]?}
+  R --> T{conditionByDate?}
   S --> T
   T -- yes --> U[hasCondition=true · 점 표시]
   T -- no --> V[hasCondition=false]
@@ -54,6 +54,30 @@ sequenceDiagram
   U->>D: 시트 외부 클릭/Esc
   D->>D: selectedDate = null
 ```
+
+## 하단 탭 "오늘로 이동" 흐름
+
+Log 탭을 탭하면 현재 보이는 월과 무관하게 오늘 날짜의 월로 되돌아가고, 오늘 셀에 애니메이션 링과 "Today" 버블이 잠깐 표시됩니다. 같은 탭을 연속으로 탭해도 매번 재실행됩니다.
+
+구현: `diaryFocusStore` (`src/store/diaryFocusStore.ts`) 의 ping 카운터를 사용합니다. 카운터 값이 바뀔 때마다 `useEffect`가 트리거되어 cursor 와 `todayPulseKey` 를 갱신합니다. Boolean 대신 카운터를 쓰는 이유는 연속 탭 시 수동 리셋 없이 같은 값으로 재실행이 불가능하기 때문입니다.
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant Nav as BottomTabNav
+  participant FS as diaryFocusStore
+  participant D as DiaryScreen
+
+  U->>Nav: Log 탭 탭
+  Nav->>FS: pingToday() — focusPing++
+  FS-->>D: focusPing 변경 감지 (useEffect)
+  D->>D: cursor = 오늘 년/월
+  D->>D: todayPulseKey++
+  D-->>U: 오늘 셀 animate-diaryTodayRing + "Today" 버블
+```
+
+- 애니메이션 keyframes: `animate-diaryTodayRing`, `animate-diaryTodayBubble` (`tailwind.config.ts` 에 정의)
+- i18n 키: `calendar.todayLabel` (en: "Today" / ko: "오늘")
 
 ## DayDetailSheet 액션 버튼
 

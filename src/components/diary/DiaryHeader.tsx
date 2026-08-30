@@ -41,7 +41,7 @@ export function DiaryHeader({
           <EditStarIcon />
         </Link>
       </div>
-      <div className="flex items-center justify-between px-4 pb-3 pt-2">
+      <div className="flex items-center justify-between px-4">
         <button
           type="button"
           onClick={onMonthClick}

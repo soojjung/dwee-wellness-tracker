@@ -89,14 +89,8 @@ export function HomeScreen() {
 
   const conditions = useMemo(() => Object.values(conditionMap), [conditionMap]);
 
-  const phase = useMemo(
-    () => currentPhase(today, periods, settings),
-    [today, periods, settings],
-  );
-  const prediction = useMemo(
-    () => predictNextPeriod(periods, settings),
-    [periods, settings],
-  );
+  const phase = useMemo(() => currentPhase(today, periods, settings), [today, periods, settings]);
+  const prediction = useMemo(() => predictNextPeriod(periods, settings), [periods, settings]);
   const insights = useMemo(
     () => generateInsights({ today, periods, conditions, settings }),
     [today, periods, conditions, settings],
@@ -151,7 +145,7 @@ export function HomeScreen() {
     <PageContainer className="gap-0 pb-10">
       <HomeHero />
 
-      <div className="flex flex-col gap-5 pt-12">
+      <div className="flex flex-col gap-5 pt-8">
         <TodayDateHeading date={today} onCalendarClick={() => setPeriodDialogOpen(true)} />
 
         <WeekStrip

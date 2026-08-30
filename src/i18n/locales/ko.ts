@@ -931,6 +931,7 @@ export const ko: Dictionary = {
     emptyMonth: '이번 달은 아직 기록이 없어요',
     previousMonth: '이전 달',
     nextMonth: '다음 달',
+    todayLabel: '오늘',
     weekdays: { sun: '일', mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토' },
     detail: {
       periodMark: '생리 기록',

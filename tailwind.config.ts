@@ -83,11 +83,29 @@ const config: Config = {
           '65%': { transform: 'translateX(-14px)' },
           '100%': { transform: 'translateX(0)' },
         },
+        // Diary "focus today" pulse — soft ring ripples out from today's
+        // number pill when the log tab is tapped. Fades to fully transparent
+        // so it doesn't leave a visual artifact.
+        diaryTodayRing: {
+          '0%': { transform: 'scale(0.6)', opacity: '0' },
+          '30%': { transform: 'scale(1.05)', opacity: '0.55' },
+          '100%': { transform: 'scale(1.6)', opacity: '0' },
+        },
+        // "오늘" callout bubble above today's cell. Slides in from just
+        // above and fades in, holds, then fades out.
+        diaryTodayBubble: {
+          '0%': { transform: 'translate(-50%, -4px)', opacity: '0' },
+          '15%': { transform: 'translate(-50%, 0)', opacity: '1' },
+          '80%': { transform: 'translate(-50%, 0)', opacity: '1' },
+          '100%': { transform: 'translate(-50%, -4px)', opacity: '0' },
+        },
       },
       animation: {
         slideDownFade: 'slideDownFade 280ms cubic-bezier(0.16, 1, 0.3, 1)',
         stickerScan: 'stickerScan 1.4s ease-in-out',
         diaryNudge: 'diaryNudge 900ms ease-in-out',
+        diaryTodayRing: 'diaryTodayRing 1500ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        diaryTodayBubble: 'diaryTodayBubble 1600ms ease-in-out forwards',
       },
     },
   },

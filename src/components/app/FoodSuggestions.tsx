@@ -21,19 +21,19 @@ interface LabelPosition {
 }
 
 // Foods cluster inside the bowl opening, overlapping like ingredients in a bowl.
-// Positions are % of the 340×280 composition (bowl sits in the bottom 180px).
+// Positions are % of the 340×230 composition (bowl sits in the bottom 190px).
 const FOOD_POSITIONS: ReadonlyArray<FoodPosition> = [
-  { top: '32%', left: '6%', size: 'text-[76px]', rotate: '-rotate-12' },
-  { top: '30%', left: '48%', size: 'text-[80px]', rotate: 'rotate-6' },
-  { top: '52%', left: '22%', size: 'text-[68px]', rotate: 'rotate-3' },
-  { top: '54%', left: '58%', size: 'text-[64px]', rotate: '-rotate-6' },
+  { top: '17%', left: '6%', size: 'text-[76px]', rotate: '-rotate-12' },
+  { top: '15%', left: '48%', size: 'text-[80px]', rotate: 'rotate-6' },
+  { top: '42%', left: '22%', size: 'text-[68px]', rotate: 'rotate-3' },
+  { top: '44%', left: '58%', size: 'text-[64px]', rotate: '-rotate-6' },
 ];
 
 const LABEL_POSITIONS: ReadonlyArray<LabelPosition> = [
-  { top: '20%', left: '2%' },
-  { top: '18%', left: '58%' },
-  { top: '82%', left: '10%' },
-  { top: '84%', left: '52%' },
+  { top: '7%', left: '2%' },
+  { top: '7%', left: '58%' },
+  { top: '78%', left: '10%' },
+  { top: '80%', left: '52%' },
 ];
 
 export function FoodSuggestions({ phase }: FoodSuggestionsProps) {
@@ -41,10 +41,10 @@ export function FoodSuggestions({ phase }: FoodSuggestionsProps) {
   const items = t.home.foods[phase].items.slice(0, 4);
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-2">
       <h3 className="text-2xl font-semibold text-brand-gray900">{t.home.foodsTitle}</h3>
 
-      <div className="relative mx-auto h-[280px] w-full max-w-[340px]">
+      <div className="relative mx-auto h-[230px] w-full max-w-[340px]">
         <Bowl className="absolute bottom-0 left-1/2 h-[190px] w-[320px] -translate-x-1/2" />
 
         {items.map((item, i) => {

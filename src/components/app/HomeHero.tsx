@@ -50,7 +50,7 @@ export function HomeHero() {
         </div>
       </div>
 
-      <div className="relative -mx-4 aspect-square overflow-hidden bg-brand-gray300">
+      <div className="relative -mx-4 aspect-square w-[calc(100%+2rem)] overflow-hidden bg-brand-gray300">
         {isCustom ? (
           <PhotoLayout count={photoCount} urls={activePhotos} transforms={activeTransforms} />
         ) : (
