@@ -11,10 +11,10 @@ AppShell·탭바 없는 `(fullscreen)` 라우트 그룹에 속합니다.
 
 ```mermaid
 flowchart TD
-    Home([HomeScreen])
-    Customize[HomeCustomizeScreen\n/home/customize]
-    EditPhotos[PhotoEditScreen\n/home/customize/edit-photos]
-    Detail[PhotoEditDetailScreen\n/home/customize/edit-photos/[slot]]
+    Home(["HomeScreen"])
+    Customize["HomeCustomizeScreen\n/home/customize"]
+    EditPhotos["PhotoEditScreen\n/home/customize/edit-photos"]
+    Detail["PhotoEditDetailScreen\n/home/customize/edit-photos/[slot]"]
 
     Home -->|"EditStar 탭"| Customize
     Customize -->|"'사진 편집하기' 탭"| EditPhotos
@@ -76,7 +76,7 @@ flowchart TD
     Show --> EditCount{"사진 수 선택\n(1 / 2 / 4)"}
     Show --> TapEdit["'사진 편집하기' 탭\n(현재 count 슬롯 전부 채워졌을 때)"]
 
-    EditCount -->|"해당 count 슬롯 미충족"| Pick["파일 picker\n(multiple)"]
+    EditCount -->|"해당 count 슬롯 미충족"| Pick["사진 picker\n(native: Camera.pickImages\n/ web: file input)"]
     Pick -->|"슬롯 채움 → edit-photos 이동"| EditPhotos([PhotoEditScreen])
     EditCount -->|"슬롯 전부 채워짐"| EditPhotos
     TapEdit --> EditPhotos
@@ -95,7 +95,11 @@ flowchart TD
 
 ### picksConfirmed 게이트
 
-"설정 완료" 는 `allFilled && picksConfirmed` 조건이 모두 참일 때만 활성화됩니다. `picksConfirmed` 는 PhotoEditScreen 의 "선택하기" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
+"설정 완료" 는 `allFilled && picksConfirmed` 조건이 모두 참일 때만 활성화됩니다. `picksConfirmed` 는 PhotoEditScreen 의 "편집 완료(Done editing)" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
+
+### beginPhotoDraft 초기 상태
+
+`beginPhotoDraft()` 는 커밋된 사진 blob 이 하나도 없을 경우 `draftPhotoCount = null`, `draftPicksConfirmed = false` 로 초기화합니다. 기본 이미지(default hero) 상태에서 커스터마이즈를 열어도 카운트 타일이 pre-select 되지 않습니다. hydrate 시에도 `count ?? null` 로 초기화되어 첫 진입 사용자에게 "1장" 이 자동 선택되지 않습니다.
 
 ---
 
@@ -108,7 +112,7 @@ stateDiagram-v2
     [*] --> Idle : 진입
     Idle --> Detail : 채워진 셀 탭 → /edit-photos/[slot]
     Idle --> FilePicker : 빈 셀(플레이스홀더) 탭
-    FilePicker --> Idle : 사진 선택 → 슬롯 업데이트
+    FilePicker --> Idle : 사진 선택 → 슬롯 업데이트 (onPick: Blob[])
     Idle --> Idle : × 버튼 탭 → 해당 슬롯 지움\npicksConfirmed 리셋
     Idle --> [*] : "선택하기" 탭 → picksConfirmed=true → /home/customize
     Idle --> [*] : "뒤로" → /home/customize
@@ -181,34 +185,34 @@ flowchart LR
 
 ## domain/home/decor 상수
 
-| 상수 | 값 |
-|------|----|
-| `PhotoCount` | `1 \| 2 \| 4` |
-| `PhotoSlot` | `0 \| 1 \| 2 \| 3 \| 4 \| 5 \| 6` |
-| `slotsForCount(count)` | 1→[0], 2→[1,2], 4→[3,4,5,6] |
-| `countForSlot(slot)` | 0→1, 1/2→2, 3..6→4 |
-| `PhotoTransform` | `{ scale, offsetXNorm, offsetYNorm }` |
-| `isPhotoTransformEdited(tx)` | epsilon 비교로 "편집 없음" 판별 |
-| `computePhotoRender(tx, natural, cell)` | 정규화 transform → px 값 변환 |
-| `clampPhotoTransform(tx, natural, cell)` | 경계 초과 pan/zoom 클램프 |
-| `TextPosition` | `topLeft \| topRight \| bottomLeft \| bottomRight` |
-| `TextOrder` | `mainFirst \| subFirst` |
-| `MAIN_TEXT_MAX` | 40자 |
-| `SUB_TEXT_MAX` | 20자 |
+| 상수                                     | 값                                                 |
+| ---------------------------------------- | -------------------------------------------------- |
+| `PhotoCount`                             | `1 \| 2 \| 4`                                      |
+| `PhotoSlot`                              | `0 \| 1 \| 2 \| 3 \| 4 \| 5 \| 6`                  |
+| `slotsForCount(count)`                   | 1→[0], 2→[1,2], 4→[3,4,5,6]                        |
+| `countForSlot(slot)`                     | 0→1, 1/2→2, 3..6→4                                 |
+| `PhotoTransform`                         | `{ scale, offsetXNorm, offsetYNorm }`              |
+| `isPhotoTransformEdited(tx)`             | epsilon 비교로 "편집 없음" 판별                    |
+| `computePhotoRender(tx, natural, cell)`  | 정규화 transform → px 값 변환                      |
+| `clampPhotoTransform(tx, natural, cell)` | 경계 초과 pan/zoom 클램프                          |
+| `TextPosition`                           | `topLeft \| topRight \| bottomLeft \| bottomRight` |
+| `TextOrder`                              | `mainFirst \| subFirst`                            |
+| `MAIN_TEXT_MAX`                          | 40자                                               |
+| `SUB_TEXT_MAX`                           | 20자                                               |
 
 ---
 
 ## IndexedDB 마이그레이션 이력
 
-| 버전 | 내용 |
-|------|------|
-| v1 | 초기 schema |
-| v2 | `mediaHomeOverlays` 삭제 (스티커 기능 제거) |
-| v3 | `mediaHomeHero` blob → slot 0 이주, `mediaPhotoCount = 1` 설정 |
-| v4 | `mediaTextPosition` / `mediaMainText` / `mediaSubText` / `mediaTextOrder` 키 추가 |
-| v5 | 슬롯 0..3 공유 범위 → count별 독립 범위 이주 |
-| v6–v9 | Diary/Event/Sticker 도메인 (다른 doc 참조) |
-| v10 | `dwee:media:photo_transform:{slot}` 키 추가 (0..6). 비파괴 transform 메타데이터 저장. 대응 Supabase 마이그레이션: `0010_home_photo_transform.sql` |
+| 버전  | 내용                                                                                                                                              |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v1    | 초기 schema                                                                                                                                       |
+| v2    | `mediaHomeOverlays` 삭제 (스티커 기능 제거)                                                                                                       |
+| v3    | `mediaHomeHero` blob → slot 0 이주, `mediaPhotoCount = 1` 설정                                                                                    |
+| v4    | `mediaTextPosition` / `mediaMainText` / `mediaSubText` / `mediaTextOrder` 키 추가                                                                 |
+| v5    | 슬롯 0..3 공유 범위 → count별 독립 범위 이주                                                                                                      |
+| v6–v9 | Diary/Event/Sticker 도메인 (다른 doc 참조)                                                                                                        |
+| v10   | `dwee:media:photo_transform:{slot}` 키 추가 (0..6). 비파괴 transform 메타데이터 저장. 대응 Supabase 마이그레이션: `0010_home_photo_transform.sql` |
 
 ---
 

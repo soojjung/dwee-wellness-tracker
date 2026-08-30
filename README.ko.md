@@ -205,6 +205,15 @@ pnpm cap:sync     # next build && cap sync
 pnpm cap:ios      # Xcode 열기
 ```
 
+`@capacitor/camera` 플러그인을 사용하므로 `ios/App/App/Info.plist` 에 아래 키가 없으면 앱스토어 심사 및 런타임에서 거부됩니다.
+
+```xml
+<key>NSPhotoLibraryUsageDescription</key>
+<string>홈 화면 사진을 선택하기 위해 사진 라이브러리에 접근합니다.</string>
+```
+
+`cap sync` 는 이 키를 자동으로 추가하지 않습니다. Xcode 에서 수동으로 추가하거나 `ios/App/App/Info.plist` 를 직접 편집하세요.
+
 ---
 
 ## 🗂 폴더 구조

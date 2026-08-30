@@ -52,7 +52,7 @@ export function DiscardDraftDialog({ onCancel, onConfirm }: DiscardDraftDialogPr
           <button
             type="button"
             onClick={onCancel}
-            className="py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900"
+            className="bg-brand-gray300 py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900"
           >
             {t.home.customize.discardDialog.cancel}
           </button>

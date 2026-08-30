@@ -153,7 +153,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       revokeAll(get().photoUrls);
       const urls: PhotoUrls = blobs.map((b) => (b ? URL.createObjectURL(b) : null));
       set({
-        photoCount: count ?? 1,
+        photoCount: count ?? null,
         photoUrls: urls,
         photoTransforms: transforms,
         textPosition,
@@ -276,18 +276,22 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
   beginPhotoDraft() {
     const state = get();
     if (state.draftActive) return;
+    // If no photo is committed, the home hero is still showing the default
+    // image — treat the draft as fresh so no photo-count tile appears
+    // pre-selected on the customize screen.
+    const hasCommittedPhoto = state.photoUrls.some((u) => !!u);
     // Committed photos were previously confirmed (they wouldn't be in the
     // repo otherwise), so open the draft in a "confirmed" state. Any pick
     // mutation below flips it back off.
     set({
       draftActive: true,
-      draftPhotoCount: state.photoCount,
+      draftPhotoCount: hasCommittedPhoto ? state.photoCount : null,
       draftPhotoUrls: state.photoUrls.slice(),
       draftPhotoTransforms: state.photoTransforms.slice(),
       draftPendingBlobs: emptyBlobs(),
       draftClearedPhotos: emptyClearedFlags(),
       draftOwnedUrls: [],
-      draftPicksConfirmed: true,
+      draftPicksConfirmed: hasCommittedPhoto,
     });
   },
 
