@@ -185,34 +185,34 @@ flowchart LR
 
 ## domain/home/decor 상수
 
-| 상수 | 값 |
-|------|----|
-| `PhotoCount` | `1 \| 2 \| 4` |
-| `PhotoSlot` | `0 \| 1 \| 2 \| 3 \| 4 \| 5 \| 6` |
-| `slotsForCount(count)` | 1→[0], 2→[1,2], 4→[3,4,5,6] |
-| `countForSlot(slot)` | 0→1, 1/2→2, 3..6→4 |
-| `PhotoTransform` | `{ scale, offsetXNorm, offsetYNorm }` |
-| `isPhotoTransformEdited(tx)` | epsilon 비교로 "편집 없음" 판별 |
-| `computePhotoRender(tx, natural, cell)` | 정규화 transform → px 값 변환 |
-| `clampPhotoTransform(tx, natural, cell)` | 경계 초과 pan/zoom 클램프 |
-| `TextPosition` | `topLeft \| topRight \| bottomLeft \| bottomRight` |
-| `TextOrder` | `mainFirst \| subFirst` |
-| `MAIN_TEXT_MAX` | 40자 |
-| `SUB_TEXT_MAX` | 20자 |
+| 상수                                     | 값                                                 |
+| ---------------------------------------- | -------------------------------------------------- |
+| `PhotoCount`                             | `1 \| 2 \| 4`                                      |
+| `PhotoSlot`                              | `0 \| 1 \| 2 \| 3 \| 4 \| 5 \| 6`                  |
+| `slotsForCount(count)`                   | 1→[0], 2→[1,2], 4→[3,4,5,6]                        |
+| `countForSlot(slot)`                     | 0→1, 1/2→2, 3..6→4                                 |
+| `PhotoTransform`                         | `{ scale, offsetXNorm, offsetYNorm }`              |
+| `isPhotoTransformEdited(tx)`             | epsilon 비교로 "편집 없음" 판별                    |
+| `computePhotoRender(tx, natural, cell)`  | 정규화 transform → px 값 변환                      |
+| `clampPhotoTransform(tx, natural, cell)` | 경계 초과 pan/zoom 클램프                          |
+| `TextPosition`                           | `topLeft \| topRight \| bottomLeft \| bottomRight` |
+| `TextOrder`                              | `mainFirst \| subFirst`                            |
+| `MAIN_TEXT_MAX`                          | 40자                                               |
+| `SUB_TEXT_MAX`                           | 20자                                               |
 
 ---
 
 ## IndexedDB 마이그레이션 이력
 
-| 버전 | 내용 |
-|------|------|
-| v1 | 초기 schema |
-| v2 | `mediaHomeOverlays` 삭제 (스티커 기능 제거) |
-| v3 | `mediaHomeHero` blob → slot 0 이주, `mediaPhotoCount = 1` 설정 |
-| v4 | `mediaTextPosition` / `mediaMainText` / `mediaSubText` / `mediaTextOrder` 키 추가 |
-| v5 | 슬롯 0..3 공유 범위 → count별 독립 범위 이주 |
-| v6–v9 | Diary/Event/Sticker 도메인 (다른 doc 참조) |
-| v10 | `dwee:media:photo_transform:{slot}` 키 추가 (0..6). 비파괴 transform 메타데이터 저장. 대응 Supabase 마이그레이션: `0010_home_photo_transform.sql` |
+| 버전  | 내용                                                                                                                                              |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v1    | 초기 schema                                                                                                                                       |
+| v2    | `mediaHomeOverlays` 삭제 (스티커 기능 제거)                                                                                                       |
+| v3    | `mediaHomeHero` blob → slot 0 이주, `mediaPhotoCount = 1` 설정                                                                                    |
+| v4    | `mediaTextPosition` / `mediaMainText` / `mediaSubText` / `mediaTextOrder` 키 추가                                                                 |
+| v5    | 슬롯 0..3 공유 범위 → count별 독립 범위 이주                                                                                                      |
+| v6–v9 | Diary/Event/Sticker 도메인 (다른 doc 참조)                                                                                                        |
+| v10   | `dwee:media:photo_transform:{slot}` 키 추가 (0..6). 비파괴 transform 메타데이터 저장. 대응 Supabase 마이그레이션: `0010_home_photo_transform.sql` |
 
 ---
 
