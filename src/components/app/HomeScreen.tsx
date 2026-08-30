@@ -17,7 +17,7 @@ import { InsightCard } from './InsightCard';
 import { WeekStrip } from './WeekStrip';
 import { HomeHero } from './HomeHero';
 import { TodayDateHeading } from './TodayDateHeading';
-import { CalendarAddIcon } from './CalendarAddIcon';
+import { PeriodAddIcon } from './PeriodAddIcon';
 import { PhaseAdvicePill } from './PhaseAdvicePill';
 import { ScratchKeywordCard } from './ScratchKeywordCard';
 import { ActivitySuggestions } from './ActivitySuggestions';
@@ -164,7 +164,7 @@ export function HomeScreen() {
             body={
               <p className="inline-flex items-center gap-1 text-xs text-brand-gray800">
                 {t.home.empty.bodyPrefix}
-                <CalendarAddIcon className="inline-block h-4 w-4" />
+                <PeriodAddIcon className="inline-block h-4 w-4" />
                 {t.home.empty.bodySuffix}
               </p>
             }

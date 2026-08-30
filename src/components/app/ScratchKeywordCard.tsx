@@ -11,6 +11,7 @@ interface ScratchKeywordCardProps {
 const SCRATCH_RADIUS = 28;
 const REVEAL_THRESHOLD = 0.2;
 const STORAGE_PREFIX = 'dwee:ui:home_scratch:';
+const COVER_IMAGE_SRC = '/home/scratch-cover.png';
 
 export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
   const t = useT();
@@ -27,8 +28,10 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const preparedRef = useRef(false);
+  const coverImageRef = useRef<HTMLImageElement | null>(null);
 
   const [revealed, setRevealed] = useState(false);
+  const [coverReady, setCoverReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -47,7 +50,8 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
     if (preparedRef.current) return;
     const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (!container || !canvas) return;
+    const image = coverImageRef.current;
+    if (!container || !canvas || !image) return;
     const rect = container.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
     const dpr = window.devicePixelRatio || 1;
@@ -58,22 +62,28 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const gradient = ctx.createLinearGradient(0, 0, rect.width, rect.height);
-    gradient.addColorStop(0, '#FBB7D8');
-    gradient.addColorStop(1, '#FDE2EF');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, rect.width, rect.height);
-    ctx.fillStyle = 'rgba(255,253,254,0.55)';
-    ctx.font = '600 15px Pretendard, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(t.home.scratchHint, rect.width / 2, rect.height / 2);
+    drawCover(ctx, image, rect.width, rect.height);
     ctx.globalCompositeOperation = 'destination-out';
     preparedRef.current = true;
-  }, [t.home.scratchHint]);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (coverImageRef.current) {
+      setCoverReady(true);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      coverImageRef.current = img;
+      setCoverReady(true);
+    };
+    img.src = COVER_IMAGE_SRC;
+  }, []);
 
   useEffect(() => {
     if (revealed) return;
+    if (!coverReady) return;
     prepareCanvas();
     const handle = () => {
       preparedRef.current = false;
@@ -81,7 +91,7 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
     };
     window.addEventListener('resize', handle);
     return () => window.removeEventListener('resize', handle);
-  }, [revealed, prepareCanvas]);
+  }, [revealed, coverReady, prepareCanvas]);
 
   const revealNow = useCallback(() => {
     setRevealed(true);
@@ -157,7 +167,7 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-[178px] w-full overflow-hidden rounded-2xl bg-brand-pink50 shadow-[inset_0_0_30px_0_rgba(255,255,255,0.7)]"
+      className="relative h-[178px] w-full overflow-hidden rounded-2xl bg-brand-pink50"
     >
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-6 text-center">
         <span className="text-base font-medium text-brand-gray900">{keyword.subtitle}</span>
@@ -190,4 +200,28 @@ function hashDate(iso: string): number {
     hash = ((hash << 5) + hash + iso.charCodeAt(i)) | 0;
   }
   return Math.abs(hash);
+}
+
+function drawCover(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+) {
+  const imgRatio = image.width / image.height;
+  const boxRatio = width / height;
+  let drawW = width;
+  let drawH = height;
+  let drawX = 0;
+  let drawY = 0;
+  if (imgRatio > boxRatio) {
+    drawH = height;
+    drawW = drawH * imgRatio;
+    drawX = (width - drawW) / 2;
+  } else {
+    drawW = width;
+    drawH = drawW / imgRatio;
+    drawY = (height - drawH) / 2;
+  }
+  ctx.drawImage(image, drawX, drawY, drawW, drawH);
 }
