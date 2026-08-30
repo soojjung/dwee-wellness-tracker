@@ -11,10 +11,10 @@ AppShell·탭바 없는 `(fullscreen)` 라우트 그룹에 속합니다.
 
 ```mermaid
 flowchart TD
-    Home([HomeScreen])
-    Customize[HomeCustomizeScreen\n/home/customize]
-    EditPhotos[PhotoEditScreen\n/home/customize/edit-photos]
-    Detail[PhotoEditDetailScreen\n/home/customize/edit-photos/[slot]]
+    Home(["HomeScreen"])
+    Customize["HomeCustomizeScreen\n/home/customize"]
+    EditPhotos["PhotoEditScreen\n/home/customize/edit-photos"]
+    Detail["PhotoEditDetailScreen\n/home/customize/edit-photos/[slot]"]
 
     Home -->|"EditStar 탭"| Customize
     Customize -->|"'사진 편집하기' 탭"| EditPhotos
