@@ -4,7 +4,7 @@ import { ko } from 'date-fns/locale';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { fromISO } from '@/lib/date';
-import { CalendarAddIcon } from './CalendarAddIcon';
+import { PeriodAddIcon } from './PeriodAddIcon';
 
 interface TodayDateHeadingProps {
   date: string;
@@ -28,7 +28,7 @@ export function TodayDateHeading({ date, onCalendarClick }: TodayDateHeadingProp
         aria-label={t.home.startPeriodButton}
         className="flex h-6 w-6 items-center justify-center text-brand-gray900 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
       >
-        <CalendarAddIcon />
+        <PeriodAddIcon />
       </button>
     </div>
   );

@@ -1,6 +1,6 @@
 # 홈 화면 플로우
 
-> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,ScratchKeywordCard,ActivitySuggestions,FoodSuggestions,TodayDateHeading,CalendarAddIcon,PeriodSelectSheet}.tsx`, `src/app/(app)/page.tsx`
+> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,ScratchKeywordCard,ActivitySuggestions,FoodSuggestions,TodayDateHeading,PeriodAddIcon,PeriodSelectSheet}.tsx`, `src/app/(app)/page.tsx`
 
 ## 생리 기록 진입점
 

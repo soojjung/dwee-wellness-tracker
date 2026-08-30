@@ -195,7 +195,6 @@ export const ko: Dictionary = {
       },
     },
     keywordsTitle: '지금 필요한 키워드는',
-    scratchHint: '긁어서 확인해보세요',
     scratchCanvasAria: '스크래치 카드. 문질러서 오늘의 키워드를 확인해 보세요.',
     durationSuffix: '분',
     activitiesTitle: '이런 활동 어때요?',

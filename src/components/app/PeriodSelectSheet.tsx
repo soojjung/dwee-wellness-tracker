@@ -27,11 +27,16 @@ interface PeriodSelectSheetProps {
   today: ISODate;
   periods: PeriodLog[];
   monthsBack?: number;
+  monthsForward?: number;
   onSubmit: (changes: PeriodChange[]) => Promise<void>;
   onCancel: () => void;
 }
 
 const DEFAULT_MONTHS_BACK = 6;
+const DEFAULT_MONTHS_FORWARD = 1;
+// Matches the 14-day period-length outlier cap in domain/cycle/aggregate.
+// A period that starts today can extend up to this many days ahead.
+const FUTURE_WINDOW_DAYS = 14;
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 interface MonthGrid {
@@ -75,6 +80,7 @@ export function PeriodSelectSheet({
   today,
   periods,
   monthsBack = DEFAULT_MONTHS_BACK,
+  monthsForward = DEFAULT_MONTHS_FORWARD,
   onSubmit,
   onCancel,
 }: PeriodSelectSheetProps) {
@@ -98,10 +104,22 @@ export function PeriodSelectSheet({
       const m = addMonths(anchor, -i);
       list.push(buildMonth(m.getFullYear(), m.getMonth()));
     }
+    for (let i = 1; i <= monthsForward; i++) {
+      const m = addMonths(anchor, i);
+      list.push(buildMonth(m.getFullYear(), m.getMonth()));
+    }
     return list;
-  }, [today, monthsBack]);
+  }, [today, monthsBack, monthsForward]);
+
+  const currentMonthKey = useMemo(() => {
+    const anchor = fromISO(today);
+    return `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}`;
+  }, [today]);
+
+  const maxSelectable = useMemo(() => addDaysISO(today, FUTURE_WINDOW_DAYS), [today]);
 
   const recordedSet = useMemo(() => collectRecordedDates(drafts), [drafts]);
+  const recordedStartSet = useMemo(() => new Set(drafts.map((d) => d.startDate)), [drafts]);
 
   const changes = useMemo(() => computeChanges(periods, drafts), [periods, drafts]);
   const dirty = changes.length > 0;
@@ -114,7 +132,7 @@ export function PeriodSelectSheet({
   useEscToClose(handleCancel);
 
   function handleCellClick(date: ISODate) {
-    if (date > today) return;
+    if (date > maxSelectable) return;
 
     const containing = findContainingDraft(drafts, date);
     if (containing) {
@@ -220,8 +238,8 @@ export function PeriodSelectSheet({
           }}
         >
           <div className="mx-auto flex w-full max-w-[358px] flex-col gap-6">
-            {months.map((m, idx) => {
-              const isCurrent = idx === months.length - 1;
+            {months.map((m) => {
+              const isCurrent = m.key === currentMonthKey;
               return (
                 <div
                   key={m.key}
@@ -239,7 +257,9 @@ export function PeriodSelectSheet({
                             key={ci}
                             date={cell}
                             today={today}
+                            maxSelectable={maxSelectable}
                             recordedSet={recordedSet}
+                            recordedStartSet={recordedStartSet}
                             pendingStart={pendingStart}
                             onClick={handleCellClick}
                           />
@@ -260,47 +280,58 @@ export function PeriodSelectSheet({
 interface DayCellProps {
   date: ISODate | null;
   today: ISODate;
+  maxSelectable: ISODate;
   recordedSet: Set<ISODate>;
+  recordedStartSet: Set<ISODate>;
   pendingStart: ISODate | null;
   onClick: (date: ISODate) => void;
 }
 
-function DayCell({ date, today, recordedSet, pendingStart, onClick }: DayCellProps) {
+function DayCell({
+  date,
+  today,
+  maxSelectable,
+  recordedSet,
+  recordedStartSet,
+  pendingStart,
+  onClick,
+}: DayCellProps) {
   if (!date) return <div className="h-10 w-full" aria-hidden />;
   const day = Number(date.slice(-2));
   const isToday = date === today;
-  const isFuture = date > today;
+  const isOutOfRange = date > maxSelectable;
   const isRecorded = recordedSet.has(date);
   const isPendingStart = pendingStart === date;
+  const isTodayStart = isToday && (isPendingStart || recordedStartSet.has(date));
 
   let bgClass = '';
   let textClass = 'text-brand-gray900';
   let borderClass = '';
 
-  if (isFuture) {
+  if (isOutOfRange) {
     textClass = 'text-brand-gray500';
   }
   if (isRecorded) {
     bgClass = 'bg-brand-pink50';
     textClass = 'text-brand-pink800';
-    if (isToday) borderClass = 'ring-2 ring-inset ring-brand-pink800';
-  } else if (isToday) {
-    bgClass = 'bg-brand-gray900';
-    textClass = 'text-brand-white';
+    if (isTodayStart) borderClass = 'ring-2 ring-inset ring-brand-pink900';
   } else if (isPendingStart) {
     bgClass = 'bg-brand-pink50';
     textClass = 'text-brand-pink800';
-    borderClass = 'ring-2 ring-inset ring-brand-pink800';
+    if (isTodayStart) borderClass = 'ring-2 ring-inset ring-brand-pink900';
+  } else if (isToday) {
+    bgClass = 'bg-brand-gray900';
+    textClass = 'text-brand-white';
   }
 
   return (
     <button
       type="button"
       onClick={() => onClick(date)}
-      disabled={isFuture}
+      disabled={isOutOfRange}
       aria-pressed={isRecorded || isPendingStart}
       className={`flex h-10 w-full items-center justify-center text-[16px] font-medium ${
-        isFuture ? 'cursor-default' : 'cursor-pointer'
+        isOutOfRange ? 'cursor-default' : 'cursor-pointer'
       } focus-visible:outline-none`}
     >
       <span

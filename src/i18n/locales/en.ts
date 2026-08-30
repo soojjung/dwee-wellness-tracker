@@ -194,7 +194,6 @@ export const en = {
       },
     },
     keywordsTitle: 'Your keyword right now',
-    scratchHint: 'Scratch to reveal',
     scratchCanvasAria: 'Scratch card. Drag across to reveal today’s keyword.',
     durationSuffix: ' min',
     activitiesTitle: 'Try one of these',
