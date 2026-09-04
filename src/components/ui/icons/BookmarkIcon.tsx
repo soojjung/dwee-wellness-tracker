@@ -14,7 +14,7 @@ export function BookmarkIcon({ filled, className }: BookmarkIconProps) {
       viewBox="0 0 24 24"
       fill={filled ? 'currentColor' : 'none'}
       stroke={filled ? 'none' : 'currentColor'}
-      strokeWidth={1.6}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

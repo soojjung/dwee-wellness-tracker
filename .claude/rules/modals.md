@@ -55,3 +55,13 @@ useEscToClose(onClose); // Esc 로 닫기 (submitting 중이면 handleClose 가 
 
 - 훅 파일: `src/hooks/useBodyScrollLock.ts`, `src/hooks/useEscToClose.ts`.
 - 새 공통 모달 훅은 같은 폴더에 추가.
+
+## 8) 2버튼 확인 팝업의 취소 버튼
+
+가로 2등분(취소/확인) 팝업에서 왼쪽 취소 버튼 배경은 `bg-brand-gray300` + `hover:bg-brand-gray400/60` 로 통일 (기존 `hover:bg-brand-gray200`, 배경 없음 조합은 사용 금지).
+
+```
+className="bg-brand-gray300 py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/60 ..."
+```
+
+`DiscardDraftDialog` 가 최초 적용 사례이며 `CancelEditDialog`, `LogoutConfirmDialog`, `WithdrawConfirmDialog`, `DeleteStickersDialog`, `DiaryCustomizeScreen`(`DiscardDialog`) 이 따른다. 동일 클래스 문자열이 여러 파일에 복붙되어 있으므로 새 2버튼 팝업 추가 시 이 값을 그대로 재사용할 것 — 값이 또 어긋나면 공유 컴포넌트/클래스 상수로 추출 검토.

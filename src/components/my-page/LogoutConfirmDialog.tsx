@@ -55,7 +55,7 @@ export function LogoutConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900 disabled:opacity-60"
+            className="bg-brand-gray300 py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900 disabled:opacity-60"
           >
             {t.myPage.signOutDialog.cancel}
           </button>

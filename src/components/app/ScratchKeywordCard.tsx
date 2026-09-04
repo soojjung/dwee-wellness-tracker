@@ -32,6 +32,7 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
 
   const [revealed, setRevealed] = useState(false);
   const [coverReady, setCoverReady] = useState(false);
+  const [scratching, setScratching] = useState(false);
 
   useEffect(() => {
     try {
@@ -39,6 +40,7 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
         setRevealed(true);
       } else {
         setRevealed(false);
+        setScratching(false);
         preparedRef.current = false;
       }
     } catch {
@@ -141,6 +143,7 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (revealed) return;
     prepareCanvas();
+    setScratching(true);
     drawingRef.current = true;
     e.currentTarget.setPointerCapture(e.pointerId);
     scratchAt(e.clientX, e.clientY);
@@ -193,9 +196,11 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
           {/* 캔버스 위에 얹어 커버가 남아있는 동안만 보인다. 이미지에 구우면
               로케일을 못 따라가므로 문구는 사전 경유 HTML 로 렌더한다.
               pointer-events-none 이라 긁는 동작을 가로막지 않는다. */}
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-[18px] font-semibold leading-[1.5] text-brand-gray700">
-            {t.home.scratchHint}
-          </span>
+          {!scratching ? (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-[18px] font-semibold leading-[1.5] text-brand-gray700">
+              {t.home.scratchHint}
+            </span>
+          ) : null}
         </>
       ) : null}
     </div>

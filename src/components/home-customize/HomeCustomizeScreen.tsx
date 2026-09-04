@@ -10,7 +10,7 @@ import {
   useIsPhotoDraftDirty,
 } from '@/store/useMediaCustomizeView';
 // import { usePeriodStore } from '@/store/periodStore';
-// import { useSettingsStore } from '@/store/settingsStore';
+import { useSettingsStore } from '@/store/settingsStore';
 // import { currentPhase } from '@/domain/cycle/phase';
 // import { todayISO } from '@/lib/date';
 import { slotsForCount, type PhotoCount } from '@/domain/home/decor';
@@ -53,8 +53,10 @@ export function HomeCustomizeScreen() {
   // const periodsHydrated = usePeriodStore((s) => s.hydrated);
   // const hydratePeriods = usePeriodStore((s) => s.hydrate);
   // const settings = useSettingsStore((s) => s.settings);
-  // const settingsHydrated = useSettingsStore((s) => s.hydrated);
-  // const hydrateSettings = useSettingsStore((s) => s.hydrate);
+  // 문구 설정은 비활성이지만 로케일은 이 스토어에서 온다. 하이드레이트하지
+  // 않으면 이 화면으로 직접 진입했을 때 useT() 가 기본 로케일(en)로 렌더된다.
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
+  const hydrateSettings = useSettingsStore((s) => s.hydrate);
 
   // const [localMain, setLocalMain] = useState('');
   // const [localSub, setLocalSub] = useState('');
@@ -64,8 +66,8 @@ export function HomeCustomizeScreen() {
   useEffect(() => {
     if (!hydrated) hydrate();
     // if (!periodsHydrated) hydratePeriods();
-    // if (!settingsHydrated) hydrateSettings();
-  }, [hydrated, hydrate]);
+    if (!settingsHydrated) hydrateSettings();
+  }, [hydrated, hydrate, settingsHydrated, hydrateSettings]);
 
   // Start (or reset) a draft session when this screen mounts on a fresh
   // hydration. All customize/edit-photos mutations happen inside the draft
