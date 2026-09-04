@@ -1,5 +1,5 @@
 'use client';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import type { BodyTypeReport, PrimaryBodyType, StyleSection } from '@/types';
 
@@ -24,7 +24,32 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
   const t = useT();
   const r = t.magazine.diagnose.result;
   const [tab, setTab] = useState<Tab>('body');
+  const cardRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
   const type = report.summary.primaryType;
+
+  // 카드 최상단 1px 이 뷰포트를 벗어나면 탭바가 고정된 상태다.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      if (entry) setStuck(!entry.isIntersecting);
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  // 탭바가 고정된 채로 탭을 바꾸면 새 탭 본문의 중간 지점에 떨어진다. 고정이
+  // 시작되는 스크롤 위치로 되돌려 탭바는 상단에 둔 채 본문만 처음부터 보이게 한다.
+  function selectTab(next: Tab) {
+    setTab(next);
+    const card = cardRef.current;
+    if (!card) return;
+    const stickyStart = card.getBoundingClientRect().top + window.scrollY;
+    if (window.scrollY > stickyStart) window.scrollTo({ top: stickyStart });
+  }
 
   return (
     <div ref={ref} className="flex flex-col bg-brand-gray900">
@@ -35,8 +60,27 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
         image={TYPE_IMAGE[type]}
       />
 
-      <div className="relative z-10 -mt-10 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-14 pt-4">
-        <TabPills active={tab} onChange={setTab} bodyLabel={r.bodyTab} styleLabel={r.styleTab} />
+      <div
+        ref={cardRef}
+        className="relative z-10 -mt-10 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-14"
+      >
+        <div ref={sentinelRef} aria-hidden className="absolute inset-x-0 top-0 h-px" />
+
+        {/* 카드와 같은 배경을 들고 고정돼 뒤로 흐르는 본문을 가린다. -mx-4 는
+            카드 좌우 패딩까지 덮기 위한 것. 라운딩은 고정 전에만 준다 — 고정
+            상태에서 모서리를 깎으면 그 틈으로 본문이 비쳐 보인다. */}
+        <div
+          className={`sticky top-0 z-10 -mx-4 bg-brand-gray50 px-4 pb-3 pt-4 ${
+            stuck ? '' : 'rounded-t-[40px]'
+          }`}
+        >
+          <TabPills
+            active={tab}
+            onChange={selectTab}
+            bodyLabel={r.bodyTab}
+            styleLabel={r.styleTab}
+          />
+        </div>
 
         {tab === 'body' ? (
           <BodyTab report={report} r={r} />

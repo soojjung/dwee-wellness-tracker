@@ -109,7 +109,7 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 pb-24 text-center">
       <div className="grid size-[70px] place-items-center rounded-full bg-brand-pink50 text-brand-pink200">
-        <BookmarkIcon filled className="size-8" />
+        <BookmarkIcon filled className="size-7" />
       </div>
       <div className="flex flex-col gap-1">
         <p className="text-xl font-semibold leading-normal text-brand-gray900">{title}</p>

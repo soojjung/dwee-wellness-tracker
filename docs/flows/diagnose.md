@@ -29,11 +29,13 @@ Two refs guard against stale closures and React StrictMode's double-mount:
 ```mermaid
 stateDiagram-v2
     [*] --> intro : 진입
+    intro --> consent_modal : 진입 즉시 (미동의 상태)
 
-    intro --> intro : 슬롯 사진 추가/교체 (front · side · back)
-    intro --> consent_modal : 첫 슬롯 탭 (미동의 시)
-    consent_modal --> intro : 취소
-    consent_modal --> intro : 동의 (consented=true) → 파일 picker 열림
+    consent_modal --> intro : 취소 ("사진 선택" 재탭 시 다시 열림)
+    consent_modal --> intro : 동의 (consented=true)
+
+    intro --> intro : "사진 선택" 버튼 → 파일 다중 선택 (앞→옆→뒤 순서로 채움)
+    intro --> consent_modal : "사진 선택" 탭 (여전히 미동의 상태)
     intro --> loading : front 슬롯 채워진 상태에서 분석 시작
 
     loading --> result_page : 분석 성공 → sessionStorage 저장 후 result 라우트로 이동
@@ -59,11 +61,13 @@ stateDiagram-v2
 
 | 단계 | 표시 내용 | 전환 조건 |
 |------|-----------|-----------|
-| **intro** | 제목·부제 + SlotStrip 3개 (front · side · back) + 촬영 가이드 섹션 + 업로드 방법 섹션 + 잔여 횟수 | (미동의) 슬롯 탭 → ConsentModal 표시 / (동의 후) 슬롯 탭 → 파일 picker / front 채운 뒤 분석 버튼 → loading |
-| **consent_modal** | 개인정보 고지 모달 (backdrop 클릭·취소 → 닫힘 / 동의 → 닫힘 후 파일 picker 열림) | 동의 → `consented: true`, 즉시 파일 picker 트리거 |
-| **loading** | front 사진 blur 15px + dim 15% 배경 + 원형 진행 표시 + 진행률 % + "화면을 유지해 달라"는 `magazine.diagnose.loading.stayWarning` 안내 문구 | Edge Function 응답 → result 라우트 또는 error |
-| **error** | `AlertCircleIcon` + 에러 제목·메시지 + pink pill 재시도 버튼 | 재시도 → intro 초기화 |
+| **intro** | 제목·부제 + SlotStrip 3개 (front · side · back, 탭 불가 촬영 가이드) + 촬영 가이드 섹션 + 업로드 방법 섹션 + 잔여 횟수 | 화면 진입 즉시 (미동의 시) → ConsentModal 자동 표시 / 하단 "사진 선택" 버튼 탭 → (동의 상태면) 파일 picker, (미동의 상태면) ConsentModal 재표시 / front 채운 뒤 분석 버튼 → loading |
+| **consent_modal** | 개인정보 고지 모달 (backdrop 클릭·취소 → 닫힘 / 동의 → 닫힘) | 화면 진입 시 자동 오픈 — 동의해도 이때는 파일 picker 를 열지 않음. "사진 선택" 버튼 탭으로 재오픈된 경우에만 동의 즉시 파일 picker 트리거 |
+| **loading** | front 사진 blur 15px + dim 40% 배경 + 원형 진행 표시 + 진행률 % + 결과를 어디서 확인하는지 안내하는 `magazine.diagnose.loading.resultLocation` 문구 | Edge Function 응답 → result 라우트 또는 error |
+| **error** | `AlertCircleIcon` + 에러 제목·메시지 + pink pill 재시도 버튼 | 재시도 → intro 초기화 (이미 동의한 상태이므로 ConsentModal 재표시 없음) |
 
+- SlotStrip 은 탭할 수 없는 촬영 가이드 띠입니다. 사진이 없는 슬롯엔 정적 가이드 이미지(`guide-front/side/back.png`)를, 선택된 슬롯엔 실제 미리보기를 보여줍니다.
+- 사진 선택은 하단 "사진 선택" 버튼 한 곳에서만 일어납니다. `<input multiple>` 로 여러 장을 한 번에 골라 앞→옆→뒤 순서로 채우며, 매 선택마다 이전 선택을 통째로 대체합니다(슬롯별 개별 교체 불가).
 - 분석에는 `front` 슬롯 사진만 사용됩니다. `side`, `back` 슬롯은 UX 안내 목적.
 - `loading` 단계에서는 뒤로가기 링크가 숨겨집니다 (Edge Function 호출 중 이탈 방지). `beforeunload` 이벤트 리스너도 등록되어 탭 닫기 / 페이지 새로고침 시 브라우저 확인 다이얼로그를 표시합니다.
 - 컴포넌트 언마운트(뒤로가기 포함) 또는 재시도 탭 시 현재 in-flight 요청이 `AbortController.abort()`로 취소됩니다. 취소된 요청은 `{ ok: false, error: 'aborted' }` 로 반환되며 화면 상태에 반영하지 않습니다.
@@ -111,31 +115,31 @@ Edge Function 은 `analyzable: false` 또는 일시적 OpenAI 실패(`openai_fai
 
 ```mermaid
 flowchart TD
-    Picker([SlotStrip\nfront · side · back])
-    Consent([ConsentModal\n첫 슬롯 탭 시 게이팅])
-    Base64[fileToBase64]
-    Service[bodyTypeService.analyzeBodyType]
-    EdgeFn[(Supabase\nEdge Function\n일 10회 rate limit)]
-    OpenAI{{OpenAI\ngpt-4o Vision\n최대 2회 시도}}
-    Report([ReportView\n체형 탭 / 스타일 가이드 탭])
-    PNG([PNG 내보내기])
+    Consent(["ConsentModal\n화면 진입 시 자동 오픈"])
+    Picker(["SlotStrip\nfront · side · back\n(탭 불가, 가이드 이미지)"])
+    Button(["#quot;사진 선택#quot; 버튼\n다중 선택"])
+    Base64["fileToBase64"]
+    Service["bodyTypeService.analyzeBodyType"]
+    EdgeFn[("Supabase\nEdge Function\n일 10회 rate limit")]
+    OpenAI{{"OpenAI\ngpt-4o Vision\n최대 2회 시도"}}
+    Report(["ReportView\n체형 탭 / 스타일 가이드 탭"])
 
-    Picker -->|미동의| Consent
-    Consent -->|동의| Picker
-    Picker -->|front File| Base64
-    Base64 -->|imageBase64| Service
-    Service -->|invoke| EdgeFn
-    EdgeFn -->|API call| OpenAI
-    OpenAI -->|BodyTypeReport JSON| EdgeFn
-    EdgeFn -->|result| Service
-    Service -->|report| Report
-    Report -->|html-to-image| PNG
+    Consent -->|"동의"| Picker
+    Picker --> Button
+    Button -->|"미동의 상태면"| Consent
+    Button -->|"동의 상태면 파일 다중 선택"| Base64
+    Base64 -->|"front 이미지만 base64로"| Service
+    Service -->|"invoke"| EdgeFn
+    EdgeFn -->|"API call"| OpenAI
+    OpenAI -->|"BodyTypeReport JSON"| EdgeFn
+    EdgeFn -->|"result"| Service
+    Service -->|"report"| Report
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
     classDef store fill:#F0E8FD,stroke:#BDA8E5,color:#4A3A5C;
     classDef ext fill:#E8FDE8,stroke:#A8E5BD,color:#3A5C3A;
-    class Picker,Consent,Report,PNG ui;
+    class Consent,Picker,Button,Report ui;
     class Base64,Service logic;
     class EdgeFn store;
     class OpenAI ext;
@@ -145,7 +149,7 @@ flowchart TD
 
 ## 관련 파일·문서
 
-- `src/components/diagnose/DiagnoseScreen.tsx` — 상태 머신 (intro / consent_modal / loading / error) + SlotStrip + ConsentModal + GuideSection
+- `src/components/diagnose/DiagnoseScreen.tsx` — 상태 머신 (intro / consent_modal / loading / error) + SlotStrip(가이드 전용, 탭 불가) + ConsentModal + GuideSection. 하단 CTA 는 `Button.tsx` 의 `BOTTOM_CTA_CLASS` 공유.
 - `src/components/diagnose/DiagnoseResultScreen.tsx` — 결과 라우트 화면 (sessionStorage 수신, Figma 재설계 후 다운로드 버튼 제거)
 - `src/components/diagnose/ReportView.tsx` — 2탭 결과 렌더 (Hero · BodyTab · StyleTab)
 - `src/data/services/bodyTypeService.ts` — Edge Function 호출 + 익명 세션 보장 + `AbortSignal` pass-through
@@ -157,3 +161,4 @@ flowchart TD
 - `supabase/README.md` — Edge Function 배포·시크릿 설정 절차
 - `public/magazine/personal-body-type/{straight,wave,natural}.png` — 체형별 전신 배경 이미지
 - `public/magazine/personal-body-type/{straight,wave,natural}-cutout.png` — Hero 우측 컷아웃 초상 이미지
+- `public/magazine/personal-body-type/guide-{front,side,back}.png` — SlotStrip 촬영 가이드 이미지 (사진 미선택 슬롯에 표시)

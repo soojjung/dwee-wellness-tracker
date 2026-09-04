@@ -10,6 +10,8 @@ import { fileToBase64, supportedMediaType } from '@/lib/image/fileToBase64';
 import { analyzeBodyType } from '@/data/services/bodyTypeService';
 import type { BodyTypeAnalyzeError, SupportedImageMediaType } from '@/types';
 import { AlertCircleIcon, BackIcon } from '@/components/ui/icons';
+import { BOTTOM_CTA_CLASS } from '@/components/ui/Button';
+import { cn } from '@/lib/cn';
 import { REPORT_SESSION_KEY } from './DiagnoseResultScreen';
 
 const ARTICLE_HREF = '/magazine/personal-body-type';
@@ -38,7 +40,8 @@ export function DiagnoseScreen() {
   const [step, setStep] = useState<Step>({
     kind: 'intro',
     photos: {},
-    consent: false,
+    // AI 이용안내는 사진을 고르기 전, 화면에 들어오자마자 먼저 보여준다.
+    consent: true,
     consented: false,
   });
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -87,14 +90,17 @@ export function DiagnoseScreen() {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [step]);
 
-  function setSlot(slot: Slot, data: Photo | null) {
+  // 하단 [사진 선택] 한 번으로 전체를 다시 고르므로, 고른 순서대로 앞→옆→뒤에
+  // 채우고 이전 선택은 통째로 버린다.
+  function setPhotos(picked: readonly Photo[]) {
     setStep((prev) => {
       if (prev.kind !== 'intro') return prev;
-      const prevData = prev.photos[slot];
-      if (prevData) URL.revokeObjectURL(prevData.previewUrl);
-      const next: Photos = { ...prev.photos };
-      if (data) next[slot] = data;
-      else delete next[slot];
+      for (const photo of Object.values(prev.photos)) URL.revokeObjectURL(photo.previewUrl);
+      const next: Photos = {};
+      SLOT_ORDER.forEach((slot, i) => {
+        const photo = picked[i];
+        if (photo) next[slot] = photo;
+      });
       return { ...prev, photos: next };
     });
   }
@@ -110,7 +116,8 @@ export function DiagnoseScreen() {
   }
 
   function resetIntro() {
-    setStep({ kind: 'intro', photos: {}, consent: false, consented: false });
+    // 에러 후 재시도. 여기까지 왔다면 이미 동의한 상태이므로 안내를 다시 띄우지 않는다.
+    setStep({ kind: 'intro', photos: {}, consent: false, consented: true });
   }
 
   async function startAnalysis(photos: Photos) {
@@ -179,7 +186,7 @@ export function DiagnoseScreen() {
         onOpenConsent={() => setConsentOpen(true)}
         onCloseConsent={() => setConsentOpen(false)}
         onConsentGranted={markConsented}
-        onSlot={setSlot}
+        onPhotos={setPhotos}
         onStart={() => startAnalysis(step.photos)}
       />
     );
@@ -196,7 +203,7 @@ interface IntroViewProps {
   onOpenConsent: () => void;
   onCloseConsent: () => void;
   onConsentGranted: () => void;
-  onSlot: (slot: Slot, data: Photo | null) => void;
+  onPhotos: (picked: readonly Photo[]) => void;
   onStart: () => void;
 }
 
@@ -208,42 +215,49 @@ function IntroView({
   onOpenConsent,
   onCloseConsent,
   onConsentGranted,
-  onSlot,
+  onPhotos,
   onStart,
 }: IntroViewProps) {
   const t = useT();
   const p = t.magazine.diagnose;
   const inputRef = useRef<HTMLInputElement>(null);
-  const [pendingSlot, setPendingSlot] = useState<Slot | null>(null);
+  // 안내 팝업은 화면 진입 시에도 뜬다. 그때는 동의해도 선택기를 열면 안 되므로
+  // "사진 선택을 누르다 막힌 경우"인지 따로 기억한다.
+  const [pickAfterConsent, setPickAfterConsent] = useState(false);
   const hasFront = Boolean(photos.front);
 
-  function requestPickerFor(slot: Slot) {
-    setPendingSlot(slot);
+  function openPicker() {
     if (!consented) {
+      setPickAfterConsent(true);
       onOpenConsent();
       return;
     }
     inputRef.current?.click();
   }
 
+  function handleConsentCancel() {
+    setPickAfterConsent(false);
+    onCloseConsent();
+  }
+
   function handleConsentAgree() {
     onConsentGranted();
+    if (!pickAfterConsent) return;
+    setPickAfterConsent(false);
     // Defer to next tick so the modal unmounts (releasing body scroll lock)
     // before the file picker takes over.
     setTimeout(() => inputRef.current?.click(), 0);
   }
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files ?? []).slice(0, SLOT_ORDER.length);
     event.target.value = '';
-    if (!file || !pendingSlot) return;
-    const mediaType = supportedMediaType(file);
-    if (!mediaType) {
-      setPendingSlot(null);
-      return;
-    }
-    onSlot(pendingSlot, { file, previewUrl: URL.createObjectURL(file), mediaType });
-    setPendingSlot(null);
+    const picked = files.flatMap((file) => {
+      const mediaType = supportedMediaType(file);
+      return mediaType ? [{ file, previewUrl: URL.createObjectURL(file), mediaType }] : [];
+    });
+    if (picked.length === 0) return;
+    onPhotos(picked);
   }
 
   const slotLabel: Record<Slot, string> = {
@@ -264,7 +278,7 @@ function IntroView({
           <p className="text-lg leading-normal text-brand-gray800">{p.intro.subtitle}</p>
         </header>
 
-        <SlotStrip photos={photos} labels={slotLabel} onSlotTap={requestPickerFor} />
+        <SlotStrip photos={photos} labels={slotLabel} />
 
         <GuideSection
           chip={p.picker.guideChip}
@@ -290,6 +304,7 @@ function IntroView({
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
+        multiple
         className="hidden"
         onChange={handleChange}
       />
@@ -299,15 +314,15 @@ function IntroView({
           <button
             type="button"
             onClick={onStart}
-            className="flex h-[60px] w-full items-center justify-center bg-brand-pink50 text-xl font-semibold leading-[normal] text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+            className={cn(BOTTOM_CTA_CLASS, 'bg-brand-pink50 text-brand-gray900')}
           >
             {p.picker.startButton}
           </button>
         ) : (
           <button
             type="button"
-            onClick={() => requestPickerFor('front')}
-            className="flex h-[60px] w-full items-center justify-center bg-brand-pink50 text-xl font-semibold leading-[normal] text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+            onClick={openPicker}
+            className={cn(BOTTOM_CTA_CLASS, 'bg-brand-pink50 text-brand-gray900')}
           >
             {p.picker.selectButton}
           </button>
@@ -315,43 +330,41 @@ function IntroView({
       </BottomBar>
 
       {consentOpen ? (
-        <ConsentModal onCancel={onCloseConsent} onAgree={handleConsentAgree} />
+        <ConsentModal onCancel={handleConsentCancel} onAgree={handleConsentAgree} />
       ) : null}
     </div>
   );
 }
 
-function SlotStrip({
-  photos,
-  labels,
-  onSlotTap,
-}: {
-  photos: Photos;
-  labels: Record<Slot, string>;
-  onSlotTap: (slot: Slot) => void;
-}) {
+const SLOT_GUIDE_IMAGE: Record<Slot, string> = {
+  front: '/magazine/personal-body-type/guide-front.png',
+  side: '/magazine/personal-body-type/guide-side.png',
+  back: '/magazine/personal-body-type/guide-back.png',
+};
+
+/**
+ * 촬영 가이드용 예시 이미지 띠. 사진 선택은 하단 버튼에서만 하므로 탭할 수 없고,
+ * 고른 사진이 있는 슬롯만 예시 대신 그 사진을 보여준다.
+ */
+function SlotStrip({ photos, labels }: { photos: Photos; labels: Record<Slot, string> }) {
   return (
     <div className="px-4">
       <div className="flex overflow-hidden rounded-2xl">
         {SLOT_ORDER.map((slot) => {
           const photo = photos[slot];
           return (
-            <button
-              key={slot}
-              type="button"
-              onClick={() => onSlotTap(slot)}
-              className="relative h-[180px] flex-1 overflow-hidden bg-brand-gray200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
-              aria-label={labels[slot]}
-            >
-              {photo ? (
-                <img src={photo.previewUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-1 text-brand-gray700">
-                  <PlusIcon className="size-6" />
-                  <span className="text-sm font-medium">{labels[slot]}</span>
-                </div>
+            <div key={slot} className="relative h-[180px] flex-1 overflow-hidden bg-brand-gray200">
+              <img
+                src={photo?.previewUrl ?? SLOT_GUIDE_IMAGE[slot]}
+                alt={photo ? '' : labels[slot]}
+                className="h-full w-full object-cover"
+              />
+              {photo ? null : (
+                <span className="absolute inset-x-0 bottom-0 bg-black/35 py-1 text-center text-sm font-medium text-brand-gray50">
+                  {labels[slot]}
+                </span>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
@@ -474,17 +487,18 @@ function LoadingView({ blurUrl }: { blurUrl: string }) {
         alt=""
         className="absolute inset-0 h-full w-full scale-110 object-cover blur-[15px]"
       />
-      <div className="absolute inset-0 bg-black/[0.15]" />
+      {/* 배경이 밝은 사진이면 흰 글씨가 묻힌다. 모달 규칙의 기본 딤과 같은 값. */}
+      <div className="absolute inset-0 bg-black/40" />
       <div className="relative flex flex-col items-center gap-8 px-6">
         <CircularProgress percent={percent} label={`${percentInt}%`} />
         <div className="flex flex-col items-center gap-1 text-center">
           <p className="text-2xl font-semibold leading-normal text-brand-gray50">{l.title}</p>
           <p className="text-base leading-normal text-brand-gray200">{l.body}</p>
-          <p className="mt-4 whitespace-pre-line text-sm leading-[1.5] text-brand-pink100">
-            {l.stayWarning}
-          </p>
         </div>
       </div>
+      <p className="absolute inset-x-0 bottom-16 whitespace-pre-line px-6 text-center text-sm leading-[1.5] text-brand-gray200">
+        {l.resultLocation}
+      </p>
     </div>
   );
 }
@@ -588,19 +602,3 @@ function BottomBar({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PlusIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className={className}
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}

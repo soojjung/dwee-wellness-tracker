@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import { useT } from '@/i18n/useT';
 import type { ArticleSection, ArticleExample } from '@/data/magazine/articles';
 
 interface ArticleSectionViewProps {
@@ -35,6 +36,7 @@ export function ArticleSectionView({ section }: ArticleSectionViewProps) {
 }
 
 function ExamplesRow({ items }: { items: readonly ArticleExample[] }) {
+  const t = useT();
   return (
     <div className="overflow-x-auto">
       <div
@@ -54,6 +56,16 @@ function ExamplesRow({ items }: { items: readonly ArticleExample[] }) {
               className="object-cover object-top"
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-black/60" />
+            {ex.source ? (
+              <>
+                {/* 밝은 화보컷 위에서도 읽히도록 하단 캡션과 같은 방식으로 깔아준다. */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-t from-transparent to-black/45" />
+                <p className="absolute right-0 top-0 p-3 text-xs leading-normal text-brand-gray200">
+                  {t.magazine.sourcePrefix}
+                  {ex.source}
+                </p>
+              </>
+            ) : null}
             <figcaption className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-3">
               <span className="text-base font-medium text-brand-gray50">{ex.name}</span>
               <p className="text-sm leading-snug text-brand-gray300">{ex.reasoning}</p>

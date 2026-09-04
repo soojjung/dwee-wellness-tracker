@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useT } from '@/i18n/useT';
+import { cn } from '@/lib/cn';
+import { BOTTOM_CTA_CLASS } from '@/components/ui/Button';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookmarkStore } from '@/store/bookmarkStore';
 import { getArticleBySlug, getArticleContent } from '@/data/magazine/articles';
@@ -75,7 +77,7 @@ export function ArticleScreen({ slug }: ArticleScreenProps) {
         <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
           <Link
             href={cta.href}
-            className="flex items-center justify-center bg-brand-gray900 py-4 text-xl font-semibold leading-[normal] text-brand-pink100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
+            className={cn(BOTTOM_CTA_CLASS, 'bg-brand-gray900 text-brand-pink100')}
           >
             {cta.label}
           </Link>
@@ -92,7 +94,9 @@ interface TopBarProps {
 
 function TopBar({ backAria, slug }: TopBarProps) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 pt-3">
+    // 본문이 뒤로 흐르는 동안 상단에 계속 떠 있는다. 아이콘을 둘 다 진한 색으로
+    // 두는 것은 어두운 히어로와 흰 본문 어느 쪽 위에서도 읽히게 하려는 것.
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-20 mx-auto flex w-full max-w-md items-center justify-between px-4 pt-3">
       <Link
         href="/magazine"
         aria-label={backAria}
@@ -102,7 +106,7 @@ function TopBar({ backAria, slug }: TopBarProps) {
       </Link>
       <BookmarkToggleButton
         slug={slug}
-        className="pointer-events-auto grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray50 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
+        className="pointer-events-auto grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
         iconClassName="size-5"
       />
     </div>

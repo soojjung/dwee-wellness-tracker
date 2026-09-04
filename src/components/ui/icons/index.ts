@@ -2,6 +2,7 @@ export { BackIcon } from './BackIcon';
 export { CancelIcon } from './CancelIcon';
 export { CheckIcon } from './CheckIcon';
 export { BookmarkIcon } from './BookmarkIcon';
+export { BookmarkStackIcon } from './BookmarkStackIcon';
 export { AlertCircleIcon } from './AlertCircleIcon';
 export { DownloadIcon } from './DownloadIcon';
 export { EditStarIcon } from './EditStarIcon';

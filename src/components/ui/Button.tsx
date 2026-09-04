@@ -17,6 +17,14 @@ const sizeClasses: Record<Size, string> = {
   lg: 'h-[55px] px-6 text-base rounded-[40px]',
 };
 
+/**
+ * 화면 하단에 좌우 꽉 차게 붙는 CTA 의 공통 크기·패딩 (20px / 16px / 32px).
+ * 아래 32px 은 홈 인디케이터 여백을 겸하므로 위아래가 비대칭이다.
+ * 배경·글자색은 화면마다 다르므로 여기에 넣지 않는다.
+ */
+export const BOTTOM_CTA_CLASS =
+  'flex w-full items-center justify-center px-4 pb-8 pt-5 text-xl font-semibold leading-[normal] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200';
+
 interface SharedProps {
   variant?: Variant;
   size?: Size;
