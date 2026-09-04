@@ -178,17 +178,25 @@ export function ScratchKeywordCard({ phase, today }: ScratchKeywordCardProps) {
       </div>
 
       {!revealed ? (
-        <canvas
-          ref={canvasRef}
-          role="img"
-          aria-label={t.home.scratchCanvasAria}
-          className="absolute inset-0 h-full w-full touch-none cursor-pointer"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerEnd}
-          onPointerCancel={onPointerEnd}
-          onPointerLeave={onPointerEnd}
-        />
+        <>
+          <canvas
+            ref={canvasRef}
+            role="img"
+            aria-label={t.home.scratchCanvasAria}
+            className="absolute inset-0 h-full w-full touch-none cursor-pointer"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerEnd}
+            onPointerCancel={onPointerEnd}
+            onPointerLeave={onPointerEnd}
+          />
+          {/* 캔버스 위에 얹어 커버가 남아있는 동안만 보인다. 이미지에 구우면
+              로케일을 못 따라가므로 문구는 사전 경유 HTML 로 렌더한다.
+              pointer-events-none 이라 긁는 동작을 가로막지 않는다. */}
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-[18px] font-semibold leading-[1.5] text-brand-gray700">
+            {t.home.scratchHint}
+          </span>
+        </>
       ) : null}
     </div>
   );

@@ -12,7 +12,7 @@ interface CustomizeDraftGuardProps {
  * deep link elsewhere. Mounts once when the layout wrapping this tree
  * mounts; unmounts only when the user is no longer on a customize route.
  *
- * Explicit exits (header ← arrow → discardPhotoDraft, "Save & apply" →
+ * Explicit exits (header ← arrow → discardPhotoDraft, "Done editing" →
  * commitPhotoDraft) leave the draft in an inactive state before this
  * cleanup runs, so the trailing discard is a safe no-op in those cases.
  * The whole point of this guard is to catch browser-back / stray

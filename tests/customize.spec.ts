@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { freezeClock } from './clock';
 
 const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal', 'unknown'] as const;
 
@@ -43,6 +44,8 @@ function attachErrorGuards(page: Page) {
 }
 
 async function seedAndOpenCustomize(page: Page, phase: Phase, locale: Locale) {
+  // 실행 날짜가 baseline 에 박히지 않도록 첫 navigation 전에 시계를 고정한다.
+  await freezeClock(page);
   await page.addInitScript(() => {
     (window as unknown as { __dweeTestAnon?: boolean }).__dweeTestAnon = true;
   });

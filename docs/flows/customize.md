@@ -21,8 +21,8 @@ flowchart TD
     EditPhotos -->|"셀 탭 → slot 상세"| Detail
     Detail -->|"✓ Save crop"| EditPhotos
     Detail -->|"X (취소 or 팝업)"| EditPhotos
-    EditPhotos -->|"'선택하기' 탭 → picksConfirmed"| Customize
-    Customize -->|"'설정 완료' (gated)"| Home
+    EditPhotos -->|"사진 편집 '편집 완료' 탭 → picksConfirmed"| Customize
+    Customize -->|"홈 꾸미기 '편집 완료' (gated)"| Home
     Customize -->|"뒤로 (dirty → DiscardDraftDialog)"| Home
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
@@ -33,13 +33,13 @@ flowchart TD
 
 ## 드래프트 모드
 
-HomeCustomizeScreen 마운트 시 `beginPhotoDraft()` 를 호출해 드래프트 세션을 시작합니다. 이후 모든 사진 변경은 `mediaStore` 의 `draft*` 필드에만 기록되며, 실제 Repository 저장은 "설정 완료" 탭 시 `commitPhotoDraft()` 가 일괄 처리합니다. 뒤로가기 또는 취소는 `discardPhotoDraft()` 를 호출해 드래프트를 폐기합니다.
+HomeCustomizeScreen 마운트 시 `beginPhotoDraft()` 를 호출해 드래프트 세션을 시작합니다. 이후 모든 사진 변경은 `mediaStore` 의 `draft*` 필드에만 기록되며, 실제 Repository 저장은 홈 꾸미기의 "편집 완료" 탭 시 `commitPhotoDraft()` 가 일괄 처리합니다. 뒤로가기 또는 취소는 `discardPhotoDraft()` 를 호출해 드래프트를 폐기합니다.
 
 ### 레이아웃 수준 드래프트 정리 (CustomizeDraftGuard)
 
 `src/app/(fullscreen)/home/customize/layout.tsx` 는 `/home/customize/*` 서브트리 전체를 `CustomizeDraftGuard` 로 감쌉니다. 이 가드는 레이아웃이 언마운트될 때(= 커스터마이즈 라우트를 완전히 벗어날 때) `discardPhotoDraft()` 를 자동 호출합니다.
 
-**덮어쓰기 없음 보장**: 헤더 ← 버튼이나 "설정 완료"를 통한 명시적 종료는 가드 언마운트 전에 이미 `discard` 또는 `commit` 을 완료합니다. 드래프트가 비활성 상태이면 `discardPhotoDraft()` 는 no-op 이므로, 가드의 trailing 정리는 안전합니다.
+**덮어쓰기 없음 보장**: 헤더 ← 버튼이나 홈 꾸미기의 "편집 완료"를 통한 명시적 종료는 가드 언마운트 전에 이미 `discard` 또는 `commit` 을 완료합니다. 드래프트가 비활성 상태이면 `discardPhotoDraft()` 는 no-op 이므로, 가드의 trailing 정리는 안전합니다.
 
 **이 가드가 잡는 케이스**: 브라우저 뒤로가기 / 탭 닫기 / 다른 라우트로의 직접 이동 — 이전에는 드래프트가 `mediaStore` 에 남아 다음 커스터마이즈 진입 시 이전 세션의 picks 가 남아있는 버그가 발생했습니다.
 
@@ -50,7 +50,7 @@ flowchart LR
     Discard["discardPhotoDraft()\n→ draft 폐기"]
     Guard["CustomizeDraftGuard\n언마운트 시 자동 discard"]
 
-    Edit -->|"'설정 완료'"| Confirm
+    Edit -->|"홈 꾸미기 '편집 완료'"| Confirm
     Edit -->|"뒤로 / 취소"| Discard
     Edit -.->|"브라우저 뒤로 / 탭 닫기"| Guard
     Guard -->|"trailing cleanup\n(no-op if already discarded)"| Discard
@@ -80,9 +80,9 @@ flowchart TD
     Pick -->|"슬롯 채움 → edit-photos 이동"| EditPhotos([PhotoEditScreen])
     EditCount -->|"슬롯 전부 채워짐"| EditPhotos
     TapEdit --> EditPhotos
-    EditPhotos -->|"'선택하기' 탭 → picksConfirmed=true"| Show
+    EditPhotos -->|"사진 편집 '편집 완료' 탭 → picksConfirmed=true"| Show
 
-    Show -->|"allFilled && picksConfirmed\n'설정 완료'"| Commit["commitPhotoDraft()"]
+    Show -->|"allFilled && picksConfirmed\n홈 꾸미기 '편집 완료'"| Commit["commitPhotoDraft()"]
     Show -->|"뒤로 (dirty)"| Dialog["DiscardDraftDialog"]
     Dialog -->|"확인"| Discard["discardPhotoDraft()"]
     Dialog -->|"취소"| Show
@@ -95,7 +95,7 @@ flowchart TD
 
 ### picksConfirmed 게이트
 
-"설정 완료" 는 `allFilled && picksConfirmed` 조건이 모두 참일 때만 활성화됩니다. `picksConfirmed` 는 PhotoEditScreen 의 "편집 완료(Done editing)" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
+홈 꾸미기의 "편집 완료" 는 `allFilled && picksConfirmed` 조건이 모두 참일 때만 활성화됩니다. `picksConfirmed` 는 PhotoEditScreen(사진 편집 그리드) 의 "편집 완료" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
 
 ### beginPhotoDraft 초기 상태
 
@@ -114,7 +114,7 @@ stateDiagram-v2
     Idle --> FilePicker : 빈 셀(플레이스홀더) 탭
     FilePicker --> Idle : 사진 선택 → 슬롯 업데이트 (onPick: Blob[])
     Idle --> Idle : × 버튼 탭 → 해당 슬롯 지움\npicksConfirmed 리셋
-    Idle --> [*] : "선택하기" 탭 → picksConfirmed=true → /home/customize
+    Idle --> [*] : 사진 편집 "편집 완료" 탭 → picksConfirmed=true → /home/customize
     Idle --> [*] : "뒤로" → /home/customize
 ```
 
@@ -142,7 +142,7 @@ stateDiagram-v2
     Idle --> [*] : X 탭 (편집 없음) → PhotoEditScreen 복귀
 ```
 
-변경 사항은 ✓ / X 버튼으로 명확하게 "이 슬롯 세션 저장" / "이 슬롯 세션 폐기" 를 나타냅니다. 힌트 문구가 "사진 바꾸기" 버튼 아래에 표시되어 최종 저장은 "설정 완료" 에서 이뤄짐을 안내합니다.
+변경 사항은 ✓ / X 버튼으로 명확하게 "이 슬롯 세션 저장" / "이 슬롯 세션 폐기" 를 나타냅니다. 힌트 문구가 "사진 바꾸기" 버튼 아래에 표시되어 최종 저장은 홈 꾸미기의 "편집 완료" 에서 이뤄짐을 안내합니다.
 
 ---
 
@@ -158,15 +158,15 @@ stateDiagram-v2
 
 ```mermaid
 flowchart LR
-    Screen[HomeCustomizeScreen\n/ PhotoEditScreen]
+    Screen["HomeCustomizeScreen\n/ PhotoEditScreen"]
     DraftStore["mediaStore\n(draft* 필드)"]
     Commit["commitPhotoDraft()"]
-    Repo[MediaRepository]
-    IDB[(IndexedDB\nslot 0–6 + transform keys)]
-    SB[(Supabase\nhome_photos.transform\nhome_decor_settings)]
+    Repo["MediaRepository"]
+    IDB[("IndexedDB\nslot 0–6 + transform keys")]
+    SB[("Supabase\nhome_photos.transform\nhome_decor_settings")]
 
     Screen -->|"draftSet* / draftClear*"| DraftStore
-    DraftStore -->|"설정 완료"| Commit
+    DraftStore -->|"홈 꾸미기 '편집 완료'"| Commit
     Commit --> Repo
     Repo --> IDB
     Repo -.->|"MVP2.2"| SB

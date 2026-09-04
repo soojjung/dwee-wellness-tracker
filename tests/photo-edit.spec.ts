@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { freezeClock } from './clock';
 
 const TITLE: Record<'en' | 'ko', string> = {
   en: 'Edit photos',
@@ -42,6 +43,8 @@ function attachErrorGuards(page: Page) {
 }
 
 async function seedAndOpenPhotoEdit(page: Page, locale: Locale) {
+  // 실행 날짜가 baseline 에 박히지 않도록 첫 navigation 전에 시계를 고정한다.
+  await freezeClock(page);
   await page.addInitScript(() => {
     (window as unknown as { __dweeTestAnon?: boolean }).__dweeTestAnon = true;
   });

@@ -163,7 +163,7 @@ export const ko: Dictionary = {
         subPlaceholder: '서브 문구를 입력하세요.',
         swapAriaLabel: '메인과 서브 문구 순서 변경',
       },
-      submit: '설정 완료',
+      submit: '편집 완료',
       confirmPicksHint: '먼저 [편집 완료]로 사진을 확정해주세요.',
       discardDialog: {
         title: '변경사항을 버릴까요?',
@@ -186,7 +186,7 @@ export const ko: Dictionary = {
         cancelAriaLabel: '편집 취소',
         confirmAriaLabel: '자르기 저장',
         changePhoto: '사진 변경하기',
-        draftHint: '변경사항은 홈 꾸미기의 [설정 완료]를 눌러야 저장돼요.',
+        draftHint: '변경사항은 홈 꾸미기의 [편집 완료]를 눌러야 저장돼요.',
         cancelDialog: {
           title: '사진 편집을 취소하고 나가시겠어요?',
           cancel: '취소',
@@ -196,6 +196,7 @@ export const ko: Dictionary = {
     },
     keywordsTitle: '지금 필요한 키워드는',
     scratchCanvasAria: '스크래치 카드. 문질러서 오늘의 키워드를 확인해 보세요.',
+    scratchHint: '여기를 긁어보세요',
     durationSuffix: '분',
     activitiesTitle: '이런 활동 어때요?',
     foodsTitle: '이렇게 먹으면 좋아요',

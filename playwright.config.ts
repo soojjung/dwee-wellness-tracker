@@ -29,13 +29,15 @@ export default defineConfig({
     timeout: 60_000,
   },
   projects: [
+    // 시각은 `tests/clock.ts` 의 freezeClock 이 고정한다. 타임존까지 고정해야
+    // 같은 순간이 어느 머신에서든 같은 날짜로 렌더된다.
     {
       name: 'en',
-      use: { ...devices['iPhone 13 Mini'], locale: 'en-US' },
+      use: { ...devices['iPhone 13 Mini'], locale: 'en-US', timezoneId: 'Asia/Seoul' },
     },
     {
       name: 'ko',
-      use: { ...devices['iPhone 13 Mini'], locale: 'ko-KR' },
+      use: { ...devices['iPhone 13 Mini'], locale: 'ko-KR', timezoneId: 'Asia/Seoul' },
     },
   ],
 });

@@ -2,7 +2,7 @@
 
 Last run: 2026-08-13 — 42/42 passed
 
-Covers the draft mode introduced by the "설정 완료 = commit" refactor plus the
+Covers the draft mode introduced by the "commit on Customize home submit" refactor plus the
 `picksConfirmed` gate. The store's committed lane (hydrate/setPhoto/etc.) is
 covered indirectly through commit paths; direct tests can be added later if
 that layer regresses.

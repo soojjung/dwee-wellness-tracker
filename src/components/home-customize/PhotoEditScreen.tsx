@@ -124,7 +124,7 @@ export function PhotoEditScreen() {
             disabled={!allFilled}
             onClick={() => {
               // Explicit acknowledgement of the current photo picks. Flips
-              // draftPicksConfirmed on so the top-level "설정 완료" activates.
+              // draftPicksConfirmed on so the top-level "편집 완료" activates.
               draftConfirmPicks();
               router.push('/home/customize');
             }}

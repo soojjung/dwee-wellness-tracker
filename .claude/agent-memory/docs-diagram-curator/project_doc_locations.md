@@ -105,8 +105,8 @@ Four states: `'actualPeriod' | 'predictedPeriod' | 'predictedFertile' | null`. P
 
 ## Home customize flow (as of refactor/home-customize-flow, 2026-08-13)
 
-- Draft mode: `beginPhotoDraft()` on mount; all changes go to `draft*` fields in `mediaStore`. `commitPhotoDraft()` on "설정 완료"; `discardPhotoDraft()` on back/cancel.
-- `picksConfirmed` gate: "설정 완료" only active when `allFilled && picksConfirmed`. `picksConfirmed` is set by "선택하기" on PhotoEditScreen and reset on any pick change.
+- Draft mode: `beginPhotoDraft()` on mount; all changes go to `draft*` fields in `mediaStore`. `commitPhotoDraft()` on Customize home's "편집 완료"; `discardPhotoDraft()` on back/cancel.
+- `picksConfirmed` gate: Customize home's "편집 완료" only active when `allFilled && picksConfirmed`. `picksConfirmed` is set by PhotoEditScreen's own "편집 완료" and reset on any pick change. Both buttons now read "편집 완료" / "Done editing" — always qualify which screen.
 - `PhotoTransform = { scale, offsetXNorm, offsetYNorm }` stored per slot. Original blob never rewritten. Rendered via CSS in `TransformedPhoto` component.
 - Text customization UI is currently commented out. `TextSettingsSection` import exists but is unused in `HomeCustomizeScreen`.
 - Photo removal: empty slots allowed in PhotoEditScreen; × button clears a filled slot and resets `picksConfirmed`.

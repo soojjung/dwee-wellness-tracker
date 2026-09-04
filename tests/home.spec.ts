@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { freezeClock } from './clock';
 
 const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal', 'unknown'] as const;
 const LOCALES = ['en', 'ko'] as const;
@@ -51,6 +52,8 @@ function attachErrorGuards(page: Page) {
 }
 
 async function seedAndOpenHome(page: Page, phase: Phase, locale: Locale) {
+  // 실행 날짜가 baseline 에 박히지 않도록 첫 navigation 전에 시계를 고정한다.
+  await freezeClock(page);
   // Enable the dev auth bypass on every navigation of this page. Without this,
   // authStore.hydrate() would query Supabase on each fresh document load and
   // reset the synthetic anon user, dropping us back on /login.

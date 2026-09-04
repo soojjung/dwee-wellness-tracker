@@ -162,7 +162,7 @@ export const en = {
         subPlaceholder: 'Enter sub text',
         swapAriaLabel: 'Swap main and sub text',
       },
-      submit: 'Save & apply',
+      submit: 'Done editing',
       confirmPicksHint: 'Tap Done editing to lock in your photos first.',
       discardDialog: {
         title: 'Discard your changes?',
@@ -185,7 +185,7 @@ export const en = {
         cancelAriaLabel: 'Cancel edit',
         confirmAriaLabel: 'Save crop',
         changePhoto: 'Replace photo',
-        draftHint: 'Changes save when you tap Save & apply on Customize home.',
+        draftHint: 'Changes save when you tap Done editing on Customize home.',
         cancelDialog: {
           title: 'Discard photo edits and exit?',
           cancel: 'Cancel',
@@ -195,6 +195,7 @@ export const en = {
     },
     keywordsTitle: 'Your keyword right now',
     scratchCanvasAria: 'Scratch card. Drag across to reveal today’s keyword.',
+    scratchHint: 'Scratch here',
     durationSuffix: ' min',
     activitiesTitle: 'Try one of these',
     foodsTitle: 'Foods that suit today',
