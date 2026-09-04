@@ -69,7 +69,7 @@ export function HomeCustomizeScreen() {
 
   // Start (or reset) a draft session when this screen mounts on a fresh
   // hydration. All customize/edit-photos mutations happen inside the draft
-  // and only reach the repo when the user taps "설정 완료".
+  // and only reach the repo when the user taps "편집 완료".
   useEffect(() => {
     if (!hydrated) return;
     beginPhotoDraft();
@@ -118,8 +118,8 @@ export function HomeCustomizeScreen() {
   const activeUrls = activeSlots.map((s) => photoUrls[s] ?? null);
   const activeTransforms = activeSlots.map((s) => photoTransforms[s] ?? null);
   const allFilled = photoCount !== null && activeUrls.every((u) => !!u);
-  // "설정 완료" only activates when the user has explicitly confirmed the
-  // photo picks via 선택하기 on the edit-photos overview. Any subsequent pick
+  // "편집 완료" only activates when the user has explicitly confirmed the
+  // photo picks via "편집 완료" on the edit-photos overview. Any subsequent pick
   // change resets picksConfirmed → forcing another visit.
   const submitEnabled = allFilled && picksConfirmed;
 

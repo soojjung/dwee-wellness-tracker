@@ -30,7 +30,7 @@ interface MediaState {
 
   // Draft (customize flow): mutations from HomeCustomizeScreen /
   // PhotoEditDetailScreen accumulate here and only reach the repo when the
-  // user taps "설정 완료" (commitPhotoDraft). Discard on cancel/back.
+  // user taps "편집 완료" (commitPhotoDraft). Discard on cancel/back.
   draftActive: boolean;
   draftPhotoCount: PhotoCount | null;
   draftPhotoUrls: PhotoUrls;
@@ -42,9 +42,9 @@ interface MediaState {
   // Object URLs the draft created (must be revoked on discard/commit).
   draftOwnedUrls: string[];
   // Explicit "these are my final picks" acknowledgement from the edit-photos
-  // overview screen (tap "선택하기"). Cleared automatically whenever the user
+  // overview screen (tap PhotoEditScreen's "편집 완료"). Cleared automatically whenever the user
   // changes photoCount, replaces a blob, or clears a slot — forcing them to
-  // re-visit the overview and confirm again before "설정 완료" activates.
+  // re-visit the overview and confirm again before "편집 완료" activates.
   draftPicksConfirmed: boolean;
 
   hydrate: () => Promise<void>;

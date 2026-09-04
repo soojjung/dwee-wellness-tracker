@@ -1,5 +1,5 @@
 // Unit tests for the draft-mode customize flow inside mediaStore. Focuses on
-// the state machine and side effects introduced by the "설정 완료 = commit"
+// the state machine and side effects introduced by the "commit on Customize home submit"
 // refactor: draft lifecycle, per-slot mutations, URL ownership, and the
 // picksConfirmed gate.
 import { beforeEach, describe, expect, it, vi } from 'vitest';

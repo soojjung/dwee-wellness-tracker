@@ -11,7 +11,7 @@ import {
  * Merged view of media state for the customize flow. Reads draft* fields
  * while a draft is active, otherwise falls back to committed state. Screens
  * inside the customize / edit-photos flow render off this so preview matches
- * what will land in the repo when the user taps "설정 완료".
+ * what will land in the repo when the user taps "편집 완료".
  */
 export interface MediaCustomizeView {
   photoCount: PhotoCount | null;

@@ -500,9 +500,12 @@ function PhotoCell({
         }
       />
       {active ? (
+        // border-width 는 브라우저가 정수 CSS px 로 스냅해서 2.5px 이 2px 로 그려진다.
+        // inset box-shadow 는 소수점 폭을 그대로 유지하므로 테두리를 shadow 로 그린다.
+        // 첫 그림자가 위에 깔리므로 핑크(2.5px) 안쪽으로 흰 선(3.5px−2.5px=1px)이 남는다.
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-10 border-[3px] border-brand-pink300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.7)]"
+          className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_2.5px_theme(colors.brand.pink200),inset_0_0_0_3.5px_rgba(255,255,255,0.7)]"
         />
       ) : null}
     </div>
