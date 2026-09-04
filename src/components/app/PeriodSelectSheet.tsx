@@ -119,7 +119,6 @@ export function PeriodSelectSheet({
   const maxSelectable = useMemo(() => addDaysISO(today, FUTURE_WINDOW_DAYS), [today]);
 
   const recordedSet = useMemo(() => collectRecordedDates(drafts), [drafts]);
-  const recordedStartSet = useMemo(() => new Set(drafts.map((d) => d.startDate)), [drafts]);
 
   const changes = useMemo(() => computeChanges(periods, drafts), [periods, drafts]);
   const dirty = changes.length > 0;
@@ -259,7 +258,6 @@ export function PeriodSelectSheet({
                             today={today}
                             maxSelectable={maxSelectable}
                             recordedSet={recordedSet}
-                            recordedStartSet={recordedStartSet}
                             pendingStart={pendingStart}
                             onClick={handleCellClick}
                           />
@@ -282,7 +280,6 @@ interface DayCellProps {
   today: ISODate;
   maxSelectable: ISODate;
   recordedSet: Set<ISODate>;
-  recordedStartSet: Set<ISODate>;
   pendingStart: ISODate | null;
   onClick: (date: ISODate) => void;
 }
@@ -292,7 +289,6 @@ function DayCell({
   today,
   maxSelectable,
   recordedSet,
-  recordedStartSet,
   pendingStart,
   onClick,
 }: DayCellProps) {
@@ -302,7 +298,6 @@ function DayCell({
   const isOutOfRange = date > maxSelectable;
   const isRecorded = recordedSet.has(date);
   const isPendingStart = pendingStart === date;
-  const isTodayStart = isToday && (isPendingStart || recordedStartSet.has(date));
 
   let bgClass = '';
   let textClass = 'text-brand-gray900';
@@ -311,14 +306,12 @@ function DayCell({
   if (isOutOfRange) {
     textClass = 'text-brand-gray500';
   }
-  if (isRecorded) {
+  // 선택되면 today 의 어두운 칩이 pink 로 덮여 today 표시가 사라진다.
+  // 링이 그 표식을 대신하므로, 범위의 시작일인지와 무관하게 오늘이면 항상 붙인다.
+  if (isRecorded || isPendingStart) {
     bgClass = 'bg-brand-pink50';
     textClass = 'text-brand-pink800';
-    if (isTodayStart) borderClass = 'ring-2 ring-inset ring-brand-pink900';
-  } else if (isPendingStart) {
-    bgClass = 'bg-brand-pink50';
-    textClass = 'text-brand-pink800';
-    if (isTodayStart) borderClass = 'ring-2 ring-inset ring-brand-pink900';
+    if (isToday) borderClass = 'ring-2 ring-inset ring-brand-pink900';
   } else if (isToday) {
     bgClass = 'bg-brand-gray900';
     textClass = 'text-brand-white';

@@ -30,7 +30,7 @@ export function NavIcon({ icon, className }: NavIconProps) {
       return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
           <circle cx="12" cy="7" r="6" />
-          <path d="M2.32 21.18C3.88 18.38 7.2 16 12.28 16C17.36 16 20.68 18.38 22.24 21.18C23.31 23.11 21.49 25 19.28 25H5.28C3.07 25 1.24 23.11 2.32 21.18Z" />
+          <path d="M2.03879 19.181C3.59983 16.3751 6.92023 14 12 14C17.0798 14 20.4002 16.3751 21.9612 19.181C23.0352 21.1115 21.2091 23 19 23H5C2.79086 23 0.964785 21.1115 2.03879 19.181Z" />
         </svg>
       );
   }

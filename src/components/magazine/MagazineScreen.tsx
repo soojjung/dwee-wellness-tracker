@@ -101,7 +101,7 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
         <Link
           href="/magazine/bookmarks"
           aria-label={t.magazine.bookmark.openAria}
-          className="grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray50 backdrop-blur-[1.5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
+          className="grid size-10 place-items-center rounded-full text-brand-gray50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
         >
           <BookmarkStackIcon filled className="size-6" />
         </Link>

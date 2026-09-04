@@ -80,6 +80,12 @@ When the exclusion list in CLAUDE.md changes:
 
 **How to apply:** On any PR touching CLAUDE.md §"명시적 제외", grep README.md and health-copy.md for the same keywords and reconcile.
 
+## Modals.md §8 added (2026-09-04, UI-polish pre-commit doc check)
+
+Added a rule documenting the 2-button confirm-dialog cancel-button convention: `bg-brand-gray300` + `hover:bg-brand-gray400/60`. Trigger: the same class string had been copy-pasted identically across `DiscardDraftDialog` (original) → `CancelEditDialog`, `LogoutConfirmDialog`, `WithdrawConfirmDialog`, `DeleteStickersDialog`, `DiaryCustomizeScreen`'s `DiscardDialog` (5 more, all in one PR) — real drift risk per CLAUDE.md's "same mistake 2x → add a rule line" policy. File is now 67 lines, still under the 80-line-file / split threshold.
+
+This PR (NavIcon path sync, PeriodSelectSheet today-ring simplification, ScratchKeywordCard hint-hide-on-touch, BookmarkIcon strokeWidth, MagazineScreen bookmark-button bg removal, HomeCustomizeScreen settingsStore hydrate fix) was otherwise pure visual/behavioral polish with no doc/README changes needed — checked README.md/README.ko.md (feature-level, doesn't document button classes or icon paths) and docs/flows/home.md + customize.md (no stale reference to `recordedStartSet`, scratch-hint threshold, or the settings-hydrate comment-out). Good example of "polish-only diff → only the recurring-drift rule needs a doc touch, not README."
+
 ## Removed component: SetupPeriodPicker
 
 `SetupPeriodPicker.tsx` was deleted in `feat/home-figma-pass`. The old `setupMode` inline calendar picker flow no longer exists. All first-record entry now goes through `TodayDateHeading` calendar icon. If any doc references `setupMode` or `SetupPeriodPicker`, delete the reference.
