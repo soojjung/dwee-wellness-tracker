@@ -999,6 +999,7 @@ export const en = {
     loadingLabel: 'Loading...',
     errorLabel: 'Something went wrong. Please try again.',
     notFound: "This article isn't available.",
+    sourcePrefix: 'Source: ',
     bookmark: {
       openAria: 'Open bookmarks',
       saveAria: 'Save to bookmarks',
@@ -1047,8 +1048,8 @@ export const en = {
       },
       loading: {
         title: 'Reading your body type',
-        body: 'The result will be ready in a moment.',
-        stayWarning: 'Please stay on this screen — closing or leaving\nwill drop the reading.',
+        body: 'Leaving this screen will cancel the reading.',
+        resultLocation: 'You can find your result in\n[My page > My tests].',
         backButton: 'Back',
       },
       result: {

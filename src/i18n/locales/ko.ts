@@ -819,8 +819,7 @@ export const ko: Dictionary = {
         modeSticker: '스티커',
         ratio1x1: '1:1',
         ratio4x3: '4:3',
-        permissionDenied:
-          '카메라 사용 권한이 필요해요. 브라우저 설정에서 허용해주세요.',
+        permissionDenied: '카메라 사용 권한이 필요해요. 브라우저 설정에서 허용해주세요.',
         unavailable: '이 기기에서는 카메라를 사용할 수 없어요. 앨범에서 선택해주세요.',
         openAlbumFallback: '앨범 열기',
       },
@@ -999,6 +998,7 @@ export const ko: Dictionary = {
     loadingLabel: '불러오는 중이에요...',
     errorLabel: '잠시 문제가 있었어요. 다시 시도해 주세요.',
     notFound: '이 글을 찾을 수 없어요.',
+    sourcePrefix: '출처: ',
     bookmark: {
       openAria: '북마크 열기',
       saveAria: '북마크에 저장',
@@ -1047,8 +1047,8 @@ export const ko: Dictionary = {
       },
       loading: {
         title: '내 체형을 분석하고 있어요!',
-        body: '곧 결과를 확인 할 수 있을 거에요',
-        stayWarning: '분석 도중에 창을 닫거나 화면을 나가면\n결과를 받을 수 없어요.',
+        body: '분석 중 화면을 나가면 결과를 받을 수 없어요.',
+        resultLocation: '결과는 [마이페이지 > 나의 테스트]에서\n확인할 수 있어요.',
         backButton: '이전으로',
       },
       result: {

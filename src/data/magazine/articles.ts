@@ -4,7 +4,11 @@ export interface ArticleExample {
   readonly name: string;
   readonly image: string;
   readonly imageAlt: string;
+  // 인물 소개 문서. 사진 출처가 아니므로 출처 표기에는 쓰지 않는다.
   readonly sourceUrl: string;
+  // 사진을 실은 매체명. 사진에 마스트헤드가 찍혀 있어 확인된 것만 채운다 —
+  // 확인 못 한 컷은 잘못된 출처를 적느니 비워 두고 표기하지 않는다.
+  readonly source?: string;
   readonly reasoning: string;
 }
 
@@ -77,6 +81,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-jisoo.png',
             imageAlt: 'Portrait of Jisoo of BLACKPINK',
             sourceUrl: 'https://en.wikipedia.org/wiki/Jisoo',
+            source: "Harper's BAZAAR Korea",
             reasoning: 'Even shoulders and a firm, three-dimensional upper body.',
           },
           {
@@ -84,6 +89,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-sabrina.png',
             imageAlt: 'Portrait of Sabrina Carpenter',
             sourceUrl: 'https://en.wikipedia.org/wiki/Sabrina_Carpenter',
+            source: 'VOGUE Korea',
             reasoning: 'Compact, defined upper body with a relatively high bust line.',
           },
         ],
@@ -112,6 +118,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-winter.png',
             imageAlt: 'Portrait of Winter from aespa',
             sourceUrl: 'https://en.wikipedia.org/wiki/Winter_(singer)',
+            source: 'ELLE Korea',
             reasoning: 'Soft features and a slim frame with gently sloping shoulders.',
           },
           {
@@ -119,6 +126,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-taylor.png',
             imageAlt: 'Portrait of Taylor Swift',
             sourceUrl: 'https://en.wikipedia.org/wiki/Taylor_Swift',
+            source: 'GQ',
             reasoning: 'Lighter upper-body lines with slim wrists and soft features.',
           },
         ],
@@ -147,6 +155,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-lisa.png',
             imageAlt: 'Portrait of Lisa of BLACKPINK',
             sourceUrl: 'https://en.wikipedia.org/wiki/Lisa_(rapper)',
+            source: "Lisa's Instagram",
             reasoning: 'Sharp shoulder line and lean, long limbs.',
           },
           {
@@ -154,6 +163,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-kendall.png',
             imageAlt: 'Portrait of Kendall Jenner',
             sourceUrl: 'https://en.wikipedia.org/wiki/Kendall_Jenner',
+            source: "Harper's BAZAAR",
             reasoning: 'Tall, lean silhouette with broad shoulders and long limbs.',
           },
         ],
@@ -197,6 +207,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-jisoo.png',
             imageAlt: '블랙핑크 지수 인물 사진',
             sourceUrl: 'https://en.wikipedia.org/wiki/Jisoo',
+            source: "Harper's BAZAAR Korea",
             reasoning: '곧은 어깨선과 단단하고 입체적인 상체.',
           },
           {
@@ -204,6 +215,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-sabrina.png',
             imageAlt: '사브리나 카펜터 인물 사진',
             sourceUrl: 'https://en.wikipedia.org/wiki/Sabrina_Carpenter',
+            source: 'VOGUE Korea',
             reasoning: '컴팩트하고 또렷한 상체와 비교적 높은 가슴 위치.',
           },
         ],
@@ -232,6 +244,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-winter.png',
             imageAlt: '에스파 윈터 인물 사진',
             sourceUrl: 'https://en.wikipedia.org/wiki/Winter_(singer)',
+            source: 'ELLE Korea',
             reasoning: '부드러운 인상과 가벼운 상체 라인.',
           },
           {
@@ -239,6 +252,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-taylor.png',
             imageAlt: '테일러 스위프트 인물 사진',
             sourceUrl: 'https://en.wikipedia.org/wiki/Taylor_Swift',
+            source: 'GQ',
             reasoning: '가벼운 상체 라인과 얇은 손목.',
           },
         ],
@@ -263,6 +277,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-lisa.png',
             imageAlt: '블랙핑크 리사 인물 사진',
             sourceUrl: 'https://en.wikipedia.org/wiki/Lisa_(rapper)',
+            source: "Lisa's Instagram",
             reasoning: '또렷한 어깨 라인과 길고 가는 팔다리.',
           },
           {
@@ -270,6 +285,7 @@ const personalBodyType: Article = {
             image: '/magazine/personal-body-type/example-kendall.png',
             imageAlt: '켄달 제너 인물 사진',
             sourceUrl: 'https://en.wikipedia.org/wiki/Kendall_Jenner',
+            source: "Harper's BAZAAR",
             reasoning: '큰 키와 길고 시원하게 떨어지는 라인.',
           },
         ],

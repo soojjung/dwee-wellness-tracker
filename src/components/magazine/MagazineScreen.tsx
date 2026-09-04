@@ -6,7 +6,7 @@ import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { listArticles, getArticleContent, type Article } from '@/data/magazine/articles';
 import type { Locale } from '@/types';
-import { BookmarkIcon } from '@/components/ui/icons';
+import { BookmarkStackIcon } from '@/components/ui/icons';
 import { formatPublishedAt } from './formatPublishedAt';
 
 export function MagazineScreen() {
@@ -74,7 +74,9 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
 
   return (
     <section className="relative overflow-hidden pb-2">
-      <div aria-hidden className="pointer-events-none absolute -inset-x-12 -top-12 h-[520px]">
+      {/* Wider than the section so blur-2xl has bleed to sample from; the
+          section's overflow-hidden crops it back. */}
+      <div aria-hidden className="pointer-events-none absolute -inset-x-12 -top-12 bottom-0">
         <Image
           src={activeArticle.cover}
           alt=""
@@ -83,8 +85,14 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
           className="scale-110 object-cover blur-2xl"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-brand-gray50" />
       </div>
+      {/* Sibling of the backdrop, not a child: the fade has to reach the page
+          background exactly at the section's bottom edge, since that is where
+          overflow-hidden cuts the backdrop. An unfinished ramp shows as a seam. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-brand-gray50"
+      />
 
       <header className="relative flex items-center justify-between px-4 pt-3 pb-4">
         <h1 className="text-2xl font-semibold leading-normal text-brand-gray50">
@@ -93,9 +101,9 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
         <Link
           href="/magazine/bookmarks"
           aria-label={t.magazine.bookmark.openAria}
-          className="grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-[1.5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
+          className="grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray50 backdrop-blur-[1.5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
         >
-          <BookmarkIcon filled className="size-6" />
+          <BookmarkStackIcon filled className="size-6" />
         </Link>
       </header>
 

@@ -10,7 +10,7 @@ type: project
 - `docs/flows/calendar.md` — calendar cell-state logic + DayDetailSheet action buttons. Standalone `/calendar` route and `CalendarScreen` were deleted; calendar is now embedded inside `DiaryScreen` (`/log` Diary view). Doc updated to reflect this.
 - `docs/flows/customize.md` — fullscreen customize flow (HomeCustomize + PhotoEdit).
 - `docs/flows/log.md` — /log page flow: PeriodHistorySection (calendar/list toggle) + LogEntryDialog (period + condition combined). Added in period-record-rewrite PR.
-- `docs/flows/diagnose.md` — DiagnoseScreen state machine (picker → preview → loading → result | error) for `/magazine/personal-body-type/diagnose`. Added in M2.0–M2.3 magazine PR.
+- `docs/flows/diagnose.md` — DiagnoseScreen state machine (picker → preview → loading → result | error) for `/magazine/personal-body-type/diagnose`. Added in M2.0–M2.3 magazine PR. Rewritten 2026-09-04 for the picker-flow overhaul (see "Diagnose picker flow" note below). At 164 lines, already over the <150-line preference — don't add more bulk; if it needs to grow further, split result-screen section into its own doc.
 - `docs/flows/settings.md` — MyPage (`/settings`) flow: auth-card variants, CycleSummaryCard, sub-page stub route map, AccountEditScreen anonymous bounce + save logic. Added in feat/my-page.
 - `docs/architecture/data-layer.md` — dependency direction + repository inventory. Must be updated when any new Repository interface is added.
 - `docs/product/mvp1-spec.md` — original product spec with persona, KPI, condition enums.
@@ -18,9 +18,28 @@ type: project
 - `.claude/rules/screens.md` — flow registry (links to all `docs/flows/*.md`). Must be updated when a new flow doc is added.
 - `supabase/README.md` — Supabase migration + adapter guide. Adapter code lives at `src/data/adapters/supabase/` (already moved from `supabase/adapters/`).
 
+## README.md (en) vs README.ko.md — NOT parallel translations
+
+They are structurally different documents, not mirror translations, despite the "always update as a pair" rule:
+- `README.md` (en) — portfolio/case-study style for an engineering audience ("Why I Built This", "Key Design Decisions & Tradeoffs", "Technical Challenges & Learnings"). Stays at a high level of abstraction — mentions features/subsystems, rarely UI-interaction-level detail. One big rolling `**Status:**` paragraph, no per-feature roadmap checklist.
+- `README.ko.md` — traditional project README with a `## 🗺 진행 상태 (Roadmap)` checklist section (`### MVP1`, `### MVP2`, `### 매거진`) that has one dense bullet per shipped feature, often including UI-interaction-level detail (e.g. exactly how the diagnose picker's consent modal is gated).
+- **Sync rule in practice:** when a change is UI-interaction-level (e.g. "consent modal now opens on screen entry instead of on first slot tap"), it usually only requires a README.ko.md roadmap bullet edit — README.md's higher abstraction level often already covers it without change. Don't force a README.md edit just to satisfy "update as a pair" when nothing at its abstraction level actually went stale; verify by grepping README.md for the specific feature/behavior first.
+- Both still must be checked every visit for stage label, feature list, exclusions, tech stack — the "not parallel" note is about internal structure/depth, not about skipping the audit.
+
+## Diagnose picker flow (as of 2026-09-04, magazine-ui-polish PR)
+
+Flow changed significantly from the original M2.0–M2.3 design documented before:
+- **Consent modal now opens automatically on screen entry** (`consent: true` in the initial `Step` state), not gated behind the first slot tap. If the user cancels it and later taps the picker button while still unconsented, it reopens — but only *that* reopen auto-triggers the file picker on agree (the initial auto-open on mount does not).
+- **SlotStrip (front/side/back) is no longer tappable.** It's now a pure photography-guide strip: empty slots show static guide images (`public/magazine/personal-body-type/guide-{front,side,back}.png`), filled slots show the picked preview. Per-slot tap-to-pick and the inline `PlusIcon` were removed entirely.
+- **Photo selection happens only via the bottom "사진 선택" button**, using `<input type=file multiple>`. Picking replaces the whole selection at once, filling front→side→back in order — no more picking/replacing one slot at a time.
+- `onSlot`/`setSlot`/`pendingSlot` were removed from `DiagnoseScreen.tsx`; replaced by `onPhotos`/`setPhotos`/`pickAfterConsent`.
+- Retry after an error (`resetIntro`) no longer resets `consented` to false — a user who already agreed once doesn't see the consent modal again on retry.
+- Loading screen background dim went from `bg-black/[0.15]` to `bg-black/40`; the `stayWarning` copy key was replaced by `resultLocation` (tells the user where to find the result later — MyPage > 나의 테스트 — instead of warning them not to leave).
+- `docs/flows/diagnose.md` state machine, table, and data-flow Mermaid diagram were all rewritten to match. The pre-existing data-flow diagram also had a stale `PNG` export node left over from an earlier PNG-export removal — dropped it while rewriting (the prose already said PNG export was removed but the diagram never caught up; check for this kind of prose/diagram divergence in other flow docs too).
+
 ## Active repositories and schema versions
 
-Period / Condition / Settings / Media / Bookmark / EventCategory / Event / DiarySticker / DiaryStickerPlacement. IndexedDB schema v10 (added `dwee:media:photo_transform:{slot}` keys 0–6). Supabase migrations through 0010 (`home_photos.transform jsonb` column). `data/index.ts` wires IndexedDB or Supabase per auth mode.
+Period / Condition / Settings / Media / Bookmark / EventCategory / Event / DiarySticker / DiaryStickerPlacement. IndexedDB schema v10 (added `dwee:media:photo_transform:{slot}` keys 0–6). Supabase migrations through 0012. `data/index.ts` wires IndexedDB or Supabase per auth mode.
 
 ## pnpm test script (as of refactor/home-customize-flow)
 
@@ -36,12 +55,15 @@ Three route groups now exist: `(auth)`, `(app)`, `(fullscreen)`. The `(fullscree
 - `(app)/magazine/` — list only (no slug sub-route here; article detail moved to fullscreen).
 - `(fullscreen)/magazine/[slug]/` — article fullscreen reader.
 - `(fullscreen)/magazine/bookmarks/` — bookmarked articles list.
-- `(fullscreen)/magazine/personal-body-type/diagnose/` — 3-slot picker (front · side · back). `PhotoPicker.tsx` was deleted; slot inputs are inline in `DiagnoseScreen.tsx`. `Step` type is `intro | loading | error`. `intro` step carries `consent` (modal open) and `consented` (one-time gate cleared) flags. First slot tap without consent opens `ConsentModal`; after agree, file picker opens. Result is a separate route.
-- `(fullscreen)/magazine/personal-body-type/diagnose/result/` — `DiagnoseResultScreen`. Receives report via `sessionStorage` key `REPORT_SESSION_KEY`. `ReportView` renders 2-tab layout: BodyTab (frame paragraphs) and StyleTab (4 clothing cards horizontal scroll). Handles PNG export.
+- `(fullscreen)/magazine/personal-body-type/diagnose/` — see "Diagnose picker flow" note above for current (2026-09-04) behavior.
+- `(fullscreen)/magazine/personal-body-type/diagnose/result/` — `DiagnoseResultScreen`. Receives report via `sessionStorage` key `REPORT_SESSION_KEY`. `ReportView` renders 2-tab layout: BodyTab (frame paragraphs) and StyleTab (4 clothing cards horizontal scroll), with a `sticky top-0` tab bar (IntersectionObserver-driven `stuck` state removes rounding only while pinned; tab switch scrolls back to the sticky-start position). PNG export was removed post-Figma-redesign — do not describe this screen as having a download button.
 - `ArticleCard.tsx` was deleted. Card rendering is now inline in `MagazineScreen`.
-- `src/data/magazine/articles.ts` — 4 articles total: personal-body-type, cycle-phases, cycle-length-35-days, period-supplements. Dates use ISO format (`YYYY-MM-DD`); dot format caused `RangeError`.
+- `src/data/magazine/articles.ts` — 4 articles total: personal-body-type, cycle-phases, cycle-length-35-days, period-supplements. Dates use ISO format (`YYYY-MM-DD`); dot format caused `RangeError`. `ArticleExample` now has an optional `source?: string` (media outlet name, only filled when confirmed from a masthead in the photo — left blank rather than guessed) shown top-right on example images via `magazine.sourcePrefix` i18n key. Distinct from `sourceUrl` (a bio page link, not a photo credit).
 - `supabase/functions/body-type-analyze/` — OpenAI gpt-4o Vision, temperature 0.3. Photo is never stored. Rate-limited to 10 calls/day (`DAILY_LIMIT = 10`, only successful analyses counted) via `supabase/migrations/0003_body_type_calls.sql`. `MAX_ATTEMPTS = 2`: retries once on `analyzable: false` or transient OpenAI failure using a separate retry prompt (`buildRetryUserText`).
 - CLAUDE.md "명시적 제외" ML/AI clause now has server-side LLM exception for explicit-user-trigger cases (magazine diagnose). README must reflect same exception text.
+- Bookmark icon is now split: `BookmarkIcon.tsx` (single ribbon, used on article detail + BookmarksScreen header) vs. `BookmarkStackIcon.tsx` (two overlapping ribbons, used on MagazineScreen list header to represent "the bookmarks collection"). Don't conflate them when documenting bookmark UI.
+- `ArticleScreen.tsx` top bar (back + bookmark) is `fixed` (was `absolute`) so it stays pinned while the article scrolls; bookmark icon color deepened for legibility over the white body background (not just the dark hero).
+- `Button.tsx` exports `BOTTOM_CTA_CLASS` — a shared bottom-CTA padding constant (20px/16px/32px) now used by both the magazine article detail CTA and the diagnose picker's bottom button. Any new bottom-fixed CTA button should reuse this instead of hand-rolling padding.
 
 ## Figma sync scope: home snapshots only
 
