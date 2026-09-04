@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { freezeClock } from './clock';
 
 // Magazine screens have no user-data dependency, but they still live under
 // `(app)/` which AuthGuard protects. We mint an anonymous session so the
@@ -12,6 +13,8 @@ declare global {
 }
 
 async function ensureAnon(page: Page) {
+  // 실행 날짜가 baseline 에 박히지 않도록 첫 navigation 전에 시계를 고정한다.
+  await freezeClock(page);
   await page.addInitScript(() => {
     (window as unknown as { __dweeTestAnon?: boolean }).__dweeTestAnon = true;
   });
