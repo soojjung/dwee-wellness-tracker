@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useT } from '@/i18n/useT';
+import { MyPageBackLink } from './MyPageBackLink';
 import { Toast } from '@/components/ui/Toast';
 
 const SUPPORT_EMAIL = 'sojjung3@gmail.com';
@@ -44,16 +44,10 @@ export function QnaScreen() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-gray50">
+    <div className="flex min-h-dvh flex-col bg-brand-gray200">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-14 items-center px-4">
-          <Link
-            href="/settings"
-            aria-label={t.myPage.qna.backAriaLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
-          >
-            <BackIcon />
-          </Link>
+          <MyPageBackLink ariaLabel={t.myPage.qna.backAriaLabel} />
         </header>
         <main className="px-4">
           <section className="rounded-2xl bg-brand-white px-5 py-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]">
@@ -87,23 +81,6 @@ export function QnaScreen() {
       </div>
       <Toast message={toast} variant="topConfirm" />
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M15 5l-7 7 7 7" />
-    </svg>
   );
 }
 

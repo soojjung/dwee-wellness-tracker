@@ -26,7 +26,7 @@ export function MagazineScreen() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6 pb-24">
       <FeaturedSection articles={featured} locale={locale} />
       {rest.length > 0 ? (
         <BasicList articles={rest} locale={locale} title={t.magazine.moreStoriesTitle} />

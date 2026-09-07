@@ -190,6 +190,16 @@ Master-toggle semantics: turning ON enables all three subs; turning OFF disables
 
 ---
 
+## Sub-page shared shell
+
+All `/settings/*` sub-pages share `bg-brand-gray200`. Legal/support sub-pages (`terms`, `privacy`, `qna`, and the `notices` stub via `SubPagePlaceholder`) additionally wrap their body in a white card (`rounded-2xl bg-brand-white px-5 py-6 shadow-...`) — previously only `qna` had this treatment, the others sat on `bg-brand-gray50` with a bare-background body.
+
+Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackLink.tsx`) instead of a raw `<Link href="/settings">` + inline `BackIcon`. It calls `router.back()` when browser history exists — so `MyPageScreen`'s scroll position survives the round trip — and falls back to pushing `/settings` only when there's no history (a direct deep link). Its icon button uses `bg-brand-gray300`, one shade darker than the page background, so it stays visible against `bg-brand-gray200`.
+
+`MyPageScreen` pairs this with `useScrollRestore('mypage')` (`src/hooks/useScrollRestore.ts`): it saves scroll position to `sessionStorage` and re-applies it frame-by-frame after remount, because store hydration keeps growing the card list after paint — past the point where Next's one-shot popstate scroll restore already ran and gave up.
+
+---
+
 ## Sub-page routes
 
 | Route | Figma | Status |

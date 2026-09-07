@@ -63,3 +63,9 @@ paths:
 - 4개 탭(home/log/magazine/settings). calendar 탭은 없음 — 캘린더는 `/log` Diary 뷰 안에 통합.
 - 탭 추가/삭제는 `BottomTabNav.tsx`의 `TABS` 배열만 수정.
 - 활성 탭 판정: 루트(`/`)는 정확 일치, 그 외는 `startsWith`.
+
+## 9) 탭 화면 하단 여백
+
+- `(app)` 탭 화면이 `BottomTabNav`에 가리지 않도록 두는 하단 여백(`pb-24`)은 **`AppShell`이 아니라 각 화면이 자체 컨테이너에** 둔다.
+- `AppShell`의 `<main>`에 두면 자식 화면의 배경(`bg-...`) 영역 밖이 되어, 화면 하단에 부모(`AppShell`) 배경색 띠가 그대로 노출된다 — 실제 발생했던 버그.
+- Home/Magazine/Diary/MyPage 모두 각자 최상위 컨테이너에 `pb-24`(또는 동등한 값)를 둘 것.
