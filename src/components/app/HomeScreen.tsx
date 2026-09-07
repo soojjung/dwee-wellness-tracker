@@ -142,7 +142,7 @@ export function HomeScreen() {
   const isEmpty = periods.length === 0;
 
   return (
-    <PageContainer className="gap-0 pb-10">
+    <PageContainer className="gap-0 pb-24">
       <HomeHero />
 
       <div className="flex flex-col gap-5 pt-8">

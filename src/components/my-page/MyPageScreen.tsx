@@ -1,5 +1,6 @@
 'use client';
 import { useT } from '@/i18n/useT';
+import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { APP_VERSION } from '@/constants/app';
 import { AuthCard } from './AuthCard';
 import { CycleSummaryCard } from './CycleSummaryCard';
@@ -15,6 +16,8 @@ import { AccountManagementCard } from './AccountManagementCard';
  */
 export function MyPageScreen() {
   const t = useT();
+  // 하위 항목에 들어갔다 나오면 마지막으로 보던 위치로 돌아온다.
+  useScrollRestore('mypage');
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-brand-gray200">

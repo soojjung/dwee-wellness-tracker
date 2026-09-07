@@ -1,6 +1,6 @@
 'use client';
-import Link from 'next/link';
 import { useT } from '@/i18n/useT';
+import { MyPageBackLink } from './MyPageBackLink';
 import { cn } from '@/lib/cn';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Locale } from '@/types';
@@ -29,13 +29,7 @@ export function LanguageSettingsScreen() {
     <div className="flex min-h-dvh flex-col bg-brand-gray200">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-14 items-center bg-brand-gray200 px-4">
-          <Link
-            href="/settings"
-            aria-label={t.myPage.language.backAriaLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
-          >
-            <BackIcon />
-          </Link>
+          <MyPageBackLink ariaLabel={t.myPage.language.backAriaLabel} />
         </header>
 
         <main className="flex flex-1 flex-col gap-2 px-4">
@@ -95,22 +89,5 @@ function RadioIndicator({ selected }: { selected: boolean }) {
         </svg>
       ) : null}
     </span>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M15 5l-7 7 7 7" />
-    </svg>
   );
 }

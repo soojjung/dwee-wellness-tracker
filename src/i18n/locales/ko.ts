@@ -1140,6 +1140,10 @@ export const ko: Dictionary = {
         savingImage: '저장 중...',
         tryAgain: '다른 사진으로 다시하기',
         backToArticle: '글로 돌아가기',
+        shareTest: '친구에게 테스트 공유하기',
+        shareMessage: '내 체형 분석해봤는데, 너도 해봐 👀\n내 체형 1분만에 알아보기!',
+        shareTitle: 'dwee 체형 분석 테스트',
+        linkCopied: '링크를 복사했어요',
       },
       error: {
         title: '체형 분석을 진행할 수 없어요',

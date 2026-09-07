@@ -5,7 +5,8 @@ import type { BodyTypeReport, PrimaryBodyType, StyleSection } from '@/types';
 
 interface ReportViewProps {
   report: BodyTypeReport;
-  onRetry: () => void;
+  /** 상단 고정바가 히어로를 벗어나 카드 위에 놓였는지 — 바 색을 바꾸는 데 쓴다. */
+  onStuckChange?: (stuck: boolean) => void;
 }
 
 const TYPE_IMAGE: Record<PrimaryBodyType, string> = {
@@ -15,10 +16,13 @@ const TYPE_IMAGE: Record<PrimaryBodyType, string> = {
 };
 
 type Tab = 'body' | 'style';
+
+/** DiagnoseResultTopBar 의 높이(pt-3 + size-10 + 여백). 탭바가 그 아래에서 고정된다. */
+const TOP_BAR_HEIGHT = 64;
 type ResultCopy = ReturnType<typeof useT>['magazine']['diagnose']['result'];
 
 export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function ReportView(
-  { report, onRetry },
+  { report, onStuckChange },
   ref,
 ) {
   const t = useT();
@@ -29,17 +33,25 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
   const [stuck, setStuck] = useState(false);
   const type = report.summary.primaryType;
 
-  // 카드 최상단 1px 이 뷰포트를 벗어나면 탭바가 고정된 상태다.
+  // 카드 최상단 1px 이 상단 고정바 아래로 들어가면 탭바가 고정된 상태다.
+  // rootMargin 으로 뷰포트 상단을 바 높이만큼 깎아 기준선을 맞춘다.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[entries.length - 1];
-      if (entry) setStuck(!entry.isIntersecting);
-    });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        if (entry) setStuck(!entry.isIntersecting);
+      },
+      { rootMargin: `-${TOP_BAR_HEIGHT}px 0px 0px 0px` },
+    );
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    onStuckChange?.(stuck);
+  }, [stuck, onStuckChange]);
 
   // 탭바가 고정된 채로 탭을 바꾸면 새 탭 본문의 중간 지점에 떨어진다. 고정이
   // 시작되는 스크롤 위치로 되돌려 탭바는 상단에 둔 채 본문만 처음부터 보이게 한다.
@@ -47,7 +59,7 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
     setTab(next);
     const card = cardRef.current;
     if (!card) return;
-    const stickyStart = card.getBoundingClientRect().top + window.scrollY;
+    const stickyStart = card.getBoundingClientRect().top + window.scrollY - TOP_BAR_HEIGHT;
     if (window.scrollY > stickyStart) window.scrollTo({ top: stickyStart });
   }
 
@@ -62,7 +74,7 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
 
       <div
         ref={cardRef}
-        className="relative z-10 -mt-10 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-14"
+        className="relative z-10 -mt-10 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-[124px]"
       >
         <div ref={sentinelRef} aria-hidden className="absolute inset-x-0 top-0 h-px" />
 
@@ -70,9 +82,10 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
             카드 좌우 패딩까지 덮기 위한 것. 라운딩은 고정 전에만 준다 — 고정
             상태에서 모서리를 깎으면 그 틈으로 본문이 비쳐 보인다. */}
         <div
-          className={`sticky top-0 z-10 -mx-4 bg-brand-gray50 px-4 pb-3 pt-4 ${
+          className={`sticky z-10 -mx-4 bg-brand-gray50 px-4 pb-3 pt-4 ${
             stuck ? '' : 'rounded-t-[40px]'
           }`}
+          style={{ top: TOP_BAR_HEIGHT }}
         >
           <TabPills
             active={tab}
@@ -87,8 +100,6 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
         ) : (
           <StyleTab report={report} r={r} type={type} />
         )}
-
-        <RetryButton label={r.tryAgain} onClick={onRetry} />
       </div>
     </div>
   );
@@ -425,37 +436,4 @@ function Paragraph({ parts }: { parts: readonly string[] }) {
   return <p className="text-base leading-normal text-brand-gray800">{text}</p>;
 }
 
-function RetryButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <div className="flex justify-center pt-2">
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex items-center gap-2 rounded-full border border-brand-gray400 bg-brand-gray50 px-7 py-4 text-base font-medium leading-normal text-brand-gray900 hover:bg-brand-gray100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
-      >
-        <RefreshIcon />
-        {label}
-      </button>
-    </div>
-  );
-}
 
-function RefreshIcon() {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className="size-4"
-    >
-      <path d="M14 8a6 6 0 0 1-10.24 4.24" />
-      <path d="M2 8a6 6 0 0 1 10.24-4.24" />
-      <path d="M11 5H14V2" />
-      <path d="M5 11H2V14" />
-    </svg>
-  );
-}

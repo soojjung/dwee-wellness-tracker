@@ -1,6 +1,6 @@
 'use client';
-import Link from 'next/link';
 import { useT } from '@/i18n/useT';
+import { MyPageBackLink } from './MyPageBackLink';
 
 interface SubPagePlaceholderProps {
   title: string;
@@ -14,16 +14,10 @@ interface SubPagePlaceholderProps {
 export function SubPagePlaceholder({ title }: SubPagePlaceholderProps) {
   const t = useT();
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-gray50">
+    <div className="flex min-h-dvh flex-col bg-brand-gray200">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 bg-brand-gray50 px-4">
-          <Link
-            href="/settings"
-            aria-label={t.myPage.account.closeAriaLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
-          >
-            <BackIcon />
-          </Link>
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 bg-brand-gray200 px-4">
+          <MyPageBackLink ariaLabel={t.myPage.account.closeAriaLabel} />
           <h1 className="text-lg font-semibold leading-6 text-brand-gray900">
             {title}
           </h1>
@@ -35,22 +29,5 @@ export function SubPagePlaceholder({ title }: SubPagePlaceholderProps) {
         </main>
       </div>
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M15 5l-7 7 7 7" />
-    </svg>
   );
 }

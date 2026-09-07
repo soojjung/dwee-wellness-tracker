@@ -236,14 +236,16 @@ src/
 │       └── magazine/
 │           ├── [slug]/           글 상세 (풀스크린)
 │           ├── bookmarks/        북마크 목록
-│           └── personal-body-type/diagnose/  퍼스널 체형 진단 플로우
-│               └── result/       진단 결과 (별도 라우트)
+│           └── personal-body-type/
+│               ├── diagnose/     퍼스널 체형 진단 플로우
+│               │   └── result/   진단 결과 (별도 라우트)
+│               └── share/[type]/ 체형별 OG 공유 랜딩 (사람은 아티클로 리다이렉트)
 │
 ├── components/
 │   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, 카드 등
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
-│   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, ReportView
+│   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, DiagnoseResultTopBar, ReportView, ShareTestBar, ShareLandingRedirect
 │   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DayDetailSheet, AddQuickSheet, EventFormSheet 등
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
@@ -269,7 +271,8 @@ src/
 │
 ├── hooks/                        재사용 커스텀 훅
 │   ├── useBodyScrollLock.ts      모달 오픈 시 body 스크롤 잠금 (count-based, 중첩 OK)
-│   └── useEscToClose.ts          Esc 키로 모달 닫기
+│   ├── useEscToClose.ts          Esc 키로 모달 닫기
+│   └── useScrollRestore.ts       목록 화면 스크롤 위치 세션 보존 (하이드레이션 대비 프레임 재시도)
 ├── i18n/                         ko / en 사전 + useT()
 ├── constants/                    공용 상수 (copy 등)
 ├── dev/                          개발/테스트 전용 시드 헬퍼 (프로덕션 번들 제외)
@@ -334,13 +337,13 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] **MVP2.4 — Diary 스티커 커스터마이즈** — `DiarySticker` (앨범 import + 카메라 촬영 + 1:1/4:3 crop) + `DiaryStickerPlacement` (캘린더 위 drag/resize/rotate/delete). `/log/customize` 풀스크린 라우트. `CameraSheet` (Capacitor Camera), `StickerScanScreen` + `CutoutConfirmScreen` (rembg 누끼 확인 → 저장), `DeleteStickersDialog` (다중 삭제), `DraggableBottomSheet` (2-snap 라이브러리). `DiaryStickerViewLayer`로 다이어리 탭 캘린더 위 배치를 read-only 렌더. 기본 스티커 5개 시드 (`public/stickers/default/`, `ensureDefaultStickersSeeded()`). `CycleChart` y-축 스케일은 `domain/cycle/chartScale.ts` 순수 함수로 분리. Supabase migrations 0008–0009.
 - [x] **MVP2.5 — 계정 관리** — 회원 탈퇴 엔드-투-엔드 구현. `delete-account` Edge Function (media 버킷 재귀 삭제 → `auth.admin.deleteUser`, cascade 로 DB 행 자동 삭제). 탈퇴 흐름을 2단계로 개편: `WithdrawConfirmDialog` (015_9) 확인 → `/settings/withdraw` 의 `WithdrawReasonScreen` (015_10~14) 에서 사유 1개 이상 선택 후 탈퇴. 사유는 `withdrawal_feedbacks` 테이블에 익명(user_id 없음) insert — 삭제 cascade 후에도 잔존하여 분석 가능. 응답 유실 시 세션 재확인으로 하드닝. 마이페이지에서 평균 생리 주기 편집 UI·시드 데이터 주입 UI 제거(도메인 로직·e2e 시드는 유지). Supabase migration 0011.
 - [x] **MVP2.6 — 마이페이지 (MyPage)** — `/settings` 를 Figma 015_1/015_2 기반 MyPage 로 전면 교체. 인증 상태별 AuthCard (비로그인 → /login CTA, 로그인 → 닉네임+이메일 → /settings/account), 주기 요약 카드 (`classifyCycleStatus` 재사용 + 상태 chip), 환경설정·고객지원 카드. 로그아웃은 `LogoutConfirmDialog` (핑크 배지)로 대체 — 확인 후 `appToast` 큐에 메시지 적재 → `router.push('/login')` 즉시 이동 → 백그라운드 `signOut()` 순으로 진행해 빈 화면 대기 없음. `/login` 마운트 시 top-confirm Toast 노출. 언어 설정 화면 (`/settings/language`) 실장 — 2개 라디오 행, 탭 즉시 locale 전환. 계정 편집 화면 (`/settings/account`, fullscreen): 닉네임 수정 → `supabase.auth.updateUser`, 익명 유저 자동 bounce. 서브 라우트 4개(notices/qna/terms/privacy) 스텁 유지. i18n `myPage.*` 서브트리 신설 (`signOutDialog.*`, `signOutToast`, `language.*` 포함); `nav.settings` 레이블 → "My page / 마이페이지".
-- [x] **MVP2.6-polish — 마이페이지 서브 페이지 실장 + 레이아웃 정리** — `MyTestsCard` (나의 테스트: 체형 분석 결과 또는 CTA, sessionStorage 기반) 신설. 알림 설정 화면 (`/settings/notifications`): 마스터 토글 + 3개 항목 토글(생리 예정/생리 지연/가임기) + 3행 휠 피커(알림 시간 0~14일 전); IndexedDB 저장(푸시 인프라 미구현). 법적 문서 실장 (한국 관할): `/settings/terms` (이용약관 제1~15조 + 부칙), `/settings/privacy` (개인정보처리방침 제1~17조 + 부칙); `src/content/legal/` 모듈로 구조화. Q&A 화면(`/settings/qna`): 정적 지원 이메일 + 클립보드 복사 + 상단 토스트. 레이아웃 폴리시: 배경색 `bg-brand-gray200`, 카드 간격 20px, 행 높이 56px, 섹션 제목 `font-semibold`. OG 메타데이터 (`og:title/og:image/og:locale`) 루트 `layout.tsx` 에 추가 — `NEXT_PUBLIC_SITE_URL` 기반. 홈 히어로 기본 이미지 (`public/home/default-hero.jpg`) — 첫 진입 전 회색 플레이스홀더 대체.
+- [x] **MVP2.6-polish — 마이페이지 서브 페이지 실장 + 레이아웃 정리** — `MyTestsCard` (나의 테스트: 체형 분석 결과 또는 CTA, sessionStorage 기반) 신설. 알림 설정 화면 (`/settings/notifications`): 마스터 토글 + 3개 항목 토글(생리 예정/생리 지연/가임기) + 3행 휠 피커(알림 시간 0~14일 전); IndexedDB 저장(푸시 인프라 미구현). 법적 문서 실장 (한국 관할): `/settings/terms` (이용약관 제1~15조 + 부칙), `/settings/privacy` (개인정보처리방침 제1~17조 + 부칙); `src/content/legal/` 모듈로 구조화. Q&A 화면(`/settings/qna`): 정적 지원 이메일 + 클립보드 복사 + 상단 토스트. 레이아웃 폴리시: 배경색 `bg-brand-gray200`, 카드 간격 20px, 행 높이 56px, 섹션 제목 `font-semibold`. OG 메타데이터 (`og:title/og:image/og:locale`) 루트 `layout.tsx` 에 추가 — `NEXT_PUBLIC_SITE_URL` 기반. 홈 히어로 기본 이미지 (`public/home/default-hero.jpg`) — 첫 진입 전 회색 플레이스홀더 대체. 후속 정리: 공지사항/Q&A/약관/개인정보처리방침 배경을 `bg-brand-gray50` → `bg-brand-gray200` 으로 통일하고 약관·개인정보 본문을 Q&A 와 같은 흰 카드로 감쌈; 뒤로가기 버튼은 배경과 구분되도록 `bg-brand-gray300` 으로 조정. 마이페이지 하위 화면 공통 뒤로가기를 `MyPageBackLink` 컴포넌트로 통합(`router.back()` 우선, 딥링크 진입 시에만 `/settings` push)하고 `useScrollRestore` 훅으로 마이페이지 목록 스크롤 위치를 세션 동안 보존. `AppShell` 의 `pb-24` 를 각 탭 화면(Home/Magazine) 자체 여백으로 이동 — 부모 `<main>` 에 두면 자식 배경 밖이라 하단에 회색 띠가 노출되던 버그 수정.
 - [x] **홈 커스터마이즈 개편** — 비파괴 사진 편집: 슬롯마다 `PhotoTransform` 메타데이터 저장, 원본 blob 덮어쓰기 금지. 드래프트 모드: 모든 변경을 draft* 필드에 버퍼링 → 홈 꾸미기의 "편집 완료" 시 `commitPhotoDraft()` 일괄 반영. `picksConfirmed` 게이트: edit-photos 그리드에서 "편집 완료" 탭 후에만 홈 꾸미기의 "편집 완료" 활성. 슬롯별 사진 삭제(× 버튼). `DiscardDraftDialog` (dirty 뒤로가기). `TransformedPhoto` 공유 렌더 컴포넌트. 텍스트 커스터마이즈 일시 비활성. `CustomizeDraftGuard` 레이아웃 래퍼: 브라우저 뒤로가기·탭 닫기 등 모든 종료 경로에서 잔여 드래프트 자동 정리 (이전에는 누수 발생). IndexedDB schema v10; Supabase migration 0010.
 - [ ] MVP2.7~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 
 ### 매거진 (MVP 병행)
 
 - [x] **M2.0 — 인프라** — 매거진 라우트 (`/magazine` 목록), ArticleScreen/ArticleSectionView, 글 데이터 모듈 (`src/data/magazine/articles.ts`)
-- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen (인트로: 진입 즉시 AI 이용안내 동의 모달 + 탭 불가 촬영 가이드 3슬롯 + 하단 "사진 선택" 버튼 다중 선택(앞→옆→뒤) → loading → result 라우트 | error), 결과 화면 분리 (`/diagnose/result`, DiagnoseResultScreen — 체형·스타일 가이드 2탭, 탭바 sticky), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 10회 rate limit, 자동 1회 재시도). 진단 플로우 강화: 요청별 `AbortController`로 in-flight 취소 지원, loading 중 `beforeunload` 경고, `mountedRef`로 React StrictMode 더블마운트 방지. Edge Function 프롬프트에 체형별 참조 블록 추가(keyTraits 5개). PNG 리포트 내보내기 기능은 Figma 재설계 후 결과 화면에서 제거됨.
+- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen (인트로: 진입 즉시 AI 이용안내 동의 모달 + 탭 불가 촬영 가이드 3슬롯 + 하단 "사진 선택" 버튼 다중 선택(앞→옆→뒤) → loading → result 라우트 | error), 결과 화면 분리 (`/diagnose/result`, DiagnoseResultScreen — 체형·스타일 가이드 2탭, 탭바 sticky), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 10회 rate limit, 자동 1회 재시도). 진단 플로우 강화: 요청별 `AbortController`로 in-flight 취소 지원, loading 중 `beforeunload` 경고, `mountedRef`로 React StrictMode 더블마운트 방지. Edge Function 프롬프트에 체형별 참조 블록 추가(keyTraits 5개). PNG 리포트 내보내기 기능은 Figma 재설계 후 결과 화면에서 제거됨. 결과 화면 상/하단 개편: `DiagnoseResultTopBar` 상단 고정바(뒤로가기 + 다시하기, 카드 sticky 탭바가 아래로 지나가면 배경 전환)가 기존 절대배치 뒤로가기 버튼을 대체하고 다시하기 동작도 화면 하단에서 여기로 이동; 하단엔 `ShareTestBar` 고정 바가 `navigator.share` 또는 클립보드 복사 폴백으로 테스트를 공유. 공유 링크는 아티클이 아니라 체형별 정적 라우트 `/magazine/personal-body-type/share/[type]` (`generateStaticParams` 3종) — `output: 'export'` 라 쿼리스트링으로 `og:image` 를 바꿀 수 없어 타입별 실제 경로가 필요했음; 사람이 열면 `ShareLandingRedirect` 가 즉시 아티클로 리다이렉트하고 크롤러만 메타를 읽음.
 - [x] **M2.2 — 추가 매거진 글 + 북마크** — 아티클 3편 추가 (cycle-phases, cycle-length-35-days, period-supplements), BookmarkRepository/IndexedDBBookmarkAdapter/bookmarkStore, BookmarksScreen (`/magazine/bookmarks`), 글 상세 풀스크린 이동 (`/magazine/[slug]`)
 - [ ] M2.3~ — 추가 진단 종류 확장 / 매거진 콘텐츠 운영
