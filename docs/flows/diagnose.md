@@ -85,7 +85,45 @@ stateDiagram-v2
 | **체형 탭** (BodyTab) | "핵심 특징" 섹션 (이모지 불릿 keyTraits 5개 + 해시태그 chips) + 5개 단락 (골격 / 살성 / 라인 / 비율 / 시각적 무게중심) |
 | **스타일 가이드 탭** (StyleTab) | 체형별 정적 요약 블록 (quote + 포인트 3줄 + 해시태그 3개, `styleSummary.*` i18n 키) + 의류 카드 4장 (tops · bottoms · dresses · outerwear) + 스타일 카드 2장 (materials · fit) + 디테일 2×2 그리드 (neckline · sleeves · waistDetail · length) |
 
-상단 Hero 영역은 어두운 배경(`brand-gray900`) + 우측에 크롭/줌된 컷아웃 초상 이미지(`straight-cutout.png` / `wave-cutout.png` / `natural-cutout.png`) + 체형명·typeSubtitle·keyTrait 첫 줄. 다시하기 pill 은 `ReportView` 내부에 배치됩니다. (다운로드 버튼은 Figma 재설계에서 제거됨.)
+상단 Hero 영역은 어두운 배경(`brand-gray900`) + 우측에 크롭/줌된 컷아웃 초상 이미지(`straight-cutout.png` / `wave-cutout.png` / `natural-cutout.png`) + 체형명·typeSubtitle·keyTrait 첫 줄. (다운로드 버튼은 Figma 재설계에서 제거됨.)
+
+상단은 `DiagnoseResultTopBar` 가 `fixed` 로 고정되어 왼쪽 뒤로가기 + 오른쪽 "다른 사진으로 다시하기"를 스크롤과 무관하게 항상 노출합니다(재시도 동작이 화면 하단에서 이 바로 이동). 히어로 위에선 반투명 원 + 밝은 아이콘, `ReportView` 의 sticky 탭바가 카드 위로 올라와 바와 겹치는 시점(`stuck`)부터는 `bg-brand-gray50` + 어두운 아이콘으로 전환합니다. `ReportView` 의 탭바는 이 바 높이(`TOP_BAR_HEIGHT = 64`)만큼 아래에서 고정되며, stuck 판정에 쓰는 `IntersectionObserver` 의 `rootMargin` 도 같은 값으로 맞춰 두 컴포넌트의 전환 시점을 정렬합니다. `ReportView` 는 `onStuckChange` 콜백으로 부모(`DiagnoseResultScreen`)에 stuck 상태를 알립니다.
+
+화면 하단은 `ShareTestBar` 가 고정 바로 깔립니다 (`bg-brand-gray900` + `text-brand-pink100`). `navigator.share` 가 있으면 네이티브 공유 시트를, 없으면 링크를 클립보드에 복사하고 토스트를 띄웁니다(`QnaScreen` 의 기존 복사 폴백과 동일 패턴). 공유 시트를 사용자가 취소한 경우는 복사하지 않고 조용히 종료합니다.
+
+---
+
+## 공유 (Share)
+
+`ShareTestBar` 가 공유하는 링크는 아티클이 아니라 `/magazine/personal-body-type/share/[type]` (`straight` / `wave` / `natural`) 라우트입니다. 이유: **`next.config` 의 `output: 'export'`(정적 내보내기)에서는 쿼리스트링으로 OG 메타를 바꿀 수 없어서**, 체형별 공유 카드가 필요하면 타입마다 실제 경로가 있어야 합니다. 같은 제약이 앞으로 "결과별 공유 카드"가 필요한 다른 기능(예: 다른 진단 종류)에서도 재발할 수 있습니다.
+
+- `generateStaticParams` 로 3개 타입을 프리렌더, `generateMetadata` 로 타입별 `og:image`(`og-{type}.png`, 1200×630 · `public/magazine/personal-body-type/`)·title·description 을 부여합니다.
+- OG 카드 이미지가 한국어로 제작되어 있어 이 라우트의 메타는 `locale: 'ko_KR'` 로 고정합니다 (루트 `layout.tsx` 의 앱 공용 OG 는 en — 이 라우트만 예외).
+- 사람이 직접 링크를 열면 `ShareLandingRedirect` 가 즉시 `/magazine/personal-body-type` 로 `router.replace` 합니다 — 크롤러는 메타 태그만 읽고 가므로, 실제 콘텐츠(체형 소개)는 계속 아티클에만 존재합니다. JS 가 죽은 경우를 위한 링크도 함께 둡니다.
+
+```mermaid
+flowchart LR
+    Result(["ReportView\n결과 화면"])
+    Bar["ShareTestBar"]
+    Native{{"navigator.share"}}
+    Copy["클립보드 복사 + 토스트"]
+    Share["share/[type]\nOG 메타 전용 라우트"]
+    Article(["매거진 아티클\n(사람이 도착하는 곳)"])
+
+    Result --> Bar
+    Bar -->|"지원 시"| Native
+    Bar -->|"미지원 시"| Copy
+    Native -->|"공유 URL"| Share
+    Copy -->|"복사되는 URL"| Share
+    Share -->|"router.replace"| Article
+
+    classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
+    classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+    classDef ext fill:#E8FDE8,stroke:#A8E5BD,color:#3A5C3A;
+    class Result,Article ui;
+    class Bar,Copy,Share logic;
+    class Native ext;
+```
 
 ---
 
@@ -150,8 +188,13 @@ flowchart TD
 ## 관련 파일·문서
 
 - `src/components/diagnose/DiagnoseScreen.tsx` — 상태 머신 (intro / consent_modal / loading / error) + SlotStrip(가이드 전용, 탭 불가) + ConsentModal + GuideSection. 하단 CTA 는 `Button.tsx` 의 `BOTTOM_CTA_CLASS` 공유.
-- `src/components/diagnose/DiagnoseResultScreen.tsx` — 결과 라우트 화면 (sessionStorage 수신, Figma 재설계 후 다운로드 버튼 제거)
-- `src/components/diagnose/ReportView.tsx` — 2탭 결과 렌더 (Hero · BodyTab · StyleTab)
+- `src/components/diagnose/DiagnoseResultScreen.tsx` — 결과 라우트 화면 (sessionStorage 수신, Figma 재설계 후 다운로드 버튼 제거, 상/하단 고정바 조립)
+- `src/components/diagnose/DiagnoseResultTopBar.tsx` — 상단 고정바 (뒤로가기 + 다시하기, stuck 시 배경 전환)
+- `src/components/diagnose/ReportView.tsx` — 2탭 결과 렌더 (Hero · BodyTab · StyleTab), sticky 탭바 stuck 상태를 `onStuckChange` 로 부모에 전달
+- `src/components/diagnose/ShareTestBar.tsx` — 하단 고정 공유 바 (네이티브 공유 시트 / 클립보드 복사 폴백)
+- `src/components/diagnose/ShareLandingRedirect.tsx` — 공유 라우트 진입 시 아티클로 즉시 리다이렉트
+- `src/app/(fullscreen)/magazine/personal-body-type/share/[type]/page.tsx` — 체형별 OG 메타 전용 정적 라우트 (`generateStaticParams` + `generateMetadata`)
+- `public/magazine/personal-body-type/og-{straight,wave,natural}.png` — 공유 카드 OG 이미지 (1200×630)
 - `src/data/services/bodyTypeService.ts` — Edge Function 호출 + 익명 세션 보장 + `AbortSignal` pass-through
 - `src/lib/image/fileToBase64.ts` — File → base64 + 미디어 타입 검증
 - `src/types/bodyType.ts` — `BodyTypeReport`, `PrimaryBodyType`, `BodyTypeAnalyzeError`

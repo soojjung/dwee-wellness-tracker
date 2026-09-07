@@ -1145,6 +1145,11 @@ export const en = {
         savingImage: 'Saving...',
         tryAgain: 'Try another photo',
         backToArticle: 'Back to article',
+        shareTest: 'Share the test with a friend',
+        shareMessage:
+          'I just found my body type — you should try it too 👀\nFind yours in 1 minute!',
+        shareTitle: 'dwee Body Type Test',
+        linkCopied: 'Link copied',
       },
       error: {
         title: "We can't run the body-type reading",

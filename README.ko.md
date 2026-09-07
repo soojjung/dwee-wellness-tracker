@@ -236,14 +236,16 @@ src/
 │       └── magazine/
 │           ├── [slug]/           글 상세 (풀스크린)
 │           ├── bookmarks/        북마크 목록
-│           └── personal-body-type/diagnose/  퍼스널 체형 진단 플로우
-│               └── result/       진단 결과 (별도 라우트)
+│           └── personal-body-type/
+│               ├── diagnose/     퍼스널 체형 진단 플로우
+│               │   └── result/   진단 결과 (별도 라우트)
+│               └── share/[type]/ 체형별 OG 공유 랜딩 (사람은 아티클로 리다이렉트)
 │
 ├── components/
 │   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, 카드 등
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
-│   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, ReportView
+│   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), DiagnoseResultScreen, DiagnoseResultTopBar, ReportView, ShareTestBar, ShareLandingRedirect
 │   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DayDetailSheet, AddQuickSheet, EventFormSheet 등
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
@@ -342,6 +344,6 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 ### 매거진 (MVP 병행)
 
 - [x] **M2.0 — 인프라** — 매거진 라우트 (`/magazine` 목록), ArticleScreen/ArticleSectionView, 글 데이터 모듈 (`src/data/magazine/articles.ts`)
-- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen (인트로: 진입 즉시 AI 이용안내 동의 모달 + 탭 불가 촬영 가이드 3슬롯 + 하단 "사진 선택" 버튼 다중 선택(앞→옆→뒤) → loading → result 라우트 | error), 결과 화면 분리 (`/diagnose/result`, DiagnoseResultScreen — 체형·스타일 가이드 2탭, 탭바 sticky), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 10회 rate limit, 자동 1회 재시도). 진단 플로우 강화: 요청별 `AbortController`로 in-flight 취소 지원, loading 중 `beforeunload` 경고, `mountedRef`로 React StrictMode 더블마운트 방지. Edge Function 프롬프트에 체형별 참조 블록 추가(keyTraits 5개). PNG 리포트 내보내기 기능은 Figma 재설계 후 결과 화면에서 제거됨.
+- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen (인트로: 진입 즉시 AI 이용안내 동의 모달 + 탭 불가 촬영 가이드 3슬롯 + 하단 "사진 선택" 버튼 다중 선택(앞→옆→뒤) → loading → result 라우트 | error), 결과 화면 분리 (`/diagnose/result`, DiagnoseResultScreen — 체형·스타일 가이드 2탭, 탭바 sticky), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 10회 rate limit, 자동 1회 재시도). 진단 플로우 강화: 요청별 `AbortController`로 in-flight 취소 지원, loading 중 `beforeunload` 경고, `mountedRef`로 React StrictMode 더블마운트 방지. Edge Function 프롬프트에 체형별 참조 블록 추가(keyTraits 5개). PNG 리포트 내보내기 기능은 Figma 재설계 후 결과 화면에서 제거됨. 결과 화면 상/하단 개편: `DiagnoseResultTopBar` 상단 고정바(뒤로가기 + 다시하기, 카드 sticky 탭바가 아래로 지나가면 배경 전환)가 기존 절대배치 뒤로가기 버튼을 대체하고 다시하기 동작도 화면 하단에서 여기로 이동; 하단엔 `ShareTestBar` 고정 바가 `navigator.share` 또는 클립보드 복사 폴백으로 테스트를 공유. 공유 링크는 아티클이 아니라 체형별 정적 라우트 `/magazine/personal-body-type/share/[type]` (`generateStaticParams` 3종) — `output: 'export'` 라 쿼리스트링으로 `og:image` 를 바꿀 수 없어 타입별 실제 경로가 필요했음; 사람이 열면 `ShareLandingRedirect` 가 즉시 아티클로 리다이렉트하고 크롤러만 메타를 읽음.
 - [x] **M2.2 — 추가 매거진 글 + 북마크** — 아티클 3편 추가 (cycle-phases, cycle-length-35-days, period-supplements), BookmarkRepository/IndexedDBBookmarkAdapter/bookmarkStore, BookmarksScreen (`/magazine/bookmarks`), 글 상세 풀스크린 이동 (`/magazine/[slug]`)
 - [ ] M2.3~ — 추가 진단 종류 확장 / 매거진 콘텐츠 운영
