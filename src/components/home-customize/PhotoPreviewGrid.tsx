@@ -10,10 +10,14 @@ interface PhotoPreviewGridProps {
 }
 
 export function PhotoPreviewGrid({ count, urls, transforms }: PhotoPreviewGridProps) {
+  const allFilled = Array.from({ length: count }, (_, i) => urls[i]).every(Boolean);
+  // 빈 칸이 남아 있을 때만 칸을 나눠 보여준다 — 다 채우면 홈과 같은 모습이 된다.
+  const gridLines = allFilled ? '' : 'gap-px bg-brand-gray400';
   const wrapperClass = cn(
     'grid h-full w-full',
-    count === 2 && 'grid-rows-2 gap-px bg-brand-gray400',
-    count === 4 && 'grid-cols-2 grid-rows-2 gap-px bg-brand-gray400',
+    count === 2 && 'grid-rows-2',
+    count === 4 && 'grid-cols-2 grid-rows-2',
+    count !== 1 && gridLines,
   );
 
   return (

@@ -1,0 +1,1 @@
+- [home.foods Figma swap (2026-09-08)](project_home_foods_figma_swap.md) — 주기당 4개 카테고리→5개 구체 식품명 전면 교체, id 목록 및 FoodSuggestions.tsx slice(0,4)/foodVisual 매핑 후속 작업 필요성 메모

@@ -66,7 +66,7 @@ function Slot({
   slotAriaLabel,
   selectedAriaLabel,
 }: SlotProps) {
-  if (!url) return <div aria-hidden />;
+  if (!url) return <div className="bg-brand-gray300" aria-hidden />;
   const ring = isSelected ? 'ring-2 ring-inset ring-brand-pink200' : '';
 
   if (!onClick) {
