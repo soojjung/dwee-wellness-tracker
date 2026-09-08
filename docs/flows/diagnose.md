@@ -4,7 +4,7 @@
 
 `(fullscreen)` 라우트 그룹에 속합니다 — AppShell·BottomTabNav 없음. 사용자가 직접 진단을 시작할 때만 진입하는 몰입형 플로우입니다.
 
-결과 화면은 별도 라우트 `/magazine/personal-body-type/diagnose/result` (= `DiagnoseResultScreen`)로 분리되어 있으며, `sessionStorage` 키 `REPORT_SESSION_KEY` 로 리포트를 전달받습니다.
+결과 화면은 별도 라우트 `/magazine/personal-body-type/diagnose/result` (= `DiagnoseResultScreen`)로 분리되어 있으며, `bodyTypeReportStore` (→ `BodyTypeReportRepository`, IndexedDB/Supabase) 에서 결과를 읽어옵니다. 원래는 `sessionStorage` 에만 뒀지만 앱을 껐다 켜면 사라지는 문제가 있어 Repository 로 이관했습니다 — 상세는 [결과 보관](#결과-보관) 참고.
 
 ---
 
@@ -17,9 +17,12 @@ type Slot = 'front' | 'side' | 'back'
 
 type Step =
   | { kind: 'intro'; photos: Partial<Record<Slot, Photo>>; consent: boolean; consented: boolean }
+  | { kind: 'preview'; photos: Partial<Record<Slot, Photo>> }
   | { kind: 'loading'; blurUrl: string }
   | { kind: 'error'; code: BodyTypeAnalyzeError }
 ```
+
+사진을 고르면 바로 분석하지 않고 `preview` 단계로 먼저 넘어갑니다 — 예전엔 고른 사진이 안내 화면의 작은 슬롯 자리에 들어가 확인이 어려웠기 때문입니다. `preview` 는 `intro` 와 별개 화면(`PhotoPreviewView`)이며, [사진 변경하기]는 사진만 다시 고르고(`preview` 유지), 뒤로가기는 `intro` 로 돌아갑니다(이미 받은 동의는 유지).
 
 Two refs guard against stale closures and React StrictMode's double-mount:
 
@@ -34,14 +37,24 @@ stateDiagram-v2
     consent_modal --> intro : 취소 ("사진 선택" 재탭 시 다시 열림)
     consent_modal --> intro : 동의 (consented=true)
 
-    intro --> intro : "사진 선택" 버튼 → 파일 다중 선택 (앞→옆→뒤 순서로 채움)
+    intro --> preview : "사진 선택" 버튼 → 다중 선택 (앞→옆→뒤 순서로 채움)
     intro --> consent_modal : "사진 선택" 탭 (여전히 미동의 상태)
-    intro --> loading : front 슬롯 채워진 상태에서 분석 시작
 
-    loading --> result_page : 분석 성공 → sessionStorage 저장 후 result 라우트로 이동
+    preview --> intro : 뒤로가기 (사진 버림, 동의는 유지)
+    preview --> preview : "사진 변경하기" → 다시 선택
+    preview --> loading : "체형 진단 시작하기"
+
+    loading --> result_page : 분석 성공 → Repository 저장 후 result 라우트로 이동
     loading --> error : 네트워크/API 오류 또는 no_body_detected
 
     error --> intro : 재시도
+
+    note right of preview
+        네이티브(Capacitor): Camera.pickImages
+        로 OS 앨범 바로 열기
+        웹: input[type=file] 폴백
+        (useBodyPhotoPicker)
+    end note
 
     note right of loading
         front 사진 fileToBase64 → analyzeBodyType
@@ -52,6 +65,8 @@ stateDiagram-v2
     note right of result_page
         /magazine/personal-body-type/diagnose/result
         (DiagnoseResultScreen · 2탭: 체형 / 스타일 가이드)
+        bodyTypeReportStore 가 BodyTypeReportRepository
+        에서 결과를 읽음 (IndexedDB/Supabase)
     end note
 ```
 
@@ -61,13 +76,14 @@ stateDiagram-v2
 
 | 단계 | 표시 내용 | 전환 조건 |
 |------|-----------|-----------|
-| **intro** | 제목·부제 + SlotStrip 3개 (front · side · back, 탭 불가 촬영 가이드) + 촬영 가이드 섹션 + 업로드 방법 섹션 + 잔여 횟수 | 화면 진입 즉시 (미동의 시) → ConsentModal 자동 표시 / 하단 "사진 선택" 버튼 탭 → (동의 상태면) 파일 picker, (미동의 상태면) ConsentModal 재표시 / front 채운 뒤 분석 버튼 → loading |
-| **consent_modal** | 개인정보 고지 모달 (backdrop 클릭·취소 → 닫힘 / 동의 → 닫힘) | 화면 진입 시 자동 오픈 — 동의해도 이때는 파일 picker 를 열지 않음. "사진 선택" 버튼 탭으로 재오픈된 경우에만 동의 즉시 파일 picker 트리거 |
+| **intro** | 제목·부제 + SlotStrip 3개 (front · side · back, 탭 불가 촬영 가이드) + 촬영 가이드 섹션 + 업로드 방법 섹션 + 잔여 횟수 | 화면 진입 즉시 (미동의 시) → ConsentModal 자동 표시 / 하단 "사진 선택" 버튼 탭 → (동의 상태면) 사진 picker, (미동의 상태면) ConsentModal 재표시 / 사진을 고르면 → preview |
+| **consent_modal** | 개인정보 고지 모달 (backdrop 클릭·취소 → 닫힘 / 동의 → 닫힘) | 화면 진입 시 자동 오픈 — 동의해도 이때는 picker 를 열지 않음. "사진 선택" 버튼 탭으로 재오픈된 경우에만 동의 즉시 picker 트리거 |
+| **preview** | 고른 사진을 가로 스와이프로 크게 확인 (`PhotoPreviewView`) + [사진 변경하기] + 하단 고정 [체형 진단 시작하기] | [사진 변경하기] → picker 재오픈 (preview 유지) / 뒤로가기 → intro (사진 버림) / [체형 진단 시작하기] → loading |
 | **loading** | front 사진 blur 15px + dim 40% 배경 + 원형 진행 표시 + 진행률 % + 결과를 어디서 확인하는지 안내하는 `magazine.diagnose.loading.resultLocation` 문구 | Edge Function 응답 → result 라우트 또는 error |
 | **error** | `AlertCircleIcon` + 에러 제목·메시지 + pink pill 재시도 버튼 | 재시도 → intro 초기화 (이미 동의한 상태이므로 ConsentModal 재표시 없음) |
 
 - SlotStrip 은 탭할 수 없는 촬영 가이드 띠입니다. 사진이 없는 슬롯엔 정적 가이드 이미지(`guide-front/side/back.png`)를, 선택된 슬롯엔 실제 미리보기를 보여줍니다.
-- 사진 선택은 하단 "사진 선택" 버튼 한 곳에서만 일어납니다. `<input multiple>` 로 여러 장을 한 번에 골라 앞→옆→뒤 순서로 채우며, 매 선택마다 이전 선택을 통째로 대체합니다(슬롯별 개별 교체 불가).
+- 사진 선택은 하단 "사진 선택" 버튼(intro) 또는 "사진 변경하기"(preview) 한 곳에서만 일어나며, 공용 로직은 `useBodyPhotoPicker` 훅입니다. 네이티브(Capacitor)에서는 `Camera.pickImages` 로 OS 앨범을 바로 열고(홈 꾸미기 사진 피커와 동일 패턴), 웹에는 앨범을 직접 여는 API 가 없어 `<input type="file" multiple>` 로 떨어집니다 — 그때 뜨는 다이얼로그는 브라우저가 정합니다. 한 번에 여러 장을 골라 앞→옆→뒤 순서로 채우며, 매 선택마다 이전 선택을 통째로 대체합니다(슬롯별 개별 교체 불가).
 - 분석에는 `front` 슬롯 사진만 사용됩니다. `side`, `back` 슬롯은 UX 안내 목적.
 - `loading` 단계에서는 뒤로가기 링크가 숨겨집니다 (Edge Function 호출 중 이탈 방지). `beforeunload` 이벤트 리스너도 등록되어 탭 닫기 / 페이지 새로고침 시 브라우저 확인 다이얼로그를 표시합니다.
 - 컴포넌트 언마운트(뒤로가기 포함) 또는 재시도 탭 시 현재 in-flight 요청이 `AbortController.abort()`로 취소됩니다. 취소된 요청은 `{ ok: false, error: 'aborted' }` 로 반환되며 화면 상태에 반영하지 않습니다.
@@ -77,6 +93,14 @@ stateDiagram-v2
 ---
 
 ## 결과 화면 (DiagnoseResultScreen + ReportView)
+
+### 결과 보관
+
+분석에 성공하면 `useBodyTypeReportStore.getState().save(report)` 가 먼저 메모리에 반영하고(즉시 result 라우트로 이동), 이어서 `BodyTypeReportRepository` (IndexedDB/Supabase) 에 저장합니다. 원래는 `sessionStorage` 에만 뒀지만 앱을 껐다 켜면 사라지는 문제가 있어 Repository 로 이관했습니다 (Supabase migration `0013_body_type_reports.sql`, 사용자당 1행 jsonb). 로그인 사용자는 다른 기기에서도 같은 결과를 보고, 마이페이지 `MyTestsCard` 도 이 저장소를 읽어 "결과" 행을 띄웁니다. 결과를 지우는 유일한 방법은 결과 화면의 [다른 사진으로 다시하기]뿐입니다.
+
+- 익명 상태에서 진단한 뒤 로그인하면 `anonToRemote` 마이그레이션이 로컬 결과를 한 번 원격으로 올립니다(원격에 이미 있으면 덮어쓰지 않음).
+- `bodyTypeReportStore` 는 `rehydrateAll` 대상에 포함되어 로그인/로그아웃 등 repo mode 전환 시 다시 읽습니다.
+- 이 기능이 원래 브라우저 저장소(local/sessionStorage)에만 결과를 두던 시절의 값은 최초 hydrate 시 한 번 읽어 Repository 로 올리고 지웁니다 (`src/data/bodyTypeReportStorage.ts`, 키는 `DEPRECATED_KEYS.bodyTypeReportBrowser`).
 
 결과는 2탭으로 구성됩니다.
 
@@ -154,32 +178,37 @@ Edge Function 은 `analyzable: false` 또는 일시적 OpenAI 실패(`openai_fai
 ```mermaid
 flowchart TD
     Consent(["ConsentModal\n화면 진입 시 자동 오픈"])
-    Picker(["SlotStrip\nfront · side · back\n(탭 불가, 가이드 이미지)"])
-    Button(["#quot;사진 선택#quot; 버튼\n다중 선택"])
+    Button(["#quot;사진 선택#quot; 버튼"])
+    Picker["useBodyPhotoPicker\n네이티브: Camera.pickImages\n웹: input[type=file]"]
+    Preview(["PhotoPreviewView\n미리보기"])
     Base64["fileToBase64"]
     Service["bodyTypeService.analyzeBodyType"]
     EdgeFn[("Supabase\nEdge Function\n일 10회 rate limit")]
     OpenAI{{"OpenAI\ngpt-4o Vision\n최대 2회 시도"}}
     Report(["ReportView\n체형 탭 / 스타일 가이드 탭"])
+    Repo[("BodyTypeReportRepository\nIndexedDB/Supabase")]
 
-    Consent -->|"동의"| Picker
-    Picker --> Button
     Button -->|"미동의 상태면"| Consent
-    Button -->|"동의 상태면 파일 다중 선택"| Base64
+    Button -->|"동의 상태면"| Picker
+    Consent -->|"동의"| Picker
+    Picker -->|"사진 선택 완료"| Preview
+    Preview -->|"#quot;사진 변경하기#quot;"| Picker
+    Preview -->|"#quot;체형 진단 시작하기#quot;"| Base64
     Base64 -->|"front 이미지만 base64로"| Service
     Service -->|"invoke"| EdgeFn
     EdgeFn -->|"API call"| OpenAI
     OpenAI -->|"BodyTypeReport JSON"| EdgeFn
     EdgeFn -->|"result"| Service
     Service -->|"report"| Report
+    Report -->|"save"| Repo
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
     classDef store fill:#F0E8FD,stroke:#BDA8E5,color:#4A3A5C;
     classDef ext fill:#E8FDE8,stroke:#A8E5BD,color:#3A5C3A;
-    class Consent,Picker,Button,Report ui;
-    class Base64,Service logic;
-    class EdgeFn store;
+    class Consent,Button,Preview,Report ui;
+    class Picker,Base64,Service logic;
+    class EdgeFn,Repo store;
     class OpenAI ext;
 ```
 
@@ -187,9 +216,16 @@ flowchart TD
 
 ## 관련 파일·문서
 
-- `src/components/diagnose/DiagnoseScreen.tsx` — 상태 머신 (intro / consent_modal / loading / error) + SlotStrip(가이드 전용, 탭 불가) + ConsentModal + GuideSection. 하단 CTA 는 `Button.tsx` 의 `BOTTOM_CTA_CLASS` 공유.
-- `src/components/diagnose/DiagnoseResultScreen.tsx` — 결과 라우트 화면 (sessionStorage 수신, Figma 재설계 후 다운로드 버튼 제거, 상/하단 고정바 조립)
+- `src/components/diagnose/DiagnoseScreen.tsx` — 상태 머신 (intro / preview / consent_modal / loading / error) + SlotStrip(가이드 전용, 탭 불가) + ConsentModal + GuideSection. 하단 CTA 는 `Button.tsx` 의 `BOTTOM_CTA_CLASS` 공유.
+- `src/components/diagnose/PhotoPreviewView.tsx` — 사진 선택 직후 전체화면 미리보기 (가로 스와이프, [사진 변경하기] / [체형 진단 시작하기])
+- `src/components/diagnose/useBodyPhotoPicker.tsx` — 사진 선택 훅. 네이티브(Capacitor)는 `Camera.pickImages` 로 OS 앨범 직접 오픈, 웹은 `<input type="file">` 폴백
+- `src/components/diagnose/DiagnoseResultScreen.tsx` — 결과 라우트 화면 (`bodyTypeReportStore` hydrate, Figma 재설계 후 다운로드 버튼 제거, 상/하단 고정바 조립)
 - `src/components/diagnose/DiagnoseResultTopBar.tsx` — 상단 고정바 (뒤로가기 + 다시하기, stuck 시 배경 전환)
+- `src/store/bodyTypeReportStore.ts` — 결과 보관 store (hydrate/rehydrate/save/clear), 레거시 브라우저 저장값 1회 승격
+- `src/data/repositories/BodyTypeReportRepository.ts` — `get()/save()/clear()`, 사용자당 결과 1건
+- `src/data/adapters/indexeddb/IndexedDBBodyTypeReportAdapter.ts`, `src/data/adapters/supabase/SupabaseBodyTypeReportAdapter.ts` — 로컬/원격 구현
+- `src/data/bodyTypeReportStorage.ts` — 레거시 local/sessionStorage 결과를 Repository 로 1회 승격 후 삭제 (`DEPRECATED_KEYS.bodyTypeReportBrowser`)
+- `supabase/migrations/0013_body_type_reports.sql` — `body_type_reports` 테이블 (user_id PK 1행, report jsonb, RLS 익명 차단)
 - `src/components/diagnose/ReportView.tsx` — 2탭 결과 렌더 (Hero · BodyTab · StyleTab), sticky 탭바 stuck 상태를 `onStuckChange` 로 부모에 전달
 - `src/components/diagnose/ShareTestBar.tsx` — 하단 고정 공유 바 (네이티브 공유 시트 / 클립보드 복사 폴백)
 - `src/components/diagnose/ShareLandingRedirect.tsx` — 공유 라우트 진입 시 아티클로 즉시 리다이렉트

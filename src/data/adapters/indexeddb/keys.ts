@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
   diaryStickers: 'dwee:diary:stickers',
   diaryStickerBlob: (id: string) => `dwee:diary:sticker_blob:${id}` as const,
   diaryStickerPlacements: 'dwee:diary:sticker_placements',
+  bodyTypeReport: 'dwee:body_type_report',
   // Device-scoped flag: true once we've attempted to seed the built-in
   // sticker set into the user's library. Prevents re-seeding after the
   // user manually deletes any of the defaults.
@@ -50,6 +51,10 @@ export const ALL_MEDIA_TEXT_KEYS = [
 export const DEPRECATED_KEYS = {
   mediaHomeOverlays: 'dwee:media:home_overlays',
   mediaHomeHero: 'dwee:media:home_hero',
+  // 체형 리딩 결과를 Repository 로 옮기기 전, 브라우저 저장소에 직접 쓰던 키.
+  // localStorage / sessionStorage 쪽이라 idb 키와 달리 del() 대상이 아니다 —
+  // data/bodyTypeReportStorage.ts 가 한 번 끌어올린 뒤 지운다.
+  bodyTypeReportBrowser: 'dwee:body-type-report',
 } as const;
 
 export const CURRENT_SCHEMA_VERSION = 10;

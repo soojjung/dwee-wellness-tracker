@@ -1,1 +1,1 @@
-- [Doc locations & sync rules](project_doc_locations.md) — which files must stay in sync with CLAUDE.md rule changes; SetupPeriodPicker removed
+- [Doc locations & sync rules](project_doc_locations.md) — doc map, README pairing convention, repo/schema/migration versions, diagnose flow history

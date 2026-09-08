@@ -36,7 +36,8 @@ src/data/
 │   ├── EventCategoryRepository.ts  : list(), add(), update(), remove()
 │   ├── EventRepository.ts          : list(), listByMonth(), add(), update(), remove()
 │   ├── DiaryStickerRepository.ts   : list(), add(), remove(), getBlob(), setBlob()
-│   └── DiaryStickerPlacementRepository.ts : listByMonth(), upsert(), remove()
+│   ├── DiaryStickerPlacementRepository.ts : listByMonth(), upsert(), remove()
+│   └── BodyTypeReportRepository.ts : get(), save(), clear() — 사용자당 결과 1건만 보관
 │
 └── adapters/                       ← 플러그 (실제 구현)
     ├── indexeddb/                  ← IndexedDB로 구현한 어댑터들 (현재 wiring)
@@ -49,6 +50,7 @@ src/data/
     │   ├── IndexedDBEventAdapter.ts
     │   ├── IndexedDBDiaryStickerAdapter.ts
     │   ├── IndexedDBDiaryStickerPlacementAdapter.ts
+    │   ├── IndexedDBBodyTypeReportAdapter.ts
     │   ├── keys.ts                 ← STORAGE_KEYS / DEPRECATED_KEYS / CURRENT_SCHEMA_VERSION (현재 v10)
     │   └── migrations.ts           ← v1→v10 순차 실행 (v3: home_hero blob → slot 0 이주, v5: slot 0–3 공유 → count별 범위 분리, v6–v9: event/sticker 도메인 추가, v10: photo_transform 키 추가)
     └── supabase/                   ← Supabase로 구현한 어댑터들 (wiring 완료 — 인증 사용자에게 활성)
@@ -62,7 +64,8 @@ src/data/
         ├── SupabaseEventCategoryAdapter.ts
         ├── SupabaseEventAdapter.ts
         ├── SupabaseDiaryStickerAdapter.ts
-        └── SupabaseDiaryStickerPlacementAdapter.ts
+        ├── SupabaseDiaryStickerPlacementAdapter.ts
+        └── SupabaseBodyTypeReportAdapter.ts ← body_type_reports 테이블 (사용자당 1행, jsonb, RLS 익명 차단)
 ```
 
 `indexeddb/`와 `supabase/` 폴더가 나란히 있어 **기술 교체는 `data/index.ts` 한 파일만 수정**하면 됩니다.
@@ -202,7 +205,7 @@ import type { PeriodLog } from '@/types';
 - `CLAUDE.md` — "코딩 표준" 섹션의 의존성 방향 규칙
 - `.claude/rules/storage.md` — 저장소 규칙 가드레일
 - `src/data/index.ts` — 단일 진입점
-- `src/data/repositories/*.ts` — Repository 인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement)
+- `src/data/repositories/*.ts` — Repository 인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement / BodyTypeReport)
 - `src/data/adapters/indexeddb/*.ts` — 로컬 구현 (현재 wiring, schema v10)
 - `src/data/adapters/supabase/*.ts` — 원격 구현 (wiring 완료)
 - `src/domain/home/decor.ts` — PhotoCount / PhotoSlot / TextPosition / TextOrder 타입·상수

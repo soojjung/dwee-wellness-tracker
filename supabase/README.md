@@ -35,9 +35,16 @@ supabase/
                          — home_photos.transform jsonb 컬럼 추가. 비파괴
                            크롭(pan/zoom) 메타데이터 저장. 페이로드
                            { scale, offsetXNorm, offsetYNorm }, null = 편집 없음.
+    0011_withdrawal_feedbacks.sql
+                         — withdrawal_feedbacks (회원탈퇴 사유, user_id 없는
+                           익명 테이블, INSERT-only RLS). 삭제 cascade 이후에도
+                           잔존해 분석 가능.
     0012_sticker_cutout_calls.sql
                          — sticker_cutout_calls (sticker-cutout Edge Function
                            일일 호출 카운터, 일 20회 limit)
+    0013_body_type_reports.sql
+                         — body_type_reports (체형 리딩 결과, user_id PK 1행,
+                           report jsonb + primary_type 컬럼). RLS anon lockout.
   functions/
     body-type-analyze/   — 매거진 퍼스널 체형 진단 Edge Function.
                            사진 base64 입력 → gpt-4o Vision 호출 →
@@ -73,6 +80,8 @@ src/data/adapters/supabase/
   SupabaseDiaryStickerPlacementAdapter.ts
                                   — DiaryStickerPlacementRepository 구현
                                     (diary_sticker_placements)
+  SupabaseBodyTypeReportAdapter.ts — BodyTypeReportRepository 구현
+                                    (body_type_reports, 사용자당 1행)
 ```
 
 ## Supabase 활성화 순서
@@ -86,7 +95,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 env 가 비어있으면 `isSupabaseConfigured === false` → `data/index.ts` 가 IndexedDB 로 자동 fallback. dev/CI 환경에서는 그대로 두어도 됨.
 
 ### 2. 마이그레이션 적용
-0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012 순서.
+0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012 → 0013 순서.
 
 **옵션 A (Supabase CLI):**
 ```bash
@@ -94,7 +103,7 @@ brew install supabase/tap/supabase
 supabase link --project-ref <ref>
 supabase db push
 ```
-**옵션 B (대시보드 SQL Editor):** 각 `migrations/*.sql` 파일을 0001부터 0012까지 순서대로 붙여넣고 RUN.
+**옵션 B (대시보드 SQL Editor):** 각 `migrations/*.sql` 파일을 0001부터 0013까지 순서대로 붙여넣고 RUN.
 
 ### 3. Auth provider 활성화 (Supabase 대시보드 → Authentication → Providers)
 - **Email** — enable. "Confirm email" 은 MVP 단계에서는 off 권장 (signUp 직후 세션 발급되어야 STEP 2.2 흐름이 즉시 로그인됨).

@@ -9,6 +9,7 @@ import { indexedDBEventCategoryAdapter } from './adapters/indexeddb/IndexedDBEve
 import { indexedDBEventAdapter } from './adapters/indexeddb/IndexedDBEventAdapter';
 import { indexedDBDiaryStickerAdapter } from './adapters/indexeddb/IndexedDBDiaryStickerAdapter';
 import { indexedDBDiaryStickerPlacementAdapter } from './adapters/indexeddb/IndexedDBDiaryStickerPlacementAdapter';
+import { indexedDBBodyTypeReportAdapter } from './adapters/indexeddb/IndexedDBBodyTypeReportAdapter';
 import { supabaseSettingsAdapter } from './adapters/supabase/SupabaseSettingsAdapter';
 import { supabasePeriodAdapter } from './adapters/supabase/SupabasePeriodAdapter';
 import { supabaseConditionAdapter } from './adapters/supabase/SupabaseConditionAdapter';
@@ -17,6 +18,7 @@ import { supabaseEventCategoryAdapter } from './adapters/supabase/SupabaseEventC
 import { supabaseEventAdapter } from './adapters/supabase/SupabaseEventAdapter';
 import { supabaseDiaryStickerAdapter } from './adapters/supabase/SupabaseDiaryStickerAdapter';
 import { supabaseDiaryStickerPlacementAdapter } from './adapters/supabase/SupabaseDiaryStickerPlacementAdapter';
+import { supabaseBodyTypeReportAdapter } from './adapters/supabase/SupabaseBodyTypeReportAdapter';
 import { runMigrations } from './adapters/indexeddb/migrations';
 import {
   STORAGE_KEYS,
@@ -34,6 +36,7 @@ import type { EventCategoryRepository } from './repositories/EventCategoryReposi
 import type { EventRepository } from './repositories/EventRepository';
 import type { DiaryStickerRepository } from './repositories/DiaryStickerRepository';
 import type { DiaryStickerPlacementRepository } from './repositories/DiaryStickerPlacementRepository';
+import type { BodyTypeReportRepository } from './repositories/BodyTypeReportRepository';
 
 export type {
   SettingsRepository,
@@ -45,6 +48,7 @@ export type {
   EventRepository,
   DiaryStickerRepository,
   DiaryStickerPlacementRepository,
+  BodyTypeReportRepository,
 };
 export type { NewPeriodInput } from './repositories/PeriodRepository';
 export type { NewConditionInput } from './repositories/ConditionRepository';
@@ -87,6 +91,9 @@ function pickEvent(): EventRepository {
 }
 function pickDiarySticker(): DiaryStickerRepository {
   return mode === 'remote' ? supabaseDiaryStickerAdapter : indexedDBDiaryStickerAdapter;
+}
+function pickBodyTypeReport(): BodyTypeReportRepository {
+  return mode === 'remote' ? supabaseBodyTypeReportAdapter : indexedDBBodyTypeReportAdapter;
 }
 function pickDiaryStickerPlacement(): DiaryStickerPlacementRepository {
   return mode === 'remote'
@@ -147,6 +154,12 @@ export const diaryStickerPlacementRepo: DiaryStickerPlacementRepository = {
   add: (input) => pickDiaryStickerPlacement().add(input),
   update: (id, patch) => pickDiaryStickerPlacement().update(id, patch),
   remove: (id) => pickDiaryStickerPlacement().remove(id),
+};
+
+export const bodyTypeReportRepo: BodyTypeReportRepository = {
+  get: () => pickBodyTypeReport().get(),
+  save: (report) => pickBodyTypeReport().save(report),
+  clear: () => pickBodyTypeReport().clear(),
 };
 
 export const mediaRepo: MediaRepository = {
@@ -220,6 +233,7 @@ export async function resetAllUserData(): Promise<void> {
     del(STORAGE_KEYS.events),
     del(STORAGE_KEYS.diaryStickers),
     del(STORAGE_KEYS.diaryStickerPlacements),
+    del(STORAGE_KEYS.bodyTypeReport),
     // Clear the seed flag so a fresh account on the same device gets the
     // built-in stickers again on next hydrate.
     del(STORAGE_KEYS.diaryDefaultStickersSeeded),

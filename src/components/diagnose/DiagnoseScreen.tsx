@@ -6,13 +6,15 @@ import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { fileToBase64, supportedMediaType } from '@/lib/image/fileToBase64';
+import { fileToBase64 } from '@/lib/image/fileToBase64';
 import { analyzeBodyType } from '@/data/services/bodyTypeService';
-import type { BodyTypeAnalyzeError, SupportedImageMediaType } from '@/types';
+import { useBodyTypeReportStore } from '@/store/bodyTypeReportStore';
+import type { BodyTypeAnalyzeError } from '@/types';
 import { AlertCircleIcon, BackIcon } from '@/components/ui/icons';
 import { BOTTOM_CTA_CLASS } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
-import { REPORT_SESSION_KEY } from './DiagnoseResultScreen';
+import { PhotoPreviewView } from './PhotoPreviewView';
+import { useBodyPhotoPicker, type PickedPhoto } from './useBodyPhotoPicker';
 
 const ARTICLE_HREF = '/magazine/personal-body-type';
 const RESULT_HREF = '/magazine/personal-body-type/diagnose/result';
@@ -20,15 +22,12 @@ const RESULT_HREF = '/magazine/personal-body-type/diagnose/result';
 type Slot = 'front' | 'side' | 'back';
 const SLOT_ORDER: readonly Slot[] = ['front', 'side', 'back'] as const;
 
-interface Photo {
-  file: File;
-  previewUrl: string;
-  mediaType: SupportedImageMediaType;
-}
+type Photo = PickedPhoto;
 type Photos = Partial<Record<Slot, Photo>>;
 
 type Step =
   | { kind: 'intro'; photos: Photos; consent: boolean; consented: boolean }
+  | { kind: 'preview'; photos: Photos }
   | { kind: 'loading'; blurUrl: string }
   | { kind: 'error'; code: BodyTypeAnalyzeError };
 
@@ -90,18 +89,27 @@ export function DiagnoseScreen() {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [step]);
 
-  // 하단 [사진 선택] 한 번으로 전체를 다시 고르므로, 고른 순서대로 앞→옆→뒤에
-  // 채우고 이전 선택은 통째로 버린다.
+  // 한 번의 선택으로 전체를 다시 고르므로, 고른 순서대로 앞→옆→뒤에 채우고
+  // 이전 선택은 통째로 버린다. 고르고 나면 크게 확인하는 화면으로 넘어간다.
   function setPhotos(picked: readonly Photo[]) {
     setStep((prev) => {
-      if (prev.kind !== 'intro') return prev;
+      if (prev.kind !== 'intro' && prev.kind !== 'preview') return prev;
       for (const photo of Object.values(prev.photos)) URL.revokeObjectURL(photo.previewUrl);
       const next: Photos = {};
       SLOT_ORDER.forEach((slot, i) => {
         const photo = picked[i];
         if (photo) next[slot] = photo;
       });
-      return { ...prev, photos: next };
+      return { kind: 'preview', photos: next };
+    });
+  }
+
+  // 미리보기에서 뒤로: 고른 사진을 버리고 안내 화면으로 돌아간다. 동의는 이미 받았다.
+  function backToIntro() {
+    setStep((prev) => {
+      if (prev.kind !== 'preview') return prev;
+      for (const photo of Object.values(prev.photos)) URL.revokeObjectURL(photo.previewUrl);
+      return { kind: 'intro', photos: {}, consent: false, consented: true };
     });
   }
 
@@ -165,14 +173,7 @@ export function DiagnoseScreen() {
       setStep({ kind: 'error', code: 'no_body_detected' });
       return;
     }
-    try {
-      window.sessionStorage.setItem(
-        REPORT_SESSION_KEY,
-        JSON.stringify({ report: result.data.report, savedAt: new Date().toISOString() }),
-      );
-    } catch (err) {
-      console.error('[diagnose] failed to persist report', err);
-    }
+    await useBodyTypeReportStore.getState().save(result.data.report);
     router.push(RESULT_HREF);
   }
 
@@ -187,12 +188,53 @@ export function DiagnoseScreen() {
         onCloseConsent={() => setConsentOpen(false)}
         onConsentGranted={markConsented}
         onPhotos={setPhotos}
+      />
+    );
+  }
+  if (step.kind === 'preview') {
+    return (
+      <PreviewStep
+        photos={step.photos}
+        onBack={backToIntro}
+        onPhotos={setPhotos}
         onStart={() => startAnalysis(step.photos)}
       />
     );
   }
   if (step.kind === 'loading') return <LoadingView blurUrl={step.blurUrl} />;
   return <ErrorView code={step.code} onRetry={resetIntro} />;
+}
+
+/**
+ * 미리보기 화면에서도 [사진 변경하기]로 다시 고를 수 있어야 해서, 훅을 여기서 쥐고
+ * 숨은 input 을 화면에 내려보낸다.
+ */
+function PreviewStep({
+  photos,
+  onBack,
+  onPhotos,
+  onStart,
+}: {
+  photos: Photos;
+  onBack: () => void;
+  onPhotos: (picked: readonly Photo[]) => void;
+  onStart: () => void;
+}) {
+  const picker = useBodyPhotoPicker({ limit: SLOT_ORDER.length, onPicked: onPhotos });
+  const ordered = SLOT_ORDER.flatMap((slot) => {
+    const photo = photos[slot];
+    return photo ? [photo] : [];
+  });
+
+  return (
+    <PhotoPreviewView
+      photos={ordered}
+      onBack={onBack}
+      onReplace={() => void picker.open()}
+      onStart={onStart}
+      pickerInput={picker.input}
+    />
+  );
 }
 
 interface IntroViewProps {
@@ -204,7 +246,6 @@ interface IntroViewProps {
   onCloseConsent: () => void;
   onConsentGranted: () => void;
   onPhotos: (picked: readonly Photo[]) => void;
-  onStart: () => void;
 }
 
 function IntroView({
@@ -216,15 +257,13 @@ function IntroView({
   onCloseConsent,
   onConsentGranted,
   onPhotos,
-  onStart,
 }: IntroViewProps) {
   const t = useT();
   const p = t.magazine.diagnose;
-  const inputRef = useRef<HTMLInputElement>(null);
+  const picker = useBodyPhotoPicker({ limit: SLOT_ORDER.length, onPicked: onPhotos });
   // 안내 팝업은 화면 진입 시에도 뜬다. 그때는 동의해도 선택기를 열면 안 되므로
   // "사진 선택을 누르다 막힌 경우"인지 따로 기억한다.
   const [pickAfterConsent, setPickAfterConsent] = useState(false);
-  const hasFront = Boolean(photos.front);
 
   function openPicker() {
     if (!consented) {
@@ -232,7 +271,7 @@ function IntroView({
       onOpenConsent();
       return;
     }
-    inputRef.current?.click();
+    void picker.open();
   }
 
   function handleConsentCancel() {
@@ -245,19 +284,8 @@ function IntroView({
     if (!pickAfterConsent) return;
     setPickAfterConsent(false);
     // Defer to next tick so the modal unmounts (releasing body scroll lock)
-    // before the file picker takes over.
-    setTimeout(() => inputRef.current?.click(), 0);
-  }
-
-  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []).slice(0, SLOT_ORDER.length);
-    event.target.value = '';
-    const picked = files.flatMap((file) => {
-      const mediaType = supportedMediaType(file);
-      return mediaType ? [{ file, previewUrl: URL.createObjectURL(file), mediaType }] : [];
-    });
-    if (picked.length === 0) return;
-    onPhotos(picked);
+    // before the picker takes over.
+    setTimeout(() => void picker.open(), 0);
   }
 
   const slotLabel: Record<Slot, string> = {
@@ -300,33 +328,16 @@ function IntroView({
         ) : null}
       </div>
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        className="hidden"
-        onChange={handleChange}
-      />
+      {picker.input}
 
       <BottomBar>
-        {hasFront ? (
-          <button
-            type="button"
-            onClick={onStart}
-            className={cn(BOTTOM_CTA_CLASS, 'bg-brand-pink50 text-brand-gray900')}
-          >
-            {p.picker.startButton}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={openPicker}
-            className={cn(BOTTOM_CTA_CLASS, 'bg-brand-pink50 text-brand-gray900')}
-          >
-            {p.picker.selectButton}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={openPicker}
+          className={cn(BOTTOM_CTA_CLASS, 'bg-brand-pink50 text-brand-gray900')}
+        >
+          {p.picker.selectButton}
+        </button>
       </BottomBar>
 
       {consentOpen ? (
