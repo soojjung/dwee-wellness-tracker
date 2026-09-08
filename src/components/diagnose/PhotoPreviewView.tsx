@@ -30,6 +30,11 @@ export function PhotoPreviewView({
 }: PhotoPreviewViewProps) {
   const t = useT();
   const p = t.magazine.diagnose;
+  // `px-14` sizes the rail so a second card peeks in from the edge, but with a
+  // single photo the leftover width all piles up on the right of the
+  // left-aligned row — 12px of it on a 402pt phone. Centre the lone card
+  // instead, on a padding narrow enough that it can never overflow.
+  const single = photos.length === 1;
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-brand-gray50 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
@@ -45,7 +50,10 @@ export function PhotoPreviewView({
       </div>
 
       <div
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-14 pt-6"
+        className={cn(
+          'flex snap-x snap-mandatory gap-3 overflow-x-auto pt-6',
+          single ? 'justify-center px-4' : 'px-14',
+        )}
         style={{ scrollbarWidth: 'none' }}
       >
         {photos.map((photo) => (

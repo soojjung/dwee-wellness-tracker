@@ -144,8 +144,14 @@ export function WithdrawReasonScreen() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-white">
-      <header className="flex items-center px-4 pb-2 pt-safe">
+    // Fixed viewport height with the scrolling confined to the middle
+    // column, so the reason list stops above the CTA rail instead of
+    // running underneath it.
+    <div className="flex h-dvh flex-col overflow-hidden bg-brand-white">
+      {/* Same 8px + notch inset as the diary customize header; bare
+          `pt-safe` is 0 off a notched device and the back button ends
+          up flush against the top edge. */}
+      <header className="flex shrink-0 items-center px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
         <button
           type="button"
           onClick={() => router.back()}
@@ -156,7 +162,7 @@ export function WithdrawReasonScreen() {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-40">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
         <h1 className="text-xl font-semibold leading-normal text-brand-gray900">
           {t.myPage.withdraw.title}
         </h1>
@@ -211,10 +217,10 @@ export function WithdrawReasonScreen() {
         </ul>
       </div>
 
-      {/* Fixed footer — pin to the bottom of the mobile shell (max-w-md,
-          centered) rather than the raw viewport so desktop preview
-          widths don't stretch the button rail edge-to-edge. */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 border-t border-brand-gray200 bg-brand-white px-4 pb-safe pt-3">
+      {/* In-flow footer: as a flex sibling of the scroll area it already
+          sits at the bottom of the mobile shell, so it needs no fixed
+          positioning and the scroll area ends exactly above it. */}
+      <div className="shrink-0 border-t border-brand-gray200 bg-brand-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3">
         <button
           type="button"
           onClick={handleSubmit}

@@ -69,10 +69,14 @@ const config: Config = {
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         // Diary sticker "scanning" animation (013_3): a soft pink bar
-        // sweeps top→bottom over the captured photo to signal "processing".
+        // travels down and back up over the captured photo to signal
+        // "processing". The bar is a third of the photo's height and starts
+        // flush with its top, so translating it by 200% lands its bottom
+        // edge exactly on the photo's bottom — it never leaves the frame.
+        // Paired with `alternate` below for the return trip.
         stickerScan: {
-          '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(100%)' },
+          '0%': { transform: 'translateY(0%)' },
+          '100%': { transform: 'translateY(200%)' },
         },
         // Diary onboarding nudge (spec 8): the calendar pulls slightly to
         // the left and returns, hinting that horizontal swipe changes the
@@ -82,14 +86,6 @@ const config: Config = {
           '35%': { transform: 'translateX(-14px)' },
           '65%': { transform: 'translateX(-14px)' },
           '100%': { transform: 'translateX(0)' },
-        },
-        // Diary "focus today" pulse — soft ring ripples out from today's
-        // number pill when the log tab is tapped. Fades to fully transparent
-        // so it doesn't leave a visual artifact.
-        diaryTodayRing: {
-          '0%': { transform: 'scale(0.6)', opacity: '0' },
-          '30%': { transform: 'scale(1.05)', opacity: '0.55' },
-          '100%': { transform: 'scale(1.6)', opacity: '0' },
         },
         // "오늘" callout bubble above today's cell. Slides in from just
         // above and fades in, holds, then fades out.
@@ -102,9 +98,8 @@ const config: Config = {
       },
       animation: {
         slideDownFade: 'slideDownFade 280ms cubic-bezier(0.16, 1, 0.3, 1)',
-        stickerScan: 'stickerScan 1.4s ease-in-out',
+        stickerScan: 'stickerScan 1.4s ease-in-out infinite alternate',
         diaryNudge: 'diaryNudge 900ms ease-in-out',
-        diaryTodayRing: 'diaryTodayRing 1500ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
         diaryTodayBubble: 'diaryTodayBubble 1600ms ease-in-out forwards',
       },
     },

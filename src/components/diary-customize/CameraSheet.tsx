@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
@@ -243,6 +243,24 @@ function SlidingPill<T extends string>({
   variant,
 }: SlidingPillProps<T>) {
   const idx = Math.max(0, options.indexOf(value));
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // The labels aren't the same width ("사진" vs "스티커"), and the buttons size
+  // to their own content, so an even split of the track lands the highlight
+  // off its button — which shows up as lopsided padding around the label.
+  // Measure the active button instead.
+  const [highlight, setHighlight] = useState<{ left: number; width: number } | null>(
+    null,
+  );
+  useLayoutEffect(() => {
+    const el = btnRefs.current[idx];
+    if (!el) return;
+    const measure = () => setHighlight({ left: el.offsetLeft, width: el.offsetWidth });
+    measure();
+    // Re-measure when the webfont swaps in or the label's weight changes.
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [idx, options]);
   const track =
     variant === 'light'
       ? 'bg-brand-white/85 text-brand-gray900'
@@ -256,20 +274,25 @@ function SlidingPill<T extends string>({
     >
       <span
         aria-hidden
-        className="absolute bottom-1 top-1 rounded-full bg-brand-pink200 transition-transform"
-        style={{
-          width: `calc((100% - 0.5rem) / ${options.length})`,
-          transform: `translateX(calc(${idx * 100}% + ${idx * 0.25}rem))`,
-          left: '0.25rem',
-        }}
+        className="absolute bottom-1 top-1 rounded-full bg-brand-pink200 transition-[left,width] duration-200 ease-out"
+        style={
+          highlight
+            ? { left: highlight.left, width: highlight.width }
+            : { opacity: 0 }
+        }
       />
-      {options.map((opt) => (
+      {options.map((opt, i) => (
         <button
           key={opt}
+          ref={(el) => {
+            btnRefs.current[i] = el;
+          }}
           type="button"
           onClick={() => onChange(opt)}
           className={cn(
-            'relative z-10 flex-1 rounded-full px-4 py-1 transition-colors focus-visible:outline-none',
+            // `whitespace-nowrap` keeps a label like "스티커"/"Sticker" on one
+            // line — the pill is a fixed 36px tall, so a wrap breaks it.
+            'relative z-10 flex-1 whitespace-nowrap rounded-full px-4 py-1 transition-colors focus-visible:outline-none',
             value === opt && 'font-semibold text-brand-white',
           )}
         >

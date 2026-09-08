@@ -1,6 +1,6 @@
 # 홈 화면 플로우
 
-> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,ScratchKeywordCard,ActivitySuggestions,FoodSuggestions,TodayDateHeading,PeriodAddIcon,PeriodSelectSheet}.tsx`, `src/app/(app)/page.tsx`
+> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,ScratchKeywordCard,ActivitySuggestions,FoodSuggestions,FoodArticleScreen,TodayDateHeading,PeriodAddIcon,PeriodSelectSheet}.tsx`, `src/app/(app)/page.tsx`, `src/app/(fullscreen)/foods/[id]/page.tsx`, `src/content/foods/articles-ko.ts`
 
 ## 생리 기록 진입점
 
@@ -116,6 +116,8 @@ WeekStrip은 날짜마다 `CycleState`(`'actualPeriod' | 'predictedPeriod' | 'pr
   - **PhotoBowl** (menstrual/follicular/ovulation/luteal) — Figma 시안에서 내보낸 주기별 합성 사진 1장(`public/home/foods/<phase>.png`) 위에 dark pill 라벨을 얹는다. 라벨 위치는 `FOOD_LABEL_POSITION`에 음식 id별 `{ left, top }` %좌표로 저장되어 있어 사진 속 실제 식재료 자리에 붙고, 이미지가 리사이즈돼도 상대 위치를 유지한다.
   - **EmojiBowl** (unknown) — 사진 시안이 아직 없는 주기용 폴백. 기존 CSS로 그린 그릇 위에 이모지 4개 + dark pill 라벨을 겹쳐 배치하던 원래 렌더링을 그대로 유지한다.
   - 음식 목록 자체도 이번에 카테고리형 4개("따뜻한 영양국" 등)에서 구체적 식품명 5개(소고기·굴 등)로 교체되며 id가 전부 재배치됐다. phase 기반 음식 목록은 여전히 `home.foods.{phase}.items` i18n 키에서 조회.
+  - **음식 칩 → 상세 화면**: PhotoBowl 칩(사진이 아니라 이름+이모지 pill)은 `/foods/[id]` (fullscreen, 탭바 없음)로 이동하는 `Link`다. `FoodArticleScreen`이 해당 음식이 왜 좋은지 설명하는 읽기 전용 화면을 보여준다 — 매거진 아티클과 별개 구현이라 북마크·공유가 없다. 콘텐츠는 `src/content/foods/articles-ko.ts`에 20개(4개 주기 × 5개 음식, title/intro/sections/tips/closing)가 **한국어 원문 전용**으로 들어 있다 — `content/legal/`과 같은 취급이라 화면이 locale 과 무관하게 이 텍스트를 그대로 보여준다(영문 사용자도 한국어 본문을 본다). **콘텐츠 키는 `home.foods` 사전의 음식 id 와 1:1 대응** — 사전에서 id 를 바꾸면 이 파일의 키도 함께 바꿔야 칩과 콘텐츠가 이어진다. `/foods/[id]`는 `generateStaticParams`로 20개 전부 프리렌더.
+  - EmojiBowl(unknown phase)의 칩은 아직 `<span>`이다 — 히어로 사진도 해당 phase 용 콘텐츠도 없어 링크로 전환되지 않았다.
 
 ## 검증 케이스
 

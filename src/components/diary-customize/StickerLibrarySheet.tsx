@@ -103,18 +103,23 @@ export function StickerLibrarySheet({
 
   return (
     <>
-      <div className="flex items-center justify-between px-6 pb-3">
-        {/* Left: Edit / Done pill (spec 1 · 2) */}
+      {/* 16px padding around a 40px-tall row, per the Figma header
+          (256:20929). The design's left slot is an empty 40x40 spacer; the
+          Edit / Done pill from the delete flow sits in it. */}
+      <div className="flex w-full items-center justify-between p-4">
+        {/* Left: Edit / Done pill (spec 1 · 2). 56x40 at minimum — 8px/14px
+            padding around a 16px regular label lands exactly there, and a
+            longer label (e.g. the English "Done") grows from it. */}
         <button
           type="button"
           onClick={mode === 'browse' ? enterEditMode : exitEditMode}
           disabled={stickers.length === 0 && mode === 'browse'}
-          className="rounded-full bg-brand-gray200 px-3 py-1 text-xs font-medium text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-40"
+          className="min-w-14 rounded-full bg-brand-gray200 px-3.5 py-2 text-base font-normal leading-normal text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-40"
         >
           {mode === 'browse' ? c.editEnter : c.editExit}
         </button>
 
-        <h2 className="text-base font-semibold text-brand-gray900">
+        <h2 className="text-[20px] font-semibold leading-none text-brand-gray900">
           {c.stickerLibrary}
         </h2>
 
@@ -126,13 +131,14 @@ export function StickerLibrarySheet({
               onClick={() => setMenuOpen((v) => !v)}
               aria-label={c.addSticker}
               aria-expanded={menuOpen}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gray400/40 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+              className="flex size-10 items-center justify-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+              {/* Path copied from the exported Figma icon (256:20932). */}
+              <svg viewBox="0 0 40 40" className="size-full" fill="none" aria-hidden>
                 <path
-                  d="M7 1.5v11M1.5 7h11"
+                  d="M20 11.5147L20 28.4853M28.4853 20L11.5147 20"
                   stroke="currentColor"
-                  strokeWidth="1.6"
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
               </svg>
@@ -145,7 +151,7 @@ export function StickerLibrarySheet({
                   onClick={() => setMenuOpen(false)}
                   className="fixed inset-0 z-30 cursor-default"
                 />
-                <div className="absolute right-0 top-10 z-40 flex w-48 flex-col overflow-hidden rounded-2xl bg-brand-gray900 text-sm text-brand-white shadow-lg">
+                <div className="absolute right-0 top-12 z-40 flex w-48 flex-col overflow-hidden rounded-2xl bg-brand-gray900 text-sm text-brand-white shadow-lg">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -170,16 +176,18 @@ export function StickerLibrarySheet({
             ) : null}
           </div>
         ) : (
-          <span aria-hidden className="h-8 w-8" />
+          <span aria-hidden className="size-10" />
         )}
       </div>
 
-      {/* pt-1 leaves 4px of vertical breathing room so the 2px selection
-          ring on the top row of stickers isn't clipped by the scroll
-          container's overflow boundary. */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-1">
+      {/* Grid metrics come from the Figma sticker rows (256:20934): 27px
+          side padding, 12px above the first row, 24px gutters, 96x96 cells.
+          On a 390px viewport those add up exactly; wider screens scale the
+          cells up proportionally. The bottom padding is 24px rather than the
+          design's 12px so the last row clears the floating delete CTA. */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[27px] pb-6 pt-3">
         {stickers.length === 0 ? null : (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-6">
             {stickers.map((s) => {
               const url = urls[s.id];
               if (!url) return null;
@@ -201,23 +209,16 @@ export function StickerLibrarySheet({
                   aria-label={label}
                   aria-pressed={editing ? isSelectedForDelete : undefined}
                   className={cn(
-                    'relative overflow-hidden rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 disabled:cursor-default',
-                    // No cell background — stickers are transparent PNGs
-                    // and the gray box was reading as a chip around them.
-                    // Press state now conveyed via `scale-90` on the img.
+                    'relative aspect-square overflow-hidden rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 disabled:cursor-default',
                     isSelectedForDelete && 'ring-2 ring-brand-pink300',
-                    isPicked && 'p-1.5',
+                    // Spec 6 / Figma 256:20937 — the pressed cell fills with
+                    // Gray/300 behind the sticker.
+                    isPicked && 'bg-brand-gray300',
                   )}
-                  style={{ aspectRatio: s.ratio === '1:1' ? '1 / 1' : '3 / 4' }}
                 >
-                  <img
-                    src={url}
-                    alt=""
-                    className={cn(
-                      'h-full w-full object-cover transition-transform',
-                      isPicked && 'scale-90 rounded-md',
-                    )}
-                  />
+                  {/* 8px inset keeps the artwork inside the design's 80px
+                      box while `object-contain` preserves its own ratio. */}
+                  <img src={url} alt="" className="h-full w-full object-contain p-2" />
                   {isNew && !editing ? (
                     <span
                       aria-hidden

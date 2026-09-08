@@ -123,7 +123,8 @@ stateDiagram-v2
 
 - `generateStaticParams` 로 3개 타입을 프리렌더, `generateMetadata` 로 타입별 `og:image`(`og-{type}.png`, 1200×630 · `public/magazine/personal-body-type/`)·title·description 을 부여합니다.
 - OG 카드 이미지가 한국어로 제작되어 있어 이 라우트의 메타는 `locale: 'ko_KR'` 로 고정합니다 (루트 `layout.tsx` 의 앱 공용 OG 는 en — 이 라우트만 예외).
-- 사람이 직접 링크를 열면 `ShareLandingRedirect` 가 즉시 `/magazine/personal-body-type` 로 `router.replace` 합니다 — 크롤러는 메타 태그만 읽고 가므로, 실제 콘텐츠(체형 소개)는 계속 아티클에만 존재합니다. JS 가 죽은 경우를 위한 링크도 함께 둡니다.
+- **인증 게이트 예외**: 이 라우트는 `AuthGuard` 의 `PUBLIC_PREFIXES` 화이트리스트에 등록돼 세션 없이도 접근 가능합니다 — MVP2 "첫 진입 강제 `/login` 게이트" 정책의 첫 예외입니다. 링크를 건네받은 사람이 세션 없이 열어도 `/login` 으로 튕기지 않고 이 화면 자체를 봅니다.
+- 사람이 직접 링크를 열면 `ShareLandingRedirect` 가 세션이 있을 때만 `/magazine` (매거진 목록) 으로 `router.replace` 합니다. 세션이 없으면 그대로 머무르며 매거진 목록으로 가는 링크만 보여줍니다 — `/magazine` 자체는 `(app)` 그룹이라 `AuthGuard` 뒤에 있어서, 세션 없이 넘기면 결국 `/login` 으로 다시 튕기기 때문입니다. 크롤러는 어느 경우든 메타 태그만 읽고 갑니다.
 
 ```mermaid
 flowchart LR
@@ -131,22 +132,27 @@ flowchart LR
     Bar["ShareTestBar"]
     Native{{"navigator.share"}}
     Copy["클립보드 복사 + 토스트"]
-    Share["share/[type]\nOG 메타 전용 라우트"]
-    Article(["매거진 아티클\n(사람이 도착하는 곳)"])
+    Share["share/[type]\nOG 메타 전용 라우트\n(세션 없이도 접근 가능)"]
+    HasSession{"세션 있음?"}
+    Magazine(["/magazine\n목록"])
+    Stay["그대로 머무름\n(수동 링크만 노출)"]
 
     Result --> Bar
     Bar -->|"지원 시"| Native
     Bar -->|"미지원 시"| Copy
     Native -->|"공유 URL"| Share
     Copy -->|"복사되는 URL"| Share
-    Share -->|"router.replace"| Article
+    Share --> HasSession
+    HasSession -- yes --> Magazine
+    HasSession -- no --> Stay
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
     classDef ext fill:#E8FDE8,stroke:#A8E5BD,color:#3A5C3A;
-    class Result,Article ui;
+    class Result,Magazine,Stay ui;
     class Bar,Copy,Share logic;
     class Native ext;
+    class HasSession logic;
 ```
 
 ---
@@ -228,7 +234,8 @@ flowchart TD
 - `supabase/migrations/0013_body_type_reports.sql` — `body_type_reports` 테이블 (user_id PK 1행, report jsonb, RLS 익명 차단)
 - `src/components/diagnose/ReportView.tsx` — 2탭 결과 렌더 (Hero · BodyTab · StyleTab), sticky 탭바 stuck 상태를 `onStuckChange` 로 부모에 전달
 - `src/components/diagnose/ShareTestBar.tsx` — 하단 고정 공유 바 (네이티브 공유 시트 / 클립보드 복사 폴백)
-- `src/components/diagnose/ShareLandingRedirect.tsx` — 공유 라우트 진입 시 아티클로 즉시 리다이렉트
+- `src/components/diagnose/ShareLandingRedirect.tsx` — 공유 라우트 진입 화면. 세션 있으면 `/magazine` 목록으로 리다이렉트, 없으면 그대로 머무름
+- `src/components/auth/AuthGuard.tsx` — `PUBLIC_PREFIXES`(`/magazine/personal-body-type/share`)는 세션 없이도 통과
 - `src/app/(fullscreen)/magazine/personal-body-type/share/[type]/page.tsx` — 체형별 OG 메타 전용 정적 라우트 (`generateStaticParams` + `generateMetadata`)
 - `public/magazine/personal-body-type/og-{straight,wave,natural}.png` — 공유 카드 OG 이미지 (1200×630)
 - `src/data/services/bodyTypeService.ts` — Edge Function 호출 + 익명 세션 보장 + `AbortSignal` pass-through

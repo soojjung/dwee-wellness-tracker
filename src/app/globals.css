@@ -25,3 +25,17 @@ body {
     Roboto,
     sans-serif;
 }
+
+@layer utilities {
+  /* iOS 노치·홈 인디케이터 여백. layout.tsx 의 `viewportFit: 'cover'` 와 짝을
+     이루며, 안전영역이 없는 기기에서는 0 이라 데스크톱 렌더는 그대로다.
+     기본 여백을 함께 주고 싶으면 이 클래스를 덧붙이지 말고
+     `pb-[calc(2rem+env(safe-area-inset-bottom,0px))]` 처럼 한 번에 쓸 것 —
+     같은 property 를 두 클래스가 다투면 뒤에 생성된 쪽이 이긴다. */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}

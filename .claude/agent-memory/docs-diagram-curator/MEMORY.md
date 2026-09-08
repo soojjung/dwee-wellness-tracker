@@ -1,1 +1,2 @@
-- [Doc locations & sync rules](project_doc_locations.md) — doc map, README pairing convention, repo/schema/migration versions, diagnose flow history
+- [Doc locations & sync rules](project_doc_locations.md) — doc map, README pairing convention, repo/schema/migration versions, diagnose flow history; AuthGuard public-route exception, safe-area utility fix, versioned sticker seeding, PhotoImportModal/CameraSheet ratio-timing split (2026-09-09)
+- [Food article pregnancy exception](project_food_article_pregnancy_exception.md) — user kept implantation/pregnancy-context phrasing in 9 food articles despite CLAUDE.md exclusion; deliberate, may be revisited
