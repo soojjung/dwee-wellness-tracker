@@ -12,6 +12,8 @@ import { indexedDBConditionAdapter } from '@/data/adapters/indexeddb/IndexedDBCo
 import { supabaseSettingsAdapter } from '@/data/adapters/supabase/SupabaseSettingsAdapter';
 import { supabasePeriodAdapter } from '@/data/adapters/supabase/SupabasePeriodAdapter';
 import { supabaseConditionAdapter } from '@/data/adapters/supabase/SupabaseConditionAdapter';
+import { indexedDBBodyTypeReportAdapter } from '@/data/adapters/indexeddb/IndexedDBBodyTypeReportAdapter';
+import { supabaseBodyTypeReportAdapter } from '@/data/adapters/supabase/SupabaseBodyTypeReportAdapter';
 import { DEFAULT_USER_SETTINGS } from '@/types/userSettings';
 
 // Wide enough to cover any realistic local history; condition
@@ -22,6 +24,7 @@ export interface MigrationResult {
   settings: boolean;
   periodsAdded: number;
   conditionsAdded: number;
+  bodyTypeReport: boolean;
   errors: string[];
 }
 
@@ -87,5 +90,19 @@ export async function migrateLocalToRemote(): Promise<MigrationResult> {
     errors.push(`conditions: ${(e as Error).message}`);
   }
 
-  return { settings, periodsAdded, conditionsAdded, errors };
+  // 로그인 전에 익명으로 진단해 둔 결과. 원격에 이미 있으면 그쪽이 최신이므로
+  // 덮어쓰지 않는다.
+  let bodyTypeReport = false;
+  try {
+    const local = await indexedDBBodyTypeReportAdapter.get();
+    if (local) {
+      const remote = await supabaseBodyTypeReportAdapter.get();
+      if (!remote) await supabaseBodyTypeReportAdapter.save(local);
+      bodyTypeReport = true;
+    }
+  } catch (e) {
+    errors.push(`bodyTypeReport: ${(e as Error).message}`);
+  }
+
+  return { settings, periodsAdded, conditionsAdded, bodyTypeReport, errors };
 }

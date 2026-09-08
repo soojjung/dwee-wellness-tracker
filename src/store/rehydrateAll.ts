@@ -3,6 +3,7 @@ import { useSettingsStore } from './settingsStore';
 import { usePeriodStore } from './periodStore';
 import { useConditionStore } from './conditionStore';
 import { useMediaStore } from './mediaStore';
+import { useBodyTypeReportStore } from './bodyTypeReportStore';
 
 /**
  * Refreshes every data-backed store from the currently active repo adapter.
@@ -15,5 +16,6 @@ export async function rehydrateAllData(): Promise<void> {
     usePeriodStore.getState().rehydrate(),
     useConditionStore.getState().rehydrate(),
     useMediaStore.getState().rehydrate(),
+    useBodyTypeReportStore.getState().rehydrate(),
   ]);
 }
