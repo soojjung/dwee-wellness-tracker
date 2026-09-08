@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import type { CyclePhase } from '@/domain/cycle/types';
@@ -61,14 +62,15 @@ function PhotoBowl({ image, items }: { image: string; items: Items }) {
           if (!pos) return null;
           const visual = foodVisual(item.id);
           return (
-            <span
+            <Link
               key={item.id}
-              className="absolute z-10 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-brand-gray900 px-3 py-1.5 text-xs font-medium text-brand-white shadow-md"
+              href={`/foods/${item.id}`}
+              className="absolute z-10 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-brand-gray900 px-3 py-1.5 text-xs font-medium text-brand-white shadow-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200 focus-visible:ring-offset-2"
               style={{ left: pos.left, top: pos.top }}
             >
               <span>{item.name}</span>
               <span aria-hidden>{visual.emoji}</span>
-            </span>
+            </Link>
           );
         })}
       </div>

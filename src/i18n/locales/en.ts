@@ -341,6 +341,11 @@ export const en = {
         ],
       },
     },
+    foodArticle: {
+      backAriaLabel: 'Back',
+      tipChip: 'TIP',
+      disclaimer: 'General nutrition info for reference only — not medical advice.',
+    },
     empty: {
       title: 'No period logged yet',
       bodyPrefix: 'Tap ',

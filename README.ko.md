@@ -239,6 +239,7 @@ src/
 │       ├── log/customize/        다이어리 스티커 라이브러리 + 배치 편집
 │       ├── settings/account/     계정 편집 (AccountEditScreen — 닉네임 수정, 익명 유저 bounce)
 │       ├── settings/withdraw/    회원탈퇴 사유 수집 (WithdrawReasonScreen — 015_10~14)
+│       ├── foods/[id]/           음식 상세 (홈 음식 칩 탭 진입, 20개 프리렌더)
 │       └── magazine/
 │           ├── [slug]/           글 상세 (풀스크린)
 │           ├── bookmarks/        북마크 목록
@@ -266,6 +267,10 @@ src/
 │   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v10, 현재 wiring)
 │   ├── adapters/supabase/        원격 구현 (Supabase JS, 인증 사용자에게 wiring 완료)
 │   └── index.ts                  단일 진입점
+│
+├── content/                      정적 원문 콘텐츠 (locale 무관, 한국어 원문 그대로 렌더)
+│   ├── legal/                    이용약관 · 개인정보처리방침 원문
+│   └── foods/                    홈 음식 상세 아티클 원문 (`home.foods` 사전 id 와 1:1 대응)
 │
 ├── domain/
 │   ├── cycle/                    순수 함수: aggregate, predictor, phase, fertile window
@@ -345,6 +350,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] **MVP2.6 — 마이페이지 (MyPage)** — `/settings` 를 Figma 015_1/015_2 기반 MyPage 로 전면 교체. 인증 상태별 AuthCard (비로그인 → /login CTA, 로그인 → 닉네임+이메일 → /settings/account), 주기 요약 카드 (`classifyCycleStatus` 재사용 + 상태 chip), 환경설정·고객지원 카드. 로그아웃은 `LogoutConfirmDialog` (핑크 배지)로 대체 — 확인 후 `appToast` 큐에 메시지 적재 → `router.push('/login')` 즉시 이동 → 백그라운드 `signOut()` 순으로 진행해 빈 화면 대기 없음. `/login` 마운트 시 top-confirm Toast 노출. 언어 설정 화면 (`/settings/language`) 실장 — 2개 라디오 행, 탭 즉시 locale 전환. 계정 편집 화면 (`/settings/account`, fullscreen): 닉네임 수정 → `supabase.auth.updateUser`, 익명 유저 자동 bounce. 서브 라우트 4개(notices/qna/terms/privacy) 스텁 유지. i18n `myPage.*` 서브트리 신설 (`signOutDialog.*`, `signOutToast`, `language.*` 포함); `nav.settings` 레이블 → "My page / 마이페이지".
 - [x] **MVP2.6-polish — 마이페이지 서브 페이지 실장 + 레이아웃 정리** — `MyTestsCard` (나의 테스트: 체형 분석 결과 또는 CTA; 최초엔 sessionStorage 기반이었으나 이후 Repository 로 이관 — 아래 M2.1 항목 참고) 신설. 알림 설정 화면 (`/settings/notifications`): 마스터 토글 + 3개 항목 토글(생리 예정/생리 지연/가임기) + 3행 휠 피커(알림 시간 0~14일 전); IndexedDB 저장(푸시 인프라 미구현). 법적 문서 실장 (한국 관할): `/settings/terms` (이용약관 제1~15조 + 부칙), `/settings/privacy` (개인정보처리방침 제1~17조 + 부칙); `src/content/legal/` 모듈로 구조화. Q&A 화면(`/settings/qna`): 정적 지원 이메일 + 클립보드 복사 + 상단 토스트. 레이아웃 폴리시: 배경색 `bg-brand-gray200`, 카드 간격 20px, 행 높이 56px, 섹션 제목 `font-semibold`. OG 메타데이터 (`og:title/og:image/og:locale`) 루트 `layout.tsx` 에 추가 — `NEXT_PUBLIC_SITE_URL` 기반. 홈 히어로 기본 이미지 (`public/home/default-hero.jpg`) — 첫 진입 전 회색 플레이스홀더 대체. 후속 정리: 공지사항/Q&A/약관/개인정보처리방침 배경을 `bg-brand-gray50` → `bg-brand-gray200` 으로 통일하고 약관·개인정보 본문을 Q&A 와 같은 흰 카드로 감쌈; 뒤로가기 버튼은 배경과 구분되도록 `bg-brand-gray300` 으로 조정. 마이페이지 하위 화면 공통 뒤로가기를 `MyPageBackLink` 컴포넌트로 통합(`router.back()` 우선, 딥링크 진입 시에만 `/settings` push)하고 `useScrollRestore` 훅으로 마이페이지 목록 스크롤 위치를 세션 동안 보존. `AppShell` 의 `pb-24` 를 각 탭 화면(Home/Magazine) 자체 여백으로 이동 — 부모 `<main>` 에 두면 자식 배경 밖이라 하단에 회색 띠가 노출되던 버그 수정.
 - [x] **홈 커스터마이즈 개편** — 비파괴 사진 편집: 슬롯마다 `PhotoTransform` 메타데이터 저장, 원본 blob 덮어쓰기 금지. 드래프트 모드: 모든 변경을 draft* 필드에 버퍼링 → 홈 꾸미기의 "편집 완료" 시 `commitPhotoDraft()` 일괄 반영. `picksConfirmed` 게이트: edit-photos 그리드에서 "편집 완료" 탭 후에만 홈 꾸미기의 "편집 완료" 활성. 슬롯별 사진 삭제(× 버튼). `DiscardDraftDialog` (dirty 뒤로가기). `TransformedPhoto` 공유 렌더 컴포넌트. 텍스트 커스터마이즈 일시 비활성. `CustomizeDraftGuard` 레이아웃 래퍼: 브라우저 뒤로가기·탭 닫기 등 모든 종료 경로에서 잔여 드래프트 자동 정리 (이전에는 누수 발생). IndexedDB schema v10; Supabase migration 0010.
+- [x] **홈 음식 상세 화면** — "이렇게 먹으면 좋아요" 섹션의 음식 칩(사진이 아니라 이름+이모지 pill만 탭 가능)을 누르면 `/foods/[id]` (fullscreen)로 이동해 해당 음식이 왜 좋은지 설명하는 읽기 전용 화면(`FoodArticleScreen`)을 보여준다. 매거진 아티클과는 별개 구현 — 북마크·공유 없음. 콘텐츠 20개(4개 주기 × 5개 음식)는 Figma `음식 상세` 시안(425:1969) 원문을 그대로 옮긴 `src/content/foods/articles-ko.ts` — `content/legal/`과 같은 한국어 원문 전용 모듈이라 en 사용자도 한국어 본문을 본다. 콘텐츠 키는 `home.foods` 사전의 음식 id 와 1:1 대응해 id 변경 시 양쪽을 함께 고쳐야 한다. `generateStaticParams`로 20개 전부 프리렌더; 사진 시안이 없는 unknown phase(EmojiBowl)의 칩은 아직 링크로 전환되지 않았다.
 - [ ] MVP2.7~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 
 ### 매거진 (MVP 병행)

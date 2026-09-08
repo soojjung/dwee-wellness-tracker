@@ -338,6 +338,11 @@ export const ko: Dictionary = {
         ],
       },
     },
+    foodArticle: {
+      backAriaLabel: '뒤로',
+      tipChip: 'TIP',
+      disclaimer: '일반적인 영양 정보이며 의학적 조언은 아니니 참고용으로 봐주세요.',
+    },
     empty: {
       title: '아직 월경 기록이 없어요!',
       bodyPrefix: '오늘 날짜 옆 ',

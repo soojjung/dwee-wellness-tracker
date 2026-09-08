@@ -348,9 +348,9 @@ function IntroView({
 }
 
 const SLOT_GUIDE_IMAGE: Record<Slot, string> = {
-  front: '/magazine/personal-body-type/guide-front.png',
-  side: '/magazine/personal-body-type/guide-side.png',
-  back: '/magazine/personal-body-type/guide-back.png',
+  front: '/magazine/personal-body-type/guide-front.webp',
+  side: '/magazine/personal-body-type/guide-side.webp',
+  back: '/magazine/personal-body-type/guide-back.webp',
 };
 
 /**
