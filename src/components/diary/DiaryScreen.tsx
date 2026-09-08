@@ -12,7 +12,6 @@ import {
   selectPlacementsForMonth,
 } from '@/store/diaryPlacementStore';
 import { todayISO, toISO } from '@/lib/date';
-import { LogEntryDialog } from '@/components/log/LogEntryDialog';
 import { DayDetailSheet } from '@/components/calendar/DayDetailSheet';
 import { isPeriodDate } from '@/components/calendar/cellState';
 import {
@@ -26,7 +25,6 @@ import type { EventCategory, EventLog } from '@/types';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
-import { AddQuickSheet } from './AddQuickSheet';
 import { EventFormSheet, type EventFormInput } from './EventFormSheet';
 import {
   EventCategoryFormSheet,
@@ -46,8 +44,6 @@ interface DiaryScreenProps {
 type EventPrev = 'addEvent' | { kind: 'editEvent'; eventId: string };
 type ActiveSheet =
   | { kind: 'none' }
-  | { kind: 'quick' }
-  | { kind: 'period' }
   | { kind: 'addEvent' }
   | { kind: 'editEvent'; eventId: string }
   | { kind: 'monthPicker' }
@@ -67,6 +63,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
 
   const conditionByDate = useConditionStore((s) => s.byDate);
   const hydrateConditionRange = useConditionStore((s) => s.hydrateRange);
+  const upsertCondition = useConditionStore((s) => s.upsert);
 
   const settings = useSettingsStore((s) => s.settings);
 
@@ -211,7 +208,14 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       memo: input.memo,
       categoryId: input.categoryId,
     });
-    return !!log;
+    if (!log) return false;
+    if (input.periodMark) {
+      await linkPeriodMark(log.id);
+    }
+    if (input.condition) {
+      await upsertCondition({ date: input.startDate, ...input.condition });
+    }
+    return true;
   }
 
   async function handleUpdateEvent(
@@ -225,7 +229,11 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       memo: input.memo,
       categoryId: input.categoryId,
     });
-    return !!next;
+    if (!next) return false;
+    if (input.condition) {
+      await upsertCondition({ date: input.startDate, ...input.condition });
+    }
+    return true;
   }
 
   async function handleAddCategory(input: CategoryFormInput): Promise<boolean> {
@@ -384,7 +392,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           currentView={currentView}
           onViewChange={onViewChange}
           onMonthClick={() => setSheet({ kind: 'monthPicker' })}
-          onAddClick={() => setSheet({ kind: 'quick' })}
+          onAddClick={() => setSheet({ kind: 'addEvent' })}
         />
         {/* Padding gutter lives OUTSIDE the overflow-hidden layer so the
             left/right margin stays visible even while the swipe transform
@@ -441,24 +449,9 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
         </div>
       </div>
 
-      {/* + button routes through AddQuickSheet: 생리일 기록 →
-          LogEntryDialog (same modal 주기리포트 uses), 일정 등록 →
-          EventFormSheet. */}
-      {sheet.kind === 'quick' ? (
-        <AddQuickSheet
-          onSelectPeriod={() => setSheet({ kind: 'period' })}
-          onSelectEvent={() => setSheet({ kind: 'addEvent' })}
-          onClose={() => setSheet({ kind: 'none' })}
-        />
-      ) : null}
-      {sheet.kind === 'period' ? (
-        <LogEntryDialog
-          today={today}
-          defaultPeriodLength={periodLength}
-          onClose={() => setSheet({ kind: 'none' })}
-          onSaved={() => setSheet({ kind: 'none' })}
-        />
-      ) : null}
+      {/* + button opens EventFormSheet directly (add mode) — it now hosts
+          the period toggle and an optional condition section, so there's
+          no separate 생리/일정 chooser popover anymore. */}
       {sheet.kind === 'addEvent' && categories.length > 0 ? (
         <EventFormSheet
           mode="add"
@@ -475,10 +468,15 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           mode="edit"
           categories={categories}
           initial={activeEvent}
+          initialCondition={conditionByDate[activeEvent.startDate] ?? null}
           defaultDate={activeEvent.startDate}
           onClose={() => setSheet({ kind: 'none' })}
           onSubmit={(input) => handleUpdateEvent(activeEvent.id, input)}
           onDelete={async () => {
+            // "일정 및 기록 삭제": the period record this event created via
+            // the 생리 toggle goes with it. The day's condition log stays —
+            // it may hold a memo/fields logged outside this sheet.
+            if (activeEvent.hasPeriodMark) await unlinkPeriodMark(activeEvent.id);
             await removeEvent(activeEvent.id);
             setSheet({ kind: 'none' });
           }}

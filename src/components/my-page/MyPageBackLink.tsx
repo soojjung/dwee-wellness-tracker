@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { MouseEvent } from 'react';
+import { BackIcon } from '@/components/ui/icons';
 
 interface MyPageBackLinkProps {
   ariaLabel: string;
@@ -33,20 +34,10 @@ export function MyPageBackLink({ ariaLabel }: MyPageBackLinkProps) {
       href="/settings"
       onClick={handleClick}
       aria-label={ariaLabel}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
+      // Same 40px circle + BackIcon as FoodArticleScreen / magazine headers.
+      className="grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-        aria-hidden
-      >
-        <path d="M15 5l-7 7 7 7" />
-      </svg>
+      <BackIcon className="size-10" />
     </Link>
   );
 }

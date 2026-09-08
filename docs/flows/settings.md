@@ -25,9 +25,9 @@ MyPage renders a fixed stack of cards, some conditionally visible:
 ```mermaid
 flowchart TD
     MP([MyPage\n/settings])
-    AnonCard[AuthCard — signed-out\nloggedOutCta → /login]
-    AuthCard[AuthCard — signed-in\nnickname + email → /settings/account]
-    AccountMgmt[AccountManagementCard\nsign-out · delete account]
+    AnonCard["AuthCard — signed-out\nloggedOutCta → /login"]
+    AuthCard["AuthCard — signed-in\nnickname + email → /settings/account"]
+    AccountMgmt["AccountManagementCard\nsign-out · delete account"]
 
     MP -->|user is anonymous or null| AnonCard
     MP -->|user is authenticated| AuthCard
@@ -49,13 +49,13 @@ Anonymous users are bounced back to `/settings` via a `useEffect` guard. Only no
 
 ```mermaid
 flowchart TD
-    Tap[Tap profile card\nAuthCard signed-in]
+    Tap["Tap profile card\nAuthCard signed-in"]
     Guard{user.is_anonymous?}
-    Bounce[redirect → /settings]
-    Form[AccountEditScreen\nemail read-only\nnickname editable]
+    Bounce["redirect → /settings"]
+    Form["AccountEditScreen\nemail read-only\nnickname editable"]
     Save{nickname non-empty\nAND changed?}
-    Update[supabase.auth.updateUser\ndata: nickname]
-    Back[router.push /settings]
+    Update["supabase.auth.updateUser\ndata: nickname"]
+    Back["router.push /settings"]
 
     Tap --> Guard
     Guard -->|yes| Bounce
@@ -90,12 +90,12 @@ Tapping "로그아웃" in `AccountManagementCard` opens `LogoutConfirmDialog` (r
 
 ```mermaid
 flowchart TD
-    Tap[Tap 로그아웃]
-    Dialog[LogoutConfirmDialog\n핑크 배지 + 취소·로그아웃]
-    Cancel[dismiss]
-    Queue[queueAppToast]
-    Nav[router.push /login]
-    SignOut[signOut — background]
+    Tap["Tap 로그아웃"]
+    Dialog["LogoutConfirmDialog\n핑크 배지 + 취소·로그아웃"]
+    Cancel["dismiss"]
+    Queue["queueAppToast"]
+    Nav["router.push /login"]
+    SignOut["signOut — background"]
     Toast([top-confirm Toast\non LoginScreen mount])
 
     Tap --> Dialog
@@ -133,15 +133,15 @@ On confirm:
 
 ```mermaid
 flowchart TD
-    Tap[Tap 계정 삭제]
-    Confirm[WithdrawConfirmDialog\n015_9]
-    Cancel[dismiss]
-    ReasonScreen[WithdrawReasonScreen\n/settings/withdraw]
-    Select[Select reason(s)\n± free-text]
-    Submit[탈퇴하기]
-    Feedback[withdrawalFeedbackService.submit\nanonymous insert → withdrawal_feedbacks]
-    Delete[deleteAccount\ndelete-account Edge Function]
-    Login[router.replace /login\n+ withdrawDoneToast]
+    Tap["Tap 계정 삭제"]
+    Confirm["WithdrawConfirmDialog\n015_9"]
+    Cancel["dismiss"]
+    ReasonScreen["WithdrawReasonScreen\n/settings/withdraw"]
+    Select["Select reason(s)\n± free-text"]
+    Submit["탈퇴하기"]
+    Feedback["withdrawalFeedbackService.submit\nanonymous insert → withdrawal_feedbacks"]
+    Delete["deleteAccount\ndelete-account Edge Function"]
+    Login["router.replace /login\n+ withdrawDoneToast"]
 
     Tap --> Confirm
     Confirm -->|취소| Cancel
@@ -184,7 +184,7 @@ Matches Figma 292:2765. One master toggle expands into three per-topic sub-toggl
 | `notifPeriodDelayEnabled` | Period delay alert |
 | `notifFertileEnabled` | Fertile window reminder |
 
-`notifPeriodDueLeadDays` (0–14, persisted to `UserSettings`) controls a 3-row wheel picker for lead time when period-due is enabled. The wheel appears inline under the period-due row; tapping a neighbor row moves one step.
+`notifPeriodDueLeadDays` (0–14, persisted to `UserSettings`) controls a 3-row wheel picker for lead time when period-due is enabled. The wheel appears inline under the period-due row; it's built on the shared `WheelColumn` (`src/components/ui/WheelColumn.tsx` — the same scroll-snap column the diary's year/month picker uses), so drag/flick scrolling settles a value in the center, and tapping a neighbor row also selects it directly.
 
 Master-toggle semantics: turning ON enables all three subs; turning OFF disables all subs and collapses the sub-toggle section. When the last enabled sub is individually turned off, master auto-clears. Persisted to IndexedDB via `settingsStore.update()` — no push infrastructure yet; Supabase profiles table has no columns for these fields (uses `DEFAULT_USER_SETTINGS` fallback on load).
 

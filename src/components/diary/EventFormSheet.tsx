@@ -4,11 +4,16 @@ import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { formatMonthLabel, fromISO } from '@/lib/date';
-import type { EventCategory, EventLog } from '@/types';
-import { ChevronDownIcon } from '@/components/ui/icons';
+import { formatMonthLabel, fromISO, todayISO } from '@/lib/date';
+import type { DailyConditionLog, EventCategory, EventLog } from '@/types';
+import { BinIcon, ChevronDownIcon } from '@/components/ui/icons';
+import { MyPageToggle } from '@/components/my-page/MyPageToggle';
 import { CategorySelector } from './CategorySelector';
 import { InlineDatePicker } from './InlineDatePicker';
+import {
+  EventConditionSection,
+  type ConditionSelection,
+} from './EventConditionSection';
 
 export type EventFormMode = 'add' | 'edit';
 
@@ -18,12 +23,17 @@ export interface EventFormInput {
   startDate: string;
   endDate: string;
   categoryId: string;
+  periodMark: boolean;
+  condition?: ConditionSelection;
 }
 
 interface EventFormSheetProps {
   mode: EventFormMode;
   categories: EventCategory[];
   initial?: EventLog | null;
+  /** Edit mode only — seeds the condition section from the day's existing
+   * check-in (keyed by `initial.startDate`), if any. */
+  initialCondition?: DailyConditionLog | null;
   defaultDate: string;
   onClose: () => void;
   onSubmit: (input: EventFormInput) => Promise<boolean>;
@@ -39,6 +49,7 @@ export function EventFormSheet({
   mode,
   categories,
   initial,
+  initialCondition,
   defaultDate,
   onClose,
   onSubmit,
@@ -61,15 +72,32 @@ export function EventFormSheet({
   const [submitting, setSubmitting] = useState(false);
   const [togglingPeriod, setTogglingPeriod] = useState(false);
   const hasPeriodMark = initial?.hasPeriodMark ?? false;
+  // add mode only — edit mode's toggle mutates the store immediately via
+  // `onTogglePeriodMark` and reads its state from `hasPeriodMark` instead.
+  const [periodOn, setPeriodOn] = useState(false);
+  const periodMarkOn = mode === 'edit' ? hasPeriodMark : periodOn;
+  const periodMarkFutureBlocked = mode === 'add' && startDate > todayISO();
+
+  const [mood, setMood] = useState(initialCondition?.mood ?? null);
+  const [energy, setEnergy] = useState(initialCondition?.energy ?? null);
+  const [pain, setPain] = useState(initialCondition?.pain ?? null);
+  const [bloating, setBloating] = useState(initialCondition?.bloating ?? null);
+  const [appetite, setAppetite] = useState(initialCondition?.appetite ?? null);
+  const [skin, setSkin] = useState(initialCondition?.skin ?? null);
 
   async function handleTogglePeriodMark() {
-    if (togglingPeriod || !onTogglePeriodMark) return;
-    setTogglingPeriod(true);
-    try {
-      await onTogglePeriodMark();
-    } finally {
-      setTogglingPeriod(false);
+    if (mode === 'edit') {
+      if (togglingPeriod || !onTogglePeriodMark) return;
+      setTogglingPeriod(true);
+      try {
+        await onTogglePeriodMark();
+      } finally {
+        setTogglingPeriod(false);
+      }
+      return;
     }
+    if (periodMarkFutureBlocked) return;
+    setPeriodOn((v) => !v);
   }
 
   function handleDelete() {
@@ -86,13 +114,22 @@ export function EventFormSheet({
   const trimmedTitle = title.trim();
   const trimmedMemo = memo.trim();
 
+  const conditionChanged =
+    mood !== (initialCondition?.mood ?? null) ||
+    energy !== (initialCondition?.energy ?? null) ||
+    pain !== (initialCondition?.pain ?? null) ||
+    bloating !== (initialCondition?.bloating ?? null) ||
+    appetite !== (initialCondition?.appetite ?? null) ||
+    skin !== (initialCondition?.skin ?? null);
+
   const isDirty =
     !initial ||
     trimmedTitle !== initial.title ||
     trimmedMemo !== (initial.memo ?? '') ||
     startDate !== initial.startDate ||
     endDate !== initial.endDate ||
-    categoryId !== initial.categoryId;
+    categoryId !== initial.categoryId ||
+    conditionChanged;
 
   const canSave =
     !submitting &&
@@ -110,12 +147,25 @@ export function EventFormSheet({
     if (!canSave || !categoryId) return;
     setSubmitting(true);
     try {
+      const condition: ConditionSelection | undefined =
+        mood || energy || pain || bloating || appetite || skin
+          ? {
+              ...(mood ? { mood } : {}),
+              ...(energy ? { energy } : {}),
+              ...(pain ? { pain } : {}),
+              ...(bloating ? { bloating } : {}),
+              ...(appetite ? { appetite } : {}),
+              ...(skin ? { skin } : {}),
+            }
+          : undefined;
       const ok = await onSubmit({
         title: trimmedTitle,
         memo: trimmedMemo,
         startDate,
         endDate,
         categoryId,
+        periodMark: periodMarkOn,
+        condition,
       });
       if (ok) onClose();
     } finally {
@@ -236,32 +286,34 @@ export function EventFormSheet({
             onAddCategory={onAddCategory}
           />
 
-          {mode === 'edit' && onTogglePeriodMark ? (
+          {mode === 'add' || onTogglePeriodMark ? (
             <div className="flex items-center justify-between rounded-2xl bg-brand-white px-4 py-3">
-              <span className="text-sm text-brand-gray700">
+              <span className="text-base text-brand-gray600">
                 {t.report.diary.eventDetail.periodToggle}
               </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={hasPeriodMark}
-                onClick={handleTogglePeriodMark}
-                disabled={togglingPeriod}
-                className={
-                  'relative h-6 w-11 rounded-full transition-colors ' +
-                  (hasPeriodMark ? 'bg-brand-pink300' : 'bg-brand-gray400')
-                }
-              >
-                <span
-                  aria-hidden
-                  className={
-                    'absolute top-0.5 h-5 w-5 rounded-full bg-brand-white shadow transition-transform ' +
-                    (hasPeriodMark ? 'translate-x-[22px]' : 'translate-x-0.5')
-                  }
-                />
-              </button>
+              <MyPageToggle
+                enabled={periodMarkOn}
+                onToggle={handleTogglePeriodMark}
+                ariaLabel={t.report.diary.eventDetail.periodToggle}
+                disabled={togglingPeriod || periodMarkFutureBlocked}
+              />
             </div>
           ) : null}
+
+          <EventConditionSection
+            mood={mood}
+            energy={energy}
+            pain={pain}
+            bloating={bloating}
+            appetite={appetite}
+            skin={skin}
+            onChangeMood={setMood}
+            onChangeEnergy={setEnergy}
+            onChangePain={setPain}
+            onChangeBloating={setBloating}
+            onChangeAppetite={setAppetite}
+            onChangeSkin={setSkin}
+          />
 
           {mode === 'edit' && onDelete ? (
             <div className="flex justify-center pt-2">
@@ -269,9 +321,10 @@ export function EventFormSheet({
                 type="button"
                 onClick={handleDelete}
                 disabled={submitting}
-                className="flex items-center gap-2 rounded-full bg-brand-white px-5 py-2 text-sm font-medium text-brand-pink600 shadow-[0_2px_8px_0_rgba(0,0,0,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink600 disabled:opacity-60"
+                // Figma 324:2315 — translucent gray400 pill, red label.
+                className="flex items-center gap-1 rounded-[40px] bg-brand-gray400/50 px-7 py-4 text-lg font-medium text-brand-red backdrop-blur-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red disabled:opacity-60"
               >
-                <TrashIcon />
+                <BinIcon className="size-[18px]" />
                 <span>{t.report.diary.eventDetail.delete}</span>
               </button>
             </div>
@@ -357,20 +410,6 @@ function CheckIcon() {
       aria-hidden
     >
       <path d="M5 12.5l4.5 4.5L19 7.5" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-      <path
-        d="M2.5 4.5h11m-9 0v-1a1 1 0 011-1h4a1 1 0 011 1v1m-6 0v9a1 1 0 001 1h6a1 1 0 001-1v-9M6.5 7v5m3-5v5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        fill="none"
-      />
     </svg>
   );
 }

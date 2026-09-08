@@ -1,11 +1,11 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
+import { WheelColumn, WHEEL_ITEM_HEIGHT as ITEM_HEIGHT } from '@/components/ui/WheelColumn';
 
-const ITEM_HEIGHT = 44;
 const YEAR_SPAN = 20;
 
 interface YearMonthWheelPickerProps {
@@ -107,72 +107,6 @@ export function YearMonthWheelPicker({
             {t.report.diary.yearMonthPicker.confirm}
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-interface WheelItem {
-  key: number | string;
-  label: string;
-}
-
-interface WheelColumnProps {
-  items: WheelItem[];
-  selectedKey: number | string;
-  onSelectKey: (key: number | string) => void;
-}
-
-function WheelColumn({ items, selectedKey, onSelectKey }: WheelColumnProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const idx = items.findIndex((it) => it.key === selectedKey);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || idx < 0) return;
-    el.scrollTop = idx * ITEM_HEIGHT;
-  }, [idx]);
-
-  function handleScroll() {
-    const el = scrollRef.current;
-    if (!el) return;
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      const nextIdx = Math.round(el.scrollTop / ITEM_HEIGHT);
-      const clamped = Math.max(0, Math.min(items.length - 1, nextIdx));
-      const target = items[clamped];
-      if (target && target.key !== selectedKey) onSelectKey(target.key);
-    }, 90);
-  }
-
-  return (
-    <div className="relative flex-1 overflow-hidden">
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth"
-        style={{ scrollPaddingTop: `calc(50% - ${ITEM_HEIGHT / 2}px)` }}
-      >
-        <div style={{ height: 'calc(50% - 22px)' }} aria-hidden />
-        {items.map((it) => {
-          const isSelected = it.key === selectedKey;
-          return (
-            <button
-              key={it.key}
-              type="button"
-              onClick={() => onSelectKey(it.key)}
-              className={
-                'flex w-full snap-center items-center justify-center text-lg transition-colors ' +
-                (isSelected ? 'font-semibold text-brand-gray900' : 'text-brand-gray400')
-              }
-              style={{ height: ITEM_HEIGHT }}
-            >
-              {it.label}
-            </button>
-          );
-        })}
-        <div style={{ height: 'calc(50% - 22px)' }} aria-hidden />
       </div>
     </div>
   );

@@ -3,3 +3,4 @@
 - [Error message copy — avoid internal tech terms](feedback_error_copy_patterns.md) — 에러 메시지에 API/서버 내부 용어 노출 금지 패턴 (session, service, network looks 등)
 - [Insight copy — avoid passive voice and medical-record tone](feedback_passive_voice_insight.md) — insight 도메인 수동태·의료 어투 회피 패턴 (Pain was logged → You logged pain)
 - [home.foods Figma swap (2026-09-08)](project_home_foods_figma_swap.md) — 주기당 4개 카테고리→5개 구체 식품명 전면 교체, id 목록 및 FoodSuggestions.tsx slice(0,4)/foodVisual 매핑 후속 작업 필요성 메모
+- [Header title tech-term collision](feedback_header_title_tech_collision.md) — "Event & log" 는 "Event Log"(IT 로그)로 읽힘. 하위 섹션 라벨 어휘(Condition)로 맞출 것, en/ko 1:1 강제 금지
