@@ -199,6 +199,12 @@ const DEFAULT_STICKER_SET_VERSION = 2;
 // re-check IndexedDB. Cleared on reset.
 const seededScopes = new Set<string>();
 
+// Seeds that are still running, keyed by scope. `seededScopes` alone can't
+// stop a double-seed: it is only set after the inserts finish, so two hydrates
+// racing each other both get past the check and each insert the full set.
+// Sharing the in-flight promise makes the second caller wait for the first.
+const seedsInFlight = new Map<string, Promise<void>>();
+
 /**
  * The seeded flag lives in local IndexedDB, but the library it guards lives
  * wherever the active repo mode points. Scoping the flag per backend is what
@@ -234,6 +240,18 @@ export async function ensureDefaultStickersSeeded(): Promise<void> {
   }
   if (seededScopes.has(scope)) return;
 
+  const running = seedsInFlight.get(scope);
+  if (running) return running;
+
+  // Registered before the first await inside `runSeed` so a concurrent caller
+  // joins this run instead of starting its own. Dropped on settle either way —
+  // a failed run has to stay retryable.
+  const run = runSeed(scope).finally(() => seedsInFlight.delete(scope));
+  seedsInFlight.set(scope, run);
+  return run;
+}
+
+async function runSeed(scope: string): Promise<void> {
   // Pre-scoping builds wrote a single unscoped flag. It is deliberately not
   // honoured: it was set even when every insert had failed, which is the
   // state that leaves a library permanently empty. Dropping it costs at most
@@ -289,6 +307,7 @@ async function clearSeedFlags(): Promise<void> {
       .map((k) => del(k)),
   );
   seededScopes.clear();
+  seedsInFlight.clear();
 }
 
 export async function resetAllUserData(): Promise<void> {
