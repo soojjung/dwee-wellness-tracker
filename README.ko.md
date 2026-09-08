@@ -253,7 +253,7 @@ src/
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
 │   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), PhotoPreviewView (선택 직후 미리보기), DiagnoseResultScreen, DiagnoseResultTopBar, ReportView, ShareTestBar, ShareLandingRedirect
-│   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DayDetailSheet, AddQuickSheet, EventFormSheet 등
+│   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DayDetailSheet, EventFormSheet (+ EventConditionSection) 등
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
 │   ├── auth/                     LoginScreen, AuthGuard
@@ -353,6 +353,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] **홈 음식 상세 화면** — "이렇게 먹으면 좋아요" 섹션의 음식 칩(사진이 아니라 이름+이모지 pill만 탭 가능)을 누르면 `/foods/[id]` (fullscreen)로 이동해 해당 음식이 왜 좋은지 설명하는 읽기 전용 화면(`FoodArticleScreen`)을 보여준다. 매거진 아티클과는 별개 구현 — 북마크·공유 없음. 콘텐츠 20개(4개 주기 × 5개 음식)는 Figma `음식 상세` 시안(425:1969) 원문을 그대로 옮긴 `src/content/foods/articles-ko.ts` — `content/legal/`과 같은 한국어 원문 전용 모듈이라 en 사용자도 한국어 본문을 본다. 콘텐츠 키는 `home.foods` 사전의 음식 id 와 1:1 대응해 id 변경 시 양쪽을 함께 고쳐야 한다. `generateStaticParams`로 20개 전부 프리렌더; 사진 시안이 없는 unknown phase(EmojiBowl)의 칩은 아직 링크로 전환되지 않았다.
 - [x] **매거진 공유 링크 로그인 예외 (2026-09-09)** — `AuthGuard` 에 `PUBLIC_PREFIXES` 화이트리스트를 추가해 `/magazine/personal-body-type/share` 하위는 세션 없이도 통과하도록 함 — "첫 진입 강제 `/login` 게이트" 정책의 첫 예외. `ShareLandingRedirect` 도 함께 조정: 목적지를 아티클 → 매거진 목록(`/magazine`)으로 바꾸고, 세션이 있을 때만 자동 이동(세션 없이 넘기면 `/magazine` 도 게이트 뒤라 결국 `/login` 으로 튕기기 때문 — 그 경우엔 화면에 머무르며 링크만 보여줌).
 - [x] **다이어리 커스터마이즈 폴리시 (2026-09-09)** — 앨범 임포트(`PhotoImportModal`)를 2단계로 재편: 모드(누끼/사진 그대로) 먼저 선택(누끼 기본), "사진 그대로"를 고를 때만 신설 풀스크린 `PhotoRatioScreen` 에서 비율 선택. 카메라 촬영은 기존대로 촬영 전 비율+모드 동시 선택. `DraggableBottomSheet` 개편: 스티커 라이브러리 시트 전체 표면이 드래그 대상이 되고(핸들만이 아님), `open`/`onDismiss` props 로 캘린더 바깥 탭 시 시트를 완전히 숨길 수 있음. 기본 스티커 시딩이 `DEFAULT_STICKER_SET_VERSION` 으로 버전 관리되고 백엔드별(local/remote:userId)로 스코프됨 — 새로 로그인한 계정도 기본 스티커를 받고, 아트워크가 바뀌면(라이브러리가 비어 있는 한) 재시드됨; `rehydrateAll` 이 `diaryStickerStore` 도 함께 rehydrate. 잠재 버그 수정: `pt-safe`/`pb-safe` 유틸리티 클래스가 실제로는 `globals.css` 어디에도 정의돼 있지 않아 안전영역 여백이 계속 무시되고 있었음 — 전역 유틸리티로 정의해 고침.
+- [x] **다이어리 통합 입력 시트 (2026-09-09)** — `+` 버튼의 [생리 추가]/[일정 추가] 2-메뉴 팝오버(`AddQuickSheet`)를 제거하고 `EventFormSheet` add 모드가 바로 열리도록 통합. add/edit 두 모드 모두 생리 토글 + 신규 `EventConditionSection`(기분/에너지/통증/붓기/식욕/피부 — `ConditionRow`의 새 `outline` variant 재사용, 시작 날짜 기준 `conditionStore.upsert`)을 포함하는 하나의 폼. `conditionStore.upsert`는 리포지토리가 레코드 전체를 교체(REPLACE)하는 것을 보완해 기존 필드(memo 등)와 병합 후 저장하도록 보강. 편집 모드 삭제 버튼은 "일정 및 기록 삭제"로 바뀌었고(신규 `BinIcon`, `brand.red`), 삭제 시 연결된 생리 기록도 함께 해제(`unlinkPeriodMark`)하되 컨디션 로그는 보존. 마이페이지 뒤로가기 버튼을 `BackIcon` 40px 원형으로 통일하고 `MyPageToggle`을 Figma 규격(50×24, ON 시 Pink/100)에 맞춰 `disabled` prop 을 추가(다이어리 시트도 재사용). 알림 시기 휠 피커를 `YearMonthWheelPicker`에서 공용 `WheelColumn`으로 추출 — 기존 scroll-padding 버그도 함께 제거.
 - [ ] MVP2.7~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
 
 ### 매거진 (MVP 병행)

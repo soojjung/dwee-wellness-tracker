@@ -9,3 +9,4 @@ export { EditStarIcon } from './EditStarIcon';
 export { ChartIcon } from './ChartIcon';
 export { DotGridIcon } from './DotGridIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';
+export { BinIcon } from './BinIcon';

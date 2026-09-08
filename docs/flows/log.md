@@ -20,7 +20,7 @@ stateDiagram-v2
 
 - `LogPage` 는 `useState<LogView>('diary')` 상태만 보유하고 조건부로 두 화면 중 하나를 렌더 (얇은 래퍼).
 - `LogViewToggle` (`src/components/diary/LogViewToggle.tsx`) — 두 헤더에서 재사용. 흰 정사각형 슬라이더가 좌우 이동.
-- STEP 10.2 완료: `+` 버튼 바텀시트(생리/일정), `▼` 연·월 wheel picker, 일정(이벤트) 배지 (AddQuickSheet, EventFormSheet, YearMonthWheelPicker, InlineDatePicker, CategoryChip/Selector, EventCategoryFormSheet). 이벤트 배지 탭 시 `EventFormSheet` 편집 모드를 바로 열림 (별도 상세 시트 없음).
+- STEP 10.2 완료: `+` 버튼 → `EventFormSheet` add 모드 바로 오픈 (생리 추가/일정 추가 2-메뉴 팝오버는 제거됨 — 시트 안에 생리 토글 + 컨디션 섹션을 포함해 하나의 폼으로 통합), `▼` 연·월 wheel picker, 일정(이벤트) 배지 (EventFormSheet, YearMonthWheelPicker, InlineDatePicker, CategoryChip/Selector, EventCategoryFormSheet). 이벤트 배지 탭 시 `EventFormSheet` 편집 모드를 바로 열림 (별도 상세 시트 없음).
 - STEP 10.3 완료: edit-star 아이콘 → `/log/customize` 풀스크린 (StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer).
 
 ---
@@ -92,8 +92,8 @@ flowchart TD
 - `src/components/diary/DiaryHeader.tsx` — 다이어리 헤더 (title + edit-star + 월 셀렉터 + 토글 + `+`)
 - `src/components/diary/LogViewToggle.tsx` — 재사용 가능한 2-아이콘 segmented toggle
 - `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx` — 다이어리용 캘린더 (생리 마커 + 이벤트 배지, STEP 10.2a)
-- `src/components/diary/AddQuickSheet.tsx` — `+` 버튼 chooser: 생리 추가 / 일정 추가 (STEP 10.2a)
-- `src/components/diary/EventFormSheet.tsx` — 일정 등록/편집 공통 폼 시트 (mode = 'add' | 'edit', inline date picker, 삭제·생리 토글 포함)
+- `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · 생리 토글(add/edit 공통) · `EventConditionSection`(선택 컨디션 6항목) · 삭제(edit 전용) 포함
+- `src/components/diary/EventConditionSection.tsx` — `EventFormSheet` 안의 선택적 컨디션 카드 (기분/에너지/통증/붓기/식욕/피부, `ConditionRow` variant="outline" 재사용)
 - `src/components/diary/InlineDatePicker.tsx` — 시작/종료 날짜 확장 시 나타나는 인라인 미니 캘린더 (STEP 10.2b)
 - `src/components/diary/YearMonthWheelPicker.tsx` — 연·월 선택 wheel picker 바텀시트 (STEP 10.2b, DiaryHeader ▼ + InlineDatePicker 에서 재사용)
 - `src/components/diary/CategoryChip.tsx`, `CategorySelector.tsx` — 팔레트 기반 카테고리 UI (10.2c 부터 편집·추가 진입점 활성)
@@ -164,12 +164,17 @@ flowchart TD
 - Pure helper: `src/lib/cutout/base64ToBlob.ts` (+ 테스트/케이스 표).
 - Env: `REMOVE_BG_API_KEY` (edge function secret) 필요. Supabase Dashboard → Functions → Secrets 에서 설정.
 
-### 생리 토글 연동 (STEP 10.2c)
+### 생리 토글 + 컨디션 연동 (STEP 10.2c, 통합 시트 갱신)
 
-`EventFormSheet` 편집 모드의 생리 토글은 `eventStore.linkPeriodMark(id)` / `unlinkPeriodMark(id)` 를 호출:
-- ON: `periodStore.add({ startDate, endDate })` → 반환된 PeriodLog.id 를 `event.linkedPeriodId` 로 저장.
-- OFF: 저장된 `linkedPeriodId` 로 `periodStore.remove()` → event.linkedPeriodId 제거, `hasPeriodMark=false`.
-- Supabase `event_logs.linked_period_id` 컬럼 (`supabase/migrations/0007_event_period_link.sql`, `on delete set null`) 이 캘린더에서 직접 삭제된 경우도 커버.
+`EventFormSheet` 는 add/edit 두 모드 모두에서 생리 토글과 `EventConditionSection`(선택) 을 렌더하지만, 반영 시점이 다릅니다.
+
+- **생리 토글 — edit 모드**: 탭 즉시 `eventStore.linkPeriodMark(id)` / `unlinkPeriodMark(id)` 호출.
+  - ON: `periodStore.add({ startDate, endDate })` → 반환된 PeriodLog.id 를 `event.linkedPeriodId` 로 저장.
+  - OFF: 저장된 `linkedPeriodId` 로 `periodStore.remove()` → event.linkedPeriodId 제거, `hasPeriodMark=false`.
+  - Supabase `event_logs.linked_period_id` 컬럼 (`supabase/migrations/0007_event_period_link.sql`, `on delete set null`) 이 캘린더에서 직접 삭제된 경우도 커버.
+- **생리 토글 — add 모드**: 로컬 state(`periodOn`)만 토글하고, 저장(✓) 시 `EventFormInput.periodMark` 로 전달 → `DiaryScreen.handleAddEvent` 가 `addEvent()` 성공 후 `linkPeriodMark(log.id)` 호출. 시작 날짜가 오늘 이후면 토글이 disabled (미래 생리 기록 방지, `LogEntryDialog` 의 `startDate ≤ today` 제약과 동일한 취지).
+- **컨디션 섹션**: 두 모드 모두 선택 사항. add 모드는 빈 값에서 시작, edit 모드는 `conditionByDate[event.startDate]` 로 초기화. 저장 시 하나라도 선택돼 있으면 `EventFormInput.condition` 에 담겨 `DiaryScreen` 이 `conditionStore.upsert({ date: startDate, ...condition })` 호출.
+- `conditionStore.upsert` 는 리포지토리가 **레코드 전체를 교체(REPLACE)** 하는 것을 보완하기 위해, 호출 전 그 날짜의 기존 `byDate` 엔트리와 필드별로 merge 합니다(`memo` 등 이번 폼이 건드리지 않은 값 보존). `LogEntryDialog` 를 포함한 모든 `upsert` 호출자가 이 merge 를 공유합니다.
 - `src/components/report/CycleReportScreen.tsx` — 최상위 화면 컴포넌트
 - `src/components/report/ReportHeader.tsx` — 헤더 + 새 기록 버튼
 - `src/components/report/StatusBadge.tsx` — 상태 코드 → 뱃지 UI

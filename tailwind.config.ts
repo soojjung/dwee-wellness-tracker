@@ -52,6 +52,7 @@ const config: Config = {
           white: '#FFFDFE',
           lavender100: '#D1C5EE',
           lavender400: '#7D5ACF',
+          red: '#FF3B30',
         },
         nav: {
           pillBg: 'rgba(255,253,254,0.8)',

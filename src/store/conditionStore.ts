@@ -46,7 +46,25 @@ export const useConditionStore = create<ConditionState>()((set, get) => ({
 
   async upsert(input) {
     try {
-      const log = await conditionRepo.upsert(input);
+      // `conditionRepo.upsert` replaces the whole record rather than
+      // merging — any field this caller doesn't set (e.g. a form that only
+      // edits mood) would otherwise wipe out an existing memo/other field
+      // for that date. Fall back to the currently-loaded entry for anything
+      // left unset here.
+      const existing = get().byDate[input.date] ?? null;
+      const merged: NewConditionInput = existing
+        ? {
+            date: input.date,
+            mood: input.mood ?? existing.mood,
+            energy: input.energy ?? existing.energy,
+            pain: input.pain ?? existing.pain,
+            bloating: input.bloating ?? existing.bloating,
+            appetite: input.appetite ?? existing.appetite,
+            skin: input.skin ?? existing.skin,
+            memo: input.memo ?? existing.memo,
+          }
+        : input;
+      const log = await conditionRepo.upsert(merged);
       set({ byDate: { ...get().byDate, [log.date]: log } });
       return log;
     } catch (e) {
