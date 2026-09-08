@@ -140,10 +140,12 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
   if (!initialSlotValid) return null;
 
   const slots = slotsForCount(photoCount);
+  // 이 화면은 사진이 다 채워졌을 때만 열린다(위 가드). 구분선을 두면 선택
+  // 테두리 바깥에 회색 선이 겹쳐 보이므로 넣지 않는다.
   const wrapperClass = cn(
     'grid h-full w-full',
-    photoCount === 2 && 'grid-rows-2 gap-px bg-brand-gray400',
-    photoCount === 4 && 'grid-cols-2 grid-rows-2 gap-px bg-brand-gray400',
+    photoCount === 2 && 'grid-rows-2',
+    photoCount === 4 && 'grid-cols-2 grid-rows-2',
   );
 
   // "dirty" = any session edit exists (crop gesture or file pick). Empty local
@@ -285,9 +287,9 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-full bg-brand-gray200 px-4 py-2.5 text-sm font-medium text-brand-gray900 shadow-[0_2px_8px_0_rgba(0,0,0,0.08)] transition-colors hover:bg-brand-gray300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-gray300 px-7 py-4 text-sm font-medium text-brand-gray900 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
             >
-              <ChangePhotoIcon />
+              <AlbumIcon />
               {t.home.customize.photoEditDetail.changePhoto}
             </button>
           </div>
@@ -551,23 +553,18 @@ function CheckIcon() {
   );
 }
 
-function ChangePhotoIcon() {
+function AlbumIcon() {
+  // Figma `icon_album` (public/icons/ui/album.svg) — fill 로 그려진 아이콘이라
+  // currentColor 를 써서 버튼 글자색을 따라가게 한다.
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      className="h-4 w-4"
-      aria-hidden
-    >
+    <svg viewBox="0 0 18 18" fill="currentColor" className="h-[18px] w-[18px]" aria-hidden>
+      <path d="M16.9277 13.75C16.5767 15.6005 14.9527 17 13 17H5C3.04731 17 1.42334 15.6005 1.07227 13.75H16.9277Z" />
       <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 16l4-4a3 3 0 014 0l4 4M14 14l1.5-1.5a3 3 0 014 0L21 14"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M13 1C15.2091 1 17 2.79086 17 5V12.25H13.3105L6.2373 5.17676C5.55391 4.49344 4.44609 4.49344 3.7627 5.17676L1 7.93945V5C1 2.79086 2.79086 1 5 1H13ZM12.5 4C11.6716 4 11 4.67157 11 5.5C11 6.32843 11.6716 7 12.5 7C13.3284 7 14 6.32843 14 5.5C14 4.67157 13.3284 4 12.5 4Z"
       />
-      <circle cx="9" cy="9" r="1.5" />
-      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M4.82324 6.2373C4.92085 6.13977 5.07915 6.13977 5.17676 6.2373L11.1895 12.25H1V10.0605L4.82324 6.2373Z" />
     </svg>
   );
 }

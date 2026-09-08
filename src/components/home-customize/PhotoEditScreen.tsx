@@ -50,10 +50,14 @@ export function PhotoEditScreen() {
 
   const allFilled = slots.every((s) => !!photoUrls[s]);
 
+  // 구분선은 아직 빈 칸이 있을 때만 — 어디를 채워야 하는지 보여주는 용도다.
+  // 다 채우고 나면 홈에서 보는 모습과 같아야 하므로 선을 없앤다.
+  const gridLines = allFilled ? '' : 'gap-px bg-brand-gray400';
   const wrapperClass = cn(
     'grid h-full w-full',
-    photoCount === 2 && 'grid-rows-2 gap-px bg-brand-gray400',
-    photoCount === 4 && 'grid-cols-2 grid-rows-2 gap-px bg-brand-gray400',
+    photoCount === 2 && 'grid-rows-2',
+    photoCount === 4 && 'grid-cols-2 grid-rows-2',
+    photoCount !== 1 && gridLines,
   );
 
   function handleAdd(slot: PhotoSlot) {
@@ -184,7 +188,9 @@ function SlotCell({
         type="button"
         onClick={() => onAdd(slot)}
         aria-label={addAriaLabel}
-        className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-brand-gray200 text-brand-gray700 transition-colors hover:bg-brand-gray300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink200"
+        // 터치에서는 탭 후 hover 가 남는다. 배경색을 바꾸면 마지막에 누른 칸만
+        // 짙게 보이므로, 모든 칸을 gray300 으로 고정하고 hover 로는 바꾸지 않는다.
+        className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-brand-gray300 text-brand-gray700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink200"
       >
         <PlusIcon />
         <span className="text-xs font-medium">{addLabel}</span>

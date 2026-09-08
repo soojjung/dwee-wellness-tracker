@@ -112,7 +112,10 @@ WeekStrip은 날짜마다 `CycleState`(`'actualPeriod' | 'predictedPeriod' | 'pr
 ## ActivitySuggestions / FoodSuggestions 구조
 
 - **ActivitySuggestions**: chip 필터 탭(카테고리별: emotion / exercise / work / selfcare) + 톤 순환 카드(gray → pink → dark → gray). 각 카드는 제목·인라인 이모지·설명·duration pill(`durationMinutes` + `t.home.durationSuffix`)을 표시. `src/data/homeImagery.ts`의 `ACTIVITY_CATEGORY_KEYS` 순서 기반.
-- **FoodSuggestions**: 그릇 컴포지션(bowl illustration) — 그릇 하단 고정, 음식 이모지 4개가 그릇 상단에 회전값 적용되어 겹쳐 배치됨. 각 이모지 위에 dark pill 라벨. phase 기반 음식 목록은 `home.foods.{phase}` i18n 키에서 조회.
+- **FoodSuggestions**: phase별로 두 가지 렌더링 중 하나를 고른다 (`FOOD_BOWL_IMAGE[phase]` 존재 여부로 분기).
+  - **PhotoBowl** (menstrual/follicular/ovulation/luteal) — Figma 시안에서 내보낸 주기별 합성 사진 1장(`public/home/foods/<phase>.png`) 위에 dark pill 라벨을 얹는다. 라벨 위치는 `FOOD_LABEL_POSITION`에 음식 id별 `{ left, top }` %좌표로 저장되어 있어 사진 속 실제 식재료 자리에 붙고, 이미지가 리사이즈돼도 상대 위치를 유지한다.
+  - **EmojiBowl** (unknown) — 사진 시안이 아직 없는 주기용 폴백. 기존 CSS로 그린 그릇 위에 이모지 4개 + dark pill 라벨을 겹쳐 배치하던 원래 렌더링을 그대로 유지한다.
+  - 음식 목록 자체도 이번에 카테고리형 4개("따뜻한 영양국" 등)에서 구체적 식품명 5개(소고기·굴 등)로 교체되며 id가 전부 재배치됐다. phase 기반 음식 목록은 여전히 `home.foods.{phase}.items` i18n 키에서 조회.
 
 ## 검증 케이스
 

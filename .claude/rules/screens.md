@@ -69,3 +69,8 @@ paths:
 - `(app)` 탭 화면이 `BottomTabNav`에 가리지 않도록 두는 하단 여백(`pb-24`)은 **`AppShell`이 아니라 각 화면이 자체 컨테이너에** 둔다.
 - `AppShell`의 `<main>`에 두면 자식 화면의 배경(`bg-...`) 영역 밖이 되어, 화면 하단에 부모(`AppShell`) 배경색 띠가 그대로 노출된다 — 실제 발생했던 버그.
 - Home/Magazine/Diary/MyPage 모두 각자 최상위 컨테이너에 `pb-24`(또는 동등한 값)를 둘 것.
+
+## 10) 텍스트 줄바꿈
+
+- 한국어가 글자 단위로 끊겨 어절이 쪼개지는 문제를 막기 위한 `word-break: keep-all` + `overflow-wrap: break-word`는 `src/app/globals.css`의 `html, body`에 전역으로 걸려 있다. 상속되므로 앱 전체에 자동 적용된다.
+- 화면·컴포넌트별로 같은 규칙을 `break-keep` 클래스나 인라인 스타일로 다시 넣지 않는다. 국소적으로 다르게 끊어야 하는 예외(코드 블록 등)에만 해당 요소에 override.

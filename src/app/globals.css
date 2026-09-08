@@ -12,6 +12,11 @@ html,
 body {
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
+  /* 한국어는 기본값(word-break: normal)에서 글자 단위로 끊겨 "조절하세 / 요." 처럼
+     어절이 쪼개진다. keep-all 로 공백에서만 줄을 바꾼다. 대신 띄어쓰기 없는 긴
+     문자열(URL, 영문 합성어)이 넘칠 수 있어 overflow-wrap 으로 그때만 끊는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
   font-family:
     'Pretendard',
     -apple-system,
