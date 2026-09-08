@@ -4,6 +4,18 @@ description: Where docs live, which files must stay in sync with CLAUDE.md rule 
 type: project
 ---
 
+## Figma asset export pitfall — node export bakes the canvas background (2026-09-08)
+
+Figma's node `download_assets` export bakes in the **canvas background color** (observed: `#444444`) with full alpha (255) — not a transparent PNG. Using that export for a UI asset (e.g. the home food-bowl composite photos) puts a solid dark-gray rectangle behind the subject once it renders on a light app background. Fix: use `download_assets`' `rawImages` (original source images), which have correct alpha, instead of the rendered node export. Watch for this any time an artifact/doc task pulls a PNG straight out of Figma via node export rather than `rawImages` — easy to repeat since the bug is invisible in the Figma canvas itself (canvas background matches, so it "looks right" in Figma).
+
+## globals.css owns app-wide text rules — don't duplicate per component (2026-09-08)
+
+`src/app/globals.css`'s `html, body` selector now carries `word-break: keep-all` + `overflow-wrap: break-word` (Korean word-wrap fix — prevents mid-word breaks like "조절하세 / 요."). This is documented as its own section in `.claude/rules/screens.md` (§10, added 2026-09-08) rather than left implicit, precisely so a future PR doesn't reintroduce a per-component `break-keep` class. Any future global typography/CSS rule (line-height, letter-spacing, etc.) set on `html`/`body` in `globals.css` should get the same one-line treatment in screens.md §10 or a sibling section — don't let screens.md's token rule (§6, colors) be the only "single source" precedent readers can find.
+
+## Home food-suggestions section — photo composite + emoji fallback (2026-09-08)
+
+`FoodSuggestions.tsx` now branches on `FOOD_BOWL_IMAGE[phase]` (in `src/data/homeImagery.ts`): menstrual/follicular/ovulation/luteal render `PhotoBowl` (a single Figma-exported composite photo per phase from `public/home/foods/<phase>.png`, with dark-pill labels absolutely positioned via `FOOD_LABEL_POSITION[foodId]` percent coordinates keyed by food id); `unknown` has no photo yet and falls back to the original `EmojiBowl` (CSS-drawn bowl + emoji). The food list itself was fully replaced in the same PR — 4 category-style items per phase ("따뜻한 영양국" etc.) became 5 specific food-name items per phase with new ids (e.g. `beef-m`, `oyster-m`); old ids are gone. Documented in `docs/flows/home.md` §"ActivitySuggestions / FoodSuggestions 구조". When a label-position Figma spec lands for follicular/ovulation/menstrual (only luteal has one so far, node 256:24709), only `FOOD_LABEL_POSITION`'s values need to change — no component code.
+
 ## Key doc locations
 
 - `docs/flows/home.md` — home screen state machine + data flow. Must be updated when HomeScreen.tsx flow changes.
