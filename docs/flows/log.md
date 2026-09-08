@@ -108,13 +108,13 @@ flowchart TD
 - 저장소: IndexedDB `dwee:diary:stickers` + blob per id. Supabase `diary_stickers` 테이블 + `media` bucket 경로 `{user_id}/diary_stickers/{id}.{ext}` (RLS anon lockout).
 - 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
 - 10.3b 포함: 캘린더 위에 스티커 배치 (drag/select/resize/rotate/delete). 라이브러리 썸네일 탭 → 화면 중앙 근처에 draft placement 생성. 커스터마이즈 화면은 draft 상태를 유지하며 완료 시 diff → repo 반영, 뒤로 시 `DiscardDialog` → 폐기.
-- 10.3c 포함: `CameraSheet` — Capacitor Camera 플러그인으로 촬영 후 crop 진입. `DraggableBottomSheet` — 스티커 라이브러리를 snap 2단계(collapsed/expanded) 바텀시트로 감쌈.
+- 10.3c 포함: `CameraSheet` — Capacitor Camera 플러그인으로 촬영 후 crop 진입. `DraggableBottomSheet` — 스티커 라이브러리를 감싸는 3-snap(`peek`/`medium`/`full`) 바텀시트. 시트 전체 표면이 드래그 대상(핸들만이 아님) — `full` 미만에서는 위로 스와이프가 항상 시트를 확장하고, `full` 에서는 안쪽 리스트가 스크롤을 먼저 가져가다 맨 위에서 더 당기면 시트가 접힘. `open`/`onDismiss` props 로 캘린더(시트 바깥) 탭 시 시트를 화면 아래로 완전히 숨길 수 있음 — `DiaryCustomizeScreen` 이 이를 이용해 배경 탭으로 라이브러리를 치워 달 전체를 보이게 함 (화면 자체 오버레이가 떠 있는 동안엔 `onDismiss` 를 꺼서 오작동 방지).
 - 10.3d 포함: `StickerScanScreen` + `CutoutConfirmScreen` — `sticker-cutout` edge function (remove.bg 프록시) 을 호출해 배경 제거된 PNG 를 받아 미리보기 → 보관함 저장 (`source: 'sticker'`). API 실패 시 같은 화면에서 재시도 · 사진 그대로 저장 · 취소 선택 가능. `DeleteStickersDialog` — 스티커 다중 선택 삭제 확인. `DiaryStickerViewLayer` — 다이어리 달력 위에 확정된 배치를 read-only 렌더하는 레이어(커스터마이즈 화면 밖에서도 표시).
-- **기본 스티커 시드**: `src/domain/diary/defaultStickers.ts` 에 5개 기본 스티커 정의 (airpods-max / avocado-toast / glass-lemon / matcha / workout). `ensureDefaultStickersSeeded()` (`src/data/index.ts`)가 첫 앱 로드 시 `diaryDefaultStickersSeeded` 플래그를 확인하고, 미시드 상태면 `public/stickers/default/*.png` 블롭을 repo에 일괄 삽입.
+- **기본 스티커 시드**: `src/domain/diary/defaultStickers.ts` 에 5개 기본 스티커 정의 (airpods-max / avocado-toast / glass-lemon / matcha / workout, 배열 순서 = 화면 표시 순서). `ensureDefaultStickersSeeded()` (`src/data/index.ts`)는 시딩 시엔 이 배열을 **역순**으로 넣는다 — 어댑터의 `add` 가 새 항목을 맨 앞에 쌓기(newest first) 때문. 시드 완료 플래그는 `DEFAULT_STICKER_SET_VERSION` 을 포함해 **백엔드별로 스코프**된다(`local` / `remote:{userId}`) — 기기가 이미 익명 라이브러리를 시드했어도 이후 로그인하는 계정은 별도로 시드받고, 기본 아트워크가 바뀌어 버전이 오르면 (라이브러리가 비어 있는 한) 재시드된다. `rehydrateAll.ts` 가 repo mode 전환 시 `diaryStickerStore.rehydrate()` 를 함께 호출해 이 재시드를 트리거한다.
 
 관련 파일:
 - `src/app/(fullscreen)/log/customize/page.tsx`
-- `src/components/diary-customize/{DiaryCustomizeScreen,StickerLibrarySheet,PhotoImportModal,PlacedStickerLayer,PlacedSticker,CameraSheet,StickerScanScreen,CutoutConfirmScreen,DeleteStickersDialog}.tsx`
+- `src/components/diary-customize/{DiaryCustomizeScreen,StickerLibrarySheet,PhotoImportModal,PhotoRatioScreen,PlacedStickerLayer,PlacedSticker,CameraSheet,StickerScanScreen,CutoutConfirmScreen,DeleteStickersDialog}.tsx`
 - `src/components/diary/DiaryStickerViewLayer.tsx` — 다이어리 탭 캘린더 위 read-only 오버레이
 - `src/components/ui/DraggableBottomSheet.tsx`
 - `src/store/{diaryStickerStore,diaryPlacementStore}.ts`
@@ -127,7 +127,12 @@ flowchart TD
 
 ### 스티커 업로드 분기 — 사진 그대로 vs 누끼
 
-앨범(`PhotoImportModal`) 과 카메라(`CameraSheet`) 모두 확정 전에 **모드 토글** (Photo / Cutout) 을 제공. 부모(`DiaryCustomizeScreen`) 가 분기:
+앨범(`PhotoImportModal`)과 카메라(`CameraSheet`) 모두 확정 전에 **모드 선택** (사진 그대로 / 누끼)을 제공하지만, 비율(1:1 · 4:3)을 언제 정하는지는 갈립니다:
+
+- **카메라**: 촬영 전에 비율 토글 + 모드 토글을 함께 보여줌 (변경 없음).
+- **앨범**: 사진을 고르면 먼저 라디오 카드로 모드부터 선택합니다 (**"누끼로 만들기"가 기본 선택**). "사진 그대로 사용"을 고를 때만 풀스크린 `PhotoRatioScreen` (013_5) 으로 넘어가 비율을 정합니다. 누끼 모드는 비율 화면을 건너뛰고 원본 파일을 그대로 넘기며, 배치용 비율은 원본 사진의 가로:세로 비로 추정합니다 (`ratioForImage` — 폭/높이 ≥ 0.875 면 1:1, 아니면 4:3).
+
+부모(`DiaryCustomizeScreen`)가 이후 분기:
 
 ```mermaid
 flowchart TD

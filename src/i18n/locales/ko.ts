@@ -874,12 +874,21 @@ export const ko: Dictionary = {
       photoImport: {
         title: '사진 미리보기',
         close: '닫기',
+        back: '뒤로',
         confirm: '완료',
-        retake: '다시 선택',
+        ratioTitle: '비율을 골라주세요',
         ratio1x1: '1:1',
         ratio4x3: '4:3',
-        modePhoto: '사진',
-        modeCutout: '누끼',
+        options: {
+          cutout: {
+            title: '누끼로 만들기',
+            body: '배경 제거 후 피사체만 사용',
+          },
+          photo: {
+            title: '사진 그대로 사용',
+            body: '원본 사진을 그대로 사용',
+          },
+        },
       },
     },
     status: {

@@ -109,6 +109,10 @@ export function DiaryCustomizeScreen() {
   // are visible at once (matches 013_1 main state). Picking a sticker
   // auto-collapses to `peek` per spec 9.
   const [sheetSnap, setSheetSnap] = useState<SheetSnap>('medium');
+  // Tapping outside slides the library fully off screen so the month is
+  // unobstructed. Adding a sticker brings it back; otherwise the session
+  // ends through the header's back / done buttons.
+  const [libraryOpen, setLibraryOpen] = useState(true);
   // Camera flow (013_2/3/4). `mode: 'idle'` is the default library view;
   // capture flows through camera → scan → confirm → back to idle.
   const [cameraMode, setCameraMode] = useState<'idle' | 'camera' | 'scan' | 'confirm'>(
@@ -228,6 +232,7 @@ export function DiaryCustomizeScreen() {
     if (created?.id) {
       setNewStickerId(created.id);
       setLibraryTouched(true);
+      setLibraryOpen(true);
       setSheetSnap('medium');
     }
   }
@@ -300,16 +305,28 @@ export function DiaryCustomizeScreen() {
     else router.push('/log');
   }
 
+  // Any full-screen flow of this screen's own. Their surfaces sit outside
+  // the sheet's DOM, so outside-tap dismissal has to stand down while one
+  // of them is open.
+  const overlayActive =
+    cameraMode !== 'idle' || importPickedFile !== null || showDiscardDialog;
+
   return (
     <div className="flex min-h-dvh flex-col bg-brand-gray200">
-      <header className="flex items-center justify-between px-4 pb-2 pt-safe">
+      {/* 8px above the row, plus the notch inset where there is one — bare
+          `pt-safe` resolved to 0 outside a notched device and left the
+          back/done buttons flush against the top edge. */}
+      <header className="flex items-center justify-between px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
         <button
           type="button"
           onClick={handleBack}
           aria-label={t.report.diary.customize.back}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gray400/40 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+          // Figma 256:21706 — Gray/400 at 50% behind a 2px backdrop blur.
+          className="flex size-10 items-center justify-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
         >
-          <BackIcon className="h-5 w-5" />
+          {/* BackIcon's chevron is drawn in a 40-unit viewBox, so it has to
+              fill the 40px button — at h-5 the glyph rendered half-size. */}
+          <BackIcon className="size-full" />
         </button>
         <button
           type="button"
@@ -317,20 +334,21 @@ export function DiaryCustomizeScreen() {
           disabled={!canConfirm || committing}
           aria-label={t.report.diary.customize.done}
           className={
-            'flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+            'flex size-10 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
             (canConfirm && !committing
               ? 'bg-brand-pink300 text-brand-white'
               : 'bg-brand-gray400/60 text-brand-gray50')
           }
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+          {/* Same check path as the sticker sheet's header icon (413:6358),
+              drawn in the shared 40-unit button viewBox. */}
+          <svg viewBox="0 0 40 40" className="size-full" fill="none" aria-hidden>
             <path
-              d="M2 7l4 4 6-8"
+              d="M13.0001 20L16.8773 24.9851C17.2777 25.4999 18.0557 25.4999 18.456 24.9851L27 14"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              fill="none"
             />
           </svg>
         </button>
@@ -378,6 +396,11 @@ export function DiaryCustomizeScreen() {
         snap={sheetSnap}
         onSnapChange={setSheetSnap}
         snapHeightsDvh={{ peek: 85, medium: 45, full: 10 }}
+        open={libraryOpen}
+        // Tapping the calendar slides the library away entirely. While one
+        // of this screen's own overlays is up, a tap inside it lands
+        // "outside" the sheet, so dismissal is switched off there.
+        onDismiss={overlayActive ? undefined : () => setLibraryOpen(false)}
       >
         <StickerLibrarySheet
           stickers={stickers}
@@ -558,3 +581,4 @@ function DiscardDialog({ onCancel, onConfirm }: DiscardDialogProps) {
     </div>
   );
 }
+

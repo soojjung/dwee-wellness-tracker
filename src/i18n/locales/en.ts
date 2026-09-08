@@ -878,12 +878,21 @@ export const en = {
       photoImport: {
         title: 'Preview',
         close: 'Close',
+        back: 'Back',
         confirm: 'Save',
-        retake: 'Retake',
+        ratioTitle: 'Choose a shape',
         ratio1x1: '1:1',
         ratio4x3: '4:3',
-        modePhoto: 'Photo',
-        modeCutout: 'Cutout',
+        options: {
+          cutout: {
+            title: 'Cut out the subject',
+            body: 'Remove the background and keep just the subject',
+          },
+          photo: {
+            title: 'Use the photo as is',
+            body: 'Keep the original photo unchanged',
+          },
+        },
       },
     },
     status: {

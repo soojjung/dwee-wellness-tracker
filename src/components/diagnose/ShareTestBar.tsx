@@ -80,8 +80,10 @@ export function ShareTestBar({ type }: ShareTestBarProps) {
         <button
           type="button"
           onClick={handleShare}
-          className="flex h-[76px] w-full items-center justify-center px-4 text-base font-medium leading-normal text-brand-pink100 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink100"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          // 패딩 20 / 16 / 32. 아래쪽은 `max()` 로 홈 인디케이터 영역을 흡수한다 —
+          // 32px 에 safe-area 를 더하면 노치 기기에서만 바가 60px 넘게 두꺼워진다.
+          className="flex w-full items-center justify-center px-4 pt-5 text-xl font-medium leading-normal text-brand-pink100 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink100"
+          style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px))' }}
         >
           {r.shareTest}
         </button>

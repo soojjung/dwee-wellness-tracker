@@ -12,9 +12,9 @@ interface DiaryDayCellProps {
   markers: CellMarkers;
   events: EventLog[];
   categoriesById: Map<string, EventCategory>;
-  // When defined and `isToday`, the cell replays its pulse-ring + "오늘"
-  // bubble animation. Keying children off the number makes React remount
-  // the animated nodes on each tap so the CSS animation restarts cleanly.
+  // When defined and `isToday`, the cell replays its "오늘" bubble
+  // animation. Keying the bubble off the number makes React remount it on
+  // each tap so the CSS animation restarts cleanly.
   todayPulseKey?: number;
   onSelect: (date: string) => void;
   onSelectEvent?: (event: EventLog) => void;
@@ -52,13 +52,6 @@ export function DiaryDayCell({
       role="presentation"
     >
       <div className="relative flex justify-center">
-        {pulsing ? (
-          <span
-            key={`ring-${todayPulseKey}`}
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gray900/25 animate-diaryTodayRing"
-          />
-        ) : null}
         <span
           className={
             'relative inline-flex h-[19px] w-8 items-center justify-center text-base font-medium leading-none ' +

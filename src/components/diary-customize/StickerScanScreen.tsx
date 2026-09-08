@@ -127,7 +127,7 @@ export function StickerScanScreen({
             onCancel={onCancel}
           />
         ) : (
-          <div className="flex items-center justify-between gap-4 px-6 pb-safe pb-8 pt-6">
+          <div className="flex items-center justify-between gap-4 px-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6">
             <span aria-hidden className="h-10 w-16" />
             <p className="flex-1 text-center text-sm text-brand-gray800">
               {t.report.diary.scan.progress}

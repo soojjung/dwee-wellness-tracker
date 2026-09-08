@@ -4,6 +4,7 @@ import { usePeriodStore } from './periodStore';
 import { useConditionStore } from './conditionStore';
 import { useMediaStore } from './mediaStore';
 import { useBodyTypeReportStore } from './bodyTypeReportStore';
+import { useDiaryStickerStore } from './diaryStickerStore';
 
 /**
  * Refreshes every data-backed store from the currently active repo adapter.
@@ -17,5 +18,9 @@ export async function rehydrateAllData(): Promise<void> {
     useConditionStore.getState().rehydrate(),
     useMediaStore.getState().rehydrate(),
     useBodyTypeReportStore.getState().rehydrate(),
+    // Also re-runs the built-in sticker seed against the backend we just
+    // switched to, so a signed-in account gets the defaults even when the
+    // device had already seeded its anonymous library.
+    useDiaryStickerStore.getState().rehydrate(),
   ]);
 }

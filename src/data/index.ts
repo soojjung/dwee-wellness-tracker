@@ -1,4 +1,4 @@
-import { del, get, set } from 'idb-keyval';
+import { del, get, keys, set } from 'idb-keyval';
 import { DEFAULT_STICKERS, defaultStickerUrl } from '@/domain/diary/defaultStickers';
 import { indexedDBSettingsAdapter } from './adapters/indexeddb/IndexedDBSettingsAdapter';
 import { indexedDBPeriodAdapter } from './adapters/indexeddb/IndexedDBPeriodAdapter';
@@ -19,6 +19,7 @@ import { supabaseEventAdapter } from './adapters/supabase/SupabaseEventAdapter';
 import { supabaseDiaryStickerAdapter } from './adapters/supabase/SupabaseDiaryStickerAdapter';
 import { supabaseDiaryStickerPlacementAdapter } from './adapters/supabase/SupabaseDiaryStickerPlacementAdapter';
 import { supabaseBodyTypeReportAdapter } from './adapters/supabase/SupabaseBodyTypeReportAdapter';
+import { requireUserId } from './adapters/supabase/client';
 import { runMigrations } from './adapters/indexeddb/migrations';
 import {
   STORAGE_KEYS,
@@ -188,38 +189,106 @@ export async function ensureMigrations(): Promise<void> {
   migrationsRan = true;
 }
 
+// Bump whenever the built-in artwork changes. The flag records the version
+// that was seeded, so a device sitting on an older set re-seeds — but only
+// while its library is empty, which is what keeps a deliberate deletion
+// deleted and stops the refreshed art from duplicating anyone's stickers.
+const DEFAULT_STICKER_SET_VERSION = 2;
+
+// Scopes already seeded in this page session, so repeated hydrates don't
+// re-check IndexedDB. Cleared on reset.
+const seededScopes = new Set<string>();
+
+/**
+ * The seeded flag lives in local IndexedDB, but the library it guards lives
+ * wherever the active repo mode points. Scoping the flag per backend is what
+ * lets a device that already seeded its anonymous library still seed the
+ * account it later signs in to.
+ */
+async function currentSeedScope(): Promise<string> {
+  if (getRepoMode() !== 'remote') return 'local';
+  return `remote:${await requireUserId()}`;
+}
+
+function seedFlagKey(scope: string): string {
+  return `${STORAGE_KEYS.diaryDefaultStickersSeeded}:${scope}`;
+}
+
 /**
  * Seeds the built-in sticker set (Figma frame 2563:1601) into the user's
- * library on first use. Runs at most once per device — a subsequent call
+ * library on first use. Runs at most once per backend — a subsequent call
  * (after the user deletes any of the defaults) is a no-op so we don't
- * resurrect stickers the user intentionally removed. If the library
- * already contains stickers when we first look, we mark seeded without
- * inserting so cross-device sync (Supabase) doesn't duplicate.
+ * resurrect stickers the user intentionally removed. If the library already
+ * contains stickers when we first look, we mark seeded without inserting so
+ * cross-device sync (Supabase) doesn't duplicate.
  */
-let seedRan = false;
 export async function ensureDefaultStickersSeeded(): Promise<void> {
-  if (seedRan || typeof window === 'undefined') return;
-  seedRan = true;
-  const flag = await get<boolean>(STORAGE_KEYS.diaryDefaultStickersSeeded);
-  if (flag) return;
+  if (typeof window === 'undefined') return;
+  let scope: string;
+  try {
+    scope = await currentSeedScope();
+  } catch {
+    // Remote mode without a live session — the hydrate that follows sign-in
+    // gets another chance rather than the seed being marked done.
+    return;
+  }
+  if (seededScopes.has(scope)) return;
 
-  const existing = await diaryStickerRepo.list();
-  if (existing.length > 0) {
-    await set(STORAGE_KEYS.diaryDefaultStickersSeeded, true);
+  // Pre-scoping builds wrote a single unscoped flag. It is deliberately not
+  // honoured: it was set even when every insert had failed, which is the
+  // state that leaves a library permanently empty. Dropping it costs at most
+  // one re-seed for someone who had emptied their library on purpose.
+  await del(STORAGE_KEYS.diaryDefaultStickersSeeded);
+
+  const key = seedFlagKey(scope);
+  // Older builds stored `true` here; anything that isn't the current version
+  // counts as out of date.
+  if ((await get<number | boolean>(key)) === DEFAULT_STICKER_SET_VERSION) {
+    seededScopes.add(scope);
     return;
   }
 
-  for (const seed of DEFAULT_STICKERS) {
+  const existing = await diaryStickerRepo.list();
+  if (existing.length > 0) {
+    // Library already has content — inserting would duplicate it. Record the
+    // version so cross-device sync (Supabase) settles without re-checking.
+    seededScopes.add(scope);
+    await set(key, DEFAULT_STICKER_SET_VERSION);
+    return;
+  }
+
+  let inserted = 0;
+  // 어댑터의 add 는 새 스티커를 목록 맨 앞에 넣는다(newest first). 그래서 시드도
+  // 순서대로 넣으면 화면에는 거꾸로 보인다. 뒤에서부터 넣어야 DEFAULT_STICKERS
+  // 에 적힌 순서 그대로 보인다.
+  for (const seed of [...DEFAULT_STICKERS].reverse()) {
     try {
       const res = await fetch(defaultStickerUrl(seed.filename));
       if (!res.ok) continue;
       const blob = await res.blob();
       await diaryStickerRepo.add({ blob, ratio: seed.ratio, source: 'sticker' });
+      inserted += 1;
     } catch {
       // Skip a single failed asset — don't block the rest of the seed.
     }
   }
-  await set(STORAGE_KEYS.diaryDefaultStickersSeeded, true);
+  // A run where every insert failed (offline, storage rejection) has to stay
+  // retryable — flagging it would strand the user with an empty library.
+  if (inserted === 0) return;
+  seededScopes.add(scope);
+  await set(key, DEFAULT_STICKER_SET_VERSION);
+}
+
+/** Drops every per-scope seed flag, including the pre-scoping unscoped one. */
+async function clearSeedFlags(): Promise<void> {
+  const prefix = STORAGE_KEYS.diaryDefaultStickersSeeded;
+  const all = await keys();
+  await Promise.all(
+    all
+      .filter((k): k is string => typeof k === 'string' && k.startsWith(prefix))
+      .map((k) => del(k)),
+  );
+  seededScopes.clear();
 }
 
 export async function resetAllUserData(): Promise<void> {
@@ -234,14 +303,13 @@ export async function resetAllUserData(): Promise<void> {
     del(STORAGE_KEYS.diaryStickers),
     del(STORAGE_KEYS.diaryStickerPlacements),
     del(STORAGE_KEYS.bodyTypeReport),
-    // Clear the seed flag so a fresh account on the same device gets the
+    // Clear the seed flags so a fresh account on the same device gets the
     // built-in stickers again on next hydrate.
-    del(STORAGE_KEYS.diaryDefaultStickersSeeded),
+    clearSeedFlags(),
     ...ALL_MEDIA_PHOTO_KEYS.map((k) => del(k)),
     ...ALL_MEDIA_PHOTO_TRANSFORM_KEYS.map((k) => del(k)),
     ...ALL_MEDIA_TEXT_KEYS.map((k) => del(k)),
     del(DEPRECATED_KEYS.mediaHomeHero),
     del(DEPRECATED_KEYS.mediaHomeOverlays),
   ]);
-  seedRan = false;
 }

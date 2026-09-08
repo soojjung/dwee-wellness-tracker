@@ -5,6 +5,10 @@ export interface DefaultStickerSeed {
   ratio: StickerRatio;
 }
 
+/**
+ * 스티커 보관함에 보이는 순서 그대로다. 실제 시딩은 `ensureDefaultStickersSeeded`
+ * 가 뒤에서부터 넣는다 — 어댑터가 새 항목을 맨 앞에 쌓기 때문.
+ */
 export const DEFAULT_STICKERS: readonly DefaultStickerSeed[] = [
   { filename: 'glass-lemon.png', ratio: '4:3' },
   { filename: 'matcha.png', ratio: '4:3' },

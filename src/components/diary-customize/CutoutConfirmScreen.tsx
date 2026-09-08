@@ -50,7 +50,7 @@ export function CutoutConfirmScreen({
       {/* Mobile shell (max-w-md) so the header, preview, and CTA row all
           share the same column width on desktop viewports. */}
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-        <div className="flex items-center justify-end px-4 pt-safe pt-4">
+        <div className="flex items-center justify-end px-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
           <button
             type="button"
             onClick={onClose}
@@ -75,7 +75,7 @@ export function CutoutConfirmScreen({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-center gap-10 pb-safe pb-8 pt-6">
+        <div className="flex items-center justify-center gap-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6">
           <button
             type="button"
             onClick={onRetake}

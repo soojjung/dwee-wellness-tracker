@@ -5,20 +5,35 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import type { StickerRatio } from '@/types';
 import type { CameraMode } from './CameraSheet';
+import { PhotoRatioScreen } from './PhotoRatioScreen';
 
 interface PhotoImportModalProps {
   file: File;
   onClose: () => void;
   /**
-   * Fires with the cropped blob + user-chosen ratio + mode. `mode: 'photo'`
-   * means "save as-is"; `mode: 'sticker'` means "run the background
-   * removal cutout flow" — the parent decides where to route next.
+   * Fires with the blob + ratio + mode. `mode: 'photo'` means "save as-is"
+   * (already cropped to the chosen ratio); `mode: 'sticker'` means "run the
+   * background removal cutout flow" and hands over the untouched original,
+   * since cropping first can slice the subject the cutout is after.
    */
   onSaved: (blob: Blob, ratio: StickerRatio, mode: CameraMode) => Promise<void> | void;
 }
 
+/**
+ * Album import sheet (013_7,8). Step 1 previews the picked photo and asks how
+ * to turn it into a sticker, defaulting to "cut out". That option routes
+ * straight to the scan screen; "use as is" hands over to the 013_5 ratio
+ * screen before saving.
+ */
+type Step = 'mode' | 'ratio';
+
+// A source photo wider than this reads as square-ish, so 1:1 crops it least.
+// Below it, the portrait 3:4 frame is the better fit.
+const SQUARE_ASPECT_CUTOFF = 0.875;
+
 export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalProps) {
   const t = useT();
+  const c = t.report.diary.photoImport;
   // Create the blob URL inside an effect (rather than useMemo) so React's
   // StrictMode double-mount can't leave the rendered <img> pointing at a
   // URL that was already revoked by the simulated cleanup. Rendering is
@@ -33,200 +48,210 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
     };
   }, [file]);
 
+  const [step, setStep] = useState<Step>('mode');
+  // Pre-selected on "cut out": it's the path most album picks are headed for,
+  // so the done button starts enabled rather than inert.
+  const [mode, setMode] = useState<CameraMode | null>('sticker');
   const [ratio, setRatio] = useState<StickerRatio>('1:1');
-  const [mode, setMode] = useState<CameraMode>('photo');
   const [submitting, setSubmitting] = useState(false);
 
   useBodyScrollLock();
-  useEscToClose(onClose);
+  useEscToClose(() => {
+    if (!submitting) onClose();
+  });
 
   async function handleConfirm() {
-    if (submitting) return;
+    if (submitting || !mode) return;
+    if (mode === 'sticker') {
+      setSubmitting(true);
+      try {
+        await onSaved(file, await ratioForImage(file), 'sticker');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+    if (step === 'mode') {
+      setStep('ratio');
+      return;
+    }
     setSubmitting(true);
     try {
       const cropped = await cropToRatio(file, ratio);
       if (!cropped) return;
-      await onSaved(cropped, ratio, mode);
+      await onSaved(cropped, ratio, 'photo');
     } finally {
       setSubmitting(false);
     }
   }
 
-  // "4:3" label maps to portrait 3:4 (Figma preview shows taller frames).
-  const aspectRatio = ratio === '1:1' ? '1 / 1' : '3 / 4';
+  const canConfirm = mode !== null && !submitting;
+
+  if (step === 'ratio') {
+    return (
+      <PhotoRatioScreen
+        previewUrl={previewUrl}
+        value={ratio}
+        onChange={setRatio}
+        onBack={() => setStep('mode')}
+        onClose={onClose}
+        onConfirm={handleConfirm}
+        submitting={submitting}
+      />
+    );
+  }
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={t.report.diary.photoImport.title}
-      className="fixed inset-0 z-50 flex flex-col bg-brand-white"
+      aria-label={c.title}
+      className="fixed inset-0 z-50 flex bg-black/40"
+      onClick={() => {
+        if (!submitting) onClose();
+      }}
     >
-      {/* Mobile shell (max-w-md) so the header, preview, toggles, and
-          CTA row stay in a phone-width column on desktop viewports. */}
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-      <header className="flex items-center justify-between px-4 pb-2 pt-safe">
-        <span aria-hidden className="h-8 w-8" />
-        <h2 className="text-base font-semibold text-brand-gray900">
-          {t.report.diary.photoImport.title}
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t.report.diary.photoImport.close}
-          disabled={submitting}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gray400/40 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-            <path
-              d="M2 2l10 10M12 2L2 12"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-      </header>
-
-      <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4">
-        {/* Reserve the tallest ratio's footprint (portrait 3:4) so that
-            switching between 1:1 and 4:3 doesn't push the toggle and CTA
-            row up/down. The actual preview centers within this box. */}
-        <div
-          className="flex w-full max-w-xs items-center justify-center"
-          style={{ aspectRatio: '3 / 4' }}
-        >
-          <div
-            className="w-full overflow-hidden rounded-lg bg-brand-gray200"
-            style={{ aspectRatio }}
-          >
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : null}
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-3">
-          <RatioToggle value={ratio} onChange={setRatio} />
-          <ModeToggle value={mode} onChange={setMode} />
-        </div>
-
-        <div className="flex items-center gap-4">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxHeight: '90dvh' }}
+        className="mx-auto mt-auto flex w-full max-w-md flex-col overflow-hidden rounded-t-[32px] bg-brand-white"
+      >
+        <header className="flex shrink-0 items-center justify-between p-4">
           <button
             type="button"
             onClick={onClose}
+            aria-label={c.close}
             disabled={submitting}
-            aria-label={t.report.diary.photoImport.retake}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+            className="flex size-10 items-center justify-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-              aria-hidden
-            >
-              {/* Lucide rotate-ccw — full CCW loop, tail in upper-left. */}
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-            </svg>
+            <CancelGlyph />
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={submitting}
-            aria-label={t.report.diary.photoImport.confirm}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-pink200 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 disabled:opacity-60"
+            disabled={!canConfirm}
+            aria-label={c.confirm}
+            className={
+              'flex size-10 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+              (canConfirm
+                ? 'bg-brand-pink200 text-brand-pink50'
+                : 'bg-brand-gray300 text-brand-gray400')
+            }
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
-              <path d="M5 12.5l4.5 4.5L19 7.5" />
-            </svg>
+            <CheckGlyph />
           </button>
+        </header>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 pb-6 pt-5">
+          <div className="h-[343px] w-full shrink-0 overflow-hidden rounded-2xl bg-brand-gray200">
+            {previewUrl ? (
+              <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+            ) : null}
+          </div>
+
+          <div role="radiogroup" aria-label={c.title} className="flex flex-col gap-4">
+            <OptionRow
+              title={c.options.cutout.title}
+              body={c.options.cutout.body}
+              selected={mode === 'sticker'}
+              onSelect={() => setMode('sticker')}
+            />
+            <OptionRow
+              title={c.options.photo.title}
+              body={c.options.photo.body}
+              selected={mode === 'photo'}
+              onSelect={() => setMode('photo')}
+            />
+          </div>
         </div>
       </div>
-      </div>
     </div>
   );
 }
 
-interface RatioToggleProps {
-  value: StickerRatio;
-  onChange: (v: StickerRatio) => void;
+interface OptionRowProps {
+  title: string;
+  body: string;
+  selected: boolean;
+  onSelect: () => void;
 }
 
-function RatioToggle({ value, onChange }: RatioToggleProps) {
-  const t = useT();
-  const is1x1 = value === '1:1';
+/** Radio-style card from 413:6366 / 413:6372 — the selected one swaps its
+ *  outline for a Pink/50 fill and its empty circle for a filled check. */
+function OptionRow({ title, body, selected, onSelect }: OptionRowProps) {
   return (
-    <div className="relative flex items-center gap-2 rounded-full border border-brand-gray200 bg-brand-white p-1">
-      <span
-        aria-hidden
-        className="absolute left-1 top-1 h-8 w-16 rounded-full bg-brand-pink50 transition-transform duration-200 ease-out"
-        style={{ transform: is1x1 ? 'translateX(0)' : 'translateX(calc(100% + 0.5rem))' }}
-      />
-      {/* Both labels always render as semibold gray900 so the button
-          footprints stay pixel-identical regardless of selection — only
-          the sliding pink pill behind them signals the active option. */}
-      <button
-        type="button"
-        onClick={() => onChange('1:1')}
-        aria-pressed={is1x1}
-        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
-      >
-        {t.report.diary.photoImport.ratio1x1}
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('4:3')}
-        aria-pressed={!is1x1}
-        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
-      >
-        {t.report.diary.photoImport.ratio4x3}
-      </button>
-    </div>
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={
+        'flex w-full items-start gap-3.5 rounded-lg px-5 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+        (selected ? 'bg-brand-pink50' : 'border border-brand-gray300')
+      }
+    >
+      <span aria-hidden className="flex size-6 shrink-0 items-center justify-center">
+        {selected ? (
+          <span className="flex size-5 items-center justify-center rounded-full bg-brand-gray900 text-brand-white">
+            <svg viewBox="0 0 14 14" fill="none" className="size-3.5" aria-hidden>
+              <path
+                d="M3.18182 6.63636L5.95868 9.54545L10.8182 4.45455"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" className="size-6 text-brand-gray400" aria-hidden>
+            <circle cx="12" cy="12" r="9.5" stroke="currentColor" />
+          </svg>
+        )}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-base font-medium leading-none text-brand-gray900">{title}</span>
+        <span className="text-sm leading-normal text-brand-gray600">{body}</span>
+      </span>
+    </button>
   );
 }
 
-interface ModeToggleProps {
-  value: CameraMode;
-  onChange: (v: CameraMode) => void;
-}
-
-function ModeToggle({ value, onChange }: ModeToggleProps) {
-  const t = useT();
-  const isPhoto = value === 'photo';
+/** Paths lifted from the exported Figma header icons (413:6358). */
+function CancelGlyph() {
   return (
-    <div className="relative flex items-center gap-2 rounded-full border border-brand-gray200 bg-brand-white p-1">
-      <span
-        aria-hidden
-        className="absolute left-1 top-1 h-8 w-16 rounded-full bg-brand-pink50 transition-transform duration-200 ease-out"
-        style={{ transform: isPhoto ? 'translateX(0)' : 'translateX(calc(100% + 0.5rem))' }}
+    <svg viewBox="0 0 40 40" className="size-full" fill="none" aria-hidden>
+      <path
+        d="M14 14L26 26M26 14L14 26"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
-      <button
-        type="button"
-        onClick={() => onChange('photo')}
-        aria-pressed={isPhoto}
-        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
-      >
-        {t.report.diary.photoImport.modePhoto}
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('sticker')}
-        aria-pressed={!isPhoto}
-        className="relative z-10 h-8 w-16 rounded-full text-sm font-semibold text-brand-gray900"
-      >
-        {t.report.diary.photoImport.modeCutout}
-      </button>
-    </div>
+    </svg>
   );
+}
+
+function CheckGlyph() {
+  return (
+    <svg viewBox="0 0 40 40" className="size-full" fill="none" aria-hidden>
+      <path
+        d="M13.0001 20L16.8773 24.9851C17.2777 25.4999 18.0557 25.4999 18.456 24.9851L27 14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** The cutout path skips the ratio step, so the placement frame is inferred
+ *  from the source photo instead. */
+async function ratioForImage(file: File): Promise<StickerRatio> {
+  try {
+    const bitmap = await loadImage(file);
+    return bitmap.width / bitmap.height >= SQUARE_ASPECT_CUTOFF ? '1:1' : '4:3';
+  } catch {
+    return '1:1';
+  }
 }
 
 async function cropToRatio(file: File, ratio: StickerRatio): Promise<Blob | null> {
