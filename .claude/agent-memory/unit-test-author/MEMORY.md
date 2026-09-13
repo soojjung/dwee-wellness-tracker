@@ -1,0 +1,2 @@
+- [Preview test pre-existing failure](project_preview_test_broken.md) — src/__preview__/grid.preview.test.tsx breaks pnpm test:unit, unrelated to domain/lib changes, out of scope
+- [Test filter flag doesn't isolate](feedback_test_filter_flag.md) — use `npx vitest run <path>` not `pnpm test:unit -- <pattern>` to check one file

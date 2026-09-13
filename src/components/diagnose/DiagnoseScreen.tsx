@@ -612,4 +612,3 @@ function BottomBar({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-

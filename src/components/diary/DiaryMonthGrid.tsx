@@ -4,8 +4,9 @@ import { useT } from '@/i18n/useT';
 import { calendarGrid, type WeekStartsOn } from '@/lib/date';
 import type { PeriodLog, EventLog, EventCategory, DailyConditionLog } from '@/types';
 import { deriveCellMarkers } from '@/components/calendar/cellState';
-import { pickBadgesForDay } from '@/domain/event/badges';
+import { layoutWeekSegments } from '@/domain/event/weekLanes';
 import { DiaryDayCell } from './DiaryDayCell';
+import { DiaryWeekEventLayer } from './DiaryWeekEventLayer';
 
 interface DiaryMonthGridProps {
   year: number;
@@ -80,7 +81,7 @@ export function DiaryMonthGrid({
         <div
           key={ri}
           className={
-            'grid grid-cols-7' +
+            'relative grid grid-cols-7' +
             (ri > 0 ? ' border-t-[0.75px] border-brand-gray400' : '')
           }
         >
@@ -96,13 +97,15 @@ export function DiaryMonthGrid({
                 conditionByDate: conditionByDate ?? {},
                 predictedDate: predictedDate ?? null,
               })}
-              events={cell.inCurrentMonth ? pickBadgesForDay(events, cell.date) : []}
-              categoriesById={categoriesById}
               todayPulseKey={cell.date === today ? todayPulseKey : undefined}
               onSelect={onSelect}
-              onSelectEvent={onSelectEvent}
             />
           ))}
+          <DiaryWeekEventLayer
+            segments={layoutWeekSegments(events, row)}
+            categoriesById={categoriesById}
+            onSelectEvent={onSelectEvent}
+          />
         </div>
       ))}
     </div>

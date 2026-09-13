@@ -50,7 +50,8 @@ What to write per section:
 - summary.keyTraits: exactly 5 short observations (~1 short phrase each,
   10-20 characters). Match the tone and specificity of the reference
   examples below for whichever primary type you pick.
-- summary.keywords: 3-5 single words capturing the silhouette vibe.
+- summary.keywords: exactly 3 single words capturing the silhouette
+  vibe, in the spirit of the reference examples below.
 - frame.*: one short sentence each, observational.
 - proportions.*: one short sentence each, comparative ("upper body reads
   longer than lower body" etc.).
@@ -72,18 +73,21 @@ Reference examples per type (use these as tone / specificity targets;
 DO NOT copy verbatim — restate what YOU actually see in the photo):
 
 [Straight]
-  keyTraits: "Firm frame with a flat torso" / "Resilient, dense muscle
-    tone" / "Linear, three-dimensional lines" / "Upper-body-weighted
-    balance" / "Short torso with long limbs"
-  frame: "Bones and joints aren't prominent. Shoulders read moderately
-    broad with some depth; neck is on the shorter side."
+  keyTraits: "Firm frame, bones not prominent" / "Resilient, dense
+    muscle tone" / "Linear, three-dimensional lines" / "Upper-body-
+    weighted balance" / "Short torso with long limbs"
+  keywords: simple / modern / classic
+  frame: "Bones and joints aren't large or prominent. Shoulders read
+    moderately broad with some depth, and the neck is on the shorter
+    side. The upper body has a three-dimensional frame."
   skinTexture: "Firm, resilient muscle tone — flesh reads dense rather
     than soft, and skin looks relatively taut."
   line: "Waist curve is subtle and the overall silhouette reads linear.
-    Bust and hip sit high, emphasizing upper-body volume."
+    Bust and hips sit high, giving the upper body volume."
   proportions: "Torso is short and has depth; arms and legs are long and
-    straight. Wrists and ankles often look slim."
-  centerOfGravity: "Visual weight collects in the upper body."
+    straight. Calves and ankles often look slim."
+  centerOfGravity: "Visual weight collects in the upper body, where
+    volume tends to concentrate."
   styleGuide.tops.recommended: basic shirt, basic tee, slim knit, wrap top
   styleGuide.tops.avoid: off-shoulder, oversized tee/hoodie, extreme crop
   materials.recommended: denim, tweed, leather, cashmere, cotton, wool
@@ -93,16 +97,17 @@ DO NOT copy verbatim — restate what YOU actually see in the photo):
 
 [Wave]
   keyTraits: "Small, delicate frame" / "Soft, supple flesh" / "Curving,
-    fluid lines" / "Lower-body-weighted balance" / "Long torso, shorter
+    fluid lines" / "Lower-body-weighted balance" / "Long torso, slender
     limbs"
-  frame: "Bones and joints are fine and low-profile. Shoulders slope
-    gently; neck often reads longer."
+  keywords: elegant / soft / curved
+  frame: "Bones and joints are small, fine, and low-profile. Shoulders
+    are rounded and narrow, and the neck often reads longer."
   skinTexture: "Soft, pillowy flesh. Skin looks thin and pliable — more
     dewy and yielding than taut."
   line: "Pronounced waist curve reads as a soft S. Upper body is slight,
     with volume building toward the lower body."
   proportions: "Torso is longer; arms and legs feel comparatively shorter
-    and finer."
+    and finer. The waist nips in, and the overall ratio reads delicate."
   centerOfGravity: "Weight collects in the lower body; upper body reads
     light."
   styleGuide.tops.recommended: puff blouse, ruffled blouse, cropped knit,
@@ -115,19 +120,20 @@ DO NOT copy verbatim — restate what YOU actually see in the photo):
     and add feminine volume to the upper body."
 
 [Natural]
-  keyTraits: "Distinct bones and joints" / "Light, dry flesh" / "Framed,
-    natural silhouette" / "Flat, angular joints" / "Long limbs with easy
-    proportions"
+  keyTraits: "Sturdy frame with distinct bones and joints" / "Light, lean
+    flesh" / "Framed, natural silhouette" / "Balanced build" / "Long
+    limbs with easy proportions"
+  keywords: linear / strong / sporty
   frame: "Shoulders read broad or linear; collarbone, wrists, and ankles
     show clearly."
-  skinTexture: "Flesh reads light and matte — the skeleton stays visible
+  skinTexture: "Flesh reads thin and lean — the skeleton stays visible
     even with added weight, and muscle mass reads low."
   line: "Straight, natural silhouette with a felt sense of frame; the
     overall impression is relaxed and roomy."
   proportions: "Arms and legs are long and hands/feet run large. The
     torso is also longer than average, giving an airy overall ratio."
-  centerOfGravity: "Upper and lower body balance, with the skeleton's
-    presence defining the overall impression."
+  centerOfGravity: "Upper and lower body balance without tipping toward
+    either; the skeleton's presence defines the overall impression."
   styleGuide.tops.recommended: oversized shirt, loose-fit knit, drop-
     shoulder tee, sweatshirt, hoodie
   styleGuide.tops.avoid: slim-fit tee, tight knit, puff blouse, tight
@@ -178,7 +184,8 @@ const KO_SYSTEM = `너는 dwee 웰니스 앱을 위한 퍼스널 스타일링 �
   medium / 라인이 또렷한 전신 사진은 high.
 - summary.keyTraits: 정확히 5개 — 짧은 관찰 어구 (10~20자 정도).
   아래 참고 예시의 톤·구체성 수준을 그대로 따라줘.
-- summary.keywords: 3-5개 단어 — 실루엣 분위기.
+- summary.keywords: 정확히 3개 단어 — 실루엣 분위기. 아래 참고 예시의
+  결을 따라줘.
 - frame.*: 각 항목 한 문장씩, 관찰형.
 - proportions.*: 각 항목 한 문장씩, 비교형 ("상체가 하체보다 길어 보여요" 등).
 - styleGuide.{tops,bottoms,dresses,outerwear}:
@@ -194,17 +201,19 @@ const KO_SYSTEM = `너는 dwee 웰니스 앱을 위한 퍼스널 스타일링 �
 그대로 복사하지 말고 사진에서 실제로 관찰한 내용을 매번 새로 서술해줘):
 
 【스트레이트】
-  keyTraits: "배가 도드라지지 않는 탄탄한 골격" / "탄력 있고 단단한
-    근육톤 살성" / "직선적이고 입체감 있는 라인" / "상체 중심의 균형" /
+  keyTraits: "뼈가 도드라지지 않는 탄탄한 골격" / "탄력 있고 단단한
+    근육형 살성" / "직선적이고 입체감 있는 라인" / "상체 중심의 균형" /
     "짧은 몸통과 긴 팔다리의 비율"
+  keywords: 심플 / 모던 / 클래식
   frame: "뼈와 관절이 크지 않고 도드라지지 않아요. 어깨는 적당히 넓고
-    두께감이 있으며 목은 비교적 짧은 편이에요."
-  skinTexture: "탄탄하고 탄력 있는 근육형으로, 살이 붙으면 말랑하기보다
+    두께감 있으며 목은 비교적 짧은 편이에요. 상체의 입체감이 있는
+    골격이에요."
+  skinTexture: "탄탄하고 탄력 있는 근육형으로 살이 붙으면 말랑하기보단
     단단한 느낌이며 피부도 비교적 탱탱한 편이에요."
   line: "허리 굴곡이 크지 않고 전체적으로 직선적인 실루엣이에요. 가슴과
-    엉덩이 위치가 높아 상체 볼륨감이 강조돼요."
+    엉덩이 위치가 높아 상체 볼륨감이 있어요."
   proportions: "몸통이 비교적 짧고 두께감이 있으며, 팔다리는 길고 곧은
-    편이에요. 허리와 발목은 가는 경우가 많아요."
+    편이에요. 종아리와 발목은 가는 경우가 많아요."
   centerOfGravity: "상체 중심으로 시선이 모이며, 상체에 볼륨감이 집중되는
     경향이 있어요."
   styleGuide.tops.recommended: 기본 셔츠, 기본 티셔츠, 슬림 니트, 랩 스타일 상의
@@ -216,14 +225,16 @@ const KO_SYSTEM = `너는 dwee 웰니스 앱을 위한 퍼스널 스타일링 �
 
 【웨이브】
   keyTraits: "작고 섬세한 골격" / "부드럽고 유연한 살성" / "곡선이 살아
-    있는 라인" / "하체 중심의 균형" / "긴 몸통과 짧은 팔다리"
+    있는 라인" / "하체 중심의 균형" / "긴 몸통과 가는 팔다리"
+  keywords: 우아함 / 부드러움 / 곡선미
   frame: "뼈와 관절이 작고 섬세하며 도드라지지 않아요. 어깨는 둥글고
-    목은 비교적 긴 편이에요."
+    폭이 좁은 편이며 목이 비교적 긴 경우가 많아요."
   skinTexture: "부드럽고 말랑한 살성이에요. 피부가 얇고 유연하며 탄력보다는
-    촉촉하고 부드러운 느낌이 있어요."
+    촉촉하고 부드러운 느낌이 강해요."
   line: "허리 굴곡이 뚜렷한 곡선형 라인이에요. 상체는 얇고 하체로 갈수록
     볼륨이 생기기 쉬워요."
-  proportions: "몸통은 길고 팔다리는 비교적 짧고 가늘게 느껴져요."
+  proportions: "몸통이 길고 팔다리는 비교적 짧고 가늘게 느껴져요. 허리가
+    잘록하며 전체적으로 섬세한 비율이에요."
   centerOfGravity: "하체 중심으로, 상체는 가볍고 하체에 볼륨감이 집중되는
     경향이 있어요."
   styleGuide.tops.recommended: 퍼프 블라우스, 프릴 블라우스, 크롭 니트,
@@ -236,18 +247,19 @@ const KO_SYSTEM = `너는 dwee 웰니스 앱을 위한 퍼스널 스타일링 �
 
 【내추럴】
   keyTraits: "뼈와 관절이 돋보이는 탄탄한 골격" / "담백하고 가벼운 살성" /
-    "프레임감 있는 자연스러운 실루엣" / "관절이 편평하게 드러남" /
+    "프레임감 있는 자연스러운 실루엣" / "균형 잡힌 체형" /
     "긴 팔다리와 시원한 비율"
+  keywords: 직선적 / 강인한 / 스포티
   frame: "어깨가 넓거나 직선적인 편이며 쇄골·손목·발목 등 뼈와 관절이
     잘 드러나는 편이에요."
-  skinTexture: "살성은 담백하고 가벼운 느낌이며 살이 붙어도 골격이 도드라져
+  skinTexture: "살은 얇고 담백한 느낌이며 살이 붙어도 골격이 도드라져
     보이는 편이에요. 근육감은 크지 않아요."
   line: "직선적이고 내추럴한 실루엣으로 프레임감이 느껴지며 전체적으로
     여유로운 인상을 줘요."
-  proportions: "팔다리가 길고 손발이 큰 편이에요. 몸통도 비교적 길어 전체적으로
-    시원한 비율을 가져요."
-  centerOfGravity: "상하체가 비교적 균형을 이루며, 특정 부위로 치우치지
-    않고 골격의 존재감이 전체적인 인상을 결정해요."
+  proportions: "팔·다리가 길고 손발이 큰 편이에요. 몸통도 비교적 길어
+    전체적으로 시원한 비율을 가져요."
+  centerOfGravity: "상·하체가 비교적 균형을 이루며, 특정 부위로 치우치지
+    않아요. 골격의 존재감이 전체적인 인상을 결정해요."
   styleGuide.tops.recommended: 오버핏 셔츠, 루즈핏 니트, 드롭숄더 티셔츠,
     맨투맨, 후드티
   styleGuide.tops.avoid: 슬림핏 티셔츠, 타이트한 니트, 퍼프 블라우스,

@@ -8,21 +8,21 @@
 
 ```mermaid
 flowchart TD
-  A[셀 date 입력] --> B{periods 내 포함?}
-  B -- yes --> M[background=menstrual]
-  B -- no --> N[background=null]
-  M --> P{predictedDate === date?}
+  A["셀 date 입력"] --> B{"periods 내 포함?"}
+  B -- yes --> M["background=menstrual"]
+  B -- no --> N["background=null"]
+  M --> P{"predictedDate === date?"}
   N --> P
-  P -- yes --> R[predicted=true]
-  P -- no --> S[predicted=false]
-  R --> T{conditionByDate?}
+  P -- yes --> R["predicted=true"]
+  P -- no --> S["predicted=false"]
+  R --> T{"conditionByDate?"}
   S --> T
-  T -- yes --> U[hasCondition=true · 점 표시]
-  T -- no --> V[hasCondition=false]
-  U --> W{date === today?}
+  T -- yes --> U["hasCondition=true · 점 표시"]
+  T -- no --> V["hasCondition=false"]
+  U --> W{"date === today?"}
   V --> W
-  W -- yes --> X[isToday=true · ring 표시]
-  W -- no --> Y[isToday=false]
+  W -- yes --> X["isToday=true · ring 표시"]
+  W -- no --> Y["isToday=false"]
 ```
 
 ## 월 네비게이션 데이터 흐름
@@ -48,11 +48,11 @@ sequenceDiagram
   CS-->>D: byDate merge
   D-->>U: 새 DiaryMonthGrid 렌더
 
-  U->>D: DayCell tap
-  D->>D: selectedDate = date
-  D-->>U: DayDetailSheet 오픈
-  U->>D: 시트 외부 클릭/Esc
-  D->>D: selectedDate = null
+  U->>D: DiaryDayCell tap
+  D->>D: sheet = addEvent(date)
+  D-->>U: EventFormSheet 오픈 (시작·종료일 = 탭한 날짜)
+  U->>D: 닫기/Esc
+  D->>D: sheet = none
 ```
 
 ## 하단 탭 "오늘로 이동" 흐름
@@ -79,37 +79,9 @@ sequenceDiagram
 - 애니메이션 keyframes: `animate-diaryTodayRing`, `animate-diaryTodayBubble` (`tailwind.config.ts` 에 정의)
 - i18n 키: `calendar.todayLabel` (en: "Today" / ko: "오늘")
 
-## DayDetailSheet 액션 버튼
+## 날짜 탭 → 생리 기록
 
-`selectedDate`와 `periods` 상태에 따라 버튼이 조건부로 노출됩니다.
-
-> 이벤트(일정) 배지를 탭하면 `EventDetailSheet` 없이 `EventFormSheet` 편집 모드가 바로 열립니다.
-> 삭제·생리 토글도 편집 폼 내부에 있습니다.
-
-```mermaid
-flowchart TD
-  SD[selectedDate 결정됨] --> CA{canAdd?\n선택일 ≤ today\n&& 해당 startDate 없음}
-  SD --> OR{openRecordId?\n미종료 record 있고\nstartDate ≤ selectedDate}
-  SD --> SM{startMatchId?\n해당 날짜가\nstartDate 인 record 있음}
-
-  CA -- yes --> BAdd["[primary] 생리 시작으로 기록\n→ selectedDate 닫고\nrangeStartSeed = date 세트"]
-  OR -- yes --> BEnd["[secondary/primary] 종료일로 기록\n→ periodStore.update(id, endDate)"]
-  SM -- yes --> BRem["[ghost] 기록 삭제\n→ periodStore.remove(id)"]
-
-  BAdd --> RD[PeriodRangeDialog 오픈\ninitialStartDate = rangeStartSeed]
-  RD --> |"onSubmit"| PA["periodStore.add\n{startDate, endDate}"]
-  PA --> Toast["toast: 추가됨"]
-
-  classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
-  classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
-  class SD,BAdd,BEnd,BRem,RD,Toast ui;
-  class CA,OR,SM,PA logic;
-```
-
-- 세 버튼은 중첩될 수 있습니다 (예: 미종료 record 가 있고 동시에 다른 startDate 도 있는 날).
-- `canAdd` 조건: `selectedDate <= today` 이고 해당 날짜를 startDate 로 갖는 record 가 없음.
-- `openRecordId`: endDate 가 없는 record 중 `startDate <= selectedDate` 를 만족하는 가장 최근 record.
-- `PeriodRangeDialog` 는 FAB 과 캘린더 양쪽에서 공유하는 컴포넌트 (`src/components/app/PeriodRangeDialog.tsx`).
+과거엔 날짜 탭 시 `DayDetailSheet` 가 열려 상황별 버튼(추가/종료/삭제) 중 하나를 고르고 `PeriodRangeDialog` 로 넘어갔습니다. 두 컴포넌트 모두 삭제되었고, 지금은 날짜 탭이 곧바로 `EventFormSheet` 를 add 모드로 엽니다 (위 [월 네비게이션 데이터 흐름](#월-네비게이션-데이터-흐름) 참고). 생리 시작/종료/삭제는 별도 버튼이 아니라 시트 안의 **생리 토글** 하나로 처리됩니다 — 판정 로직·상세 흐름은 [`docs/flows/log.md` § 생리 토글 + 컨디션 연동](./log.md#생리-토글--컨디션-연동-step-102c-통합-시트-갱신) 참고.
 
 ## 결정 사항
 

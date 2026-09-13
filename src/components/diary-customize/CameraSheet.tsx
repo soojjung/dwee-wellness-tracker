@@ -179,8 +179,9 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
         ) : null}
       </div>
 
-      {/* Control bar */}
-      <div className="flex flex-col items-center gap-5 bg-brand-gray900 pb-safe pt-6">
+      {/* Control bar. 맨 아래 스티커·사진 토글이 화면 하단에 붙어 보이지 않도록
+          기본 32px 을 두고, 홈 인디케이터가 있는 기기에서는 그 높이를 더한다. */}
+      <div className="flex flex-col items-center gap-5 bg-brand-gray900 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6">
         <div className="flex w-full items-center justify-around px-6">
           <button
             type="button"
