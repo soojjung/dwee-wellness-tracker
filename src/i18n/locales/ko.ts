@@ -849,7 +849,7 @@ export const ko: Dictionary = {
         openAlbumFallback: '앨범 열기',
       },
       scan: {
-        progress: '✨ 스캔 중이에요! 잠시만 기다려~',
+        progress: '✨스캔 중이에요! 잠시만 기다려~✨',
         cancel: '취소',
       },
       cutout: {

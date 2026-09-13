@@ -853,7 +853,7 @@ export const en = {
         openAlbumFallback: 'Open album',
       },
       scan: {
-        progress: '✨ Scanning… hold tight!',
+        progress: '✨Scanning… hold tight!✨',
         cancel: 'Cancel',
       },
       cutout: {

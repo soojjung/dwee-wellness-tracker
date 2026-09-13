@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { formatMonthLabel, fromISO, todayISO } from '@/lib/date';
+import { defaultCategoryId } from '@/domain/event/builtins';
 import type { DailyConditionLog, EventCategory, EventLog } from '@/types';
 import { BinIcon, ChevronDownIcon } from '@/components/ui/icons';
 import { MyPageToggle } from '@/components/my-page/MyPageToggle';
@@ -43,7 +44,7 @@ interface EventFormSheetProps {
   onAddCategory?: () => void;
 }
 
-type ExpandedField = 'none' | 'start' | 'end';
+type ExpandedField = 'none' | 'start' | 'end' | 'category';
 
 export function EventFormSheet({
   mode,
@@ -66,7 +67,7 @@ export function EventFormSheet({
   const [startDate, setStartDate] = useState(initial?.startDate ?? defaultDate);
   const [endDate, setEndDate] = useState(initial?.endDate ?? defaultDate);
   const [categoryId, setCategoryId] = useState<string | null>(
-    initial?.categoryId ?? categories[0]?.id ?? null,
+    initial?.categoryId ?? defaultCategoryId(categories),
   );
   const [expanded, setExpanded] = useState<ExpandedField>('none');
   const [submitting, setSubmitting] = useState(false);
@@ -201,11 +202,11 @@ export function EventFormSheet({
             aria-label={t.report.diary.eventSheet.close}
             disabled={submitting}
             onClick={handleClose}
-            className="grid size-9 place-items-center rounded-full bg-brand-gray100 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-60"
+            className="grid size-10 place-items-center rounded-full bg-brand-gray100 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-60"
           >
             <CloseIcon />
           </button>
-          <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-brand-gray900">
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-[20px] font-semibold text-brand-gray900">
             {headerTitle}
           </h2>
           <button
@@ -214,7 +215,7 @@ export function EventFormSheet({
             disabled={!canSave}
             onClick={handleSave}
             className={
-              'grid size-9 place-items-center rounded-full text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+              'grid size-10 place-items-center rounded-full text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
               (canSave ? 'bg-brand-pink200' : 'bg-brand-gray400')
             }
           >
@@ -282,6 +283,10 @@ export function EventFormSheet({
             categories={categories}
             selectedId={categoryId}
             onSelect={setCategoryId}
+            expanded={expanded === 'category'}
+            onToggle={() =>
+              setExpanded((v) => (v === 'category' ? 'none' : 'category'))
+            }
             onEditCategory={onEditCategory}
             onAddCategory={onAddCategory}
           />
