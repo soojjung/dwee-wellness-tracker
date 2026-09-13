@@ -12,13 +12,6 @@ import {
   selectPlacementsForMonth,
 } from '@/store/diaryPlacementStore';
 import { todayISO, toISO } from '@/lib/date';
-import { DayDetailSheet } from '@/components/calendar/DayDetailSheet';
-import { isPeriodDate } from '@/components/calendar/cellState';
-import {
-  PeriodRangeDialog,
-  type AddPeriodInput,
-} from '@/components/app/PeriodRangeDialog';
-import { Toast } from '@/components/ui/Toast';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
@@ -34,17 +27,15 @@ import { YearMonthWheelPicker } from './YearMonthWheelPicker';
 import type { LogView } from './LogViewToggle';
 
 const WEEK_STARTS_ON = 0;
-const TOAST_MS = 2400;
-
 interface DiaryScreenProps {
   currentView: LogView;
   onViewChange: (view: LogView) => void;
 }
 
-type EventPrev = 'addEvent' | { kind: 'editEvent'; eventId: string };
+type EventPrev = { kind: 'addEvent'; date?: string } | { kind: 'editEvent'; eventId: string };
 type ActiveSheet =
   | { kind: 'none' }
-  | { kind: 'addEvent' }
+  | { kind: 'addEvent'; date?: string }
   | { kind: 'editEvent'; eventId: string }
   | { kind: 'monthPicker' }
   | { kind: 'addCategory'; prev: EventPrev }
@@ -57,9 +48,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const periods = usePeriodStore((s) => s.periods);
   const periodsHydrated = usePeriodStore((s) => s.hydrated);
   const hydratePeriods = usePeriodStore((s) => s.hydrate);
-  const addPeriod = usePeriodStore((s) => s.add);
-  const removePeriod = usePeriodStore((s) => s.remove);
-  const updatePeriod = usePeriodStore((s) => s.update);
 
   const conditionByDate = useConditionStore((s) => s.byDate);
   const hydrateConditionRange = useConditionStore((s) => s.hydrateRange);
@@ -80,8 +68,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const addCategory = useEventStore((s) => s.addCategory);
   const updateCategory = useEventStore((s) => s.updateCategory);
 
-  const periodLength = useSettingsStore((s) => s.settings.averagePeriodLength);
-
   const stickers = useDiaryStickerStore((s) => s.stickers);
   const stickerUrls = useDiaryStickerStore((s) => s.urls);
   const stickersHydrated = useDiaryStickerStore((s) => s.hydrated);
@@ -96,9 +82,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   // replay the animation.
   const [todayPulseKey, setTodayPulseKey] = useState(0);
   const [sheet, setSheet] = useState<ActiveSheet>({ kind: 'none' });
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [rangeStartSeed, setRangeStartSeed] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const placements = useDiaryPlacementStore(
     selectPlacementsForMonth(cursor.year, cursor.monthIndex),
@@ -127,12 +110,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     hydrateConditionRange(start, end);
   }, [cursor.year, cursor.monthIndex, hydrateConditionRange]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(null), TOAST_MS);
-    return () => clearTimeout(id);
-  }, [toast]);
-
   // Log-tab tap → jump to today's month + pulse the today cell. Also fires
   // once on mount so a fresh navigation into the diary shows the same cue.
   const focusPing = useDiaryFocusStore((s) => s.focusPing);
@@ -146,44 +123,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     () => predictNextPeriod(periods, settings),
     [periods, settings],
   );
-
-  const startMatchId = useMemo(
-    () =>
-      selectedDate ? periods.find((p) => p.startDate === selectedDate)?.id ?? null : null,
-    [periods, selectedDate],
-  );
-  const openRecordId = useMemo(() => {
-    if (!selectedDate) return null;
-    let latest: { id: string; startDate: string } | null = null;
-    for (const p of periods) {
-      if (p.endDate) continue;
-      if (p.startDate > selectedDate) continue;
-      if (!latest || p.startDate > latest.startDate) latest = { id: p.id, startDate: p.startDate };
-    }
-    return latest?.id ?? null;
-  }, [periods, selectedDate]);
-  const canAddOnSelected =
-    !!selectedDate && !startMatchId && selectedDate <= today;
-
-  function handleAddPeriodOnDate(startDate: string) {
-    setSelectedDate(null);
-    setRangeStartSeed(startDate);
-  }
-  async function handleRangeSubmit(input: AddPeriodInput) {
-    await addPeriod(input);
-    setRangeStartSeed(null);
-    setToast(t.calendar.detail.added);
-  }
-  async function handleRemovePeriod(id: string) {
-    await removePeriod(id);
-    setSelectedDate(null);
-    setToast(t.calendar.detail.removed);
-  }
-  async function handleMarkEnd(id: string, endDate: string) {
-    await updatePeriod(id, { endDate });
-    setSelectedDate(null);
-    setToast(t.calendar.detail.endMarked);
-  }
 
   const builtinNamer = useCallback(
     (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
@@ -258,7 +197,8 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
 
   function openAddCategoryFromEvent() {
     setSheet((prev) => {
-      if (prev.kind === 'addEvent') return { kind: 'addCategory', prev: 'addEvent' };
+      if (prev.kind === 'addEvent')
+        return { kind: 'addCategory', prev: { kind: 'addEvent', date: prev.date } };
       if (prev.kind === 'editEvent')
         return {
           kind: 'addCategory',
@@ -271,7 +211,11 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   function openEditCategoryFromEvent(cat: EventCategory) {
     setSheet((prev) => {
       if (prev.kind === 'addEvent')
-        return { kind: 'editCategory', categoryId: cat.id, prev: 'addEvent' };
+        return {
+          kind: 'editCategory',
+          categoryId: cat.id,
+          prev: { kind: 'addEvent', date: prev.date },
+        };
       if (prev.kind === 'editEvent')
         return {
           kind: 'editCategory',
@@ -283,8 +227,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   }
 
   function returnToEventSheet(prev: EventPrev) {
-    if (prev === 'addEvent') setSheet({ kind: 'addEvent' });
-    else setSheet(prev);
+    setSheet(prev);
   }
 
   const activeCategoryForEdit =
@@ -438,7 +381,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                     conditionByDate={conditionByDate}
                     predictedDate={prediction.predictedDate}
                     todayPulseKey={todayPulseKey}
-                    onSelect={setSelectedDate}
+                    onSelect={(date) => setSheet({ kind: 'addEvent', date })}
                     onSelectEvent={(ev) => setSheet({ kind: 'editEvent', eventId: ev.id })}
                   />
                 </div>
@@ -449,14 +392,14 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
         </div>
       </div>
 
-      {/* + button opens EventFormSheet directly (add mode) — it now hosts
-          the period toggle and an optional condition section, so there's
-          no separate 생리/일정 chooser popover anymore. */}
+      {/* + button and day-cell taps both open EventFormSheet in add mode —
+          it hosts the period toggle and an optional condition section, so
+          there's no separate day-detail or 생리/일정 chooser popover. */}
       {sheet.kind === 'addEvent' && categories.length > 0 ? (
         <EventFormSheet
           mode="add"
           categories={categories}
-          defaultDate={today}
+          defaultDate={sheet.date ?? today}
           onClose={() => setSheet({ kind: 'none' })}
           onSubmit={handleAddEvent}
           onEditCategory={openEditCategoryFromEvent}
@@ -519,34 +462,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           }}
         />
       ) : null}
-
-      {selectedDate ? (
-        <DayDetailSheet
-          date={selectedDate}
-          onClose={() => setSelectedDate(null)}
-          hasPeriod={isPeriodDate(selectedDate, periods)}
-          isPredicted={prediction.predictedDate === selectedDate}
-          condition={conditionByDate[selectedDate] ?? null}
-          startMatchId={startMatchId}
-          openRecordId={openRecordId}
-          canAdd={canAddOnSelected}
-          onAdd={handleAddPeriodOnDate}
-          onRemove={handleRemovePeriod}
-          onMarkEnd={handleMarkEnd}
-        />
-      ) : null}
-
-      {rangeStartSeed ? (
-        <PeriodRangeDialog
-          initialStartDate={rangeStartSeed}
-          defaultPeriodLength={periodLength}
-          today={today}
-          onSubmit={handleRangeSubmit}
-          onCancel={() => setRangeStartSeed(null)}
-        />
-      ) : null}
-
-      <Toast message={toast} />
     </>
   );
 }

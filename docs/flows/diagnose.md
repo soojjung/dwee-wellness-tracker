@@ -107,11 +107,11 @@ stateDiagram-v2
 | 탭 | 내용 |
 |----|------|
 | **체형 탭** (BodyTab) | "핵심 특징" 섹션 (이모지 불릿 keyTraits 5개 + 해시태그 chips) + 5개 단락 (골격 / 살성 / 라인 / 비율 / 시각적 무게중심) |
-| **스타일 가이드 탭** (StyleTab) | 체형별 정적 요약 블록 (quote + 포인트 3줄 + 해시태그 3개, `styleSummary.*` i18n 키) + 의류 카드 4장 (tops · bottoms · dresses · outerwear) + 스타일 카드 2장 (materials · fit) + 디테일 2×2 그리드 (neckline · sleeves · waistDetail · length) |
+| **스타일 가이드 탭** (StyleGuideTab) | 체형별 **정적** 콘텐츠. 요약 블록 (quote + 포인트 3줄 + 해시태그 3개, `styleSummary.*` i18n 키) + 가로 스와이프 카드 스트립 3줄 — 의류 4장 (tops · bottoms · dresses · outerwear) / 스타일 2장 (materials · fit) / 디테일 5장 (neckline · sleeves · length · pattern · decoration). 카드마다 "잘 어울려요" / "피하면 좋아요" 그룹이 있고, 각 그룹은 chips + `→ 이유` 한 줄. 본문은 LLM 리포트가 아니라 `src/data/bodyType/styleGuide/{straight,wave,natural}.ts` (en/ko, Figma 522-8571 / 522-9391 / 522-10258 문안 그대로) |
 
 상단 Hero 영역은 어두운 배경(`brand-gray900`) + 우측에 크롭/줌된 컷아웃 초상 이미지(`straight-cutout.png` / `wave-cutout.png` / `natural-cutout.png`) + 체형명·typeSubtitle·keyTrait 첫 줄. (다운로드 버튼은 Figma 재설계에서 제거됨.)
 
-상단은 `DiagnoseResultTopBar` 가 `fixed` 로 고정되어 왼쪽 뒤로가기 + 오른쪽 "다른 사진으로 다시하기"를 스크롤과 무관하게 항상 노출합니다(재시도 동작이 화면 하단에서 이 바로 이동). 히어로 위에선 반투명 원 + 밝은 아이콘, `ReportView` 의 sticky 탭바가 카드 위로 올라와 바와 겹치는 시점(`stuck`)부터는 `bg-brand-gray50` + 어두운 아이콘으로 전환합니다. `ReportView` 의 탭바는 이 바 높이(`TOP_BAR_HEIGHT = 64`)만큼 아래에서 고정되며, stuck 판정에 쓰는 `IntersectionObserver` 의 `rootMargin` 도 같은 값으로 맞춰 두 컴포넌트의 전환 시점을 정렬합니다. `ReportView` 는 `onStuckChange` 콜백으로 부모(`DiagnoseResultScreen`)에 stuck 상태를 알립니다.
+상단은 `DiagnoseResultTopBar` 가 `fixed` 로 고정되어 왼쪽 뒤로가기 + 오른쪽 "다른 사진으로 다시하기"를 스크롤과 무관하게 항상 노출합니다(재시도 동작이 화면 하단에서 이 바로 이동). 히어로 위에선 반투명 원 + 밝은 아이콘, 카드 상단이 바 아래로 들어오는 시점(`stuck`)부터는 `bg-brand-gray50` + 어두운 아이콘으로 전환합니다. stuck 판정은 `ReportView` 가 카드 최상단 1px 센티널에 `IntersectionObserver` 를 걸어 하며, `rootMargin` 을 바 높이(`TOP_BAR_HEIGHT = 64`)로 맞춰 전환 시점을 정렬하고 `onStuckChange` 콜백으로 부모(`DiagnoseResultScreen`)에 알립니다. 탭 pill 은 상단에 고정하지 않고 본문과 함께 스크롤됩니다 — 고정하면 읽는 영역이 줄어 답답하다는 피드백으로 sticky 를 제거했습니다 (2026-09-14).
 
 화면 하단은 `ShareTestBar` 가 고정 바로 깔립니다 (`bg-brand-gray900` + `text-brand-pink100`). `navigator.share` 가 있으면 네이티브 공유 시트를, 없으면 링크를 클립보드에 복사하고 토스트를 띄웁니다(`QnaScreen` 의 기존 복사 폴백과 동일 패턴). 공유 시트를 사용자가 취소한 경우는 복사하지 않고 조용히 종료합니다.
 
@@ -232,7 +232,10 @@ flowchart TD
 - `src/data/adapters/indexeddb/IndexedDBBodyTypeReportAdapter.ts`, `src/data/adapters/supabase/SupabaseBodyTypeReportAdapter.ts` — 로컬/원격 구현
 - `src/data/bodyTypeReportStorage.ts` — 레거시 local/sessionStorage 결과를 Repository 로 1회 승격 후 삭제 (`DEPRECATED_KEYS.bodyTypeReportBrowser`)
 - `supabase/migrations/0013_body_type_reports.sql` — `body_type_reports` 테이블 (user_id PK 1행, report jsonb, RLS 익명 차단)
-- `src/components/diagnose/ReportView.tsx` — 2탭 결과 렌더 (Hero · BodyTab · StyleTab), sticky 탭바 stuck 상태를 `onStuckChange` 로 부모에 전달
+- `src/components/diagnose/ReportView.tsx` — 2탭 결과 렌더 (Hero · TabPills · BodyTab), 카드 stuck 상태를 `onStuckChange` 로 부모에 전달
+- `src/components/diagnose/StyleGuideTab.tsx` — 스타일 가이드 탭 (요약 블록 + 카드 스트립 3줄). 리포트를 받지 않고 `getStyleGuideContent(type, locale)` 로 정적 콘텐츠를 읽음
+- `src/data/bodyType/styleGuide.ts` + `styleGuide/{straight,wave,natural}.ts` — 유형별 스타일 가이드 정적 콘텐츠 (en/ko). `StyleGuideContent` 타입은 `src/types/bodyType.ts`
+- `src/components/diagnose/HashtagRow.tsx`, `reportCopy.ts` — 두 탭이 공유하는 해시태그 chips 와 `ResultCopy` 사전 타입
 - `src/components/diagnose/ShareTestBar.tsx` — 하단 고정 공유 바 (네이티브 공유 시트 / 클립보드 복사 폴백)
 - `src/components/diagnose/ShareLandingRedirect.tsx` — 공유 라우트 진입 화면. 세션 있으면 `/magazine` 목록으로 리다이렉트, 없으면 그대로 머무름
 - `src/components/auth/AuthGuard.tsx` — `PUBLIC_PREFIXES`(`/magazine/personal-body-type/share`)는 세션 없이도 통과
@@ -241,7 +244,7 @@ flowchart TD
 - `src/data/services/bodyTypeService.ts` — Edge Function 호출 + 익명 세션 보장 + `AbortSignal` pass-through
 - `src/lib/image/fileToBase64.ts` — File → base64 + 미디어 타입 검증
 - `src/types/bodyType.ts` — `BodyTypeReport`, `PrimaryBodyType`, `BodyTypeAnalyzeError`
-- `supabase/functions/body-type-analyze/` — Edge Function 본체 (일 10회 limit, MAX_ATTEMPTS=2, temperature 0.3). 프롬프트 파일(`prompt.ts`)에 체형별 참조 블록(keyTraits 5개 / frame / skin / line / proportions / centerOfGravity / styleGuide 등) 추가. 변경 시 `supabase functions deploy body-type-analyze` 재배포 필요.
+- `supabase/functions/body-type-analyze/` — Edge Function 본체 (일 10회 limit, MAX_ATTEMPTS=2, temperature 0.3). 프롬프트 파일(`prompt.ts`)에 체형별 참조 블록(keyTraits 5개 / keywords 3개 / frame / skin / line / proportions / centerOfGravity / styleGuide 등) 추가 — 체형 탭 문안은 Figma 522-8386 / 522-9206 / 522-10070 기준. 리포트의 `styleGuide` / `fitCriteria` / `details` / `materials` 는 스키마에 남아 있지만 화면은 더 이상 읽지 않음(정적 콘텐츠로 대체). 변경 시 `supabase functions deploy body-type-analyze` 재배포 필요.
 - `supabase/migrations/0003_body_type_calls.sql` — 일일 호출 카운터 테이블 + RLS
 - `docs/components/modal.md` — ConsentModal 이 따르는 공통 모달 설계 규칙
 - `supabase/README.md` — Edge Function 배포·시크릿 설정 절차

@@ -2,7 +2,7 @@
 
 ## 위치 & 추출 시점
 
-- 현재 모달·다이얼로그: `ConsentModal` (`src/components/diagnose/DiagnoseScreen.tsx`), `PeriodRangeDialog` (`src/components/app/PeriodRangeDialog.tsx`), `PeriodSelectSheet` (`src/components/app/PeriodSelectSheet.tsx`).
+- 현재 모달·다이얼로그: `ConsentModal` (`src/components/diagnose/DiagnoseScreen.tsx`), `ShortCycleConfirmDialog` (`src/components/app/ShortCycleConfirmDialog.tsx`), `PeriodSelectSheet` (`src/components/app/PeriodSelectSheet.tsx`).
 - 아직 공통 `Modal` 컴포넌트로 추출되지 않음. 세 번째 이상 중복되면 `src/components/ui/Modal.tsx` 로 추출.
 
 ## 필수 원칙

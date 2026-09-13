@@ -112,7 +112,11 @@ export function EventFormSheet({
     void onDelete();
   }
 
-  const trimmedTitle = title.trim();
+  // A period-marked event may be saved without a title; the badge then
+  // reads as the period label so the calendar cell never shows an empty chip.
+  const trimmedTitle =
+    title.trim() ||
+    (periodMarkOn ? t.report.diary.eventDetail.periodToggle : '');
   const trimmedMemo = memo.trim();
 
   const conditionChanged =

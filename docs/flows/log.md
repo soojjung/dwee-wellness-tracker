@@ -42,7 +42,7 @@ Report 탭이 활성화되면 `<CycleReportScreen />` 을 렌더합니다. 구�
 ```mermaid
 flowchart TD
     Mount(["CycleReportScreen 마운트"])
-    HasPeriods{periods > 0?}
+    HasPeriods{"periods > 0?"}
     Empty["CycleReportEmpty\n(기록 없음 안내)"]
     Report["ReportHeader\n+ StatusBadge\n+ CycleChart\n+ RecentCyclesCard"]
     Tooltip["StatusTooltip\n(StatusBadge 탭)"]
@@ -91,7 +91,7 @@ flowchart TD
 - `src/components/diary/DiaryScreen.tsx` — 다이어리 탭 최상위 (MonthGrid 재사용, 생리일 핑크 + 오늘 검정 마커)
 - `src/components/diary/DiaryHeader.tsx` — 다이어리 헤더 (title + edit-star + 월 셀렉터 + 토글 + `+`)
 - `src/components/diary/LogViewToggle.tsx` — 재사용 가능한 2-아이콘 segmented toggle
-- `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx` — 다이어리용 캘린더 (생리 마커 + 이벤트 배지, STEP 10.2a)
+- `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx`, `DiaryWeekEventLayer.tsx` — 다이어리용 캘린더 (생리 마커 + 주 단위로 이어지는 이벤트 바, STEP 10.2a). 배치는 `src/domain/event/weekLanes.ts` 의 `layoutWeekSegments()` 가 한 주(7칸) 단위로 계산 — 같은 기간의 이벤트는 여러 날에 걸쳐 하나의 막대로 이어지고, 겹치는 이벤트는 lane 을 나눠 쌓인다(최대 `MAX_BADGES_PER_DAY`개).
 - `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · 생리 토글(add/edit 공통) · `EventConditionSection`(선택 컨디션 6항목) · 삭제(edit 전용) 포함. 카테고리 초기값은 `initial?.categoryId` (edit) 없으면 `defaultCategoryId(categories)` (add) — 목록의 첫 항목이 아니라 내장 카테고리 "친구"를 우선 선택
 - `src/components/diary/EventConditionSection.tsx` — `EventFormSheet` 안의 선택적 컨디션 카드 (기분/에너지/통증/붓기/식욕/피부, `ConditionRow` variant="outline" 재사용)
 - `src/components/diary/InlineDatePicker.tsx` — 시작/종료 날짜 확장 시 나타나는 인라인 미니 캘린더 (STEP 10.2b)
@@ -110,7 +110,7 @@ flowchart TD
 - 저장소: IndexedDB `dwee:diary:stickers` + blob per id. Supabase `diary_stickers` 테이블 + `media` bucket 경로 `{user_id}/diary_stickers/{id}.{ext}` (RLS anon lockout).
 - 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
 - 10.3b 포함: 캘린더 위에 스티커 배치 (drag/select/resize/rotate/delete). 라이브러리 썸네일 탭 → 화면 중앙 근처에 draft placement 생성. 커스터마이즈 화면은 draft 상태를 유지하며 완료 시 diff → repo 반영, 뒤로 시 `DiscardDialog` → 폐기.
-- 10.3c 포함: `CameraSheet` — Capacitor Camera 플러그인으로 촬영 후 crop 진입. `DraggableBottomSheet` — 스티커 라이브러리를 감싸는 3-snap(`peek`/`medium`/`full`) 바텀시트. 시트 전체 표면이 드래그 대상(핸들만이 아님) — `full` 미만에서는 위로 스와이프가 항상 시트를 확장하고, `full` 에서는 안쪽 리스트가 스크롤을 먼저 가져가다 맨 위에서 더 당기면 시트가 접힘. `open`/`onDismiss` props 로 캘린더(시트 바깥) 탭 시 시트를 화면 아래로 완전히 숨길 수 있음 — `DiaryCustomizeScreen` 이 이를 이용해 배경 탭으로 라이브러리를 치워 달 전체를 보이게 함 (화면 자체 오버레이가 떠 있는 동안엔 `onDismiss` 를 꺼서 오작동 방지).
+- 10.3c 포함: `CameraSheet` — MediaDevices 라이브 프리뷰 + 자체 비율(1:1/4:3)·모드(사진/스티커) 토글. 셔터를 누르면 이미 크롭된 프레임을 그대로 부모(`DiaryCustomizeScreen`)에 넘긴다(`PhotoImportModal` 을 거치지 않음) — `photo` 모드는 즉시 저장, `sticker` 모드는 `StickerScanScreen` 으로 진입. `DraggableBottomSheet` — 스티커 라이브러리를 감싸는 3-snap(`peek`/`medium`/`full`) 바텀시트. 시트 전체 표면이 드래그 대상(핸들만이 아님) — `full` 미만에서는 위로 스와이프가 항상 시트를 확장하고, `full` 에서는 안쪽 리스트가 스크롤을 먼저 가져가다 맨 위에서 더 당기면 시트가 접힘. `open`/`onDismiss` props 로 캘린더(시트 바깥) 탭 시 시트를 화면 아래로 완전히 숨길 수 있음 — `DiaryCustomizeScreen` 이 이를 이용해 배경 탭으로 라이브러리를 치워 달 전체를 보이게 함 (화면 자체 오버레이가 떠 있는 동안엔 `onDismiss` 를 꺼서 오작동 방지).
 - 10.3d 포함: `StickerScanScreen` + `CutoutConfirmScreen` — `sticker-cutout` edge function (remove.bg 프록시) 을 호출해 배경 제거된 PNG 를 받아 미리보기 → 보관함 저장 (`source: 'sticker'`). API 실패 시 같은 화면에서 재시도 · 사진 그대로 저장 · 취소 선택 가능. `DeleteStickersDialog` — 스티커 다중 선택 삭제 확인. `DiaryStickerViewLayer` — 다이어리 달력 위에 확정된 배치를 read-only 렌더하는 레이어(커스터마이즈 화면 밖에서도 표시).
 - **기본 스티커 시드**: `src/domain/diary/defaultStickers.ts` 에 5개 기본 스티커 정의 (airpods-max / avocado-toast / glass-lemon / matcha / workout, 배열 순서 = 화면 표시 순서). `ensureDefaultStickersSeeded()` (`src/data/index.ts`)는 시딩 시엔 이 배열을 **역순**으로 넣는다 — 어댑터의 `add` 가 새 항목을 맨 앞에 쌓기(newest first) 때문. 시드 완료 플래그는 `DEFAULT_STICKER_SET_VERSION` 을 포함해 **백엔드별로 스코프**된다(`local` / `remote:{userId}`) — 기기가 이미 익명 라이브러리를 시드했어도 이후 로그인하는 계정은 별도로 시드받고, 기본 아트워크가 바뀌어 버전이 오르면 (라이브러리가 비어 있는 한) 재시드된다. `rehydrateAll.ts` 가 repo mode 전환 시 `diaryStickerStore.rehydrate()` 를 함께 호출해 이 재시드를 트리거한다.
 
@@ -131,7 +131,7 @@ flowchart TD
 
 앨범(`PhotoImportModal`)과 카메라(`CameraSheet`) 모두 확정 전에 **모드 선택** (사진 그대로 / 누끼)을 제공하지만, 비율(1:1 · 4:3)을 언제 정하는지는 갈립니다:
 
-- **카메라**: 촬영 전에 비율 토글 + 모드 토글을 함께 보여줌 (변경 없음).
+- **카메라**: 촬영 전에 비율 토글 + 모드 토글을 함께 보여주고, 셔터를 누르면 이미 크롭된 프레임을 바로 부모에 넘깁니다 (`PhotoImportModal` 미경유).
 - **앨범**: 사진을 고르면 먼저 라디오 카드로 모드부터 선택합니다 (**"누끼로 만들기"가 기본 선택**). "사진 그대로 사용"을 고를 때만 풀스크린 `PhotoRatioScreen` (013_5) 으로 넘어가 비율을 정합니다. 누끼 모드는 비율 화면을 건너뛰고 원본 파일을 그대로 넘기며, 배치용 비율은 원본 사진의 가로:세로 비로 추정합니다 (`ratioForImage` — 폭/높이 ≥ 0.875 면 1:1, 아니면 4:3).
 
 부모(`DiaryCustomizeScreen`)가 이후 분기:

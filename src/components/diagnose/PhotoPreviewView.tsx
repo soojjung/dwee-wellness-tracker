@@ -1,6 +1,6 @@
 'use client';
 import { useT } from '@/i18n/useT';
-import { BackIcon } from '@/components/ui/icons';
+import { AlbumIcon, BackIcon } from '@/components/ui/icons';
 import { BOTTOM_CTA_CLASS } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import type { PickedPhoto } from './useBodyPhotoPicker';
@@ -72,7 +72,7 @@ export function PhotoPreviewView({
           onClick={onReplace}
           className="flex items-center gap-2 rounded-full bg-brand-gray300 px-5 py-3 text-base font-medium leading-normal text-brand-gray900 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
         >
-          <PhotoIcon />
+          <AlbumIcon className="size-[18px]" />
           {p.picker.replaceButton}
         </button>
       </div>
@@ -89,24 +89,5 @@ export function PhotoPreviewView({
         </button>
       </div>
     </div>
-  );
-}
-
-function PhotoIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="size-5"
-      aria-hidden
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <circle cx="8.5" cy="10" r="1.5" />
-      <path d="M21 16l-5-5-4.5 4.5" />
-    </svg>
   );
 }

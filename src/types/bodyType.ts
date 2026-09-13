@@ -6,6 +6,32 @@ export type SupportedImageMediaType = 'image/jpeg' | 'image/png' | 'image/webp';
 
 export type PrimaryBodyType = 'straight' | 'wave' | 'natural';
 
+/** 정적 스타일 가이드 — 유형별 고정 콘텐츠(Figma 522-8571 / 522-9391 / 522-10258). */
+export interface StyleGuideGroup {
+  readonly items: readonly string[];
+  readonly reason: string;
+}
+
+export interface StyleGuideCategory {
+  readonly good: readonly StyleGuideGroup[];
+  readonly avoid: readonly StyleGuideGroup[];
+}
+
+export type StyleGuideCategoryKey =
+  | 'tops'
+  | 'bottoms'
+  | 'dresses'
+  | 'outerwear'
+  | 'materials'
+  | 'fit'
+  | 'neckline'
+  | 'sleeves'
+  | 'length'
+  | 'pattern'
+  | 'decoration';
+
+export type StyleGuideContent = Readonly<Record<StyleGuideCategoryKey, StyleGuideCategory>>;
+
 export interface StyleSection {
   readonly recommended: readonly string[];
   readonly avoid: readonly string[];

@@ -26,4 +26,4 @@ Last run: 2026-08-19 — 19/19 passed
 
 - `isPeriodDate` 는 문자열 ISO 비교(`>=`, `<=`) 로 판정. 오픈 기록(endDate 없음)은 startDate 당일만 true.
 - `deriveCellMarkers` 는 4개 marker(`background`, `predicted`, `hasCondition`, `isToday`)를 독립적으로 계산.
-- 이 헬퍼들은 `DiaryScreen`/`CalendarScreen` 의 날짜 셀 표시 및 탭 상세 팝업 (`DayDetailSheet`) 진입 판정에 공용으로 쓰인다.
+- 이 헬퍼들은 `DiaryMonthGrid` 의 날짜 셀 표시(생리 배경·오늘·예측 마커) 판정에 쓰인다.

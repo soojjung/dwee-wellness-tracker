@@ -15,7 +15,7 @@ interface StickerScanScreenProps {
   /** Escape hatch when the API fails — save the raw photo as a
    * source: 'photo' sticker instead. */
   onSaveAsPhoto: () => Promise<void> | void;
-  /** Aborts the flow entirely (back to library). */
+  /** Aborts the flow from the error card (back to library). */
   onCancel: () => void;
   /** Minimum time the pink sweep stays visible so the screen doesn't
    * flash if the API returns fast. */
@@ -144,22 +144,10 @@ export function StickerScanScreen({
             onCancel={onCancel}
           />
         ) : (
-          // 1fr | text | 1fr keeps the copy screen-centred when there's room and
-          // only nudges it left (never wraps) on narrow phones where the
-          // cancel button needs more than its half.
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6">
-            <span aria-hidden />
-            <p className="whitespace-nowrap text-center text-sm text-brand-gray800">
-              {t.report.diary.scan.progress}
-            </p>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="h-10 justify-self-end rounded-full px-3 text-sm font-medium text-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
-            >
-              {t.report.diary.scan.cancel}
-            </button>
-          </div>
+          // No cancel affordance while scanning; the error card still offers one.
+          <p className="whitespace-nowrap px-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6 text-center text-sm text-brand-gray800">
+            {t.report.diary.scan.progress}
+          </p>
         )}
       </div>
     </div>

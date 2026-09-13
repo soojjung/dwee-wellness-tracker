@@ -1,7 +1,11 @@
 'use client';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
-import type { BodyTypeReport, PrimaryBodyType, StyleSection } from '@/types';
+import { useSettingsStore } from '@/store/settingsStore';
+import type { BodyTypeReport, PrimaryBodyType } from '@/types';
+import { HashtagRow } from './HashtagRow';
+import { StyleGuideTab } from './StyleGuideTab';
+import type { ResultCopy } from './reportCopy';
 
 interface ReportViewProps {
   report: BodyTypeReport;
@@ -17,18 +21,17 @@ const TYPE_IMAGE: Record<PrimaryBodyType, string> = {
 
 type Tab = 'body' | 'style';
 
-/** DiagnoseResultTopBar 의 높이(pt-3 + size-10 + 여백). 탭바가 그 아래에서 고정된다. */
+/** DiagnoseResultTopBar 의 높이(pt-3 + size-10 + 여백). 카드가 이 선을 넘으면 바 색이 바뀐다. */
 const TOP_BAR_HEIGHT = 64;
-type ResultCopy = ReturnType<typeof useT>['magazine']['diagnose']['result'];
 
 export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function ReportView(
   { report, onStuckChange },
   ref,
 ) {
   const t = useT();
+  const locale = useSettingsStore((s) => s.settings.locale);
   const r = t.magazine.diagnose.result;
   const [tab, setTab] = useState<Tab>('body');
-  const cardRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [stuck, setStuck] = useState(false);
   const type = report.summary.primaryType;
@@ -53,16 +56,6 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
     onStuckChange?.(stuck);
   }, [stuck, onStuckChange]);
 
-  // 탭바가 고정된 채로 탭을 바꾸면 새 탭 본문의 중간 지점에 떨어진다. 고정이
-  // 시작되는 스크롤 위치로 되돌려 탭바는 상단에 둔 채 본문만 처음부터 보이게 한다.
-  function selectTab(next: Tab) {
-    setTab(next);
-    const card = cardRef.current;
-    if (!card) return;
-    const stickyStart = card.getBoundingClientRect().top + window.scrollY - TOP_BAR_HEIGHT;
-    if (window.scrollY > stickyStart) window.scrollTo({ top: stickyStart });
-  }
-
   return (
     <div ref={ref} className="flex flex-col bg-brand-gray900">
       <Hero
@@ -72,33 +65,19 @@ export const ReportView = forwardRef<HTMLDivElement, ReportViewProps>(function R
         image={TYPE_IMAGE[type]}
       />
 
-      <div
-        ref={cardRef}
-        className="relative z-10 -mt-10 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-[124px]"
-      >
+      <div className="relative z-10 -mt-10 flex flex-col gap-8 rounded-t-[40px] bg-brand-gray50 px-4 pb-[124px]">
         <div ref={sentinelRef} aria-hidden className="absolute inset-x-0 top-0 h-px" />
 
-        {/* 카드와 같은 배경을 들고 고정돼 뒤로 흐르는 본문을 가린다. -mx-4 는
-            카드 좌우 패딩까지 덮기 위한 것. 라운딩은 고정 전에만 준다 — 고정
-            상태에서 모서리를 깎으면 그 틈으로 본문이 비쳐 보인다. */}
-        <div
-          className={`sticky z-10 -mx-4 bg-brand-gray50 px-4 pb-3 pt-4 ${
-            stuck ? '' : 'rounded-t-[40px]'
-          }`}
-          style={{ top: TOP_BAR_HEIGHT }}
-        >
-          <TabPills
-            active={tab}
-            onChange={selectTab}
-            bodyLabel={r.bodyTab}
-            styleLabel={r.styleTab}
-          />
+        {/* 탭은 본문과 함께 흘러간다. 상단에 고정하면 읽는 영역이 그만큼 줄어
+            답답하다는 피드백이 있어 제자리에 둔다. */}
+        <div className="pt-4">
+          <TabPills active={tab} onChange={setTab} bodyLabel={r.bodyTab} styleLabel={r.styleTab} />
         </div>
 
         {tab === 'body' ? (
           <BodyTab report={report} r={r} />
         ) : (
-          <StyleTab report={report} r={r} type={type} />
+          <StyleGuideTab type={type} locale={locale} r={r} />
         )}
       </div>
     </div>
@@ -238,190 +217,6 @@ function BodyTab({ report, r }: { report: BodyTypeReport; r: ResultCopy }) {
   );
 }
 
-function StyleTab({
-  report,
-  r,
-  type,
-}: {
-  report: BodyTypeReport;
-  r: ResultCopy;
-  type: PrimaryBodyType;
-}) {
-  return (
-    <div className="flex flex-col gap-8">
-      <StyleSummaryBlock
-        headline={r.styleSummary.headline[type]}
-        points={r.styleSummary.points[type]}
-        hashtags={r.styleSummary.hashtags[type]}
-      />
-
-      <CategoryStrip title={r.styleGuideTitle}>
-        <StyleCard label={r.styleGuideTops} section={report.styleGuide.tops} r={r} />
-        <StyleCard label={r.styleGuideBottoms} section={report.styleGuide.bottoms} r={r} />
-        <StyleCard label={r.styleGuideDresses} section={report.styleGuide.dresses} r={r} />
-        <StyleCard label={r.styleGuideOuterwear} section={report.styleGuide.outerwear} r={r} />
-      </CategoryStrip>
-
-      <CategoryStrip title={r.styleCategoryTitle}>
-        <StyleCard
-          label={r.materialsTitle}
-          section={{
-            recommended: report.materials.recommended,
-            avoid: report.materials.avoid,
-            reason: report.materials.reason,
-          }}
-          r={r}
-        />
-        <StyleCard
-          label={r.fitCriteriaTitle}
-          section={{
-            recommended: report.fitCriteria.good,
-            avoid: report.fitCriteria.bad,
-            reason: report.fitCriteria.reason,
-          }}
-          r={r}
-        />
-      </CategoryStrip>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold leading-normal text-brand-gray900">
-          {r.detailsTitle}
-        </h2>
-        <DetailsGrid
-          items={[
-            { label: r.detailsNeckline, value: report.details.neckline },
-            { label: r.detailsSleeves, value: report.details.sleeves },
-            { label: r.detailsWaistDetail, value: report.details.waistDetail },
-            { label: r.detailsLength, value: report.details.length },
-          ]}
-        />
-      </section>
-    </div>
-  );
-}
-
-function StyleSummaryBlock({
-  headline,
-  points,
-  hashtags,
-}: {
-  headline: string;
-  points: readonly string[];
-  hashtags: readonly string[];
-}) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-xl font-semibold leading-normal text-brand-gray900">
-        &ldquo;{headline}&rdquo;
-      </h2>
-      <ul className="flex flex-col gap-1">
-        {points.map((p, i) => (
-          <li
-            key={i}
-            className="flex items-start gap-2 text-base leading-normal text-brand-gray900"
-          >
-            <span aria-hidden className="shrink-0 leading-normal">
-              👚
-            </span>
-            <span>{p}</span>
-          </li>
-        ))}
-      </ul>
-      <HashtagRow items={hashtags} />
-    </section>
-  );
-}
-
-function CategoryStrip({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold leading-normal text-brand-gray900">{title}</h2>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function StyleCard({ label, section, r }: { label: string; section: StyleSection; r: ResultCopy }) {
-  return (
-    <div className="flex w-[280px] shrink-0 snap-start flex-col gap-4 rounded-2xl bg-brand-gray100 p-5">
-      <p className="text-lg font-semibold leading-normal text-brand-gray900">{label}</p>
-      <StyleBlock emoji="💚" label={r.recommendedLabel} items={section.recommended} />
-      <div className="h-px bg-brand-gray200" />
-      <StyleBlock emoji="💔" label={r.avoidLabel} items={section.avoid} />
-      {section.reason && (
-        <div className="flex gap-1.5 text-xs leading-normal text-brand-gray600">
-          <span aria-hidden className="shrink-0">
-            →
-          </span>
-          <span>{section.reason}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StyleBlock({
-  emoji,
-  label,
-  items,
-}: {
-  emoji: string;
-  label: string;
-  items: readonly string[];
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="flex items-center gap-1.5 text-sm font-semibold leading-normal text-brand-gray900">
-        <span aria-hidden>{emoji}</span>
-        {label}
-      </p>
-      <div className="flex flex-wrap gap-1">
-        {items.map((item, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center rounded-full bg-brand-gray50 px-2.5 py-1 text-xs leading-normal text-brand-gray800"
-          >
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DetailsGrid({ items }: { items: readonly { label: string; value: string }[] }) {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      {items.map((item, i) => (
-        <div key={i} className="flex flex-col gap-1 rounded-2xl bg-brand-gray100 p-4">
-          <span className="text-xs font-medium leading-normal text-brand-gray600">
-            {item.label}
-          </span>
-          <span className="text-sm leading-normal text-brand-gray900">{item.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function HashtagRow({ items }: { items: readonly string[] }) {
-  if (items.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1">
-      {items.map((tag, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center rounded-full border border-brand-gray300 px-2.5 py-1.5 text-xs font-medium leading-normal text-brand-gray800"
-        >
-          #{tag}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
@@ -435,5 +230,3 @@ function Paragraph({ parts }: { parts: readonly string[] }) {
   const text = parts.filter((p) => p && p.trim().length > 0).join(' ');
   return <p className="text-base leading-normal text-brand-gray800">{text}</p>;
 }
-
-

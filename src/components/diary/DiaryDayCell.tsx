@@ -1,34 +1,25 @@
 'use client';
 import { useT } from '@/i18n/useT';
 import { fromISO } from '@/lib/date';
-import type { EventLog, EventCategory } from '@/types';
-import { paletteFor } from '@/domain/event/palette';
-import { truncateTitle } from '@/domain/event/badges';
 import type { CellMarkers } from '@/components/calendar/cellState';
 
 interface DiaryDayCellProps {
   date: string;
   inCurrentMonth: boolean;
   markers: CellMarkers;
-  events: EventLog[];
-  categoriesById: Map<string, EventCategory>;
   // When defined and `isToday`, the cell replays its "오늘" bubble
   // animation. Keying the bubble off the number makes React remount it on
   // each tap so the CSS animation restarts cleanly.
   todayPulseKey?: number;
   onSelect: (date: string) => void;
-  onSelectEvent?: (event: EventLog) => void;
 }
 
 export function DiaryDayCell({
   date,
   inCurrentMonth,
   markers,
-  events,
-  categoriesById,
   todayPulseKey,
   onSelect,
-  onSelectEvent,
 }: DiaryDayCellProps) {
   const t = useT();
   const day = fromISO(date).getDate();
@@ -46,6 +37,9 @@ export function DiaryDayCell({
   const pulsing = isToday && todayPulseKey !== undefined && todayPulseKey > 0;
 
   return (
+    // Event bars are drawn by DiaryWeekEventLayer over the whole row so a
+    // multi-day event reads as one continuous strip; keep the top padding /
+    // number height in sync with that layer's offset.
     <div
       className="relative flex min-h-[92px] flex-col items-stretch gap-1 pb-4 pt-2"
       onClick={() => onSelect(date)}
@@ -70,26 +64,6 @@ export function DiaryDayCell({
             {t.calendar.todayLabel}
           </span>
         ) : null}
-      </div>
-      <div className="flex flex-col items-stretch gap-0.5 px-1">
-        {events.map((ev) => {
-          const cat = categoriesById.get(ev.categoryId);
-          const p = paletteFor(cat?.colorId ?? 'gray');
-          return (
-            <button
-              key={ev.id}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectEvent?.(ev);
-              }}
-              className="block w-full truncate rounded px-1 py-[2px] text-left text-[12px] font-medium leading-none text-brand-gray900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink800"
-              style={{ backgroundColor: p.bg }}
-            >
-              {truncateTitle(ev.title)}
-            </button>
-          );
-        })}
       </div>
     </div>
   );
