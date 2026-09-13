@@ -70,6 +70,7 @@ export function PlacedStickerLayer({
                 key={p.id}
                 placement={p}
                 ratio={sticker.ratio}
+                source={sticker.source}
                 imageUrl={url}
                 containerWidth={containerWidth}
                 selected={selectedId === p.id}

@@ -92,14 +92,16 @@ flowchart TD
 - `src/components/diary/DiaryHeader.tsx` — 다이어리 헤더 (title + edit-star + 월 셀렉터 + 토글 + `+`)
 - `src/components/diary/LogViewToggle.tsx` — 재사용 가능한 2-아이콘 segmented toggle
 - `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx` — 다이어리용 캘린더 (생리 마커 + 이벤트 배지, STEP 10.2a)
-- `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · 생리 토글(add/edit 공통) · `EventConditionSection`(선택 컨디션 6항목) · 삭제(edit 전용) 포함
+- `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · 생리 토글(add/edit 공통) · `EventConditionSection`(선택 컨디션 6항목) · 삭제(edit 전용) 포함. 카테고리 초기값은 `initial?.categoryId` (edit) 없으면 `defaultCategoryId(categories)` (add) — 목록의 첫 항목이 아니라 내장 카테고리 "친구"를 우선 선택
 - `src/components/diary/EventConditionSection.tsx` — `EventFormSheet` 안의 선택적 컨디션 카드 (기분/에너지/통증/붓기/식욕/피부, `ConditionRow` variant="outline" 재사용)
 - `src/components/diary/InlineDatePicker.tsx` — 시작/종료 날짜 확장 시 나타나는 인라인 미니 캘린더 (STEP 10.2b)
 - `src/components/diary/YearMonthWheelPicker.tsx` — 연·월 선택 wheel picker 바텀시트 (STEP 10.2b, DiaryHeader ▼ + InlineDatePicker 에서 재사용)
-- `src/components/diary/CategoryChip.tsx`, `CategorySelector.tsx` — 팔레트 기반 카테고리 UI (10.2c 부터 편집·추가 진입점 활성)
+- `src/components/diary/CategoryChip.tsx` — 팔레트 기반 카테고리 칩 (`size='sm'` 캘린더 배지 / `'md'` 폼 행·목록)
+- `src/components/diary/CategorySelector.tsx` — "일정 유형" 행. 접힌 상태는 선택 칩 + 화살표만 보이고(날짜 필드와 같은 accordion 그룹, `EventFormSheet` 가 `expanded`/`onToggle` 로 제어), 탭하면 세로 목록으로 펼쳐져 선택 항목에 핑크 체크 + 행별 "편집" 버튼 + 맨 아래 "+ 일정 유형 추가" 행을 보여줌(Figma 012_2/012_6)
 - `src/components/diary/EventCategoryFormSheet.tsx` — 일정 유형 추가/편집 시트 (STEP 10.2c, name + 색상 팔레트 선택)
 - `src/components/diary/ColorPaletteSelector.tsx` — 7색 팔레트 확장 셀렉터
 - `src/store/eventStore.ts` — 이벤트/카테고리 Zustand 스토어. `addEvent`/`updateEvent`/`removeEvent`/`addCategory`/`updateCategory`/`linkPeriodMark`/`unlinkPeriodMark`
+- `src/domain/event/builtins.ts` — 내장 카테고리 시드(family/friend/work/club) + 순수 함수 `defaultCategoryId()` (신규 일정 기본 카테고리 = "친구", 테스트: `builtins.test.ts`/`builtins.cases.md`)
 
 ### Diary 커스터마이즈 (STEP 10.3a–10.3d — 완료)
 

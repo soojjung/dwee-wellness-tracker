@@ -6,11 +6,13 @@ import {
   PLACEMENT_NOMINAL_WIDTH,
   type DiaryStickerPlacement,
   type StickerRatio,
+  type StickerSource,
 } from '@/types';
 
 interface PlacedStickerProps {
   placement: DiaryStickerPlacement;
   ratio: StickerRatio;
+  source: StickerSource;
   imageUrl: string;
   containerWidth: number;
   selected: boolean;
@@ -35,6 +37,7 @@ interface DragState {
 export function PlacedSticker({
   placement,
   ratio,
+  source,
   imageUrl,
   containerWidth,
   selected,
@@ -147,7 +150,10 @@ export function PlacedSticker({
         onPointerCancel={endDrag}
         aria-label={t.report.diary.customize.placement}
         className={
-          'block h-full w-full overflow-hidden rounded-md focus-visible:outline-none ' +
+          'block h-full w-full overflow-hidden focus-visible:outline-none ' +
+          // Photo stickers get an 8px radius; cutouts already carry their own
+          // silhouette so clipping the bounding box would only eat the subject.
+          (source === 'photo' ? 'rounded-lg ' : '') +
           (selected ? 'ring-2 ring-brand-pink300' : '')
         }
       >

@@ -4,6 +4,7 @@ import type {
   DiarySticker,
   DiaryStickerPlacement,
   StickerRatio,
+  StickerSource,
 } from '@/types';
 import { PLACEMENT_BASE_SIZE, PLACEMENT_NOMINAL_WIDTH } from '@/types';
 
@@ -57,6 +58,7 @@ export function DiaryStickerViewLayer({
                 key={p.id}
                 placement={p}
                 ratio={sticker.ratio}
+                source={sticker.source}
                 imageUrl={url}
                 containerWidth={containerWidth}
               />
@@ -70,11 +72,18 @@ export function DiaryStickerViewLayer({
 interface ViewStickerProps {
   placement: DiaryStickerPlacement;
   ratio: StickerRatio;
+  source: StickerSource;
   imageUrl: string;
   containerWidth: number;
 }
 
-function ViewSticker({ placement, ratio, imageUrl, containerWidth }: ViewStickerProps) {
+function ViewSticker({
+  placement,
+  ratio,
+  source,
+  imageUrl,
+  containerWidth,
+}: ViewStickerProps) {
   const scaleFactor = containerWidth / PLACEMENT_NOMINAL_WIDTH;
   const baseW = PLACEMENT_BASE_SIZE * placement.scale;
   // "4:3" label = portrait 3:4 aspect (height taller than width).
@@ -101,7 +110,9 @@ function ViewSticker({ placement, ratio, imageUrl, containerWidth }: ViewSticker
         src={imageUrl}
         alt=""
         draggable={false}
-        className="h-full w-full object-cover"
+        className={
+          'h-full w-full object-cover ' + (source === 'photo' ? 'rounded-lg' : '')
+        }
       />
     </div>
   );

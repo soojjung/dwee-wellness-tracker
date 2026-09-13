@@ -105,8 +105,10 @@ export function StickerLibrarySheet({
     <>
       {/* 16px padding around a 40px-tall row, per the Figma header
           (256:20929). The design's left slot is an empty 40x40 spacer; the
-          Edit / Done pill from the delete flow sits in it. */}
-      <div className="flex w-full items-center justify-between p-4">
+          Edit / Done pill from the delete flow sits in it. Equal-width side
+          columns keep the title centered even though the pill (56px+) and
+          the + button (40px) differ in width. */}
+      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center p-4">
         {/* Left: Edit / Done pill (spec 1 · 2). 56x40 at minimum — 8px/14px
             padding around a 16px regular label lands exactly there, and a
             longer label (e.g. the English "Done") grows from it. */}
@@ -114,18 +116,18 @@ export function StickerLibrarySheet({
           type="button"
           onClick={mode === 'browse' ? enterEditMode : exitEditMode}
           disabled={stickers.length === 0 && mode === 'browse'}
-          className="min-w-14 rounded-full bg-brand-gray200 px-3.5 py-2 text-base font-normal leading-normal text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-40"
+          className="justify-self-start min-w-14 rounded-full bg-brand-gray200 px-3.5 py-2 text-base font-normal leading-normal text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-40"
         >
           {mode === 'browse' ? c.editEnter : c.editExit}
         </button>
 
-        <h2 className="text-[20px] font-semibold leading-none text-brand-gray900">
+        <h2 className="text-center text-[20px] font-semibold leading-none text-brand-gray900">
           {c.stickerLibrary}
         </h2>
 
         {/* Right: + menu (spec 3 — hidden in edit mode) */}
         {mode === 'browse' ? (
-          <div className="relative">
+          <div className="relative justify-self-end">
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
@@ -176,7 +178,7 @@ export function StickerLibrarySheet({
             ) : null}
           </div>
         ) : (
-          <span aria-hidden className="size-10" />
+          <span aria-hidden className="size-10 justify-self-end" />
         )}
       </div>
 
@@ -217,8 +219,19 @@ export function StickerLibrarySheet({
                   )}
                 >
                   {/* 8px inset keeps the artwork inside the design's 80px
-                      box while `object-contain` preserves its own ratio. */}
-                  <img src={url} alt="" className="h-full w-full object-contain p-2" />
+                      box. The <img> shrinks to its own ratio (not the cell's)
+                      so the radius on photo stickers hugs the actual pixels
+                      instead of the letterboxed square. */}
+                  <span className="flex h-full w-full items-center justify-center p-2">
+                    <img
+                      src={url}
+                      alt=""
+                      className={cn(
+                        'max-h-full max-w-full object-contain',
+                        s.source === 'photo' && 'rounded-lg',
+                      )}
+                    />
+                  </span>
                   {isNew && !editing ? (
                     <span
                       aria-hidden

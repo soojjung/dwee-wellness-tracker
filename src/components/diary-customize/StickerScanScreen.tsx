@@ -35,10 +35,28 @@ export function StickerScanScreen({
   onCutoutReady,
   onSaveAsPhoto,
   onCancel,
-  minDisplayMs = 900,
+  // One full sweep of the scan band (see `stickerScan` in tailwind.config)
+  // so a fast API response still shows the scan interaction once.
+  minDisplayMs = 1400,
 }: StickerScanScreenProps) {
   const t = useT();
   useBodyScrollLock();
+
+  // The photo is capped to the free area's height (not just its width) so
+  // the whole frame is always on screen and the scan overlay — sized to
+  // the <img> box — never sweeps through a clipped-off part of the photo.
+  const areaRef = useRef<HTMLDivElement>(null);
+  const [areaHeight, setAreaHeight] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) setAreaHeight(entry.contentRect.height);
+    });
+    observer.observe(el);
+    setAreaHeight(el.getBoundingClientRect().height);
+    return () => observer.disconnect();
+  }, []);
 
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -94,26 +112,25 @@ export function StickerScanScreen({
       {/* Mobile shell (max-w-md) — matches the rest of the app so the
           photo, error card, and progress footer share the same column
           width on desktop viewports. */}
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-        <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-          <div className="relative w-full overflow-hidden">
-            {url ? (
+      <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
+        <div
+          ref={areaRef}
+          className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden"
+        >
+          {url ? (
+            // Shrink-to-fit wrapper: its box equals the rendered photo, so
+            // the absolutely positioned scan overlay is bounded by the photo.
+            <div className="relative min-w-0 max-w-full overflow-hidden">
               <img
                 src={url}
                 alt=""
                 aria-hidden
-                className="block h-auto w-full object-contain"
+                className="block h-auto w-auto max-w-full object-contain"
+                style={{ maxHeight: areaHeight }}
               />
-            ) : null}
-            {!error ? (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 overflow-hidden"
-              >
-                <span className="absolute inset-x-0 top-0 h-1/3 animate-stickerScan bg-gradient-to-b from-transparent via-brand-pink100/70 to-transparent" />
-              </span>
-            ) : null}
-          </div>
+              {!error ? <ScanSweep /> : null}
+            </div>
+          ) : null}
         </div>
 
         {error ? (
@@ -127,15 +144,18 @@ export function StickerScanScreen({
             onCancel={onCancel}
           />
         ) : (
-          <div className="flex items-center justify-between gap-4 px-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6">
-            <span aria-hidden className="h-10 w-16" />
-            <p className="flex-1 text-center text-sm text-brand-gray800">
+          // 1fr | text | 1fr keeps the copy screen-centred when there's room and
+          // only nudges it left (never wraps) on narrow phones where the
+          // cancel button needs more than its half.
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6">
+            <span aria-hidden />
+            <p className="whitespace-nowrap text-center text-sm text-brand-gray800">
               {t.report.diary.scan.progress}
             </p>
             <button
               type="button"
               onClick={onCancel}
-              className="h-10 w-16 rounded-full text-sm font-medium text-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+              className="h-10 justify-self-end rounded-full px-3 text-sm font-medium text-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
             >
               {t.report.diary.scan.cancel}
             </button>
@@ -143,6 +163,25 @@ export function StickerScanScreen({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Pink scan band that travels down and back up the photo (013_3). The band
+ * is a third of the photo's height and the keyframes move it by 200% of
+ * itself, so it never leaves the photo. A crisp pink line sits in the
+ * middle of a soft tint so the motion reads as a scanner pass rather than
+ * a static haze.
+ */
+function ScanSweep() {
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <span className="absolute inset-x-0 top-0 flex h-1/3 animate-stickerScan flex-col">
+        <span className="flex-1 bg-gradient-to-b from-transparent to-brand-pink100/45" />
+        <span className="h-0.5 shrink-0 bg-brand-pink300 shadow-[0_0_12px_2px_rgba(241,88,160,0.55)]" />
+        <span className="flex-1 bg-gradient-to-b from-brand-pink100/45 to-transparent" />
+      </span>
+    </span>
   );
 }
 
