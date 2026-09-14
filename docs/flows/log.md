@@ -103,6 +103,37 @@ flowchart TD
 - `src/store/eventStore.ts` — 이벤트/카테고리 Zustand 스토어. `addEvent`/`updateEvent`/`removeEvent`/`addCategory`/`updateCategory`/`linkPeriodMark`/`unlinkPeriodMark`
 - `src/domain/event/builtins.ts` — 내장 카테고리 시드(family/friend/work/club) + 순수 함수 `defaultCategoryId()` (신규 일정 기본 카테고리 = "친구", 테스트: `builtins.test.ts`/`builtins.cases.md`)
 
+### 공휴일 표시
+
+`DiaryMonthGrid`가 보이는 달의 셀 범위만큼 `domain/holiday`의 `holidaysByDate(countries, start, end)`를 호출해 날짜별 공휴일을 계산하고, `DiaryDayCell`에 라벨 한 줄을 넘긴다. 한국(KR)·미국(US) 두 나라를 지원.
+
+```mermaid
+flowchart TD
+    Setting["settings.holidayCountries"]
+    IsNull{"null?"}
+    Auto["언어 따라 자동\nko→KR · en→US"]
+    Explicit["저장된 배열 그대로"]
+    Grid["DiaryMonthGrid\nholidaysByDate()"]
+
+    Setting --> IsNull
+    IsNull -- "예" --> Auto --> Grid
+    IsNull -- "아니오" --> Explicit --> Grid
+
+    classDef store fill:#F0E8FD,stroke:#BDA8E5,color:#4A3A5C;
+    classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
+    class Setting store;
+    class IsNull,Auto,Explicit,Grid logic;
+```
+
+- **어느 나라를 보여줄지**: `resolveHolidayCountries(setting, locale)`. 저장값이 `null`(마이페이지 토글을 한 번도 건드리지 않은 기본값)이면 앱 언어를 따라 자동 결정(ko → KR, en → US). `/settings/holidays`에서 토글하면 그 시점부터 명시적 배열이 저장되고, 이후 언어를 바꿔도 그 선택이 유지된다.
+- **라벨 배치**: `DiaryDayCell`의 날짜 숫자 바로 아래 12px 줄에 한 줄 truncate로 표시하고, 이벤트 바(3-lane)는 그 아래(`DiaryWeekEventLayer` `top-[43px]`)에서 시작한다. 이 줄은 공휴일이 없는 셀에도 항상 비워 둔 채 확보해 행 높이가 주마다 달라지지 않게 한다 — 셀 최소 높이 92px → 100px. 이번 달이 아닌 셀(`inCurrentMonth === false`)은 공휴일이 있어도 표시하지 않는다.
+- **이름/톤**: `t.holiday.KR.*` / `t.holiday.US.*` (en source, ko 번역). 한국 대체공휴일은 원래 이름 대신 "대체공휴일" 한 단어로, 미국 observed day는 원래 이름 뒤에 " (observed)"를 붙인다. 부처님오신날은 한 줄에 맞추기 위해 "석가탄신일"로 표시. 같은 날 두 나라 공휴일이 겹치면 가운뎃점(·)으로 잇는다.
+- **어디서 쓰이는지**: `DiaryScreen`(`/log` 다이어리 탭)과 `DiaryCustomizeScreen`(`/log/customize`, 스티커 배치 화면)이 같은 `DiaryMonthGrid`를 재사용해 동일한 규칙으로 공휴일을 얹는다. 커스터마이즈 화면은 `(fullscreen)` 라우트라 설정 스토어 하이드레이션이 따로 필요했다 — `FullscreenShell`이 `useCoreStoresHydration()`을 호출해 `/log`와 같은 설정을 갖도록 함(이전에는 새로고침·딥링크 진입 시 기본값(영어)으로 렌더되던 버그가 있었음).
+- 도메인 로직 상세(음력 표·대체공휴일 규칙·지원 연도): [`docs/domain/holiday.md`](../domain/holiday.md)
+- 설정 화면: [`docs/flows/settings.md`](./settings.md)
+
+관련 파일: `src/domain/holiday/`, `src/components/diary/DiaryMonthGrid.tsx`, `src/components/diary/DiaryDayCell.tsx`, `src/hooks/useCoreStoresHydration.ts`, `src/components/app/FullscreenShell.tsx`.
+
 ### Diary 커스터마이즈 (STEP 10.3a–10.3d — 완료)
 
 `edit-star` 아이콘 → `/log/customize` fullscreen 라우트로 이동.

@@ -33,7 +33,7 @@ paths:
 
 - `useT()`, store, `usePathname` 등을 쓰는 페이지는 `'use client'` 선언.
 - 라우트 그룹 layout(`(auth)/layout.tsx`, `(app)/layout.tsx`)은 server 유지가 기본.
-- `AppShell`이 client 컴포넌트라 `(app)` 하위는 mount 시 `settingsStore.hydrate()` + `authStore.hydrate()` 각 1회 자동 실행됨.
+- `(app)` 은 `AppShell`, `(fullscreen)` 은 `FullscreenShell` 이 client 컴포넌트로 `useCoreStoresHydration()` 을 호출해 mount 시 settings · auth · bookmarks 스토어를 각 1회 hydrate 한다 (2026-09-14: 풀스크린 라우트가 빠져 있어 새로고침·딥링크 진입 시 언어·공휴일 설정이 기본값으로 뜨던 버그를 고침).
 - `(auth)` 그룹은 hydrate 없음 — 데이터 의존 화면이면 별도 처리 (예: LoginScreen은 자체적으로 authStore.hydrate 트리거).
 
 ## 4) 컴포넌트 분리 기준

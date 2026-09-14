@@ -69,10 +69,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
 
   // Bail out (before any redirects) if the URL slot doesn't belong to the
   // current photoCount — e.g. someone hits /edit-photos/2 while count=4.
-  const validSlots = useMemo(
-    () => (photoCount ? slotsForCount(photoCount) : []),
-    [photoCount],
-  );
+  const validSlots = useMemo(() => (photoCount ? slotsForCount(photoCount) : []), [photoCount]);
   const initialSlotValid = validSlots.includes(initialSlot);
 
   useEffect(() => {
@@ -91,15 +88,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
     if (!initialSlotValid) {
       router.replace('/home/customize/edit-photos');
     }
-  }, [
-    hydrated,
-    draftActive,
-    photoCount,
-    photoUrls,
-    validSlots,
-    initialSlotValid,
-    router,
-  ]);
+  }, [hydrated, draftActive, photoCount, photoUrls, validSlots, initialSlotValid, router]);
 
   // Seed local transforms from the store exactly once per hydration cycle so
   // the user can undo their gesture by comparing against the stored value.
@@ -115,8 +104,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
   }, [hydrated, photoCount, photoTransforms]);
 
   const handleTransform = useCallback(
-    (s: PhotoSlot, tx: PhotoTransform) =>
-      setTransforms((prev) => ({ ...prev, [s]: tx })),
+    (s: PhotoSlot, tx: PhotoTransform) => setTransforms((prev) => ({ ...prev, [s]: tx })),
     [],
   );
   const handleNatural = useCallback(
@@ -201,9 +189,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
       for (const slot of slots) {
         const local = transforms[slot];
         if (!local) continue;
-        const stored = pickedSlots.has(slot)
-          ? null
-          : (photoTransforms[slot] ?? null);
+        const stored = pickedSlots.has(slot) ? null : (photoTransforms[slot] ?? null);
         if (photoTransformEqual(local, stored)) continue;
         draftSetPhotoTransform(slot, local);
       }
@@ -263,7 +249,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
         </header>
 
         <main className="flex flex-1 flex-col items-center justify-start">
-          <div className="aspect-square w-full max-h-full overflow-hidden">
+          <div className="aspect-square max-h-full w-full overflow-hidden">
             <div className={wrapperClass}>
               {slots.map((slot) => (
                 <PhotoCell
@@ -376,7 +362,8 @@ function PhotoCell({
   const rendered = ready ? computePhotoRender(transform, natural!, cellSize) : null;
 
   function clamp(next: PhotoTransform): PhotoTransform {
-    if (!natural || cellSize.w <= 0) return { ...next, scale: Math.max(1, Math.min(4, next.scale)) };
+    if (!natural || cellSize.w <= 0)
+      return { ...next, scale: Math.max(1, Math.min(4, next.scale)) };
     return clampPhotoTransform(next, natural, cellSize);
   }
 
@@ -504,16 +491,15 @@ function PhotoCell({
       {active ? (
         // border-width 는 브라우저가 정수 CSS px 로 스냅해서 2.5px 이 2px 로 그려진다.
         // inset box-shadow 는 소수점 폭을 그대로 유지하므로 테두리를 shadow 로 그린다.
-        // 첫 그림자가 위에 깔리므로 핑크(2.5px) 안쪽으로 흰 선(3.5px−2.5px=1px)이 남는다.
+        // 핑크 한 겹만 — 안쪽에 얹었던 흰 선은 회색 줄처럼 보여 뺐다.
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_2.5px_theme(colors.brand.pink200),inset_0_0_0_3.5px_rgba(255,255,255,0.7)]"
+          className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_2.5px_theme(colors.brand.pink200)]"
         />
       ) : null}
     </div>
   );
 }
-
 
 function pointDistance(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);

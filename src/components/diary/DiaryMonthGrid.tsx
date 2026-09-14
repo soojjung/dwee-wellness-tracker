@@ -2,9 +2,17 @@
 import { useMemo } from 'react';
 import { useT } from '@/i18n/useT';
 import { calendarGrid, type WeekStartsOn } from '@/lib/date';
-import type { PeriodLog, EventLog, EventCategory, DailyConditionLog } from '@/types';
+import type {
+  PeriodLog,
+  EventLog,
+  EventCategory,
+  DailyConditionLog,
+  HolidayCountry,
+} from '@/types';
+import type { Dictionary } from '@/i18n';
 import { deriveCellMarkers } from '@/components/calendar/cellState';
 import { layoutWeekSegments } from '@/domain/event/weekLanes';
+import { holidaysByDate, type Holiday } from '@/domain/holiday';
 import { DiaryDayCell } from './DiaryDayCell';
 import { DiaryWeekEventLayer } from './DiaryWeekEventLayer';
 
@@ -21,6 +29,8 @@ interface DiaryMonthGridProps {
   // Bumped by the parent whenever the today cell should replay its
   // pulse-ring + "오늘" bubble animation (log-tab tap, initial mount).
   todayPulseKey?: number;
+  /** 공휴일을 얹을 나라. 비어 있으면 라벨 띠는 비운 채 높이만 유지한다. */
+  holidayCountries?: readonly HolidayCountry[];
   onSelect: (date: string) => void;
   onSelectEvent?: (event: EventLog) => void;
 }
@@ -38,6 +48,7 @@ export function DiaryMonthGrid({
   conditionByDate,
   predictedDate,
   todayPulseKey,
+  holidayCountries,
   onSelect,
   onSelectEvent,
 }: DiaryMonthGridProps) {
@@ -51,10 +62,13 @@ export function DiaryMonthGrid({
     for (let i = 0; i < weekStartsOn; i += 1) rotated.push(rotated.shift()!);
     return rotated.map((k) => t.calendar.weekdays[k]);
   }, [t, weekStartsOn]);
-  const categoriesById = useMemo(
-    () => new Map(categories.map((c) => [c.id, c])),
-    [categories],
-  );
+  const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
+  const holidays = useMemo(() => {
+    const first = cells[0]?.date;
+    const last = cells[cells.length - 1]?.date;
+    if (!first || !last || !holidayCountries?.length) return {};
+    return holidaysByDate(holidayCountries, first, last);
+  }, [cells, holidayCountries]);
   const rows = useMemo(() => {
     const list: (typeof cells)[] = [];
     for (let r = 0; r < cells.length; r += 7) {
@@ -69,9 +83,7 @@ export function DiaryMonthGrid({
         {weekdays.map((label, i) => (
           <span
             key={i}
-            className={
-              i === 0 || i === 6 ? 'text-brand-gray500' : 'text-brand-gray700'
-            }
+            className={i === 0 || i === 6 ? 'text-brand-gray500' : 'text-brand-gray700'}
           >
             {label}
           </span>
@@ -81,8 +93,7 @@ export function DiaryMonthGrid({
         <div
           key={ri}
           className={
-            'relative grid grid-cols-7' +
-            (ri > 0 ? ' border-t-[0.75px] border-brand-gray400' : '')
+            'relative grid grid-cols-7' + (ri > 0 ? ' border-t-[0.75px] border-brand-gray400' : '')
           }
         >
           {row.map((cell) => (
@@ -98,6 +109,9 @@ export function DiaryMonthGrid({
                 predictedDate: predictedDate ?? null,
               })}
               todayPulseKey={cell.date === today ? todayPulseKey : undefined}
+              holidayLabel={
+                cell.inCurrentMonth ? holidayLabelFor(holidays[cell.date], t.holiday) : undefined
+              }
               onSelect={onSelect}
             />
           ))}
@@ -110,4 +124,27 @@ export function DiaryMonthGrid({
       ))}
     </div>
   );
+}
+
+/**
+ * 같은 날 두 나라 공휴일이 겹치면 가운뎃점으로 잇는다 — 어차피 한 줄에서 잘리므로
+ * 첫 이름이 먼저 보이는 게 중요하다. 한국 대체공휴일은 "대체공휴일" 한 단어로,
+ * 미국 observed 는 원래 이름 뒤에 접미사를 붙인다.
+ */
+function holidayLabelFor(
+  list: Holiday[] | undefined,
+  copy: Dictionary['holiday'],
+): string | undefined {
+  if (!list || list.length === 0) return undefined;
+  return list
+    .map((h) => {
+      if (h.country === 'KR') {
+        const names = copy.KR;
+        return h.substitute ? names.substitute : names[h.key as keyof typeof names];
+      }
+      const names = copy.US;
+      const name = names[h.key as keyof typeof names];
+      return h.substitute ? `${name}${names.observedSuffix}` : name;
+    })
+    .join(' · ');
 }

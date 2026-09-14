@@ -7,22 +7,17 @@ import { useConditionStore } from '@/store/conditionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
 import { useDiaryFocusStore } from '@/store/diaryFocusStore';
-import {
-  useDiaryPlacementStore,
-  selectPlacementsForMonth,
-} from '@/store/diaryPlacementStore';
+import { useDiaryPlacementStore, selectPlacementsForMonth } from '@/store/diaryPlacementStore';
 import { todayISO, toISO } from '@/lib/date';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
+import { resolveHolidayCountries } from '@/domain/holiday';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
 import { EventFormSheet, type EventFormInput } from './EventFormSheet';
-import {
-  EventCategoryFormSheet,
-  type CategoryFormInput,
-} from './EventCategoryFormSheet';
+import { EventCategoryFormSheet, type CategoryFormInput } from './EventCategoryFormSheet';
 import { YearMonthWheelPicker } from './YearMonthWheelPicker';
 import type { LogView } from './LogViewToggle';
 
@@ -119,10 +114,11 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     setTodayPulseKey((k) => k + 1);
   }, [focusPing]);
 
-  const prediction = useMemo(
-    () => predictNextPeriod(periods, settings),
-    [periods, settings],
+  const holidayCountries = useMemo(
+    () => resolveHolidayCountries(settings.holidayCountries, settings.locale),
+    [settings.holidayCountries, settings.locale],
   );
+  const prediction = useMemo(() => predictNextPeriod(periods, settings), [periods, settings]);
 
   const builtinNamer = useCallback(
     (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
@@ -135,9 +131,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   }, [eventsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
 
   const activeEvent: EventLog | null =
-    sheet.kind === 'editEvent'
-      ? events.find((e) => e.id === sheet.eventId) ?? null
-      : null;
+    sheet.kind === 'editEvent' ? (events.find((e) => e.id === sheet.eventId) ?? null) : null;
 
   async function handleAddEvent(input: EventFormInput): Promise<boolean> {
     const log = await addEvent({
@@ -157,10 +151,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     return true;
   }
 
-  async function handleUpdateEvent(
-    id: string,
-    input: EventFormInput,
-  ): Promise<boolean> {
+  async function handleUpdateEvent(id: string, input: EventFormInput): Promise<boolean> {
     const next = await updateEvent(id, {
       startDate: input.startDate,
       endDate: input.endDate,
@@ -184,10 +175,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     return !!row;
   }
 
-  async function handleUpdateCategory(
-    id: string,
-    input: CategoryFormInput,
-  ): Promise<boolean> {
+  async function handleUpdateCategory(id: string, input: CategoryFormInput): Promise<boolean> {
     const next = await updateCategory(id, {
       name: input.name,
       colorId: input.colorId,
@@ -232,7 +220,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
 
   const activeCategoryForEdit =
     sheet.kind === 'editCategory'
-      ? categories.find((c) => c.id === sheet.categoryId) ?? null
+      ? (categories.find((c) => c.id === sheet.categoryId) ?? null)
       : null;
 
   const swipeContainerRef = useRef<HTMLDivElement>(null);
@@ -324,10 +312,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           scoped to this component paints the whole viewport in gray200
           (matches Figma 012_1 page bg variable) and unmounts cleanly
           when the user leaves the diary tab. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-brand-gray200"
-      />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-brand-gray200" />
       <div className="relative z-10">
         <DiaryHeader
           year={cursor.year}
@@ -343,52 +328,53 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
             6th calendar row clear of the fixed BottomTabNav on short mobile
             viewports (Safari with URL bar visible). */}
         <div className="px-4 pb-24 pt-4">
-        <div
-          ref={swipeContainerRef}
-          // `select-none` prevents mouse-drag text selection from
-          // hijacking the swipe gesture on desktop; `touch-pan-y`
-          // lets vertical page scroll still work on mobile.
-          className="relative touch-pan-y select-none overflow-hidden"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerEnd}
-          onPointerCancel={handlePointerEnd}
-        >
-          {/* Two nested divs so nudge (CSS keyframe transform on the outer)
+          <div
+            ref={swipeContainerRef}
+            // `select-none` prevents mouse-drag text selection from
+            // hijacking the swipe gesture on desktop; `touch-pan-y`
+            // lets vertical page scroll still work on mobile.
+            className="relative touch-pan-y select-none overflow-hidden"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+          >
+            {/* Two nested divs so nudge (CSS keyframe transform on the outer)
               and swipe (inline transform on the inner) don't collide on
               the same property. */}
-          <div className={nudgeOnMount ? 'animate-diaryNudge' : undefined}>
-            <div
-              style={{
-                transform: `translateX(${swipeOffset}px)`,
-                transition: swipeAnimating ? 'transform 220ms ease-out' : 'none',
-              }}
-            >
-              <DiaryStickerViewLayer
-                placements={placements}
-                stickers={stickers}
-                urls={stickerUrls}
+            <div className={nudgeOnMount ? 'animate-diaryNudge' : undefined}>
+              <div
+                style={{
+                  transform: `translateX(${swipeOffset}px)`,
+                  transition: swipeAnimating ? 'transform 220ms ease-out' : 'none',
+                }}
               >
-                <div className="rounded-2xl bg-brand-white/95 py-2 backdrop-blur-sm">
-                  <DiaryMonthGrid
-                    year={cursor.year}
-                    monthIndex={cursor.monthIndex}
-                    weekStartsOn={WEEK_STARTS_ON}
-                    today={today}
-                    periods={periods}
-                    events={events}
-                    categories={categories}
-                    conditionByDate={conditionByDate}
-                    predictedDate={prediction.predictedDate}
-                    todayPulseKey={todayPulseKey}
-                    onSelect={(date) => setSheet({ kind: 'addEvent', date })}
-                    onSelectEvent={(ev) => setSheet({ kind: 'editEvent', eventId: ev.id })}
-                  />
-                </div>
-              </DiaryStickerViewLayer>
+                <DiaryStickerViewLayer
+                  placements={placements}
+                  stickers={stickers}
+                  urls={stickerUrls}
+                >
+                  <div className="rounded-2xl bg-brand-white/95 py-2 backdrop-blur-sm">
+                    <DiaryMonthGrid
+                      year={cursor.year}
+                      monthIndex={cursor.monthIndex}
+                      weekStartsOn={WEEK_STARTS_ON}
+                      today={today}
+                      periods={periods}
+                      events={events}
+                      categories={categories}
+                      conditionByDate={conditionByDate}
+                      predictedDate={prediction.predictedDate}
+                      todayPulseKey={todayPulseKey}
+                      holidayCountries={holidayCountries}
+                      onSelect={(date) => setSheet({ kind: 'addEvent', date })}
+                      onSelectEvent={(ev) => setSheet({ kind: 'editEvent', eventId: ev.id })}
+                    />
+                  </div>
+                </DiaryStickerViewLayer>
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -446,9 +432,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           mode="edit"
           initial={activeCategoryForEdit}
           onClose={() => returnToEventSheet(sheet.prev)}
-          onSubmit={(input) =>
-            handleUpdateCategory(activeCategoryForEdit.id, input)
-          }
+          onSubmit={(input) => handleUpdateCategory(activeCategoryForEdit.id, input)}
         />
       ) : null}
       {sheet.kind === 'monthPicker' ? (

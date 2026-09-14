@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { MyPageBackLink } from './MyPageBackLink';
 import { useSettingsStore } from '@/store/settingsStore';
-import { MyPageToggle } from './MyPageToggle';
 import { cn } from '@/lib/cn';
+import { SettingCard, SettingDetailRow, SettingToggleRow } from './SettingRows';
 import { WheelColumn, WHEEL_ITEM_HEIGHT } from '@/components/ui/WheelColumn';
 
 // Reminder lead-time range shown in the timing picker (0–14 days before).
@@ -77,18 +77,18 @@ export function NotificationsScreen() {
         </header>
 
         <main className="flex flex-col gap-4 px-4 pb-24">
-          <Card>
-            <SimpleRow
+          <SettingCard>
+            <SettingToggleRow
               title={t.myPage.notifications.master}
               enabled={master}
               onToggle={handleMasterToggle}
             />
-          </Card>
+          </SettingCard>
 
           {master ? (
             <>
-              <Card>
-                <DetailRow
+              <SettingCard>
+                <SettingDetailRow
                   title={t.myPage.notifications.periodDue.title}
                   subtitle={t.myPage.notifications.periodDue.subtitle}
                   enabled={periodDue}
@@ -122,75 +122,29 @@ export function NotificationsScreen() {
                     ) : null}
                   </>
                 ) : null}
-              </Card>
+              </SettingCard>
 
-              <Card>
-                <DetailRow
+              <SettingCard>
+                <SettingDetailRow
                   title={t.myPage.notifications.periodDelay.title}
                   subtitle={t.myPage.notifications.periodDelay.subtitle}
                   enabled={periodDelay}
                   onToggle={() => toggleSub('periodDelay')}
                 />
-              </Card>
+              </SettingCard>
 
-              <Card>
-                <DetailRow
+              <SettingCard>
+                <SettingDetailRow
                   title={t.myPage.notifications.fertile.title}
                   subtitle={t.myPage.notifications.fertile.subtitle}
                   enabled={fertile}
                   onToggle={() => toggleSub('fertile')}
                 />
-              </Card>
+              </SettingCard>
             </>
           ) : null}
         </main>
       </div>
-    </div>
-  );
-}
-
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="overflow-hidden rounded-2xl bg-brand-white">
-      {children}
-    </section>
-  );
-}
-
-interface SimpleRowProps {
-  title: string;
-  enabled: boolean;
-  onToggle: () => void;
-}
-
-function SimpleRow({ title, enabled, onToggle }: SimpleRowProps) {
-  return (
-    <div className="flex h-[52px] items-center justify-between px-5">
-      <span className="text-base font-medium text-brand-gray900">{title}</span>
-      <MyPageToggle enabled={enabled} onToggle={onToggle} ariaLabel={title} />
-    </div>
-  );
-}
-
-interface DetailRowProps {
-  title: string;
-  subtitle: string;
-  enabled: boolean;
-  onToggle: () => void;
-}
-
-function DetailRow({ title, subtitle, enabled, onToggle }: DetailRowProps) {
-  return (
-    <div className="flex min-h-[72px] items-center justify-between gap-3 px-5 py-3.5">
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-base font-medium leading-tight text-brand-gray900">
-          {title}
-        </span>
-        <span className="text-xs leading-tight text-brand-gray600">
-          {subtitle}
-        </span>
-      </div>
-      <MyPageToggle enabled={enabled} onToggle={onToggle} ariaLabel={title} />
     </div>
   );
 }

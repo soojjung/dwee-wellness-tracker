@@ -20,14 +20,10 @@ export function FoodSuggestions({ phase }: FoodSuggestionsProps) {
   const bowlImage = FOOD_BOWL_IMAGE[phase];
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex flex-col gap-5">
       <h3 className="text-2xl font-semibold text-brand-gray900">{t.home.foodsTitle}</h3>
 
-      {bowlImage ? (
-        <PhotoBowl image={bowlImage} items={items} />
-      ) : (
-        <EmojiBowl items={items} />
-      )}
+      {bowlImage ? <PhotoBowl image={bowlImage} items={items} /> : <EmojiBowl items={items} />}
     </section>
   );
 }
@@ -44,10 +40,7 @@ type Items = ReturnType<typeof useT>['home']['foods'][CyclePhase]['items'];
 function PhotoBowl({ image, items }: { image: string; items: Items }) {
   return (
     <div className="mx-auto w-full max-w-[356px] px-2">
-      <div
-        className="relative mx-auto"
-        style={{ width: BOWL_WIDTH, height: BOWL_HEIGHT }}
-      >
+      <div className="relative mx-auto" style={{ width: BOWL_WIDTH, height: BOWL_HEIGHT }}>
         <Image
           src={image}
           alt=""

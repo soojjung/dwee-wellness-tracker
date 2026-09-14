@@ -11,8 +11,9 @@ interface LanguageOption {
 }
 
 const OPTIONS: readonly LanguageOption[] = [
-  { value: 'ko', labelKey: 'koreanLabel' },
+  // 메인 타겟 시장(미국) 순서 — en 먼저, ko 다음.
   { value: 'en', labelKey: 'englishLabel' },
+  { value: 'ko', labelKey: 'koreanLabel' },
 ];
 
 /**

@@ -113,9 +113,11 @@ export function StickerScanScreen({
           photo, error card, and progress footer share the same column
           width on desktop viewports. */}
       <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
+        {/* 사진을 영역 바닥에 붙여 아래 문구와의 간격이 pt-6(24px) 로 고정되게
+            한다. 가운데 정렬이면 짧은 사진일수록 문구와 멀어져 떠 보였다. */}
         <div
           ref={areaRef}
-          className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden"
+          className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden"
         >
           {url ? (
             // Shrink-to-fit wrapper: its box equals the rendered photo, so
@@ -189,7 +191,7 @@ function ScanErrorCard({ error, onRetry, onSaveAsPhoto, onCancel }: ScanErrorCar
   const retryable = error !== 'quota_exceeded' && error !== 'rate_limit_exceeded';
 
   return (
-    <div className="mx-4 mb-safe mb-6 mt-4 rounded-2xl bg-brand-gray50 p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.08)]">
+    <div className="mb-safe mx-4 mb-6 mt-4 rounded-2xl bg-brand-gray50 p-5 shadow-[0_4px_16px_0_rgba(0,0,0,0.08)]">
       <p className="text-sm font-semibold text-brand-gray900">{c.errorTitle}</p>
       <p className="mt-1 text-sm text-brand-gray800">{body}</p>
       <div className="mt-4 flex flex-col gap-2">

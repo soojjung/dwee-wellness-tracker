@@ -11,3 +11,4 @@ export { DotGridIcon } from './DotGridIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';
 export { BinIcon } from './BinIcon';
 export { AlbumIcon } from './AlbumIcon';
+export { RetryIcon } from './RetryIcon';

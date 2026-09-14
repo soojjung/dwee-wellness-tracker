@@ -11,9 +11,9 @@ interface DiaryWeekEventLayerProps {
 
 /**
  * Overlay for one calendar row: each event is a single bar spanning every
- * column it covers, stacked by lane. Sits below the date numbers (pt-2 +
- * 19px number + gap-1 in DiaryDayCell) and lets clicks on empty space fall
- * through to the day cells.
+ * column it covers, stacked by lane. Sits below the date number and the
+ * holiday line (pt-2 + 19px number + 2 + 12px line in DiaryDayCell) and lets
+ * clicks on empty space fall through to the day cells.
  */
 export function DiaryWeekEventLayer({
   segments,
@@ -22,7 +22,7 @@ export function DiaryWeekEventLayer({
 }: DiaryWeekEventLayerProps) {
   if (segments.length === 0) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[31px] grid auto-rows-[16px] grid-cols-7 gap-y-0.5">
+    <div className="pointer-events-none absolute inset-x-0 top-[43px] grid auto-rows-[16px] grid-cols-7 gap-y-0.5">
       {segments.map((seg) => {
         const cat = categoriesById.get(seg.event.categoryId);
         const p = paletteFor(cat?.colorId ?? 'gray');

@@ -1,3 +1,5 @@
+import type { HolidayCountry } from './holiday';
+
 export type Locale = 'ko' | 'en';
 
 export interface UserSettings {
@@ -12,6 +14,12 @@ export interface UserSettings {
   notifFertileEnabled: boolean;
   onboardingCompleted: boolean;
   locale: Locale;
+  /**
+   * 다이어리에 표시할 공휴일 나라. `null` 은 "언어 따라 자동"(ko→KR, en→US) —
+   * 사용자가 토글을 건드리기 전까지의 기본값. 해석은 `domain/holiday`
+   * 의 `resolveHolidayCountries` 가 한다.
+   */
+  holidayCountries: readonly HolidayCountry[] | null;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -24,4 +32,5 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   notifFertileEnabled: false,
   onboardingCompleted: false,
   locale: 'en',
+  holidayCountries: null,
 };
