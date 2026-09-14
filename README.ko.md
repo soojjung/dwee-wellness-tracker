@@ -8,7 +8,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 무거운 의료 앱 대신, 매일 3탭 안에 끝나는 가벼운 기록과 rule-based 인사이트를 지향합니다.
 
 - 배포: https://dwee-neon.vercel.app/
-- 단계: **MVP2 — 서버 연동·인증 도입** (MVP1 핵심 플로우는 완료, 잔여 polish 는 MVP2 와 병행)
+- 단계: **v1.0 (MVP1 완료)** — 로컬 기록·예측·인사이트 + Supabase 인증·클라우드 동기화까지 포함. 다음 단계는 아래 로드맵 참고.
 
 ---
 
@@ -20,19 +20,16 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 ## ✨ 핵심 가치
 
-### MVP1 (완료)
+### MVP1 (v1.0)
 
 1. **생리 시작/종료 기록** — 캘린더에서 1~2탭으로 기록
 2. **평균 주기 기반 예측** — 데이터가 쌓이면 다음 예상일 추정
 3. **오늘의 컨디션 기록** — 기분 / 에너지 / 통증 / 붓기 / 식욕 / 피부 + 메모
-4. **캘린더 확인** — 기록·예측·국면(phase)을 한 눈에
+4. **다이어리 캘린더** — 기록·예측·일정·스티커·공휴일을 한 눈에
 5. **rule-based 인사이트** — 단언 대신 "추정", 데이터 부족 시엔 "아직 예측하기 어려워요"
-
-### MVP2 (진행 중)
-
-6. **Supabase 인증** — 첫 진입 시 `/login` 강제 게이트. "로그인 없이 계속"은 익명 세션을 명시적으로 발급(자동 발급 아님). Apple/Google OAuth 로그인 시 로컬 데이터 1회 마이그레이션 후 클라우드 전환. 로그아웃 시 로컬 캐시 초기화 후 `/login` 복귀.
-7. **클라우드 동기화** — 로컬(IndexedDB) 우선 + 백그라운드 sync (hybrid)
-8. **다기기 사용** — 같은 계정으로 여러 기기 패턴 유지
+6. **Supabase 인증** — 첫 진입 `/login` 게이트, Apple/Google OAuth 또는 명시적 익명 세션. 로그인 시 로컬 데이터 1회 마이그레이션
+7. **클라우드 동기화** — 로컬(IndexedDB) 우선, 로그인 사용자는 Supabase 로 전환
+8. **매거진** — 주기 관련 아티클 + 북마크 + 퍼스널 체형 진단(서버측 Vision)
 
 문구는 항상 추정형으로, 의료적·다이어트 유도 표현은 사용하지 않습니다.
 (상세 카피 규칙: [`/.claude/rules/health-copy.md`](./.claude/rules/health-copy.md))
@@ -334,33 +331,36 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 
 ## 🗺 진행 상태 (Roadmap)
 
-### MVP1 — 완료
+### MVP1 — 완료 (v1.0)
 
-- [x] STEP 0~8 — 정의 / 하네스 / 아키텍처 / 공통 타입·유틸 / Storage 추상화 / Zustand stores / 화면 골격 / UI 컴포넌트 / i18n
-- [x] STEP 9 — 화면별 실제 구현 (Onboarding · Home · Log · Calendar · Insights · Settings)
-- [x] STEP 10~11 — 샘플 데이터 / edge case / 리팩토링
+**기반**
+- [x] 정의 / 하네스 / 아키텍처 / 공통 타입·유틸 / Storage 추상화 / Zustand stores / UI 컴포넌트 / i18n
+- [x] 화면 구현 (Onboarding · Home · Log · Calendar · Insights · Settings) + 샘플 데이터 / edge case / 리팩토링
 
-### MVP2 — 진행 중
+**인증·동기화**
+- [x] Supabase 기반 셋업 — auth store, 익명 로그인, 어댑터 wiring (`data/index.ts` 분기), Apple/Google OAuth, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 게이트, 로그아웃 후 `/login` 복귀 + 스토어 rehydrate
+- [x] 계정 관리 — 회원 탈퇴 (`delete-account` Edge Function, 2단계 확인 + 사유 수집 `withdrawal_feedbacks`, migration 0011), 계정 편집(`/settings/account`)
 
-- [x] **MVP2.1 — Supabase 기반 셋업** (auth store, 익명 로그인, 어댑터 src/ 이동)
-- [x] **MVP2.2 — Supabase 어댑터 wiring + 로그인 게이트** (`data/index.ts` 분기 완료, Apple/Google OAuth 활성화, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 강제, 로그아웃 후 `/login` 복귀, 4 스토어 rehydrate)
-- [x] **MVP2.3 — Diary & Event 도메인** — `/log` 탭을 Diary(기본)/Report segmented toggle 구조로 전환. EventCategory (built-in 4종 + 사용자 추가) + EventLog (제목/메모/날짜범위/카테고리/생리마크 토글) 도메인 신설. 생리마크 ON/OFF 시 PeriodLog 자동 생성/삭제. Supabase migrations 0006–0007. IndexedDB schema v9.
-- [x] **MVP2.4 — Diary 스티커 커스터마이즈** — `DiarySticker` (앨범 import + 카메라 촬영 + 1:1/4:3 crop) + `DiaryStickerPlacement` (캘린더 위 drag/resize/rotate/delete). `/log/customize` 풀스크린 라우트. `CameraSheet` (MediaDevices 라이브 프리뷰), `StickerScanScreen` + `CutoutConfirmScreen` (rembg 누끼 확인 → 저장), `DeleteStickersDialog` (다중 삭제), `DraggableBottomSheet` (2-snap 라이브러리). `DiaryStickerViewLayer`로 다이어리 탭 캘린더 위 배치를 read-only 렌더. 기본 스티커 5개 시드 (`public/stickers/default/`, `ensureDefaultStickersSeeded()`). `CycleChart` y-축 스케일은 `domain/cycle/chartScale.ts` 순수 함수로 분리. Supabase migrations 0008–0009.
-- [x] **MVP2.5 — 계정 관리** — 회원 탈퇴 엔드-투-엔드 구현. `delete-account` Edge Function (media 버킷 재귀 삭제 → `auth.admin.deleteUser`, cascade 로 DB 행 자동 삭제). 탈퇴 흐름을 2단계로 개편: `WithdrawConfirmDialog` (015_9) 확인 → `/settings/withdraw` 의 `WithdrawReasonScreen` (015_10~14) 에서 사유 1개 이상 선택 후 탈퇴. 사유는 `withdrawal_feedbacks` 테이블에 익명(user_id 없음) insert — 삭제 cascade 후에도 잔존하여 분석 가능. 응답 유실 시 세션 재확인으로 하드닝. 마이페이지에서 평균 생리 주기 편집 UI·시드 데이터 주입 UI 제거(도메인 로직·e2e 시드는 유지). Supabase migration 0011.
-- [x] **MVP2.6 — 마이페이지 (MyPage)** — `/settings` 를 Figma 015_1/015_2 기반 MyPage 로 전면 교체. 인증 상태별 AuthCard (비로그인 → /login CTA, 로그인 → 닉네임+이메일 → /settings/account), 주기 요약 카드 (`classifyCycleStatus` 재사용 + 상태 chip), 환경설정·고객지원 카드. 로그아웃은 `LogoutConfirmDialog` (핑크 배지)로 대체 — 확인 후 `appToast` 큐에 메시지 적재 → `router.push('/login')` 즉시 이동 → 백그라운드 `signOut()` 순으로 진행해 빈 화면 대기 없음. `/login` 마운트 시 top-confirm Toast 노출. 언어 설정 화면 (`/settings/language`) 실장 — 2개 라디오 행, 탭 즉시 locale 전환. 계정 편집 화면 (`/settings/account`, fullscreen): 닉네임 수정 → `supabase.auth.updateUser`, 익명 유저 자동 bounce. 서브 라우트 4개(notices/qna/terms/privacy) 스텁 유지. i18n `myPage.*` 서브트리 신설 (`signOutDialog.*`, `signOutToast`, `language.*` 포함); `nav.settings` 레이블 → "My page / 마이페이지".
-- [x] **MVP2.6-polish — 마이페이지 서브 페이지 실장 + 레이아웃 정리** — `MyTestsCard` (나의 테스트: 체형 분석 결과 또는 CTA; 최초엔 sessionStorage 기반이었으나 이후 Repository 로 이관 — 아래 M2.1 항목 참고) 신설. 알림 설정 화면 (`/settings/notifications`): 마스터 토글 + 3개 항목 토글(생리 예정/생리 지연/가임기) + 3행 휠 피커(알림 시간 0~14일 전); IndexedDB 저장(푸시 인프라 미구현). 법적 문서 실장 (한국 관할): `/settings/terms` (이용약관 제1~15조 + 부칙), `/settings/privacy` (개인정보처리방침 제1~17조 + 부칙); `src/content/legal/` 모듈로 구조화. Q&A 화면(`/settings/qna`): 정적 지원 이메일 + 클립보드 복사 + 상단 토스트. 레이아웃 폴리시: 배경색 `bg-brand-gray200`, 카드 간격 20px, 행 높이 56px, 섹션 제목 `font-semibold`. OG 메타데이터 (`og:title/og:image/og:locale`) 루트 `layout.tsx` 에 추가 — `NEXT_PUBLIC_SITE_URL` 기반. 홈 히어로 기본 이미지 (`public/home/default-hero.jpg`) — 첫 진입 전 회색 플레이스홀더 대체. 후속 정리: 공지사항/Q&A/약관/개인정보처리방침 배경을 `bg-brand-gray50` → `bg-brand-gray200` 으로 통일하고 약관·개인정보 본문을 Q&A 와 같은 흰 카드로 감쌈; 뒤로가기 버튼은 배경과 구분되도록 `bg-brand-gray300` 으로 조정. 마이페이지 하위 화면 공통 뒤로가기를 `MyPageBackLink` 컴포넌트로 통합(`router.back()` 우선, 딥링크 진입 시에만 `/settings` push)하고 `useScrollRestore` 훅으로 마이페이지 목록 스크롤 위치를 세션 동안 보존. `AppShell` 의 `pb-24` 를 각 탭 화면(Home/Magazine) 자체 여백으로 이동 — 부모 `<main>` 에 두면 자식 배경 밖이라 하단에 회색 띠가 노출되던 버그 수정.
-- [x] **홈 커스터마이즈 개편** — 비파괴 사진 편집: 슬롯마다 `PhotoTransform` 메타데이터 저장, 원본 blob 덮어쓰기 금지. 드래프트 모드: 모든 변경을 draft* 필드에 버퍼링 → 홈 꾸미기의 "편집 완료" 시 `commitPhotoDraft()` 일괄 반영. `picksConfirmed` 게이트: edit-photos 그리드에서 "편집 완료" 탭 후에만 홈 꾸미기의 "편집 완료" 활성. 슬롯별 사진 삭제(× 버튼). `DiscardDraftDialog` (dirty 뒤로가기). `TransformedPhoto` 공유 렌더 컴포넌트. 텍스트 커스터마이즈 일시 비활성. `CustomizeDraftGuard` 레이아웃 래퍼: 브라우저 뒤로가기·탭 닫기 등 모든 종료 경로에서 잔여 드래프트 자동 정리 (이전에는 누수 발생). IndexedDB schema v10; Supabase migration 0010.
-- [x] **홈 음식 상세 화면** — "이렇게 먹으면 좋아요" 섹션의 음식 칩(사진이 아니라 이름+이모지 pill만 탭 가능)을 누르면 `/foods/[id]` (fullscreen)로 이동해 해당 음식이 왜 좋은지 설명하는 읽기 전용 화면(`FoodArticleScreen`)을 보여준다. 매거진 아티클과는 별개 구현 — 북마크·공유 없음. 콘텐츠 20개(4개 주기 × 5개 음식)는 Figma `음식 상세` 시안(425:1969) 원문을 그대로 옮긴 `src/content/foods/articles-ko.ts` — `content/legal/`과 같은 한국어 원문 전용 모듈이라 en 사용자도 한국어 본문을 본다. 콘텐츠 키는 `home.foods` 사전의 음식 id 와 1:1 대응해 id 변경 시 양쪽을 함께 고쳐야 한다. `generateStaticParams`로 20개 전부 프리렌더; 사진 시안이 없는 unknown phase(EmojiBowl)의 칩은 아직 링크로 전환되지 않았다.
-- [x] **매거진 공유 링크 로그인 예외 (2026-09-09)** — `AuthGuard` 에 `PUBLIC_PREFIXES` 화이트리스트를 추가해 `/magazine/personal-body-type/share` 하위는 세션 없이도 통과하도록 함 — "첫 진입 강제 `/login` 게이트" 정책의 첫 예외. `ShareLandingRedirect` 도 함께 조정: 목적지를 아티클 → 매거진 목록(`/magazine`)으로 바꾸고, 세션이 있을 때만 자동 이동(세션 없이 넘기면 `/magazine` 도 게이트 뒤라 결국 `/login` 으로 튕기기 때문 — 그 경우엔 화면에 머무르며 링크만 보여줌).
-- [x] **다이어리 커스터마이즈 폴리시 (2026-09-09)** — 앨범 임포트(`PhotoImportModal`)를 2단계로 재편: 모드(누끼/사진 그대로) 먼저 선택(누끼 기본), "사진 그대로"를 고를 때만 신설 풀스크린 `PhotoRatioScreen` 에서 비율 선택. 카메라 촬영은 기존대로 촬영 전 비율+모드 동시 선택. `DraggableBottomSheet` 개편: 스티커 라이브러리 시트 전체 표면이 드래그 대상이 되고(핸들만이 아님), `open`/`onDismiss` props 로 캘린더 바깥 탭 시 시트를 완전히 숨길 수 있음. 기본 스티커 시딩이 `DEFAULT_STICKER_SET_VERSION` 으로 버전 관리되고 백엔드별(local/remote:userId)로 스코프됨 — 새로 로그인한 계정도 기본 스티커를 받고, 아트워크가 바뀌면(라이브러리가 비어 있는 한) 재시드됨; `rehydrateAll` 이 `diaryStickerStore` 도 함께 rehydrate. 잠재 버그 수정: `pt-safe`/`pb-safe` 유틸리티 클래스가 실제로는 `globals.css` 어디에도 정의돼 있지 않아 안전영역 여백이 계속 무시되고 있었음 — 전역 유틸리티로 정의해 고침.
-- [x] **다이어리 통합 입력 시트 (2026-09-09)** — `+` 버튼의 [생리 추가]/[일정 추가] 2-메뉴 팝오버(`AddQuickSheet`)를 제거하고 `EventFormSheet` add 모드가 바로 열리도록 통합. add/edit 두 모드 모두 생리 토글 + 신규 `EventConditionSection`(기분/에너지/통증/붓기/식욕/피부 — `ConditionRow`의 새 `outline` variant 재사용, 시작 날짜 기준 `conditionStore.upsert`)을 포함하는 하나의 폼. `conditionStore.upsert`는 리포지토리가 레코드 전체를 교체(REPLACE)하는 것을 보완해 기존 필드(memo 등)와 병합 후 저장하도록 보강. 편집 모드 삭제 버튼은 "일정 및 기록 삭제"로 바뀌었고(신규 `BinIcon`, `brand.red`), 삭제 시 연결된 생리 기록도 함께 해제(`unlinkPeriodMark`)하되 컨디션 로그는 보존. 마이페이지 뒤로가기 버튼을 `BackIcon` 40px 원형으로 통일하고 `MyPageToggle`을 Figma 규격(50×24, ON 시 Pink/100)에 맞춰 `disabled` prop 을 추가(다이어리 시트도 재사용). 알림 시기 휠 피커를 `YearMonthWheelPicker`에서 공용 `WheelColumn`으로 추출 — 기존 scroll-padding 버그도 함께 제거.
-- [x] **다이어리 이벤트 폼 폴리시 (2026-09-13)** — "일정 유형" 선택 UI를 전면 재구성: 모든 칩을 한 번에 보여주던 방식 대신, 선택된 칩 + 화살표만 보이는 접힌 행(다른 날짜 필드와 동일한 accordion 그룹, 한 번에 하나만 펼침)을 탭하면 세로 목록이 펼쳐지고 선택 항목엔 핑크 체크, 각 행엔 "편집" 텍스트 버튼, 맨 아래엔 "+ 일정 유형 추가" 행이 나타남(Figma 012_2/012_6). 신규 일정 작성 시 기본 선택 카테고리가 목록의 첫 항목이 아니라 내장 카테고리 "친구"로 고정됨 — 새 순수 함수 `defaultCategoryId()`(`src/domain/event/builtins.ts`, Vitest + `cases.md` 포함)가 시드 순서로 매칭. 사진 소스 스티커(누끼 제외)가 다이어리 캘린더·커스터마이즈 캔버스·스티커 보관함 세 곳 모두에서 8px 라운드 코너로 렌더링. 스티커 스캔 화면: 사진이 여백 영역에 꽉 차게(가로+세로 모두) 맞춰지고 분홍 스캔 밴드가 사진 박스 안쪽에서만 오가며 부드러운 틴트 위에 또렷한 라인이 지나가도록 재설계, 최소 노출 시간 0.9초 → 1.4초(밴드가 최소 한 바퀴는 보이도록). `YearMonthWheelPicker` 헤더가 원형 X/✓ 버튼 + 선택된 휠 행 아래 핑크 밑줄로 교체됨(Figma 311:2130).
-- [x] **다이어리 공휴일 표시 (2026-09-14)** — 다이어리 캘린더에 한국(KR)·미국(US) 공휴일을 얹는 기능. `domain/holiday`(순수 함수): 한국은 고정일 규칙 + 음력 표(2025–2030, 설날/부처님오신날/추석) + 대체공휴일, 미국은 전부 규칙 기반 연방 공휴일(연도 제한 없음) + observed day. `UserSettings.holidayCountries`(`null` = 앱 언어 따라 자동, ko→KR/en→US)는 마이페이지 새 화면 `/settings/holidays`에서 토글하면 명시적 배열로 바뀌어 이후 언어를 바꿔도 유지됨. `DiaryMonthGrid`가 날짜 숫자 바로 아래 줄에 라벨을 표시(공휴일 없는 셀도 항상 비워 둔 채 확보 — 셀 높이 92→100px), `/log` 다이어리 탭과 `/log/customize` 스티커 커스터마이즈 화면이 함께 사용. Supabase `profiles.holiday_countries` 컬럼 추가(migration 0014). 버그 수정 겸용: `(fullscreen)` 라우트 그룹이 설정·인증·북마크 스토어를 hydrate 하지 않아 새로고침·딥링크 진입 시 기본값(영어)으로 렌더되던 문제를 공용 훅 `useCoreStoresHydration`(+ 신규 `FullscreenShell`)으로 해결.
-- [ ] MVP2.7~ — 백그라운드 sync / 충돌 해결 / 다기기 검증
+**다이어리**
+- [x] Diary & Event 도메인 — `/log` 를 Diary/Report 토글로 전환, EventCategory(내장 4종 + 사용자 추가) + EventLog(제목/메모/기간/카테고리/생리마크), 생리마크 ↔ PeriodLog 자동 연동. migrations 0006–0007
+- [x] 통합 입력 시트 — `+` 와 날짜 탭 모두 `EventFormSheet` 하나로(생리 토글 + 컨디션 섹션 포함). 일정 유형은 접힌 행 → 펼침 목록(기본 "친구"), 삭제는 `DeleteEventDialog`
+- [x] 주간 이벤트 바 — 여러 날짜에 걸친 일정을 한 줄 바로 표시 (`domain/event/weekLanes`)
+- [x] 스티커 커스터마이즈 — 앨범/카메라 → 누끼(`sticker-cutout`) 또는 사진 그대로 → 캘린더 위 drag/resize/rotate. `/log/customize`, `DraggableBottomSheet`, 기본 스티커 시드(버전 관리). migrations 0008–0009, 0012
+- [x] 공휴일 표시 — 한국·미국 공휴일을 날짜 아래 라벨로 (`domain/holiday`, 한국 음력 표 2025–2030 + 대체공휴일 규칙). 마이페이지 `/settings/holidays` 토글, 기본은 앱 언어 따라 자동. migration 0014
 
-### 매거진 (MVP 병행)
+**홈**
+- [x] 홈 커스터마이즈 — 비파괴 사진 편집(`PhotoTransform`), 드래프트 모드 + `commitPhotoDraft()`, 슬롯 삭제, 종료 경로 드래프트 정리(`CustomizeDraftGuard`). IndexedDB v10, migration 0010
+- [x] 음식 상세 화면 — 주기별 추천 음식 칩 → `/foods/[id]` 읽기 전용 아티클 20편(`src/content/foods/`, 한국어 원문)
 
-- [x] **M2.0 — 인프라** — 매거진 라우트 (`/magazine` 목록), ArticleScreen/ArticleSectionView, 글 데이터 모듈 (`src/data/magazine/articles.ts`)
-- [x] **M2.1 — 퍼스널 체형 진단** — 풀스크린 진단 플로우 (`/magazine/personal-body-type/diagnose`), DiagnoseScreen (인트로: 진입 즉시 AI 이용안내 동의 모달 + 탭 불가 촬영 가이드 3슬롯 + 하단 "사진 선택" 버튼 다중 선택(앞→옆→뒤) → loading → result 라우트 | error), 결과 화면 분리 (`/diagnose/result`, DiagnoseResultScreen — 체형·스타일 가이드 2탭, 탭바 sticky), Supabase Edge Function `body-type-analyze` (OpenAI gpt-4o Vision, 사진 저장 X, 일 10회 rate limit, 자동 1회 재시도). 진단 플로우 강화: 요청별 `AbortController`로 in-flight 취소 지원, loading 중 `beforeunload` 경고, `mountedRef`로 React StrictMode 더블마운트 방지. Edge Function 프롬프트에 체형별 참조 블록 추가(keyTraits 5개). PNG 리포트 내보내기 기능은 Figma 재설계 후 결과 화면에서 제거됨. 결과 화면 상/하단 개편: `DiagnoseResultTopBar` 상단 고정바(뒤로가기 + 다시하기, 카드 sticky 탭바가 아래로 지나가면 배경 전환)가 기존 절대배치 뒤로가기 버튼을 대체하고 다시하기 동작도 화면 하단에서 여기로 이동; 하단엔 `ShareTestBar` 고정 바가 `navigator.share` 또는 클립보드 복사 폴백으로 테스트를 공유. 공유 링크는 아티클이 아니라 체형별 정적 라우트 `/magazine/personal-body-type/share/[type]` (`generateStaticParams` 3종) — `output: 'export'` 라 쿼리스트링으로 `og:image` 를 바꿀 수 없어 타입별 실제 경로가 필요했음; 사람이 열면 `ShareLandingRedirect` 가 즉시 아티클로 리다이렉트하고 크롤러만 메타를 읽음 (2026-09-09 시점 동작 — 목적지·조건이 이후 바뀜, 아래 "매거진 공유 링크 로그인 예외" 항목 참고). 사진 선택 개편: 네이티브(Capacitor)에서는 `Camera.pickImages` 로 OS 앨범을 바로 열고(홈 꾸미기 사진 피커와 동일 패턴), 웹은 `<input type="file">` 폴백 — 공용 로직은 `useBodyPhotoPicker` 훅으로 분리. 선택 직후 `PhotoPreviewView` 전체화면 미리보기 단계([사진 변경하기] / [체형 진단 시작하기])를 거쳐야 분석이 시작됨. 결과 보관을 `sessionStorage` 에서 `BodyTypeReportRepository` (IndexedDB/Supabase, 사용자당 1행 jsonb, RLS 익명 차단) 로 이관 — Supabase migration `0013_body_type_reports.sql`. `rehydrateAll` 대상에 `bodyTypeReportStore` 추가(총 5 스토어), `anonToRemote` 마이그레이션이 익명 상태에서 진단한 결과를 첫 로그인 시 원격으로 올림(원격에 이미 있으면 덮어쓰지 않음). 기존 브라우저(local/sessionStorage) 저장 결과는 최초 hydrate 시 한 번 Repository 로 끌어올린 뒤 지움.
-- [x] **M2.2 — 추가 매거진 글 + 북마크** — 아티클 3편 추가 (cycle-phases, cycle-length-35-days, period-supplements), BookmarkRepository/IndexedDBBookmarkAdapter/bookmarkStore, BookmarksScreen (`/magazine/bookmarks`), 글 상세 풀스크린 이동 (`/magazine/[slug]`)
-- [ ] M2.3~ — 추가 진단 종류 확장 / 매거진 콘텐츠 운영
+**마이페이지**
+- [x] Figma 015 기반 MyPage — 인증 카드, 주기 요약, 환경설정(알림·언어·공휴일)·고객지원 카드, 로그아웃 확인 다이얼로그, 법적 문서(약관·개인정보처리방침), Q&A, 알림 설정(마스터 + 3항목 + 시기 휠), `MyPageBackLink` + 스크롤 복원
+
+**매거진**
+- [x] 인프라 — `/magazine` 목록, `ArticleScreen`, 글 데이터 모듈(`src/data/magazine/articles.ts`), 아티클 4편, 북마크(`/magazine/bookmarks`)
+- [x] 퍼스널 체형 진단 — `/magazine/personal-body-type/diagnose` 플로우(동의 → 사진 선택·미리보기 → 분석 → 결과). Edge Function `body-type-analyze`(OpenAI Vision, 사진 미저장, 일 10회, 1회 재시도). 결과 화면은 체형 탭(LLM 리딩) + 스타일 가이드 탭(유형별 정적 콘텐츠). 결과는 `BodyTypeReportRepository` 로 보관(migration 0013), 체형별 공유 링크는 `AuthGuard` 예외
+
+### 다음
+
+- [ ] 백그라운드 sync / 충돌 해결 / 다기기 검증
+- [ ] 푸시 알림 인프라 (알림 설정은 로컬 저장까지만 구현)
+- [ ] 매거진 콘텐츠 운영 / 추가 진단 종류
