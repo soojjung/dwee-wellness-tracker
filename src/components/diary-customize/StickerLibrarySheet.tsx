@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
+import { usePhotoLibraryPicker } from '@/hooks/usePhotoLibraryPicker';
 import type { DiarySticker } from '@/types';
 import { cn } from '@/lib/cn';
 import { DeleteStickersDialog } from './DeleteStickersDialog';
@@ -35,8 +36,8 @@ export function StickerLibrarySheet({
 }: StickerLibrarySheetProps) {
   const t = useT();
   const c = t.report.diary.customize;
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const albumPicker = usePhotoLibraryPicker({ onPicked: onPickFile });
   const [pickedId, setPickedId] = useState<string | null>(null);
   const flashTimerRef = useRef<number | null>(null);
 
@@ -44,13 +45,6 @@ export function StickerLibrarySheet({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) onPickFile(file);
-    e.target.value = '';
-    setMenuOpen(false);
-  }
 
   function handlePick(sticker: DiarySticker) {
     if (mode === 'edit') {
@@ -156,7 +150,12 @@ export function StickerLibrarySheet({
                 <div className="absolute right-0 top-12 z-40 flex w-48 flex-col overflow-hidden rounded-2xl bg-brand-gray900 text-sm text-brand-white shadow-lg">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      // Close our menu first so it never sits under the OS
+                      // picker (web fallback) — the two stacked was the bug.
+                      setMenuOpen(false);
+                      void albumPicker.open();
+                    }}
                     className="flex items-center gap-2 px-4 py-3 text-left focus-visible:outline-none focus-visible:bg-brand-gray800"
                   >
                     <AlbumIcon />
@@ -267,13 +266,7 @@ export function StickerLibrarySheet({
         </div>
       ) : null}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="hidden"
-      />
+      {albumPicker.input}
 
       {deleteDialogOpen ? (
         <DeleteStickersDialog

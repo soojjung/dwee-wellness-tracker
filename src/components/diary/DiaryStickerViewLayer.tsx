@@ -1,11 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import type {
-  DiarySticker,
-  DiaryStickerPlacement,
-  StickerRatio,
-  StickerSource,
-} from '@/types';
+import type { DiarySticker, DiaryStickerPlacement, StickerRatio, StickerSource } from '@/types';
 import { PLACEMENT_BASE_SIZE, PLACEMENT_NOMINAL_WIDTH } from '@/types';
 
 interface DiaryStickerViewLayerProps {
@@ -14,20 +9,30 @@ interface DiaryStickerViewLayerProps {
   urls: Record<string, string>;
   /** Slot to render underneath the sticker layer (usually the calendar grid). */
   children: React.ReactNode;
+  /**
+   * 스티커 탭 콜백. 주면 스티커가 탭을 받는다 (일정 바보다 위에 있으므로 겹친 곳은
+   * 스티커가 이긴다). 없으면 예전처럼 투명하게 통과시켜 아래 셀·일정이 탭을 받는다.
+   */
+  onStickerTap?: (placementId: string) => void;
+  /** 탭 가능한 스티커의 접근성 라벨 (`onStickerTap` 과 함께 준다). */
+  stickerAriaLabel?: string;
 }
 
 /**
  * View-only sticker overlay used on the main diary tab. Mirrors the geometry
  * math from PlacedStickerLayer/PlacedSticker but strips out drag, resize,
- * selection, and delete — the diary main is read-only. Stickers sit above
- * the calendar and don't intercept taps (`pointer-events-none`) so day
- * cells and event badges underneath stay tappable.
+ * and delete — editing happens on /log/customize. With `onStickerTap` a tap
+ * on a sticker hands off to that screen (a sticker drawn over an event bar
+ * should open the sticker, not the event); the empty space around stickers
+ * still falls through to day cells and event bars.
  */
 export function DiaryStickerViewLayer({
   placements,
   stickers,
   urls,
   children,
+  onStickerTap,
+  stickerAriaLabel,
 }: DiaryStickerViewLayerProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -61,6 +66,8 @@ export function DiaryStickerViewLayer({
                 source={sticker.source}
                 imageUrl={url}
                 containerWidth={containerWidth}
+                onTap={onStickerTap ? () => onStickerTap(p.id) : undefined}
+                ariaLabel={stickerAriaLabel}
               />
             );
           })
@@ -75,6 +82,8 @@ interface ViewStickerProps {
   source: StickerSource;
   imageUrl: string;
   containerWidth: number;
+  onTap?: () => void;
+  ariaLabel?: string;
 }
 
 function ViewSticker({
@@ -83,6 +92,8 @@ function ViewSticker({
   source,
   imageUrl,
   containerWidth,
+  onTap,
+  ariaLabel,
 }: ViewStickerProps) {
   const scaleFactor = containerWidth / PLACEMENT_NOMINAL_WIDTH;
   const baseW = PLACEMENT_BASE_SIZE * placement.scale;
@@ -93,27 +104,42 @@ function ViewSticker({
   const renderW = baseW * scaleFactor;
   const renderH = baseH * scaleFactor;
 
+  const style = {
+    left: renderX,
+    top: renderY,
+    width: renderW,
+    height: renderH,
+    transform: `translate(-50%, -50%) rotate(${placement.rotation}deg)`,
+    transformOrigin: 'center',
+  } as const;
+  const img = (
+    <img
+      src={imageUrl}
+      alt=""
+      draggable={false}
+      className={'h-full w-full object-cover ' + (source === 'photo' ? 'rounded-lg' : '')}
+    />
+  );
+
+  if (!onTap) {
+    return (
+      <div aria-hidden className="pointer-events-none absolute select-none" style={style}>
+        {img}
+      </div>
+    );
+  }
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute select-none"
-      style={{
-        left: renderX,
-        top: renderY,
-        width: renderW,
-        height: renderH,
-        transform: `translate(-50%, -50%) rotate(${placement.rotation}deg)`,
-        transformOrigin: 'center',
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onTap();
       }}
+      aria-label={ariaLabel}
+      className="absolute select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink300"
+      style={style}
     >
-      <img
-        src={imageUrl}
-        alt=""
-        draggable={false}
-        className={
-          'h-full w-full object-cover ' + (source === 'photo' ? 'rounded-lg' : '')
-        }
-      />
-    </div>
+      {img}
+    </button>
   );
 }

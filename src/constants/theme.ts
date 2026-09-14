@@ -1,6 +1,6 @@
 export const THEME = {
   color: {
-    bg: '#FFF8F5',
+    bg: '#F5F3F4',
     surface: '#FFFFFF',
     text: '#1F1B1A',
     subtext: '#6B6562',

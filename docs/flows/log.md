@@ -137,6 +137,8 @@ flowchart TD
 ### Diary 커스터마이즈 (STEP 10.3a–10.3d — 완료)
 
 `edit-star` 아이콘 → `/log/customize` fullscreen 라우트로 이동.
+- **달 유지**: `diaryFocusStore.visibleMonth` 를 다이어리와 꾸미기 화면이 공유한다. 꾸미기는 다이어리가 보여주던 달로 열리고(이전엔 항상 오늘 달로 열려 다른 달을 보다가 들어가면 튕기는 버그가 있었음), 돌아왔을 때도 그 달이 유지된다. 하단 탭의 log 탭을 다시 탭할 때(`pingToday`)만 둘 다 오늘 달로 리셋된다. 새로고침·딥링크처럼 기록이 없으면 오늘 달이 기본.
+- **다이어리에서 스티커 탭 → 꾸미기**: `DiaryStickerViewLayer` 가 다이어리 탭에서도 스티커를 탭 가능하게 만든다(이벤트 바보다 위 레이어라, 겹친 곳은 스티커가 이벤트를 가로챈다). 탭하면 `diaryFocusStore.setFocusPlacementId(id)` 로 1회용 값을 저장하고 `/log/customize` 로 이동 — 꾸미기 화면이 마운트되며 그 스티커를 바로 선택 상태로 열고 라이브러리 시트를 `peek` 로 내려 가리지 않게 한다.
 - 데이터: `DiarySticker` (id, storageRef, ratio 1:1|4:3, source photo|sticker, createdAt).
 - 저장소: IndexedDB `dwee:diary:stickers` + blob per id. Supabase `diary_stickers` 테이블 + `media` bucket 경로 `{user_id}/diary_stickers/{id}.{ext}` (RLS anon lockout).
 - 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
@@ -150,7 +152,9 @@ flowchart TD
 - `src/components/diary-customize/{DiaryCustomizeScreen,StickerLibrarySheet,PhotoImportModal,PhotoRatioScreen,PlacedStickerLayer,PlacedSticker,CameraSheet,StickerScanScreen,CutoutConfirmScreen,DeleteStickersDialog}.tsx`
 - `src/components/diary/DiaryStickerViewLayer.tsx` — 다이어리 탭 캘린더 위 read-only 오버레이
 - `src/components/ui/DraggableBottomSheet.tsx`
+- `src/hooks/usePhotoLibraryPicker.tsx` — 앨범 사진 한 장 선택 (네이티브 `Camera.pickImages` / 웹 file input 폴백)
 - `src/store/{diaryStickerStore,diaryPlacementStore}.ts`
+- `src/store/diaryFocusStore.ts` — `visibleMonth`(다이어리↔꾸미기 공유 월) + `focusPlacementId`(스티커 탭 → 꾸미기 프리셀렉트, 1회용)
 - `src/domain/diary/defaultStickers.ts` — 기본 스티커 메타 정의
 - `public/stickers/default/*.png` — 5개 rembg 누끼 처리 이미지
 - `src/data/index.ts` — `ensureDefaultStickersSeeded()` 진입점
@@ -162,8 +166,9 @@ flowchart TD
 
 앨범(`PhotoImportModal`)과 카메라(`CameraSheet`) 모두 확정 전에 **모드 선택** (사진 그대로 / 누끼)을 제공하지만, 비율(1:1 · 4:3)을 언제 정하는지는 갈립니다:
 
-- **카메라**: 촬영 전에 비율 토글 + 모드 토글을 함께 보여주고, 셔터를 누르면 이미 크롭된 프레임을 바로 부모에 넘깁니다 (`PhotoImportModal` 미경유).
+- **카메라**: 촬영 전에 비율 토글 + 모드 토글을 함께 보여주고, 셔터를 누르면 이미 크롭된 프레임을 바로 부모에 넘깁니다 (`PhotoImportModal` 미경유). 카메라 시트 안의 앨범 아이콘은 `usePhotoLibraryPicker` 훅으로 OS 앨범을 직접 엽니다.
 - **앨범**: 사진을 고르면 먼저 라디오 카드로 모드부터 선택합니다 (**"누끼로 만들기"가 기본 선택**). "사진 그대로 사용"을 고를 때만 풀스크린 `PhotoRatioScreen` (013_5) 으로 넘어가 비율을 정합니다. 누끼 모드는 비율 화면을 건너뛰고 원본 파일을 그대로 넘기며, 배치용 비율은 원본 사진의 가로:세로 비로 추정합니다 (`ratioForImage` — 폭/높이 ≥ 0.875 면 1:1, 아니면 4:3).
+- **`usePhotoLibraryPicker`** (`src/hooks/usePhotoLibraryPicker.tsx`) — 스티커 라이브러리의 `+` 팝오버 "앨범"과 카메라 시트의 앨범 아이콘이 공유하는 훅. 네이티브(Capacitor)에서는 `Camera.pickImages({ limit: 1 })` 로 OS 앨범 피커를 바로 열고(카메라/파일 선택이 섞인 액션 시트 없음), 웹에서는 숨은 `<input type="file">` 로 폴백한다 — 이전엔 각 화면이 자기 file input 을 직접 관리했다.
 
 부모(`DiaryCustomizeScreen`)가 이후 분기:
 
