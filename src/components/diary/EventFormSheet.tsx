@@ -192,8 +192,11 @@ export function EventFormSheet({
       className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={handleClose}
     >
+      {/* 시트 위로 다이어리 제목 행(56px + 노치)이 그대로 보일 만큼 남긴다 — 90vh 로
+          거의 꽉 차면 바깥을 탭해 닫을 영역이 너무 좁다는 피드백. 120px = 제목 행
+          56 + 여유 64. 데스크톱(sm)은 가운데 카드라 예전 값 유지. */}
       <div
-        className="flex h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-brand-gray200 shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
+        className="flex h-[calc(100dvh-120px-env(safe-area-inset-top,0px))] w-full max-w-md flex-col rounded-t-3xl bg-brand-gray200 shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Figma 012_2 header: circular X (left), centered title, circular

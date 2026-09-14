@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { usePeriodStore } from '@/store/periodStore';
 import { useEventStore } from '@/store/eventStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
+import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
 import {
   selectPlacementsForMonth,
   useDiaryPlacementStore,
@@ -25,6 +26,7 @@ import { DiaryMonthGrid } from '@/components/diary/DiaryMonthGrid';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import { resolveHolidayCountries } from '@/domain/holiday';
 import { StickerLibrarySheet } from './StickerLibrarySheet';
+import { usePhotoLibraryPicker } from '@/hooks/usePhotoLibraryPicker';
 import { PhotoImportModal } from './PhotoImportModal';
 import { PlacedStickerLayer } from './PlacedStickerLayer';
 import { DraggableBottomSheet, type SheetSnap } from '@/components/ui/DraggableBottomSheet';
@@ -96,10 +98,9 @@ export function DiaryCustomizeScreen() {
   const addSticker = useDiaryStickerStore((s) => s.addSticker);
   const removeSticker = useDiaryStickerStore((s) => s.removeSticker);
 
-  const [cursor] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), monthIndex: now.getMonth() };
-  });
+  // 다이어리에서 보던 달로 연다. 10월을 보다가 꾸미기에 들어왔는데 9월(오늘 달)이
+  // 열리던 버그의 수정. 새로고침·딥링크처럼 기록이 없으면 오늘 달.
+  const [cursor] = useState(() => useDiaryFocusStore.getState().visibleMonth ?? currentMonth());
   const persistedPlacements = useDiaryPlacementStore(
     selectPlacementsForMonth(cursor.year, cursor.monthIndex),
   );
@@ -153,6 +154,16 @@ export function DiaryCustomizeScreen() {
     if (initialized) return;
     setDraft(persistedPlacements.map(toDraft));
     setInitialized(true);
+    // 다이어리에서 스티커를 탭해 들어온 경우: 그 스티커를 바로 선택하고 보관함은
+    // peek 로 내려 스티커가 가려지지 않게 한다. 1회용 값이라 읽고 나면 지운다.
+    const focusId = useDiaryFocusStore.getState().focusPlacementId;
+    if (focusId) {
+      useDiaryFocusStore.getState().setFocusPlacementId(null);
+      if (persistedPlacements.some((p) => p.id === focusId)) {
+        setSelectedId(focusId);
+        setSheetSnap('peek');
+      }
+    }
   }, [persistedPlacements, initialized]);
 
   const builtinNamer = useCallback(
@@ -203,7 +214,14 @@ export function DiaryCustomizeScreen() {
   }
 
   // ---- Camera flow ---------------------------------------------------------
-  const cameraFallbackFileRef = useRef<HTMLInputElement>(null);
+  // Spec 4 — camera's album icon opens the OS photo library, then reuses
+  // the PhotoImportModal path (crop → save) via importPickedFile.
+  const cameraAlbumPicker = usePhotoLibraryPicker({
+    onPicked: (file) => {
+      setCameraMode('idle');
+      setImportPickedFile(file);
+    },
+  });
 
   function openCamera() {
     setCameraMode('camera');
@@ -213,12 +231,6 @@ export function DiaryCustomizeScreen() {
     setCameraMode('idle');
     setCaptured(null);
     setCutoutBlob(null);
-  }
-
-  function handleAlbumFromCamera() {
-    // Spec 4 — camera's album icon triggers the OS picker. We reuse the
-    // existing PhotoImportModal path (crop → save) via importPickedFile.
-    cameraFallbackFileRef.current?.click();
   }
 
   async function saveAndClose(input: {
@@ -420,7 +432,7 @@ export function DiaryCustomizeScreen() {
       {cameraMode === 'camera' ? (
         <CameraSheet
           onClose={closeCameraFlow}
-          onOpenAlbum={handleAlbumFromCamera}
+          onOpenAlbum={() => void cameraAlbumPicker.open()}
           onCapture={handleCapture}
         />
       ) : null}
@@ -459,22 +471,9 @@ export function DiaryCustomizeScreen() {
         />
       ) : null}
 
-      {/* Hidden file input for the in-camera "album" fallback. Reuses the
-          same PhotoImportModal path as the library's + menu. */}
-      <input
-        ref={cameraFallbackFileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = '';
-          if (!file) return;
-          setCameraMode('idle');
-          setCaptured(null);
-          setImportPickedFile(file);
-        }}
-      />
+      {/* Web fallback input for the camera's album icon (native opens the
+          OS library directly through the hook). */}
+      {cameraAlbumPicker.input}
 
       {importPickedFile ? (
         <PhotoImportModal

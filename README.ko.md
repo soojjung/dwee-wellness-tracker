@@ -235,7 +235,7 @@ src/
 │       ├── home/customize/       홈 커스터마이즈 + 사진 편집
 │       ├── log/customize/        다이어리 스티커 라이브러리 + 배치 편집
 │       ├── settings/account/     계정 편집 (AccountEditScreen — 닉네임 수정, 익명 유저 bounce)
-│       ├── settings/withdraw/    회원탈퇴 사유 수집 (WithdrawReasonScreen — 015_10~14)
+│       ├── settings/withdraw/    회원탈퇴 사유 수집 (WithdrawReasonScreen — 262:3527)
 │       ├── foods/[id]/           음식 상세 (홈 음식 칩 탭 진입, 20개 프리렌더)
 │       └── magazine/
 │           ├── [slug]/           글 상세 (풀스크린)
@@ -346,6 +346,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] 통합 입력 시트 — `+` 와 날짜 탭 모두 `EventFormSheet` 하나로(생리 토글 + 컨디션 섹션 포함). 일정 유형은 접힌 행 → 펼침 목록(기본 "친구"), 삭제는 `DeleteEventDialog`
 - [x] 주간 이벤트 바 — 여러 날짜에 걸친 일정을 한 줄 바로 표시 (`domain/event/weekLanes`)
 - [x] 스티커 커스터마이즈 — 앨범/카메라 → 누끼(`sticker-cutout`) 또는 사진 그대로 → 캘린더 위 drag/resize/rotate. `/log/customize`, `DraggableBottomSheet`, 기본 스티커 시드(버전 관리). migrations 0008–0009, 0012
+- [x] 다이어리 탭 스티커 탭 → 꾸미기 — 스티커가 일정 바보다 위 레이어라 겹친 곳은 스티커가 탭을 가로챔. 탭하면 `/log/customize` 로 이동해 해당 스티커를 바로 선택 상태로 열고 라이브러리 시트는 `peek`. `diaryFocusStore.visibleMonth` 를 다이어리·꾸미기가 공유해 보던 달을 유지(로그 탭 재탭 시에만 오늘 달로 리셋). 앨범 선택은 라이브러리 `+` 팝오버와 카메라 앨범 아이콘이 `usePhotoLibraryPicker` 훅(네이티브 `Camera.pickImages` / 웹 file input 폴백) 하나로 통합
 - [x] 공휴일 표시 — 한국·미국 공휴일을 날짜 아래 라벨로 (`domain/holiday`, 한국 음력 표 2025–2030 + 대체공휴일 규칙). 마이페이지 `/settings/holidays` 토글, 기본은 앱 언어 따라 자동. migration 0014
 
 **홈**

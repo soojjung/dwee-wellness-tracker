@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { queueAppToast } from '@/lib/appToast';
 import { Toast } from '@/components/ui/Toast';
 import { submitWithdrawalFeedback } from '@/data/services/withdrawalFeedbackService';
+import { BackIcon } from '@/components/ui/icons';
 
 const MAX_OTHER_LEN = 100;
 
@@ -147,29 +148,31 @@ export function WithdrawReasonScreen() {
     // Fixed viewport height with the scrolling confined to the middle
     // column, so the reason list stops above the CTA rail instead of
     // running underneath it.
-    <div className="flex h-dvh flex-col overflow-hidden bg-brand-white">
-      {/* Same 8px + notch inset as the diary customize header; bare
-          `pt-safe` is 0 off a notched device and the back button ends
-          up flush against the top edge. */}
-      <header className="flex shrink-0 items-center px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-brand-white">
+      {/* 뒤로가기 버튼만 본문 위에 띄운다 (FoodArticleScreen 과 같은 패턴). 상단 바에
+          배경을 깔지 않아 스크롤할 때 본문이 버튼 아래로 그대로 지나간다 — 바 전체가
+          흰 띠로 남아 보이던 것이 피드백. */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center px-4 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
         <button
           type="button"
           onClick={() => router.back()}
           aria-label={t.myPage.withdraw.backAriaLabel}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+          // Figma 262:3532 — 40px 원형 배경. 본문이 비쳐 보이도록 Gray/400 50% + blur.
+          className="pointer-events-auto grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
         >
-          <BackIcon />
+          <BackIcon className="size-10" />
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
+      {/* 상단 여백 72 = 버튼 위 8 + 버튼 40 + 제목까지 24 (Figma 262:3527). 버튼이
+          떠 있어도 첫 화면에서 제목이 가려지지 않는다. */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-[calc(72px+env(safe-area-inset-top,0px))]">
         <h1 className="text-xl font-semibold leading-normal text-brand-gray900">
           {t.myPage.withdraw.title}
         </h1>
-        <p className="mt-1 text-xs text-brand-gray600">
-          {t.myPage.withdraw.subtitle}
-        </p>
+        <p className="mt-1 text-xs text-brand-gray600">{t.myPage.withdraw.subtitle}</p>
 
+        {/* 행 간격 24 (Figma) = 텍스트 위아래 4px 탭 여백 + space-y-4. */}
         <ul className="mt-6 space-y-4">
           {REASON_ORDER.map((key) => {
             const isSelected = selected.has(key);
@@ -180,20 +183,16 @@ export function WithdrawReasonScreen() {
                   role="checkbox"
                   aria-checked={isSelected}
                   onClick={() => toggleReason(key)}
-                  className="flex w-full items-center justify-between gap-3 py-2 text-left text-sm text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink300"
+                  className="flex w-full items-center justify-between gap-3 py-1 text-left text-base leading-normal text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink300"
                 >
-                  <span className="flex-1">
-                    {t.myPage.withdraw.reasons[key]}
-                  </span>
+                  <span className="flex-1">{t.myPage.withdraw.reasons[key]}</span>
                   <CheckCircle checked={isSelected} />
                 </button>
                 {key === 'other' && otherPicked ? (
                   <div
                     className={
                       'mt-2 rounded-2xl border bg-brand-white px-4 py-3 transition-colors ' +
-                      (otherText.length === 0
-                        ? 'border-brand-pink300'
-                        : 'border-brand-gray300')
+                      (otherText.length === 0 ? 'border-brand-pink300' : 'border-brand-gray300')
                     }
                   >
                     <textarea
@@ -217,46 +216,27 @@ export function WithdrawReasonScreen() {
         </ul>
       </div>
 
-      {/* In-flow footer: as a flex sibling of the scroll area it already
-          sits at the bottom of the mobile shell, so it needs no fixed
-          positioning and the scroll area ends exactly above it. */}
-      <div className="shrink-0 border-t border-brand-gray200 bg-brand-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className={
-            'block w-full rounded-2xl py-4 text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 ' +
-            (canSubmit
-              ? 'bg-brand-gray900 text-brand-white'
-              : 'bg-brand-gray200 text-brand-gray600')
-          }
-        >
-          {submitting ? t.myPage.withdraw.busy : t.myPage.withdraw.cta}
-        </button>
-      </div>
+      {/* 하단 CTA 바 — Figma 262:3524 (비활성: Gray/400 위 Gray/200 글자) /
+          262:3610 (활성: Gray/900 위 Pink/100 글자). ShareTestBar 와 같은 "바 전체가
+          버튼" 형태라 패딩 20 / 32(+safe-area) 을 바에 직접 준다. flex 형제라 스크롤
+          영역이 정확히 그 위에서 끝난다. */}
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={!canSubmit}
+        className={
+          'flex w-full shrink-0 items-center justify-center px-4 pt-5 text-xl font-semibold leading-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink100 ' +
+          (canSubmit
+            ? 'bg-brand-gray900 text-brand-pink100'
+            : 'bg-brand-gray400 text-brand-gray200')
+        }
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px))' }}
+      >
+        {submitting ? t.myPage.withdraw.busy : t.myPage.withdraw.cta}
+      </button>
 
-      {overLimitToast ? (
-        <Toast message={overLimitToast} variant="topConfirm" />
-      ) : null}
+      {overLimitToast ? <Toast message={overLimitToast} variant="topConfirm" /> : null}
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M15 6l-6 6 6 6" />
-    </svg>
   );
 }
 

@@ -113,17 +113,19 @@ flowchart TD
 
 ---
 
-## Account deletion flow (015_9 → 015_14)
+## Account deletion flow (015_9 → 262:3527)
 
 ### Confirm dialog (015_9)
 
 Tapping "계정 삭제" in `AccountManagementCard` opens `WithdrawConfirmDialog` (pink alert badge, same visual language as `LogoutConfirmDialog`). On confirm, the user is pushed to the withdrawal reason screen instead of triggering deletion immediately.
 
-### Reason collection screen (015_10–015_14)
+### Reason collection screen (262:3527)
 
 Route: `(fullscreen)/settings/withdraw` — rendered by `WithdrawReasonScreen`.
 
 The user selects one or more reasons from a fixed list (`ReasonKey` union — nine preset keys + `'other'`). Selecting `'other'` reveals a free-text input (capped at 100 chars in UI, 500 chars in the DB). The "탈퇴하기" confirm button is disabled until at least one reason is selected.
+
+**Visual spec (262:3527)**: a floating translucent back button (`bg-brand-gray400/50` + blur, 40px, 262:3532) sits absolutely over a transparent header, so the body scrolls underneath it instead of under a solid bar. Title sits 24px below the button, 16px side padding, reason rows spaced 16px apart. The bottom CTA is a full-width bar rather than an inset button: disabled state is `gray400` background / `gray200` text (262:3524), enabled is `gray900` background / `pink100` text (262:3610), 20px semibold, `pt-5` with `pb` at least 32px plus the safe-area inset.
 
 On confirm:
 
@@ -219,7 +221,7 @@ Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackL
 | Route | Figma | Status |
 |---|---|---|
 | `/settings/language` | 015_15 | live — `LanguageSettingsScreen` |
-| `/settings/withdraw` | 015_10–14 | live — `WithdrawReasonScreen` (fullscreen) |
+| `/settings/withdraw` | 262:3527 | live — `WithdrawReasonScreen` (fullscreen) |
 | `/settings/notifications` | 292:2765 | live — `NotificationsScreen` |
 | `/settings/holidays` | — | live — `HolidaysScreen` |
 | `/settings/qna` | 015_5 | live — `QnaScreen` (static support email + copy-to-clipboard) |

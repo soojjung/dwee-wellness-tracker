@@ -1,12 +1,13 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { usePeriodStore } from '@/store/periodStore';
 import { useEventStore } from '@/store/eventStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
-import { useDiaryFocusStore } from '@/store/diaryFocusStore';
+import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
 import { useDiaryPlacementStore, selectPlacementsForMonth } from '@/store/diaryPlacementStore';
 import { todayISO, toISO } from '@/lib/date';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
@@ -68,10 +69,16 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const stickersHydrated = useDiaryStickerStore((s) => s.hydrated);
   const hydrateStickers = useDiaryStickerStore((s) => s.hydrate);
 
-  const [cursor, setCursor] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), monthIndex: now.getMonth() };
-  });
+  // 꾸미기 화면에서 돌아오거나 탭을 오갈 때 보던 달을 유지한다.
+  const [cursor, setCursor] = useState(
+    () => useDiaryFocusStore.getState().visibleMonth ?? currentMonth(),
+  );
+  const setVisibleMonth = useDiaryFocusStore((s) => s.setVisibleMonth);
+  const setFocusPlacementId = useDiaryFocusStore((s) => s.setFocusPlacementId);
+  const router = useRouter();
+  useEffect(() => {
+    setVisibleMonth(cursor);
+  }, [cursor, setVisibleMonth]);
   // Ticked whenever we want the today cell to briefly pulse + show its "오늘"
   // bubble. Bumped on mount and on every log-tab tap so consecutive taps
   // replay the animation.
@@ -105,12 +112,16 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     hydrateConditionRange(start, end);
   }, [cursor.year, cursor.monthIndex, hydrateConditionRange]);
 
-  // Log-tab tap → jump to today's month + pulse the today cell. Also fires
-  // once on mount so a fresh navigation into the diary shows the same cue.
+  // Log-tab tap → jump to today's month + pulse the today cell. On mount only
+  // the pulse fires: the month comes from `visibleMonth` (today after a tab tap,
+  // or the month the user was on when they left for /log/customize).
   const focusPing = useDiaryFocusStore((s) => s.focusPing);
+  const seenPingRef = useRef(focusPing);
   useEffect(() => {
-    const now = new Date();
-    setCursor({ year: now.getFullYear(), monthIndex: now.getMonth() });
+    if (seenPingRef.current !== focusPing) {
+      seenPingRef.current = focusPing;
+      setCursor(currentMonth());
+    }
     setTodayPulseKey((k) => k + 1);
   }, [focusPing]);
 
@@ -353,6 +364,11 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                   placements={placements}
                   stickers={stickers}
                   urls={stickerUrls}
+                  stickerAriaLabel={t.report.diary.customize.placement}
+                  onStickerTap={(id) => {
+                    setFocusPlacementId(id);
+                    router.push('/log/customize');
+                  }}
                 >
                   <div className="rounded-2xl bg-brand-white/95 py-2 backdrop-blur-sm">
                     <DiaryMonthGrid
