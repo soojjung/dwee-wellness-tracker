@@ -1,4 +1,4 @@
-import type { UserSettings } from '@/types';
+import type { HolidayCountry, UserSettings } from '@/types';
 import { DEFAULT_USER_SETTINGS } from '@/types/userSettings';
 import type { SettingsRepository } from '@/data/repositories/SettingsRepository';
 import { supabase, requireUserId } from './client';
@@ -10,6 +10,8 @@ interface ProfileRow {
   average_period_length: number;
   notifications_enabled: boolean;
   onboarding_completed: boolean;
+  /** null = 언어 따라 자동 (0014 migration). */
+  holiday_countries: HolidayCountry[] | null;
 }
 
 function rowToSettings(row: ProfileRow): UserSettings {
@@ -23,6 +25,7 @@ function rowToSettings(row: ProfileRow): UserSettings {
     averagePeriodLength: row.average_period_length,
     notificationsEnabled: row.notifications_enabled,
     onboardingCompleted: row.onboarding_completed,
+    holidayCountries: row.holiday_countries ?? null,
   };
 }
 
@@ -30,20 +33,21 @@ function patchToRow(patch: Partial<UserSettings>): Partial<ProfileRow> {
   const out: Partial<ProfileRow> = {};
   if (patch.locale !== undefined) out.locale = patch.locale;
   if (patch.averageCycleLength !== undefined) out.average_cycle_length = patch.averageCycleLength;
-  if (patch.averagePeriodLength !== undefined) out.average_period_length = patch.averagePeriodLength;
-  if (patch.notificationsEnabled !== undefined) out.notifications_enabled = patch.notificationsEnabled;
+  if (patch.averagePeriodLength !== undefined)
+    out.average_period_length = patch.averagePeriodLength;
+  if (patch.notificationsEnabled !== undefined)
+    out.notifications_enabled = patch.notificationsEnabled;
   if (patch.onboardingCompleted !== undefined) out.onboarding_completed = patch.onboardingCompleted;
+  if (patch.holidayCountries !== undefined) {
+    out.holiday_countries = patch.holidayCountries ? [...patch.holidayCountries] : null;
+  }
   return out;
 }
 
 export const supabaseSettingsAdapter: SettingsRepository = {
   async get() {
     const userId = await requireUserId();
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (error) throw error;
     return data ? rowToSettings(data as ProfileRow) : DEFAULT_USER_SETTINGS;
   },

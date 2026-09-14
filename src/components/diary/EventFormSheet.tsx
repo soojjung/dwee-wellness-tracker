@@ -10,11 +10,9 @@ import type { DailyConditionLog, EventCategory, EventLog } from '@/types';
 import { BinIcon, ChevronDownIcon } from '@/components/ui/icons';
 import { MyPageToggle } from '@/components/my-page/MyPageToggle';
 import { CategorySelector } from './CategorySelector';
+import { DeleteEventDialog } from './DeleteEventDialog';
 import { InlineDatePicker } from './InlineDatePicker';
-import {
-  EventConditionSection,
-  type ConditionSelection,
-} from './EventConditionSection';
+import { EventConditionSection, type ConditionSelection } from './EventConditionSection';
 
 export type EventFormMode = 'add' | 'edit';
 
@@ -71,6 +69,7 @@ export function EventFormSheet({
   );
   const [expanded, setExpanded] = useState<ExpandedField>('none');
   const [submitting, setSubmitting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [togglingPeriod, setTogglingPeriod] = useState(false);
   const hasPeriodMark = initial?.hasPeriodMark ?? false;
   // add mode only — edit mode's toggle mutates the store immediately via
@@ -103,20 +102,24 @@ export function EventFormSheet({
 
   function handleDelete() {
     if (submitting || !onDelete) return;
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(t.report.diary.eventDetail.deleteConfirm)
-    ) {
-      return;
+    setConfirmingDelete(true);
+  }
+
+  async function confirmDelete() {
+    if (submitting || !onDelete) return;
+    setSubmitting(true);
+    try {
+      await onDelete();
+    } finally {
+      setSubmitting(false);
+      setConfirmingDelete(false);
     }
-    void onDelete();
   }
 
   // A period-marked event may be saved without a title; the badge then
   // reads as the period label so the calendar cell never shows an empty chip.
   const trimmedTitle =
-    title.trim() ||
-    (periodMarkOn ? t.report.diary.eventDetail.periodToggle : '');
+    title.trim() || (periodMarkOn ? t.report.diary.eventDetail.periodToggle : '');
   const trimmedMemo = memo.trim();
 
   const conditionChanged =
@@ -137,11 +140,7 @@ export function EventFormSheet({
     conditionChanged;
 
   const canSave =
-    !submitting &&
-    trimmedTitle.length > 0 &&
-    !!categoryId &&
-    endDate >= startDate &&
-    isDirty;
+    !submitting && trimmedTitle.length > 0 && !!categoryId && endDate >= startDate && isDirty;
 
   function handleClose() {
     if (submitting) return;
@@ -179,12 +178,11 @@ export function EventFormSheet({
   }
 
   useBodyScrollLock();
-  useEscToClose(handleClose);
+  // While the delete confirm is up, Esc belongs to it — otherwise both close.
+  useEscToClose(handleClose, !confirmingDelete);
 
   const headerTitle =
-    mode === 'edit'
-      ? t.report.diary.editSheet.title
-      : t.report.diary.eventSheet.title;
+    mode === 'edit' ? t.report.diary.editSheet.title : t.report.diary.eventSheet.title;
 
   return (
     <div
@@ -200,7 +198,7 @@ export function EventFormSheet({
       >
         {/* Figma 012_2 header: circular X (left), centered title, circular
             confirm ✓ (right — pink when canSave, gray400 when disabled). */}
-        <header className="relative flex items-center justify-between px-4 pt-4 pb-3">
+        <header className="relative flex items-center justify-between px-4 pb-3 pt-4">
           <button
             type="button"
             aria-label={t.report.diary.eventSheet.close}
@@ -218,9 +216,13 @@ export function EventFormSheet({
             aria-label={t.report.diary.eventSheet.save}
             disabled={!canSave}
             onClick={handleSave}
+            // Figma 327:4405 / 327:4404 — pink200 circle + pink50 check when
+            // enabled, gray400 circle + gray200 check when disabled.
             className={
-              'grid size-10 place-items-center rounded-full text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
-              (canSave ? 'bg-brand-pink200' : 'bg-brand-gray400')
+              'grid size-10 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+              (canSave
+                ? 'bg-brand-pink200 text-brand-pink50'
+                : 'bg-brand-gray400 text-brand-gray200')
             }
           >
             <CheckIcon />
@@ -251,9 +253,7 @@ export function EventFormSheet({
               value={startDate}
               locale={locale}
               expanded={expanded === 'start'}
-              onToggle={() =>
-                setExpanded((v) => (v === 'start' ? 'none' : 'start'))
-              }
+              onToggle={() => setExpanded((v) => (v === 'start' ? 'none' : 'start'))}
             />
             {expanded === 'start' ? (
               <InlineDatePicker
@@ -270,9 +270,7 @@ export function EventFormSheet({
               value={endDate}
               locale={locale}
               expanded={expanded === 'end'}
-              onToggle={() =>
-                setExpanded((v) => (v === 'end' ? 'none' : 'end'))
-              }
+              onToggle={() => setExpanded((v) => (v === 'end' ? 'none' : 'end'))}
             />
             {expanded === 'end' ? (
               <InlineDatePicker
@@ -288,9 +286,7 @@ export function EventFormSheet({
             selectedId={categoryId}
             onSelect={setCategoryId}
             expanded={expanded === 'category'}
-            onToggle={() =>
-              setExpanded((v) => (v === 'category' ? 'none' : 'category'))
-            }
+            onToggle={() => setExpanded((v) => (v === 'category' ? 'none' : 'category'))}
             onEditCategory={onEditCategory}
             onAddCategory={onAddCategory}
           />
@@ -340,6 +336,17 @@ export function EventFormSheet({
           ) : null}
         </div>
       </div>
+      {confirmingDelete ? (
+        // Rendered inside the sheet root, so a backdrop tap on the dialog must
+        // not bubble up to handleClose and take the sheet down with it.
+        <div onClick={(e) => e.stopPropagation()}>
+          <DeleteEventDialog
+            submitting={submitting}
+            onCancel={() => setConfirmingDelete(false)}
+            onConfirm={() => void confirmDelete()}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -370,9 +377,7 @@ function DateRow({ label, value, locale, expanded, onToggle }: DateRowProps) {
       >
         <span>{formatted}</span>
         <ChevronDownIcon
-          className={
-            'h-2 w-3 transition-transform ' + (expanded ? 'rotate-180' : '')
-          }
+          className={'h-2 w-3 transition-transform ' + (expanded ? 'rotate-180' : '')}
         />
       </span>
     </button>
@@ -406,19 +411,20 @@ function CloseIcon() {
   );
 }
 
+// Figma 256:15860 의 벡터 그대로 — 40 viewBox 를 버튼 크기(40px)에 1:1 로 얹어
+// 체크 크기·선 굵기·둥근 꺾임이 시안과 같아진다.
 function CheckIcon() {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 40 40"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-4 w-4"
+      className="size-10"
       aria-hidden
     >
-      <path d="M5 12.5l4.5 4.5L19 7.5" />
+      <path d="M13.0001 20L16.8773 24.9851C17.2777 25.4999 18.0557 25.4999 18.456 24.9851L27 14" />
     </svg>
   );
 }

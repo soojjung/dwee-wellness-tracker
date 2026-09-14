@@ -1,4 +1,5 @@
 export * from './userSettings';
+export * from './holiday';
 export * from './periodLog';
 export * from './conditionLog';
 export * from './insight';

@@ -23,6 +23,7 @@ import {
 import { BackIcon } from '@/components/ui/icons';
 import { DiaryMonthGrid } from '@/components/diary/DiaryMonthGrid';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
+import { resolveHolidayCountries } from '@/domain/holiday';
 import { StickerLibrarySheet } from './StickerLibrarySheet';
 import { PhotoImportModal } from './PhotoImportModal';
 import { PlacedStickerLayer } from './PlacedStickerLayer';
@@ -72,6 +73,11 @@ export function DiaryCustomizeScreen() {
   const router = useRouter();
   const today = todayISO();
   const locale = useSettingsStore((s) => s.settings.locale);
+  const holidaySetting = useSettingsStore((s) => s.settings.holidayCountries);
+  const holidayCountries = useMemo(
+    () => resolveHolidayCountries(holidaySetting, locale),
+    [holidaySetting, locale],
+  );
 
   const periods = usePeriodStore((s) => s.periods);
   const periodsHydrated = usePeriodStore((s) => s.hydrated);
@@ -115,9 +121,7 @@ export function DiaryCustomizeScreen() {
   const [libraryOpen, setLibraryOpen] = useState(true);
   // Camera flow (013_2/3/4). `mode: 'idle'` is the default library view;
   // capture flows through camera → scan → confirm → back to idle.
-  const [cameraMode, setCameraMode] = useState<'idle' | 'camera' | 'scan' | 'confirm'>(
-    'idle',
-  );
+  const [cameraMode, setCameraMode] = useState<'idle' | 'camera' | 'scan' | 'confirm'>('idle');
   const [captured, setCaptured] = useState<CameraCapture | null>(null);
   // Populated by StickerScanScreen once the cutout API returns a PNG.
   // CutoutConfirmScreen then shows and (on confirm) persists this blob
@@ -160,10 +164,7 @@ export function DiaryCustomizeScreen() {
     if (categories.length === 0) seedBuiltinsIfEmpty(builtinNamer);
   }, [eventsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
 
-  const monthLabel = formatMonthLabel(
-    new Date(cursor.year, cursor.monthIndex, 1),
-    locale,
-  );
+  const monthLabel = formatMonthLabel(new Date(cursor.year, cursor.monthIndex, 1), locale);
 
   const isDirty = useMemo(() => {
     if (!initialized) return false;
@@ -308,8 +309,7 @@ export function DiaryCustomizeScreen() {
   // Any full-screen flow of this screen's own. Their surfaces sit outside
   // the sheet's DOM, so outside-tap dismissal has to stand down while one
   // of them is open.
-  const overlayActive =
-    cameraMode !== 'idle' || importPickedFile !== null || showDiscardDialog;
+  const overlayActive = cameraMode !== 'idle' || importPickedFile !== null || showDiscardDialog;
 
   return (
     <div className="flex min-h-dvh flex-col bg-brand-gray200">
@@ -382,6 +382,7 @@ export function DiaryCustomizeScreen() {
               periods={periods}
               events={events}
               categories={categories}
+              holidayCountries={holidayCountries}
               onSelect={() => {
                 /* Reserved for future day-focused customize UX */
               }}
@@ -560,9 +561,7 @@ function DiscardDialog({ onCancel, onConfirm }: DiscardDialogProps) {
           >
             {copy.title}
           </p>
-          <p className="text-center text-xs leading-[1.5] text-brand-gray800">
-            {copy.body}
-          </p>
+          <p className="text-center text-xs leading-[1.5] text-brand-gray800">{copy.body}</p>
         </div>
         <div className="grid grid-cols-2 border-t border-brand-gray300">
           <button
@@ -584,4 +583,3 @@ function DiscardDialog({ onCancel, onConfirm }: DiscardDialogProps) {
     </div>
   );
 }
-

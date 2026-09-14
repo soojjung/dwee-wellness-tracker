@@ -14,7 +14,7 @@ MyPage renders a fixed stack of cards, some conditionally visible:
 | `AuthCard` | yes | signed-out → login CTA row; signed-in → dark profile card |
 | `CycleSummaryCard` | yes | shows status chip when data sufficient; "not enough data" copy otherwise |
 | `MyTestsCard` | yes | `나의 테스트` — one row per quiz; body-type row shows "결과" link (→ result page) when sessionStorage has a report, "체형 분석 해보기" CTA (→ article intro) otherwise. Skips hydration render to avoid flash. |
-| `PreferencesCard` | yes | notifications row (→ `/settings/notifications`) + language row |
+| `PreferencesCard` | yes | notifications row (→ `/settings/notifications`) + language row + holidays row (→ `/settings/holidays`) |
 | `SupportCard` | yes | notices / Q&A / terms / privacy rows |
 | `AccountManagementCard` | signed-in only | sign-out + account deletion rows |
 
@@ -190,6 +190,20 @@ Master-toggle semantics: turning ON enables all three subs; turning OFF disables
 
 ---
 
+## 공휴일 설정
+
+Route: `(app)/settings/holidays` — rendered by `HolidaysScreen`. Reached from `PreferencesCard`'s holidays row on MyPage.
+
+Two toggle rows (South Korea / United States), built on shared `SettingCard` / `SettingDetailRow` from the new `src/components/my-page/SettingRows.tsx` — the same building blocks `NotificationsScreen` was refactored onto.
+
+- **Resolved value shown**: both this screen's toggles and `PreferencesCard`'s summary label call `resolveHolidayCountries(setting, locale)` from `domain/holiday`.
+- **`null` / auto semantics**: `UserSettings.holidayCountries` defaults to `null` — "follow the app language" (ko → KR, en → US). The screen shows an "auto until changed" hint (`c.autoHint`) only while the setting is `null`. Tapping either toggle computes the currently-resolved list and saves an explicit array from that point on — so a later language change no longer touches the choice. An empty array (`[]`, both off) is distinct from `null` and is preserved.
+- **Persistence**: `settingsStore.update({ holidayCountries })` — IndexedDB for anonymous/local users; for signed-in users, `SupabaseSettingsAdapter` maps it to the `profiles.holiday_countries text[] null` column (migration `0014_profiles_holiday_countries.sql`, check constraint restricts values to `{KR, US}`).
+- **Where it's consumed**: `DiaryMonthGrid` (both the `/log` Diary tab and the `/log/customize` sticker-customize screen) — see [`docs/flows/log.md §공휴일 표시`](./log.md).
+- Domain rules (lunar-date table, substitute-holiday policy, supported years): [`docs/domain/holiday.md`](../domain/holiday.md).
+
+---
+
 ## Sub-page shared shell
 
 All `/settings/*` sub-pages share `bg-brand-gray200`. Legal/support sub-pages (`terms`, `privacy`, `qna`, and the `notices` stub via `SubPagePlaceholder`) additionally wrap their body in a white card (`rounded-2xl bg-brand-white px-5 py-6 shadow-...`) — previously only `qna` had this treatment, the others sat on `bg-brand-gray50` with a bare-background body.
@@ -207,6 +221,7 @@ Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackL
 | `/settings/language` | 015_15 | live — `LanguageSettingsScreen` |
 | `/settings/withdraw` | 015_10–14 | live — `WithdrawReasonScreen` (fullscreen) |
 | `/settings/notifications` | 292:2765 | live — `NotificationsScreen` |
+| `/settings/holidays` | — | live — `HolidaysScreen` |
 | `/settings/qna` | 015_5 | live — `QnaScreen` (static support email + copy-to-clipboard) |
 | `/settings/terms` | 015_16 | live — `TermsScreen` (제1~15조 + 부칙, Korean-only) |
 | `/settings/privacy` | 015_17 | live — `PrivacyScreen` (제1~17조 + 부칙, Korean-only) |
@@ -225,6 +240,9 @@ All copy lives under `myPage.*` in `src/i18n/locales/{en,ko}.ts`. Keys by featur
 - `myPage.withdraw.*` — reason-collection screen title, reason labels, free-text placeholder, submit button
 - `myPage.withdrawDoneToast` — post-deletion confirmation message shown on `/login`
 - `myPage.notifications.*` — notifications screen title, master toggle, per-topic labels/subtitles, wheel picker strings
+- `myPage.holidays.*` — holidays screen title/description, per-country title/subtitle, auto hint, `PreferencesCard`'s resolved-value labels
+- `myPage.settings.holidays` — the `PreferencesCard` row label
+- `holiday.KR.*` / `holiday.US.*` — top-level (not under `myPage`) holiday name strings rendered on the diary calendar cell, plus `KR.substitute` and `US.observedSuffix`
 - `myPage.tests.*` — tests card title, body-type CTA label, body-type result label
 
 Nickname fallback logic (email local-part) is in `AuthCard.getNickname()` — not an i18n key.

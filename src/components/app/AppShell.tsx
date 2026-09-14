@@ -1,30 +1,10 @@
 'use client';
-import { useEffect, type ReactNode } from 'react';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useAuthStore } from '@/store/authStore';
-import { useBookmarkStore } from '@/store/bookmarkStore';
+import type { ReactNode } from 'react';
+import { useCoreStoresHydration } from '@/hooks/useCoreStoresHydration';
 import { BottomTabNav } from './BottomTabNav';
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const hydrateSettings = useSettingsStore((s) => s.hydrate);
-  const settingsHydrated = useSettingsStore((s) => s.hydrated);
-  const hydrateAuth = useAuthStore((s) => s.hydrate);
-  const authHydrated = useAuthStore((s) => s.hydrated);
-  const hydrateBookmarks = useBookmarkStore((s) => s.hydrate);
-  const bookmarksHydrated = useBookmarkStore((s) => s.hydrated);
-
-  useEffect(() => {
-    if (!settingsHydrated) hydrateSettings();
-    if (!authHydrated) hydrateAuth();
-    if (!bookmarksHydrated) hydrateBookmarks();
-  }, [
-    hydrateSettings,
-    settingsHydrated,
-    hydrateAuth,
-    authHydrated,
-    hydrateBookmarks,
-    bookmarksHydrated,
-  ]);
+  useCoreStoresHydration();
 
   return (
     <div className="flex min-h-dvh flex-col bg-brand-gray50">

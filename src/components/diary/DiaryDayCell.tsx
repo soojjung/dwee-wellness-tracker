@@ -11,6 +11,8 @@ interface DiaryDayCellProps {
   // animation. Keying the bubble off the number makes React remount it on
   // each tap so the CSS animation restarts cleanly.
   todayPulseKey?: number;
+  /** 공휴일 이름. 칸 아래쪽 띠에 한 줄로 보여준다 (없으면 띠는 비워 둔다). */
+  holidayLabel?: string;
   onSelect: (date: string) => void;
 }
 
@@ -19,6 +21,7 @@ export function DiaryDayCell({
   inCurrentMonth,
   markers,
   todayPulseKey,
+  holidayLabel,
   onSelect,
 }: DiaryDayCellProps) {
   const t = useT();
@@ -38,10 +41,12 @@ export function DiaryDayCell({
 
   return (
     // Event bars are drawn by DiaryWeekEventLayer over the whole row so a
-    // multi-day event reads as one continuous strip; keep the top padding /
-    // number height in sync with that layer's offset.
+    // multi-day event reads as one continuous strip. Vertical rhythm, kept in
+    // sync with that layer's `top`: pt-2 (8) + number 19 + 2 + holiday line 12
+    // = 41 → bars start at 43. The holiday line is reserved on every cell so
+    // rows stay the same height whether or not the week has a holiday.
     <div
-      className="relative flex min-h-[92px] flex-col items-stretch gap-1 pb-4 pt-2"
+      className="relative flex min-h-[100px] flex-col items-stretch pb-4 pt-2"
       onClick={() => onSelect(date)}
       role="presentation"
     >
@@ -59,12 +64,18 @@ export function DiaryDayCell({
           <span
             key={`bubble-${todayPulseKey}`}
             aria-hidden
-            className="pointer-events-none absolute -top-7 left-1/2 z-20 whitespace-nowrap rounded-full bg-brand-gray900 px-2 py-0.5 text-[11px] font-medium leading-none text-brand-white shadow-md animate-diaryTodayBubble after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-4 after:border-x-transparent after:border-b-transparent after:border-t-brand-gray900 after:content-['']"
+            className="pointer-events-none absolute -top-7 left-1/2 z-20 animate-diaryTodayBubble whitespace-nowrap rounded-full bg-brand-gray900 px-2 py-0.5 text-[11px] font-medium leading-none text-brand-white shadow-md after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-4 after:border-x-transparent after:border-b-transparent after:border-t-brand-gray900 after:content-['']"
           >
             {t.calendar.todayLabel}
           </span>
         ) : null}
       </div>
+      <span
+        className="mt-0.5 block h-3 truncate px-0.5 text-center text-[9px] font-medium leading-3 text-brand-gray600"
+        title={holidayLabel}
+      >
+        {holidayLabel}
+      </span>
     </div>
   );
 }

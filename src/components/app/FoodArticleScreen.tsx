@@ -18,23 +18,33 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
   if (!article) return null;
 
   return (
-    // 뒤로가기 바는 고정, 스크롤은 아래 본문 컨테이너에서만 일어난다. 페이지 전체를
-    // 스크롤시키면 스크롤바가 상단 바까지 걸쳐 보여서 영역을 나눴다.
-    <div className="mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden bg-brand-gray50">
-      <header className="flex shrink-0 items-center px-4 pb-2 pt-3">
+    // 스크롤은 본문 컨테이너에서만 일어나고, 뒤로가기 버튼은 그 위에 띄워 둔다.
+    // 바 전체가 아니라 버튼만 고정이라 본문이 버튼 아래로 흘러 지나간다 (Figma).
+    <div className="relative mx-auto h-dvh w-full max-w-md overflow-hidden bg-brand-gray50">
+      {/* 노치 뒤로 지나가는 글자는 페이지색으로 살짝 덮어 상태바 가독성을 지킨다.
+          안전영역이 없는 기기에서는 높이 0 이라 아무것도 그려지지 않는다. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[calc(env(safe-area-inset-top,0px)+0.75rem)] bg-gradient-to-b from-brand-gray50 to-brand-gray50/0"
+      />
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <Link
           href="/"
           aria-label={t.home.foodArticle.backAriaLabel}
-          className="grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
+          // DiaryCustomizeScreen 의 반투명 버튼과 같은 값 — 본문이 비쳐 보이도록
+          // Gray/400 50% + 2px backdrop blur.
+          className="pointer-events-auto grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
         >
           <BackIcon className="size-10" />
         </Link>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-16">
+      {/* 상단 여백 68px = 버튼 위 12 + 버튼 40 + 버튼 아래 16. 버튼이 떠 있어도
+          첫 화면에서 히어로가 버튼에 가려지지 않게 예전 바 높이만큼 비워 둔다. */}
+      <div className="h-full overflow-y-auto pb-16 pt-[calc(68px+env(safe-area-inset-top,0px))]">
         {/* 히어로는 헤드라인까지 구워진 정사각 카드다 (Figma 358×358). 코너 배경이
             페이지와 같은 색이라 라운딩이 자연스럽게 이어진다. */}
-        <div className="mt-2 px-4">
+        <div className="px-4">
           <Image
             src={`/home/foods/articles/${id}.webp`}
             alt=""
@@ -104,7 +114,9 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
             ))}
           </div>
 
-          <p className="text-xs leading-[1.6] text-brand-gray600">{t.home.foodArticle.disclaimer}</p>
+          <p className="text-xs leading-[1.6] text-brand-gray600">
+            {t.home.foodArticle.disclaimer}
+          </p>
         </article>
       </div>
     </div>
