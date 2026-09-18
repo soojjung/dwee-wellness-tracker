@@ -119,7 +119,6 @@ export function DiaryCustomizeScreen() {
   // Tapping outside slides the library fully off screen so the month is
   // unobstructed. Adding a sticker brings it back; otherwise the session
   // ends through the header's back / done buttons.
-  const [libraryOpen, setLibraryOpen] = useState(true);
   // Camera flow (013_2/3/4). `mode: 'idle'` is the default library view;
   // capture flows through camera → scan → confirm → back to idle.
   const [cameraMode, setCameraMode] = useState<'idle' | 'camera' | 'scan' | 'confirm'>('idle');
@@ -245,7 +244,6 @@ export function DiaryCustomizeScreen() {
     if (created?.id) {
       setNewStickerId(created.id);
       setLibraryTouched(true);
-      setLibraryOpen(true);
       setSheetSnap('medium');
     }
   }
@@ -323,12 +321,30 @@ export function DiaryCustomizeScreen() {
   // of them is open.
   const overlayActive = cameraMode !== 'idle' || importPickedFile !== null || showDiscardDialog;
 
+  // 보관함 바깥 탭 (Figma 피드백 2026-09-16): 시트를 없애지 않고 한 단계씩 내린다.
+  //   medium/full → peek, peek → 꾸미기 종료(= 뒤로가기, dirty 면 확인 팝업).
+  // 캔버스의 스티커를 잡거나(드래그·삭제) 상단 버튼을 누르는 터치는 제외하고,
+  // peek 에서 스티커가 선택돼 있으면 그 탭은 선택 해제로만 쓴다.
+  function handleSheetOutsideTap(e: PointerEvent) {
+    const target = e.target instanceof Element ? e.target : null;
+    if (target?.closest('[data-placed-sticker="true"], [data-sheet-dismiss-ignore]')) return;
+    if (sheetSnap !== 'peek') {
+      setSheetSnap('peek');
+      return;
+    }
+    if (selectedId) return;
+    handleBack();
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-brand-gray200">
       {/* 8px above the row, plus the notch inset where there is one — bare
           `pt-safe` resolved to 0 outside a notched device and left the
           back/done buttons flush against the top edge. */}
-      <header className="flex items-center justify-between px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
+      <header
+        data-sheet-dismiss-ignore
+        className="flex items-center justify-between px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]"
+      >
         <button
           type="button"
           onClick={handleBack}
@@ -412,11 +428,10 @@ export function DiaryCustomizeScreen() {
         snap={sheetSnap}
         onSnapChange={setSheetSnap}
         snapHeightsDvh={{ peek: 85, medium: 45, full: 10 }}
-        open={libraryOpen}
-        // Tapping the calendar slides the library away entirely. While one
-        // of this screen's own overlays is up, a tap inside it lands
-        // "outside" the sheet, so dismissal is switched off there.
-        onDismiss={overlayActive ? undefined : () => setLibraryOpen(false)}
+        open
+        // While one of this screen's own overlays is up, a tap inside it lands
+        // "outside" the sheet, so outside-tap handling is switched off there.
+        onDismiss={overlayActive ? undefined : handleSheetOutsideTap}
       >
         <StickerLibrarySheet
           stickers={stickers}

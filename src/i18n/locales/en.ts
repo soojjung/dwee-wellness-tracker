@@ -733,7 +733,7 @@ export const en = {
     },
     chartEmpty: {
       title: 'Not enough data yet',
-      body: 'At least 3 period records are needed!',
+      body: 'We need at least 3 period records to spot your pattern!',
     },
     tooltipAria: 'Cycle status detail',
     diary: {
@@ -767,7 +767,11 @@ export const en = {
       eventDetail: {
         back: 'Back',
         edit: 'Edit',
+        typeLabel: 'Event type',
         periodToggle: 'Period',
+        periodOn: 'Yes',
+        periodOff: 'No',
+        conditionLabel: 'Condition',
         delete: 'Delete event & period',
         deleteConfirm: 'Delete this event and its period record?',
         cancel: 'Cancel',
@@ -950,6 +954,8 @@ export const en = {
     todayBloating: 'Bloating',
     todayAppetite: 'Appetite',
     todaySkin: 'Skin',
+    todaySleep: 'Sleep',
+    todayExercise: 'Exercise',
     memoPlaceholder: 'Optional note for today',
     save: 'Save',
     saving: 'Saving...',
@@ -1392,6 +1398,8 @@ export const en = {
     bloating: { none: 'None', mild: 'Slight', severe: 'Heavy' },
     appetite: { low: 'Light', normal: 'Steady', high: 'Strong' },
     skin: { clear: 'Clear', oily: 'Oily', dry: 'Dry', breakout: 'Breakout' },
+    sleep: { good: 'Rested', fair: 'Okay', poor: 'Poor' },
+    exercise: { none: 'None', light: 'Light', active: 'Active' },
   },
 };
 

@@ -764,7 +764,11 @@ export const ko: Dictionary = {
       eventDetail: {
         back: '뒤로',
         edit: '편집',
+        typeLabel: '일정 유형',
         periodToggle: '생리',
+        periodOn: '있음',
+        periodOff: '없음',
+        conditionLabel: '컨디션',
         delete: '일정 및 기록 삭제',
         deleteConfirm: '이 일정과 생리 기록을 삭제할까요?',
         cancel: '취소',
@@ -945,6 +949,8 @@ export const ko: Dictionary = {
     todayBloating: '붓기',
     todayAppetite: '식욕',
     todaySkin: '피부',
+    todaySleep: '수면',
+    todayExercise: '운동',
     memoPlaceholder: '오늘의 메모 (선택)',
     save: '저장',
     saving: '저장 중이에요...',
@@ -1387,5 +1393,7 @@ export const ko: Dictionary = {
     bloating: { none: '없음', mild: '약간', severe: '심함' },
     appetite: { low: '적음', normal: '보통', high: '많음' },
     skin: { clear: '깨끗', oily: '유분', dry: '건조', breakout: '트러블' },
+    sleep: { good: '충분', fair: '보통', poor: '부족' },
+    exercise: { none: '없음', light: '가벼움', active: '활발' },
   },
 };

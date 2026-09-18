@@ -79,6 +79,8 @@ export async function migrateLocalToRemote(): Promise<MigrationResult> {
           bloating: c.bloating,
           appetite: c.appetite,
           skin: c.skin,
+          sleep: c.sleep,
+          exercise: c.exercise,
           memo: c.memo,
         });
         conditionsAdded += 1;

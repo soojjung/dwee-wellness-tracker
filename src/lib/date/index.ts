@@ -30,11 +30,17 @@ export const daysBetween = (a: ISODate, b: ISODate): number =>
 
 export const addDaysISO = (d: ISODate, days: number): ISODate => toISO(addDays(fromISO(d), days));
 
-export const formatMonthLabel = (d: ISODate | Date, locale: Locale): string => {
+/** 일정 상세 헤딩 — ko "2026년 6월 15일 월요일", en "Monday, June 15, 2026". */
+export const formatFullDate = (d: ISODate | Date, locale: Locale): string => {
   const date = typeof d === 'string' ? fromISO(d) : d;
   return locale === 'ko'
-    ? format(date, 'yyyy년 M월', { locale: ko })
-    : format(date, 'MMMM yyyy');
+    ? format(date, 'yyyy년 M월 d일 EEEE', { locale: ko })
+    : format(date, 'EEEE, MMMM d, yyyy');
+};
+
+export const formatMonthLabel = (d: ISODate | Date, locale: Locale): string => {
+  const date = typeof d === 'string' ? fromISO(d) : d;
+  return locale === 'ko' ? format(date, 'yyyy년 M월', { locale: ko }) : format(date, 'MMMM yyyy');
 };
 
 export * from './calendarGrid';

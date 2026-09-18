@@ -24,7 +24,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 1. **생리 시작/종료 기록** — 캘린더에서 1~2탭으로 기록
 2. **평균 주기 기반 예측** — 데이터가 쌓이면 다음 예상일 추정
-3. **오늘의 컨디션 기록** — 기분 / 에너지 / 통증 / 붓기 / 식욕 / 피부 + 메모
+3. **오늘의 컨디션 기록** — 기분 / 에너지 / 통증 / 붓기 / 식욕 / 피부 / 수면 / 운동 + 메모
 4. **다이어리 캘린더** — 기록·예측·일정·스티커·공휴일을 한 눈에
 5. **rule-based 인사이트** — 단언 대신 "추정", 데이터 부족 시엔 "아직 예측하기 어려워요"
 6. **Supabase 인증** — 첫 진입 `/login` 게이트, Apple/Google OAuth 또는 명시적 익명 세션. 로그인 시 로컬 데이터 1회 마이그레이션
@@ -265,9 +265,9 @@ src/
 │   ├── adapters/supabase/        원격 구현 (Supabase JS, 인증 사용자에게 wiring 완료)
 │   └── index.ts                  단일 진입점
 │
-├── content/                      정적 원문 콘텐츠 (locale 무관, 한국어 원문 그대로 렌더)
-│   ├── legal/                    이용약관 · 개인정보처리방침 원문
-│   └── foods/                    홈 음식 상세 아티클 원문 (`home.foods` 사전 id 와 1:1 대응)
+├── content/                      정적 콘텐츠 원문
+│   ├── legal/                    이용약관 · 개인정보처리방침 원문 (한국어, locale 무관)
+│   └── foods/                    홈 음식 상세 아티클 (`articles-en`/`articles-ko`, en 원문 · ko 번역, `home.foods` 사전 id 와 1:1 대응)
 │
 ├── domain/
 │   ├── cycle/                    순수 함수: aggregate, predictor, phase, fertile window
@@ -351,7 +351,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 
 **홈**
 - [x] 홈 커스터마이즈 — 비파괴 사진 편집(`PhotoTransform`), 드래프트 모드 + `commitPhotoDraft()`, 슬롯 삭제, 종료 경로 드래프트 정리(`CustomizeDraftGuard`). IndexedDB v10, migration 0010
-- [x] 음식 상세 화면 — 주기별 추천 음식 칩 → `/foods/[id]` 읽기 전용 아티클 20편(`src/content/foods/`, 한국어 원문)
+- [x] 음식 상세 화면 — 주기별 추천 음식 칩 → `/foods/[id]` 읽기 전용 아티클 20편(`src/content/foods/`, en 원문 + ko 번역, 텍스트 없는 원본 히어로 사진 위에 헤드라인을 오버레이)
 
 **마이페이지**
 - [x] Figma 015 기반 MyPage — 인증 카드, 주기 요약, 환경설정(알림·언어·공휴일)·고객지원 카드, 로그아웃 확인 다이얼로그, 법적 문서(약관·개인정보처리방침), Q&A, 알림 설정(마스터 + 3항목 + 시기 휠), `MyPageBackLink` + 스크롤 복원

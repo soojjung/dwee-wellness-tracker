@@ -1,4 +1,14 @@
-import type { DailyConditionLog, Mood, Energy, Pain, Bloating, Appetite, Skin } from '@/types';
+import type {
+  DailyConditionLog,
+  Mood,
+  Energy,
+  Pain,
+  Bloating,
+  Appetite,
+  Skin,
+  Sleep,
+  Exercise,
+} from '@/types';
 import type {
   ConditionRepository,
   NewConditionInput,
@@ -15,6 +25,8 @@ interface ConditionRow {
   bloating: Bloating | null;
   appetite: Appetite | null;
   skin: Skin | null;
+  sleep: Sleep | null;
+  exercise: Exercise | null;
   memo: string | null;
   created_at: string;
 }
@@ -27,6 +39,8 @@ function rowToLog(row: ConditionRow): DailyConditionLog {
   if (row.bloating) log.bloating = row.bloating;
   if (row.appetite) log.appetite = row.appetite;
   if (row.skin) log.skin = row.skin;
+  if (row.sleep) log.sleep = row.sleep;
+  if (row.exercise) log.exercise = row.exercise;
   if (row.memo) log.memo = row.memo;
   return log;
 }
@@ -55,6 +69,8 @@ export const supabaseConditionAdapter: ConditionRepository = {
       bloating: input.bloating ?? null,
       appetite: input.appetite ?? null,
       skin: input.skin ?? null,
+      sleep: input.sleep ?? null,
+      exercise: input.exercise ?? null,
       memo: input.memo ?? null,
     };
     const { data, error } = await supabase

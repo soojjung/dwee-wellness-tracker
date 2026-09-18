@@ -17,6 +17,7 @@ import type { EventCategory, EventLog } from '@/types';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
+import { EventDetailScreen } from './EventDetailScreen';
 import { EventFormSheet, type EventFormInput } from './EventFormSheet';
 import { EventCategoryFormSheet, type CategoryFormInput } from './EventCategoryFormSheet';
 import { YearMonthWheelPicker } from './YearMonthWheelPicker';
@@ -32,6 +33,7 @@ type EventPrev = { kind: 'addEvent'; date?: string } | { kind: 'editEvent'; even
 type ActiveSheet =
   | { kind: 'none' }
   | { kind: 'addEvent'; date?: string }
+  | { kind: 'eventDetail'; eventId: string }
   | { kind: 'editEvent'; eventId: string }
   | { kind: 'monthPicker' }
   | { kind: 'addCategory'; prev: EventPrev }
@@ -141,8 +143,11 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     if (categories.length === 0) seedBuiltinsIfEmpty(builtinNamer);
   }, [eventsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
 
+  // 상세와 편집 시트가 같은 일정을 본다 — 편집은 상세 위에 겹쳐 열리므로 둘 다 활성.
   const activeEvent: EventLog | null =
-    sheet.kind === 'editEvent' ? (events.find((e) => e.id === sheet.eventId) ?? null) : null;
+    sheet.kind === 'eventDetail' || sheet.kind === 'editEvent'
+      ? (events.find((e) => e.id === sheet.eventId) ?? null)
+      : null;
 
   async function handleAddEvent(input: EventFormInput): Promise<boolean> {
     const log = await addEvent({
@@ -384,7 +389,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                       todayPulseKey={todayPulseKey}
                       holidayCountries={holidayCountries}
                       onSelect={(date) => setSheet({ kind: 'addEvent', date })}
-                      onSelectEvent={(ev) => setSheet({ kind: 'editEvent', eventId: ev.id })}
+                      onSelectEvent={(ev) => setSheet({ kind: 'eventDetail', eventId: ev.id })}
                     />
                   </div>
                 </DiaryStickerViewLayer>
@@ -408,6 +413,21 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           onAddCategory={openAddCategoryFromEvent}
         />
       ) : null}
+      {/* 일정 탭 → 상세(읽기 전용) → [편집] → 편집 시트 (Figma 012_7/8). 편집 시트는
+          상세 위에 겹쳐 열리고, X·저장은 상세로 돌아오며 삭제만 다이어리로 나간다. */}
+      {(sheet.kind === 'eventDetail' || sheet.kind === 'editEvent') && activeEvent ? (
+        <EventDetailScreen
+          event={activeEvent}
+          category={categories.find((c) => c.id === activeEvent.categoryId) ?? null}
+          condition={conditionByDate[activeEvent.startDate] ?? null}
+          locale={settings.locale}
+          // 편집 시트가 위에 열려 있는 동안엔 상세의 Esc/뒤로가 먼저 반응하지 않게 막는다.
+          onBack={() => {
+            if (sheet.kind === 'eventDetail') setSheet({ kind: 'none' });
+          }}
+          onEdit={() => setSheet({ kind: 'editEvent', eventId: activeEvent.id })}
+        />
+      ) : null}
       {sheet.kind === 'editEvent' && activeEvent ? (
         <EventFormSheet
           mode="edit"
@@ -415,7 +435,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           initial={activeEvent}
           initialCondition={conditionByDate[activeEvent.startDate] ?? null}
           defaultDate={activeEvent.startDate}
-          onClose={() => setSheet({ kind: 'none' })}
+          onClose={() => setSheet({ kind: 'eventDetail', eventId: activeEvent.id })}
           onSubmit={(input) => handleUpdateEvent(activeEvent.id, input)}
           onDelete={async () => {
             // "일정 및 기록 삭제": the period record this event created via

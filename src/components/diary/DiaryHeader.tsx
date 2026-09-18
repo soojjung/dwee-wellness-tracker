@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatMonthLabel } from '@/lib/date';
-import { ChevronDownIcon, EditStarIcon } from '@/components/ui/icons';
+import { ChevronDownIcon, EditStarIcon, PeriodAddIcon } from '@/components/ui/icons';
 import { LogViewToggle, type LogView } from './LogViewToggle';
 
 interface DiaryHeaderProps {
@@ -27,8 +27,9 @@ export function DiaryHeader({
   const locale = useSettingsStore((s) => s.settings.locale);
   const monthLabel = formatMonthLabel(new Date(year, monthIndex, 1), locale);
 
+  // 하단 12px: 스크롤로 본문이 헤더 밑을 지날 때 텍스트가 헤더에 바짝 붙지 않게 (Figma).
   return (
-    <div className="sticky top-0 z-10 flex flex-col bg-brand-gray200/95 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 flex flex-col bg-brand-gray200/95 pb-3 backdrop-blur-sm">
       <div className="flex items-center justify-between px-4 py-2.5">
         <h1 className="text-2xl font-semibold leading-normal text-brand-gray900">
           {t.report.diary.title}
@@ -64,14 +65,7 @@ export function DiaryHeader({
             aria-label={t.report.diary.addAria}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gray400/40 text-brand-gray900 transition-colors hover:bg-brand-gray400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-              <path
-                d="M7 1.5v11M1.5 7h11"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
-            </svg>
+            <PeriodAddIcon className="h-[18px] w-4" />
           </button>
         </div>
       </div>

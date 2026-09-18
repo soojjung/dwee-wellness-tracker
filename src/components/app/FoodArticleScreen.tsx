@@ -2,8 +2,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useT } from '@/i18n/useT';
+import { useSettingsStore } from '@/store/settingsStore';
 import { BackIcon } from '@/components/ui/icons';
-import { foodArticle } from '@/content/foods/articles-ko';
+import { foodArticle } from '@/content/foods';
 import { splitBody } from '@/content/foods/splitBody';
 
 interface FoodArticleScreenProps {
@@ -13,7 +14,8 @@ interface FoodArticleScreenProps {
 
 export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
   const t = useT();
-  const article = foodArticle(id);
+  const locale = useSettingsStore((s) => s.settings.locale);
+  const article = foodArticle(id, locale);
 
   if (!article) return null;
 
@@ -21,11 +23,12 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
     // 스크롤은 본문 컨테이너에서만 일어나고, 뒤로가기 버튼은 그 위에 띄워 둔다.
     // 바 전체가 아니라 버튼만 고정이라 본문이 버튼 아래로 흘러 지나간다 (Figma).
     <div className="relative mx-auto h-dvh w-full max-w-md overflow-hidden bg-brand-gray50">
-      {/* 노치 뒤로 지나가는 글자는 페이지색으로 살짝 덮어 상태바 가독성을 지킨다.
+      {/* 노치 뒤로 지나가는 글자는 흰 판으로 가리지 않고 반투명 블러로만 흐려서
+          본문이 비쳐 보이게 한다 — 시계·배터리는 읽히되 스크롤이 이어지는 느낌 (Figma).
           안전영역이 없는 기기에서는 높이 0 이라 아무것도 그려지지 않는다. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[calc(env(safe-area-inset-top,0px)+0.75rem)] bg-gradient-to-b from-brand-gray50 to-brand-gray50/0"
+        className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[env(safe-area-inset-top,0px)] bg-brand-gray50/60 backdrop-blur-[2px]"
       />
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <Link
@@ -42,17 +45,22 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
       {/* 상단 여백 68px = 버튼 위 12 + 버튼 40 + 버튼 아래 16. 버튼이 떠 있어도
           첫 화면에서 히어로가 버튼에 가려지지 않게 예전 바 높이만큼 비워 둔다. */}
       <div className="h-full overflow-y-auto pb-16 pt-[calc(68px+env(safe-area-inset-top,0px))]">
-        {/* 히어로는 헤드라인까지 구워진 정사각 카드다 (Figma 358×358). 코너 배경이
-            페이지와 같은 색이라 라운딩이 자연스럽게 이어진다. */}
+        {/* 히어로는 정사각 사진 카드 (Figma 358×358). 헤드라인은 사진에 굽지 않고
+            텍스트로 얹어 locale 을 따르게 한다 — 가독성을 위해 아래쪽만 살짝 어둡게. */}
         <div className="px-4">
-          <Image
-            src={`/home/foods/articles/${id}.webp`}
-            alt=""
-            width={716}
-            height={716}
-            className="aspect-square w-full rounded-2xl object-cover"
-            priority
-          />
+          <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
+            <Image
+              src={`/home/foods/articles/${id}.webp`}
+              alt=""
+              width={716}
+              height={716}
+              className="size-full object-cover"
+              priority
+            />
+            <p className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-gray900/55 to-brand-gray900/0 px-6 pb-6 pt-14 text-[22px] font-semibold leading-[1.4] text-brand-white">
+              {article.headline}
+            </p>
+          </div>
         </div>
 
         <article className="flex flex-col gap-8 px-4 pt-8 text-brand-gray900">

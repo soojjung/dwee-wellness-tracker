@@ -94,7 +94,7 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-brand-gray50"
       />
 
-      <header className="relative flex items-center justify-between px-4 pt-3 pb-4">
+      <header className="relative flex items-center justify-between px-4 pb-4 pt-3">
         <h1 className="text-2xl font-semibold leading-normal text-brand-gray50">
           {t.magazine.listTitle}
         </h1>
@@ -107,9 +107,11 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
         </Link>
       </header>
 
+      {/* 좌우 여백을 (컨테이너 폭 − 카드 폭)/2 로 잡아 첫·마지막 카드가 화면 가운데
+          오게 한다. 고정 32px 이면 폭 넓은 기기에서 카드가 왼쪽으로 치우친다. */}
       <div
         ref={scrollerRef}
-        className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 pl-8 pr-8"
+        className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-[calc((100%-330px)/2)] pb-3"
         style={{ scrollbarWidth: 'none' }}
       >
         {articles.map((article, i) => (
@@ -142,13 +144,7 @@ function FeaturedCard({ article, locale, counter, index }: FeaturedCardProps) {
       data-featured-index={index}
       className="relative block aspect-square h-[330px] w-[330px] shrink-0 snap-center overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
     >
-      <Image
-        src={article.cover}
-        alt=""
-        fill
-        sizes="330px"
-        className="object-cover"
-      />
+      <Image src={article.cover} alt="" fill sizes="330px" className="object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
       <div className="absolute inset-x-5 bottom-5 flex flex-col gap-1 text-brand-gray50">
         <p className="text-xl font-semibold leading-normal">{content.title}</p>
@@ -192,13 +188,7 @@ function BasicRow({ article, locale }: { article: Article; locale: Locale }) {
       className="flex items-center gap-4 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200"
     >
       <div className="relative size-[110px] shrink-0 overflow-hidden rounded-lg bg-brand-pink50">
-        <Image
-          src={article.cover}
-          alt=""
-          fill
-          sizes="110px"
-          className="object-cover"
-        />
+        <Image src={article.cover} alt="" fill sizes="110px" className="object-cover" />
       </div>
       <div className="flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-1">

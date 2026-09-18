@@ -84,6 +84,8 @@ export function EventFormSheet({
   const [bloating, setBloating] = useState(initialCondition?.bloating ?? null);
   const [appetite, setAppetite] = useState(initialCondition?.appetite ?? null);
   const [skin, setSkin] = useState(initialCondition?.skin ?? null);
+  const [sleep, setSleep] = useState(initialCondition?.sleep ?? null);
+  const [exercise, setExercise] = useState(initialCondition?.exercise ?? null);
 
   async function handleTogglePeriodMark() {
     if (mode === 'edit') {
@@ -128,7 +130,9 @@ export function EventFormSheet({
     pain !== (initialCondition?.pain ?? null) ||
     bloating !== (initialCondition?.bloating ?? null) ||
     appetite !== (initialCondition?.appetite ?? null) ||
-    skin !== (initialCondition?.skin ?? null);
+    skin !== (initialCondition?.skin ?? null) ||
+    sleep !== (initialCondition?.sleep ?? null) ||
+    exercise !== (initialCondition?.exercise ?? null);
 
   const isDirty =
     !initial ||
@@ -152,7 +156,7 @@ export function EventFormSheet({
     setSubmitting(true);
     try {
       const condition: ConditionSelection | undefined =
-        mood || energy || pain || bloating || appetite || skin
+        mood || energy || pain || bloating || appetite || skin || sleep || exercise
           ? {
               ...(mood ? { mood } : {}),
               ...(energy ? { energy } : {}),
@@ -160,6 +164,8 @@ export function EventFormSheet({
               ...(bloating ? { bloating } : {}),
               ...(appetite ? { appetite } : {}),
               ...(skin ? { skin } : {}),
+              ...(sleep ? { sleep } : {}),
+              ...(exercise ? { exercise } : {}),
             }
           : undefined;
       const ok = await onSubmit({
@@ -315,12 +321,16 @@ export function EventFormSheet({
             bloating={bloating}
             appetite={appetite}
             skin={skin}
+            sleep={sleep}
+            exercise={exercise}
             onChangeMood={setMood}
             onChangeEnergy={setEnergy}
             onChangePain={setPain}
             onChangeBloating={setBloating}
             onChangeAppetite={setAppetite}
             onChangeSkin={setSkin}
+            onChangeSleep={setSleep}
+            onChangeExercise={setExercise}
           />
 
           {mode === 'edit' && onDelete ? (

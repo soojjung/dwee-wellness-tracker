@@ -17,7 +17,7 @@ import { InsightCard } from './InsightCard';
 import { WeekStrip } from './WeekStrip';
 import { HomeHero } from './HomeHero';
 import { TodayDateHeading } from './TodayDateHeading';
-import { PeriodAddIcon } from './PeriodAddIcon';
+import { PeriodAddIcon } from '@/components/ui/icons';
 import { PhaseAdvicePill } from './PhaseAdvicePill';
 import { ScratchKeywordCard } from './ScratchKeywordCard';
 import { ActivitySuggestions } from './ActivitySuggestions';

@@ -13,6 +13,8 @@ import {
   BLOATING_VALUES,
   APPETITE_VALUES,
   SKIN_VALUES,
+  SLEEP_VALUES,
+  EXERCISE_VALUES,
 } from '@/constants/conditionOptions';
 import type {
   Mood,
@@ -21,6 +23,8 @@ import type {
   Bloating,
   Appetite,
   Skin,
+  Sleep,
+  Exercise,
   DailyConditionLog,
 } from '@/types';
 import { ConditionRow } from './ConditionRow';
@@ -36,6 +40,8 @@ interface FormState {
   bloating: Bloating | null;
   appetite: Appetite | null;
   skin: Skin | null;
+  sleep: Sleep | null;
+  exercise: Exercise | null;
   memo: string;
 }
 
@@ -46,6 +52,8 @@ const EMPTY_STATE: FormState = {
   bloating: null,
   appetite: null,
   skin: null,
+  sleep: null,
+  exercise: null,
   memo: '',
 };
 
@@ -57,6 +65,8 @@ function fromLog(log: DailyConditionLog): FormState {
     bloating: log.bloating ?? null,
     appetite: log.appetite ?? null,
     skin: log.skin ?? null,
+    sleep: log.sleep ?? null,
+    exercise: log.exercise ?? null,
     memo: log.memo ?? '',
   };
 }
@@ -105,6 +115,8 @@ export function ConditionForm() {
       ...(form.bloating ? { bloating: form.bloating } : {}),
       ...(form.appetite ? { appetite: form.appetite } : {}),
       ...(form.skin ? { skin: form.skin } : {}),
+      ...(form.sleep ? { sleep: form.sleep } : {}),
+      ...(form.exercise ? { exercise: form.exercise } : {}),
       ...(form.memo.trim() ? { memo: form.memo.trim() } : {}),
     });
     setSubmitting(false);
@@ -136,12 +148,62 @@ export function ConditionForm() {
         {todayLog ? <ConditionSavedBadge /> : null}
       </header>
 
-      <ConditionRow label={t.log.todayMood} values={MOOD_VALUES} labels={t.condition.mood} value={form.mood} onChange={(v) => update('mood', v)} />
-      <ConditionRow label={t.log.todayEnergy} values={ENERGY_VALUES} labels={t.condition.energy} value={form.energy} onChange={(v) => update('energy', v)} />
-      <ConditionRow label={t.log.todayPain} values={PAIN_VALUES} labels={t.condition.pain} value={form.pain} onChange={(v) => update('pain', v)} />
-      <ConditionRow label={t.log.todayBloating} values={BLOATING_VALUES} labels={t.condition.bloating} value={form.bloating} onChange={(v) => update('bloating', v)} />
-      <ConditionRow label={t.log.todayAppetite} values={APPETITE_VALUES} labels={t.condition.appetite} value={form.appetite} onChange={(v) => update('appetite', v)} />
-      <ConditionRow label={t.log.todaySkin} values={SKIN_VALUES} labels={t.condition.skin} value={form.skin} onChange={(v) => update('skin', v)} />
+      <ConditionRow
+        label={t.log.todayMood}
+        values={MOOD_VALUES}
+        labels={t.condition.mood}
+        value={form.mood}
+        onChange={(v) => update('mood', v)}
+      />
+      <ConditionRow
+        label={t.log.todayEnergy}
+        values={ENERGY_VALUES}
+        labels={t.condition.energy}
+        value={form.energy}
+        onChange={(v) => update('energy', v)}
+      />
+      <ConditionRow
+        label={t.log.todayPain}
+        values={PAIN_VALUES}
+        labels={t.condition.pain}
+        value={form.pain}
+        onChange={(v) => update('pain', v)}
+      />
+      <ConditionRow
+        label={t.log.todayBloating}
+        values={BLOATING_VALUES}
+        labels={t.condition.bloating}
+        value={form.bloating}
+        onChange={(v) => update('bloating', v)}
+      />
+      <ConditionRow
+        label={t.log.todayAppetite}
+        values={APPETITE_VALUES}
+        labels={t.condition.appetite}
+        value={form.appetite}
+        onChange={(v) => update('appetite', v)}
+      />
+      <ConditionRow
+        label={t.log.todaySkin}
+        values={SKIN_VALUES}
+        labels={t.condition.skin}
+        value={form.skin}
+        onChange={(v) => update('skin', v)}
+      />
+      <ConditionRow
+        label={t.log.todaySleep}
+        values={SLEEP_VALUES}
+        labels={t.condition.sleep}
+        value={form.sleep}
+        onChange={(v) => update('sleep', v)}
+      />
+      <ConditionRow
+        label={t.log.todayExercise}
+        values={EXERCISE_VALUES}
+        labels={t.condition.exercise}
+        value={form.exercise}
+        onChange={(v) => update('exercise', v)}
+      />
 
       <label className="flex flex-col gap-2">
         <textarea
