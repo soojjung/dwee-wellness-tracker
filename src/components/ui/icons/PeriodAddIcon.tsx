@@ -2,16 +2,11 @@ interface PeriodAddIconProps {
   className?: string;
 }
 
-// Waterdrop + circled plus — Figma node 327:3816. currentColor 로 채워지므로
-// 부모의 text-* 컬러를 상속.
+// Waterdrop + circled plus — Figma node 327:3816 (홈), 256:22212 (주기리포트·다이어리 헤더).
+// currentColor 로 채워지므로 부모의 text-* 컬러를 상속.
 export function PeriodAddIcon({ className = 'h-6 w-6' }: PeriodAddIconProps) {
   return (
-    <svg
-      viewBox="0 0 19.5788 21.8824"
-      fill="currentColor"
-      className={className}
-      aria-hidden
-    >
+    <svg viewBox="0 0 19.5788 21.8824" fill="currentColor" className={className} aria-hidden>
       <path d="M6.09365 1.1007C6.99043 -0.366799 9.13661 -0.367 10.0331 1.1007L14.8173 8.93468C14.4913 8.88987 14.1585 8.86536 13.8202 8.86535C9.8115 8.86537 6.56148 12.1154 6.56143 16.1241C6.56149 17.8712 7.17853 19.4742 8.20694 20.7267C6.09569 20.7625 3.97227 20.0222 2.36123 18.5001C-0.218625 16.0625 -0.743999 12.2913 1.07998 9.30578L6.09365 1.1007Z" />
       <path
         fillRule="evenodd"

@@ -81,6 +81,17 @@ sequenceDiagram
 
 ## 날짜 탭 → 생리 기록
 
+**등록된 일정 탭 (2026-09-18)**: 캘린더의 일정 바를 탭하면 바로 편집이 아니라 읽기 전용 `EventDetailScreen`(Figma 012_7, `sheet.kind = 'eventDetail'`)이 다이어리 위에 풀스크린으로 겹친다 — 날짜·제목·메모·일정 유형 칩·생리 있음/없음·기록된 컨디션 항목. 우상단 [편집] 이 `EventFormSheet` edit 모드(012_8)를 상세 위에 다시 겹쳐 열고, X·저장은 상세로 돌아오며 삭제만 다이어리로 나간다. 편집 시트가 열린 동안 상세의 뒤로/Esc 는 무시된다.
+
+```mermaid
+flowchart LR
+  Bar(["일정 바 탭"]) --> Detail["EventDetailScreen\n(읽기 전용)"]
+  Detail -->|"편집"| Form["EventFormSheet\n(edit 모드)"]
+  Form -->|"X · 저장"| Detail
+  Form -->|"삭제"| Diary(["다이어리로 복귀"])
+  Detail -->|"뒤로 · Esc"| Diary
+```
+
 과거엔 날짜 탭 시 `DayDetailSheet` 가 열려 상황별 버튼(추가/종료/삭제) 중 하나를 고르고 `PeriodRangeDialog` 로 넘어갔습니다. 두 컴포넌트 모두 삭제되었고, 지금은 날짜 탭이 곧바로 `EventFormSheet` 를 add 모드로 엽니다 (위 [월 네비게이션 데이터 흐름](#월-네비게이션-데이터-흐름) 참고). 생리 시작/종료/삭제는 별도 버튼이 아니라 시트 안의 **생리 토글** 하나로 처리됩니다 — 판정 로직·상세 흐름은 [`docs/flows/log.md` § 생리 토글 + 컨디션 연동](./log.md#생리-토글--컨디션-연동-step-102c-통합-시트-갱신) 참고.
 
 ## 결정 사항

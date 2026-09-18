@@ -733,7 +733,7 @@ export const en = {
     },
     chartEmpty: {
       title: 'Not enough data yet',
-      body: 'At least 3 period records are needed!',
+      body: 'We need at least 3 period records to spot your pattern!',
     },
     tooltipAria: 'Cycle status detail',
     diary: {
@@ -767,7 +767,11 @@ export const en = {
       eventDetail: {
         back: 'Back',
         edit: 'Edit',
+        typeLabel: 'Event type',
         periodToggle: 'Period',
+        periodOn: 'Yes',
+        periodOff: 'No',
+        conditionLabel: 'Condition',
         delete: 'Delete event & period',
         deleteConfirm: 'Delete this event and its period record?',
         cancel: 'Cancel',

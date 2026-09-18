@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidISODate, ISO_DATE_RE } from './index';
+import { isValidISODate, ISO_DATE_RE, formatFullDate, fromISO } from './index';
 
 describe('ISO_DATE_RE', () => {
   it('matches a well-formed YYYY-MM-DD string', () => {
@@ -67,5 +67,36 @@ describe('isValidISODate', () => {
 
   it('returns false for an empty string', () => {
     expect(isValidISODate('')).toBe(false);
+  });
+});
+
+describe('formatFullDate', () => {
+  it('renders ko full date with weekday for a Monday', () => {
+    expect(formatFullDate('2026-06-15', 'ko')).toBe('2026년 6월 15일 월요일');
+  });
+
+  it('renders en full date with weekday for a Monday', () => {
+    expect(formatFullDate('2026-06-15', 'en')).toBe('Monday, June 15, 2026');
+  });
+
+  it('renders a Sunday in ko', () => {
+    expect(formatFullDate('2026-06-14', 'ko')).toBe('2026년 6월 14일 일요일');
+  });
+
+  it('renders a Sunday in en', () => {
+    expect(formatFullDate('2026-06-14', 'en')).toBe('Sunday, June 14, 2026');
+  });
+
+  it('produces the same output for an ISO string and its equivalent Date object', () => {
+    const iso = '2026-06-15';
+    expect(formatFullDate(fromISO(iso), 'en')).toBe(formatFullDate(iso, 'en'));
+  });
+
+  it('renders the last day of a month correctly', () => {
+    expect(formatFullDate('2026-01-31', 'en')).toBe('Saturday, January 31, 2026');
+  });
+
+  it('renders the first day of the next month correctly', () => {
+    expect(formatFullDate('2026-02-01', 'en')).toBe('Sunday, February 1, 2026');
   });
 });

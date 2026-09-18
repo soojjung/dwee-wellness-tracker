@@ -764,7 +764,11 @@ export const ko: Dictionary = {
       eventDetail: {
         back: '뒤로',
         edit: '편집',
+        typeLabel: '일정 유형',
         periodToggle: '생리',
+        periodOn: '있음',
+        periodOff: '없음',
+        conditionLabel: '컨디션',
         delete: '일정 및 기록 삭제',
         deleteConfirm: '이 일정과 생리 기록을 삭제할까요?',
         cancel: '취소',

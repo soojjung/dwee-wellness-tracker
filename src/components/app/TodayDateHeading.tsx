@@ -4,7 +4,7 @@ import { ko } from 'date-fns/locale';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { fromISO } from '@/lib/date';
-import { PeriodAddIcon } from './PeriodAddIcon';
+import { PeriodAddIcon } from '@/components/ui/icons';
 
 interface TodayDateHeadingProps {
   date: string;

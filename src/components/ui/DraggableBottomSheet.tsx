@@ -25,7 +25,8 @@ interface DraggableBottomSheetProps {
   open?: boolean;
   /** Fires on a tap outside the sheet. Omit to ignore outside taps (e.g.
    * while a modal of the parent's own is covering the sheet). */
-  onDismiss?: () => void;
+  /** 시트 바깥 pointerdown. 이벤트를 넘겨 부모가 예외(예: 캔버스 위 스티커)를 가려낼 수 있게 한다. */
+  onDismiss?: (e: PointerEvent) => void;
   /** Rendered inside the sheet body — scrollable area sits below the
    * drag handle. */
   children: ReactNode;
@@ -49,10 +50,7 @@ const RESIZE_MEDIA = '(orientation: portrait)';
 const DRAG_THRESHOLD_PX = 6;
 
 /** Nearest actually-scrollable ancestor of `from`, bounded by `root`. */
-function findScroller(
-  from: EventTarget | null,
-  root: HTMLElement | null,
-): HTMLElement | null {
+function findScroller(from: EventTarget | null, root: HTMLElement | null): HTMLElement | null {
   if (!root || !(from instanceof HTMLElement)) return null;
   let el: HTMLElement | null = from;
   while (el && root.contains(el)) {
@@ -84,8 +82,8 @@ interface DragState {
  * (uncontrolled visual state), then snaps to the nearest of the three
  * offsets on release.
  *
- * A tap outside the sheet reports through `onDismiss`; the parent flips
- * `open` and the sheet slides fully off the bottom of the viewport.
+ * A tap outside the sheet reports through `onDismiss` with the pointer
+ * event; the parent decides whether to drop a snap, flip `open`, or ignore it.
  *
  * The whole sheet surface is draggable, not just the handle. When the
  * pointer starts over a scrollable list the gesture is arbitrated the way
@@ -130,7 +128,7 @@ export function DraggableBottomSheet({
       const el = rootRef.current;
       const target = e.target;
       if (!el || (target instanceof Node && el.contains(target))) return;
-      dismissRef.current?.();
+      dismissRef.current?.(e);
     }
     document.addEventListener('pointerdown', handleDocPointerDown);
     return () => document.removeEventListener('pointerdown', handleDocPointerDown);
