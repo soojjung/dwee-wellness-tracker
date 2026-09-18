@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidISODate, ISO_DATE_RE, formatFullDate, fromISO } from './index';
+import { isValidISODate, ISO_DATE_RE, formatFullDate, fromISO, calendarGrid } from './index';
 
 describe('ISO_DATE_RE', () => {
   it('matches a well-formed YYYY-MM-DD string', () => {
@@ -98,5 +98,62 @@ describe('formatFullDate', () => {
 
   it('renders the first day of the next month correctly', () => {
     expect(formatFullDate('2026-02-01', 'en')).toBe('Sunday, February 1, 2026');
+  });
+});
+
+describe('calendarGrid', () => {
+  it('returns a 5-week (35-cell) grid for a month needing 5 rows, Sunday start', () => {
+    const grid = calendarGrid(2026, 8, 0); // September 2026 (Sep 1 = Tue, Sep 30 = Wed)
+    expect(grid).toHaveLength(35);
+    expect(grid.at(0)?.date).toBe('2026-08-30');
+    expect(grid.at(-1)?.date).toBe('2026-10-03');
+  });
+
+  it('returns a 4-week (28-cell) grid when the month exactly fills whole weeks, Sunday start', () => {
+    const grid = calendarGrid(2026, 1, 0); // February 2026 (Feb 1 = Sun, Feb 28 = Sat, 28 days)
+    expect(grid).toHaveLength(28);
+    expect(grid.at(0)?.date).toBe('2026-02-01');
+    expect(grid.at(-1)?.date).toBe('2026-02-28');
+  });
+
+  it('returns a 6-week (42-cell) grid for a month needing 6 rows, Sunday start', () => {
+    const grid = calendarGrid(2026, 7, 0); // August 2026 (Aug 1 = Sat, Aug 31 = Mon, 31 days)
+    expect(grid).toHaveLength(42);
+    expect(grid.at(0)?.date).toBe('2026-07-26');
+    expect(grid.at(-1)?.date).toBe('2026-09-05');
+  });
+
+  it('shifts the leading padding when weekStartsOn is Monday', () => {
+    const grid = calendarGrid(2026, 8, 1); // September 2026, Monday start
+    expect(grid).toHaveLength(35);
+    expect(grid.at(0)?.date).toBe('2026-08-31');
+    expect(grid.at(-1)?.date).toBe('2026-10-04');
+  });
+
+  it('marks leading and trailing padding cells as outside the current month', () => {
+    const grid = calendarGrid(2026, 8, 0); // September 2026, Sunday start: 2 leading + 3 trailing days
+    expect(grid.slice(0, 2).map((c) => c.inCurrentMonth)).toEqual([false, false]);
+    expect(grid.slice(-3).map((c) => c.inCurrentMonth)).toEqual([false, false, false]);
+  });
+
+  it('marks every day within the target month as inCurrentMonth', () => {
+    const grid = calendarGrid(2026, 8, 0); // September 2026, Sunday start
+    const septemberCells = grid.filter((c) => c.date >= '2026-09-01' && c.date <= '2026-09-30');
+    expect(septemberCells).toHaveLength(30);
+    expect(septemberCells.every((c) => c.inCurrentMonth)).toBe(true);
+  });
+
+  it('marks every cell true when the month exactly fills whole weeks', () => {
+    const grid = calendarGrid(2026, 1, 0); // February 2026, no padding needed
+    expect(grid.every((c) => c.inCurrentMonth)).toBe(true);
+  });
+
+  it('produces consecutive ISO dates with no gaps or duplicates', () => {
+    const grid = calendarGrid(2026, 7, 0); // August 2026, 6-week grid
+    for (let i = 1; i < grid.length; i++) {
+      const prev = fromISO(grid[i - 1]!.date);
+      const curr = fromISO(grid[i]!.date);
+      expect((curr.getTime() - prev.getTime()) / 86_400_000).toBe(1);
+    }
   });
 });

@@ -99,6 +99,6 @@ flowchart LR
 - **A9** = 주 시작 요일: 일요일 (`WEEK_STARTS_ON = 0`).
 - 셀 상태 우선순위: `menstrual`(배경) > `predicted`(ring) > `hasCondition`(하단 점) > `today`(얇은 ring).
   - 같은 셀에 여러 상태 중첩 가능 (예: 오늘이면서 생리 기록 + 컨디션).
-- 6주×7일 = 42칸 고정. 5주만 필요한 달은 padding으로 유지 (UX 일관성).
+- 그 달이 걸치는 주만 렌더 (4~6주, 대개 5주). 2026-09-18 까지는 42칸(6주) 고정이었으나, 5주 달에 다음 달 한 주가 통째로 붙어 보여 자연 주 수로 바꿈.
 - 월 이동마다 `hydrateRange`로 해당 월 conditions만 로드 (전체 로드 없음).
 - 예측 날짜는 `predictNextPeriod()` 단일 값 — 다음 한 사이클만 표시.
