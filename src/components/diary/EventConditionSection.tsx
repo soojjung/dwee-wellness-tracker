@@ -7,8 +7,10 @@ import {
   BLOATING_VALUES,
   APPETITE_VALUES,
   SKIN_VALUES,
+  SLEEP_VALUES,
+  EXERCISE_VALUES,
 } from '@/constants/conditionOptions';
-import type { Mood, Energy, Pain, Bloating, Appetite, Skin } from '@/types';
+import type { Mood, Energy, Pain, Bloating, Appetite, Skin, Sleep, Exercise } from '@/types';
 import { ConditionRow } from '@/components/log/ConditionRow';
 
 /** Subset of `DailyConditionLog` this sheet can set — only present when
@@ -20,6 +22,8 @@ export interface ConditionSelection {
   bloating?: Bloating;
   appetite?: Appetite;
   skin?: Skin;
+  sleep?: Sleep;
+  exercise?: Exercise;
 }
 
 interface EventConditionSectionProps {
@@ -29,12 +33,16 @@ interface EventConditionSectionProps {
   bloating: Bloating | null;
   appetite: Appetite | null;
   skin: Skin | null;
+  sleep: Sleep | null;
+  exercise: Exercise | null;
   onChangeMood: (value: Mood) => void;
   onChangeEnergy: (value: Energy) => void;
   onChangePain: (value: Pain) => void;
   onChangeBloating: (value: Bloating) => void;
   onChangeAppetite: (value: Appetite) => void;
   onChangeSkin: (value: Skin) => void;
+  onChangeSleep: (value: Sleep) => void;
+  onChangeExercise: (value: Exercise) => void;
 }
 
 /**
@@ -50,12 +58,16 @@ export function EventConditionSection({
   bloating,
   appetite,
   skin,
+  sleep,
+  exercise,
   onChangeMood,
   onChangeEnergy,
   onChangePain,
   onChangeBloating,
   onChangeAppetite,
   onChangeSkin,
+  onChangeSleep,
+  onChangeExercise,
 }: EventConditionSectionProps) {
   const t = useT();
 
@@ -111,6 +123,22 @@ export function EventConditionSection({
         labels={t.condition.skin}
         value={skin}
         onChange={onChangeSkin}
+      />
+      <ConditionRow
+        variant="outline"
+        label={t.log.todaySleep}
+        values={SLEEP_VALUES}
+        labels={t.condition.sleep}
+        value={sleep}
+        onChange={onChangeSleep}
+      />
+      <ConditionRow
+        variant="outline"
+        label={t.log.todayExercise}
+        values={EXERCISE_VALUES}
+        labels={t.condition.exercise}
+        value={exercise}
+        onChange={onChangeExercise}
       />
     </div>
   );

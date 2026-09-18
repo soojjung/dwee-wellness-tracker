@@ -18,5 +18,8 @@ export function conditionRowsOf(c: DailyConditionLog | null, t: Dictionary): Con
   if (c.appetite)
     rows.push({ label: t.log.todayAppetite, value: t.condition.appetite[c.appetite] });
   if (c.skin) rows.push({ label: t.log.todaySkin, value: t.condition.skin[c.skin] });
+  if (c.sleep) rows.push({ label: t.log.todaySleep, value: t.condition.sleep[c.sleep] });
+  if (c.exercise)
+    rows.push({ label: t.log.todayExercise, value: t.condition.exercise[c.exercise] });
   return rows;
 }

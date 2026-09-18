@@ -92,8 +92,8 @@ flowchart TD
 - `src/components/diary/DiaryHeader.tsx` — 다이어리 헤더 (title + edit-star + 월 셀렉터 + 토글 + `+`)
 - `src/components/diary/LogViewToggle.tsx` — 재사용 가능한 2-아이콘 segmented toggle
 - `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx`, `DiaryWeekEventLayer.tsx` — 다이어리용 캘린더 (생리 마커 + 주 단위로 이어지는 이벤트 바, STEP 10.2a). 배치는 `src/domain/event/weekLanes.ts` 의 `layoutWeekSegments()` 가 한 주(7칸) 단위로 계산 — 같은 기간의 이벤트는 여러 날에 걸쳐 하나의 막대로 이어지고, 겹치는 이벤트는 lane 을 나눠 쌓인다(최대 `MAX_BADGES_PER_DAY`개).
-- `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · 생리 토글(add/edit 공통) · `EventConditionSection`(선택 컨디션 6항목) · 삭제(edit 전용) 포함. 카테고리 초기값은 `initial?.categoryId` (edit) 없으면 `defaultCategoryId(categories)` (add) — 목록의 첫 항목이 아니라 내장 카테고리 "친구"를 우선 선택
-- `src/components/diary/EventConditionSection.tsx` — `EventFormSheet` 안의 선택적 컨디션 카드 (기분/에너지/통증/붓기/식욕/피부, `ConditionRow` variant="outline" 재사용)
+- `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · 생리 토글(add/edit 공통) · `EventConditionSection`(선택 컨디션 8항목) · 삭제(edit 전용) 포함. 카테고리 초기값은 `initial?.categoryId` (edit) 없으면 `defaultCategoryId(categories)` (add) — 목록의 첫 항목이 아니라 내장 카테고리 "친구"를 우선 선택
+- `src/components/diary/EventConditionSection.tsx` — `EventFormSheet` 안의 선택적 컨디션 카드 (기분/에너지/통증/붓기/식욕/피부/수면/운동, `ConditionRow` variant="outline" 재사용)
 - `src/components/diary/InlineDatePicker.tsx` — 시작/종료 날짜 확장 시 나타나는 인라인 미니 캘린더 (STEP 10.2b)
 - `src/components/diary/YearMonthWheelPicker.tsx` — 연·월 선택 wheel picker 바텀시트 (STEP 10.2b, DiaryHeader ▼ + InlineDatePicker 에서 재사용)
 - `src/components/diary/CategoryChip.tsx` — 팔레트 기반 카테고리 칩 (`size='sm'` 캘린더 배지 / `'md'` 폼 행·목록)

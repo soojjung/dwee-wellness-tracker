@@ -7,10 +7,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { usePeriodStore } from '@/store/periodStore';
 import { useConditionStore } from '@/store/conditionStore';
-import {
-  defaultPeriodEndDate,
-  resolvePeriodEndOnStartChange,
-} from '@/domain/cycle/recordPolicy';
+import { defaultPeriodEndDate, resolvePeriodEndOnStartChange } from '@/domain/cycle/recordPolicy';
 import { formatMonthLabel, fromISO } from '@/lib/date';
 import { ChevronDownIcon } from '@/components/ui/icons';
 import { InlineDatePicker } from '@/components/diary/InlineDatePicker';
@@ -21,8 +18,10 @@ import {
   BLOATING_VALUES,
   APPETITE_VALUES,
   SKIN_VALUES,
+  SLEEP_VALUES,
+  EXERCISE_VALUES,
 } from '@/constants/conditionOptions';
-import type { Mood, Energy, Pain, Bloating, Appetite, Skin } from '@/types';
+import type { Mood, Energy, Pain, Bloating, Appetite, Skin, Sleep, Exercise } from '@/types';
 import { ConditionRow } from './ConditionRow';
 
 const MEMO_MAX = 200;
@@ -48,9 +47,7 @@ export function LogEntryDialog({
   const upsertCondition = useConditionStore((s) => s.upsert);
 
   const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(() =>
-    defaultPeriodEndDate(today, defaultPeriodLength),
-  );
+  const [endDate, setEndDate] = useState(() => defaultPeriodEndDate(today, defaultPeriodLength));
   const [endDirty, setEndDirty] = useState(false);
   const [expanded, setExpanded] = useState<ExpandedField>('none');
 
@@ -60,6 +57,8 @@ export function LogEntryDialog({
   const [bloating, setBloating] = useState<Bloating | null>(null);
   const [appetite, setAppetite] = useState<Appetite | null>(null);
   const [skin, setSkin] = useState<Skin | null>(null);
+  const [sleep, setSleep] = useState<Sleep | null>(null);
+  const [exercise, setExercise] = useState<Exercise | null>(null);
   const [memo, setMemo] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -86,8 +85,17 @@ export function LogEntryDialog({
   }
 
   const periodValid = !!startDate && !!endDate && startDate <= today && endDate >= startDate;
-  const hasAnyCondition =
-    !!(mood || energy || pain || bloating || appetite || skin || memo.trim());
+  const hasAnyCondition = !!(
+    mood ||
+    energy ||
+    pain ||
+    bloating ||
+    appetite ||
+    skin ||
+    sleep ||
+    exercise ||
+    memo.trim()
+  );
   const disabled = submitting || !periodValid;
 
   async function handleSave() {
@@ -103,6 +111,8 @@ export function LogEntryDialog({
           ...(bloating ? { bloating } : {}),
           ...(appetite ? { appetite } : {}),
           ...(skin ? { skin } : {}),
+          ...(sleep ? { sleep } : {}),
+          ...(exercise ? { exercise } : {}),
           ...(memo.trim() ? { memo: memo.trim() } : {}),
         });
       }
@@ -132,9 +142,7 @@ export function LogEntryDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between px-6 py-4">
-          <h2 className="text-base font-semibold text-brand-gray900">
-            {t.log.addEntryTitle}
-          </h2>
+          <h2 className="text-base font-semibold text-brand-gray900">{t.log.addEntryTitle}</h2>
           <button
             type="button"
             aria-label={t.home.cancel}
@@ -157,9 +165,7 @@ export function LogEntryDialog({
               value={startDate}
               locale={locale}
               expanded={expanded === 'start'}
-              onToggle={() =>
-                setExpanded((v) => (v === 'start' ? 'none' : 'start'))
-              }
+              onToggle={() => setExpanded((v) => (v === 'start' ? 'none' : 'start'))}
             />
             {expanded === 'start' ? (
               <InlineDatePicker
@@ -177,9 +183,7 @@ export function LogEntryDialog({
               value={endDate}
               locale={locale}
               expanded={expanded === 'end'}
-              onToggle={() =>
-                setExpanded((v) => (v === 'end' ? 'none' : 'end'))
-              }
+              onToggle={() => setExpanded((v) => (v === 'end' ? 'none' : 'end'))}
             />
             {expanded === 'end' ? (
               <InlineDatePicker
@@ -239,6 +243,20 @@ export function LogEntryDialog({
               value={skin}
               onChange={setSkin}
             />
+            <ConditionRow
+              label={t.log.todaySleep}
+              values={SLEEP_VALUES}
+              labels={t.condition.sleep}
+              value={sleep}
+              onChange={setSleep}
+            />
+            <ConditionRow
+              label={t.log.todayExercise}
+              values={EXERCISE_VALUES}
+              labels={t.condition.exercise}
+              value={exercise}
+              onChange={setExercise}
+            />
             <textarea
               value={memo}
               maxLength={MEMO_MAX}
@@ -260,13 +278,7 @@ export function LogEntryDialog({
           >
             {t.home.cancel}
           </Button>
-          <Button
-            variant="primary"
-            size="md"
-            fullWidth
-            disabled={disabled}
-            onClick={handleSave}
-          >
+          <Button variant="primary" size="md" fullWidth disabled={disabled} onClick={handleSave}>
             {submitting ? t.log.saving : t.log.save}
           </Button>
         </footer>
@@ -301,9 +313,7 @@ function DateRow({ label, value, locale, expanded, onToggle }: DateRowProps) {
       >
         <span>{formatted}</span>
         <ChevronDownIcon
-          className={
-            'h-2 w-3 transition-transform ' + (expanded ? 'rotate-180' : '')
-          }
+          className={'h-2 w-3 transition-transform ' + (expanded ? 'rotate-180' : '')}
         />
       </span>
     </button>

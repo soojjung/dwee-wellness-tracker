@@ -4,6 +4,8 @@ export type Pain = 'none' | 'mild' | 'moderate' | 'severe';
 export type Bloating = 'none' | 'mild' | 'severe';
 export type Appetite = 'low' | 'normal' | 'high';
 export type Skin = 'clear' | 'oily' | 'dry' | 'breakout';
+export type Sleep = 'good' | 'fair' | 'poor';
+export type Exercise = 'none' | 'light' | 'active';
 
 export interface DailyConditionLog {
   id: string;
@@ -14,6 +16,8 @@ export interface DailyConditionLog {
   bloating?: Bloating;
   appetite?: Appetite;
   skin?: Skin;
+  sleep?: Sleep;
+  exercise?: Exercise;
   memo?: string;
   createdAt: string;
 }

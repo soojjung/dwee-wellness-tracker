@@ -954,6 +954,8 @@ export const en = {
     todayBloating: 'Bloating',
     todayAppetite: 'Appetite',
     todaySkin: 'Skin',
+    todaySleep: 'Sleep',
+    todayExercise: 'Exercise',
     memoPlaceholder: 'Optional note for today',
     save: 'Save',
     saving: 'Saving...',
@@ -1396,6 +1398,8 @@ export const en = {
     bloating: { none: 'None', mild: 'Slight', severe: 'Heavy' },
     appetite: { low: 'Light', normal: 'Steady', high: 'Strong' },
     skin: { clear: 'Clear', oily: 'Oily', dry: 'Dry', breakout: 'Breakout' },
+    sleep: { good: 'Rested', fair: 'Okay', poor: 'Poor' },
+    exercise: { none: 'None', light: 'Light', active: 'Active' },
   },
 };
 

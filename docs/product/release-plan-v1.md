@@ -81,7 +81,7 @@
 - **Apple Developer**: App ID 에 Sign in with Apple 켜기, Services ID 의 Return URL 에 Supabase 콜백 확인, 2027-01-14 전 client_secret 회전 일정 등록.
 - **Google Cloud**: OAuth 동의 화면을 "프로덕션"으로 게시(앱 이름·로고·개인정보처리방침 URL 필요 → STEP 1 산출물), iOS 클라이언트 ID 는 브라우저 방식이면 기존 웹 클라이언트로 충분.
 - **Edge Functions**: `body-type-analyze`(갱신된 프롬프트 재배포 필요), `sticker-cutout`, `delete-account` 배포 상태와 시크릿(OPENAI_API_KEY, remove.bg 키, service role) 확인. 일일 한도(10회 / 누끼 한도)가 심사 시 막히지 않도록 리뷰 계정은 한도 여유 확인.
-- **DB**: 마이그레이션 0001~0014 가 프로덕션에 모두 적용됐는지 대시보드에서 확인(CLI 이력은 비어 있음).
+- **DB**: 마이그레이션 0001~0015 가 프로덕션에 모두 적용됐는지 대시보드에서 확인(CLI 이력은 비어 있음).
 - **Vercel**: 프로덕션 도메인 확정(현재 `dwee-neon.vercel.app`), 환경변수 3종, OG 이미지 URL.
 
 ## 5. QA (Phase 4)

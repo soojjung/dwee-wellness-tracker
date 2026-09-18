@@ -61,6 +61,8 @@ export const useConditionStore = create<ConditionState>()((set, get) => ({
             bloating: input.bloating ?? existing.bloating,
             appetite: input.appetite ?? existing.appetite,
             skin: input.skin ?? existing.skin,
+            sleep: input.sleep ?? existing.sleep,
+            exercise: input.exercise ?? existing.exercise,
             memo: input.memo ?? existing.memo,
           }
         : input;
