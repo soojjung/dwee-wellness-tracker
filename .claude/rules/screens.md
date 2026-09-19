@@ -14,14 +14,15 @@ paths:
 
 ## 1) 라우트 그룹
 
-- `(auth)` — 풀스크린, BottomTabNav 없음. 로그인/온보딩 등 진입 동선 전용.
+- `(intro)` — 풀스크린, BottomTabNav 없음. 흰 테마(`(auth)`와 색이 달라 그룹을 분리). 기기 최초 실행 시 1회만 보이는 소개 슬라이드(`/onboarding`) 전용. `AuthGuard`가 감싸지 않는다 — `OnboardingScreen`이 자체적으로 hydrate·리다이렉트.
+- `(auth)` — 풀스크린, BottomTabNav 없음. 로그인(`/login`) 전용. 마찬가지로 `AuthGuard` 밖.
 - `(app)` — `<AppShell>` 자동 래핑. BottomTabNav 항상 표시.
 - `(fullscreen)` — 풀스크린, BottomTabNav 없음. AppShell 밖의 몰입형 편집 화면 전용.  
   현재 포함: `/home/customize`, `/home/customize/edit-photos`, `/home/customize/edit-photos/[slot]`, `/log/customize`, `/foods/[id]`, `/magazine/[slug]`, `/magazine/bookmarks`, `/magazine/personal-body-type/diagnose`, `/magazine/personal-body-type/diagnose/result`, `/magazine/personal-body-type/share/[type]`, `/settings/account`, `/settings/withdraw`.
-- 새 화면 추가 시 셋 중 어디에 둘지 먼저 결정.
-- **인증 게이트**: `AuthGuard` 가 `(app)`/`(fullscreen)` 레이아웃을 감싸 세션 없으면 `/login` 으로 보낸다. 예외는 `AuthGuard.tsx` 의 `PUBLIC_PREFIXES` 화이트리스트(현재 `/magazine/personal-body-type/share`)뿐 — 남에게 건넨 공유 링크를 첫 방문자가 세션 없이도 볼 수 있게 하는 용도. 새 화면을 이 목록에 추가하는 것은 "첫 진입 강제 로그인" 정책의 예외이므로 신중히 결정할 것 (자세한 배경: [`docs/flows/diagnose.md`](../../docs/flows/diagnose.md) §"공유 (Share)").
+- 새 화면 추가 시 넷 중 어디에 둘지 먼저 결정.
+- **인증 게이트**: `AuthGuard` 가 `(app)`/`(fullscreen)` 레이아웃만 감싸 세션 없으면 `/login`(또는 기기 최초 실행이면 `/onboarding`) 으로 보낸다. 예외는 `AuthGuard.tsx` 의 `PUBLIC_PREFIXES` 화이트리스트(현재 `/magazine/personal-body-type/share`)뿐 — 남에게 건넨 공유 링크를 첫 방문자가 세션 없이도 볼 수 있게 하는 용도. 새 화면을 이 목록에 추가하는 것은 "첫 진입 강제 로그인" 정책의 예외이므로 신중히 결정할 것 (자세한 배경: [`docs/flows/diagnose.md`](../../docs/flows/diagnose.md) §"공유 (Share)"). 첫 진입 라우팅 전체 흐름은 [`docs/flows/onboarding.md`](../../docs/flows/onboarding.md).
 
-**모바일 셸 (mobile shell):** 세 라우트 그룹 모두 최상위 layout 에서 `max-w-md` (448px) + `mx-auto` 로 콘텐츠 폭을 고정합니다. 데스크톱 브라우저에서도 모바일 폭을 유지하는 것이 의도된 동작입니다. `(app)` 은 `AppShell` 내부 `main` 에서, `(auth)` 와 `(fullscreen)` 은 각 `layout.tsx` 의 wrapper div 에서 적용합니다. 새 레이아웃을 추가할 때도 `max-w-md mx-auto w-full` 을 유지하세요.
+**모바일 셸 (mobile shell):** 네 라우트 그룹 모두 최상위 layout 에서 `max-w-md` (448px) + `mx-auto` 로 콘텐츠 폭을 고정합니다. 데스크톱 브라우저에서도 모바일 폭을 유지하는 것이 의도된 동작입니다. `(app)` 은 `AppShell` 내부 `main` 에서, `(intro)`·`(auth)`·`(fullscreen)` 은 각 `layout.tsx` 의 wrapper div 에서 적용합니다. 새 레이아웃을 추가할 때도 `max-w-md mx-auto w-full` 을 유지하세요.
 
 ## 2) i18n
 

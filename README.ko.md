@@ -27,7 +27,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 3. **오늘의 컨디션 기록** — 기분 / 에너지 / 통증 / 붓기 / 식욕 / 피부 / 수면 / 운동 + 메모
 4. **다이어리 캘린더** — 기록·예측·일정·스티커·공휴일을 한 눈에
 5. **rule-based 인사이트** — 단언 대신 "추정", 데이터 부족 시엔 "아직 예측하기 어려워요"
-6. **Supabase 인증** — 첫 진입 `/login` 게이트, Apple/Google OAuth 또는 명시적 익명 세션. 로그인 시 로컬 데이터 1회 마이그레이션
+6. **Supabase 인증** — 첫 진입 `/login` 게이트(기기 최초 실행 시 1회 소개 슬라이드가 먼저 뜸), Apple/Google OAuth 또는 명시적 익명 세션. 로그인 시 로컬 데이터 1회 마이그레이션
 7. **클라우드 동기화** — 로컬(IndexedDB) 우선, 로그인 사용자는 Supabase 로 전환
 8. **매거진** — 주기 관련 아티클 + 북마크 + 퍼스널 체형 진단(서버측 Vision)
 
@@ -224,7 +224,9 @@ pnpm cap:ios      # Xcode 열기
 ```
 src/
 ├── app/                          Next.js App Router
-│   ├── (auth)/                   로그인 (풀스크린, 탭바 없음)
+│   ├── (intro)/                  기기 최초 실행 1회 소개 슬라이드 (풀스크린, 탭바 없음, AuthGuard 밖)
+│   │   └── onboarding/
+│   ├── (auth)/                   로그인 (풀스크린, 탭바 없음, AuthGuard 밖)
 │   │   └── login/
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
@@ -246,21 +248,22 @@ src/
 │               └── share/[type]/ 체형별 OG 공유 랜딩 (로그인 게이트 예외, 세션 있으면 매거진 목록으로 리다이렉트)
 │
 ├── components/
-│   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, 카드 등
+│   ├── onboarding/               OnboardingScreen, OnboardingSlides, PageIndicator, 슬라이드별 일러스트(Record/Diary/CareSlideArt)
+│   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, SplashScreen, 카드 등
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
 │   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), PhotoPreviewView (선택 직후 미리보기), DiagnoseResultScreen, DiagnoseResultTopBar, ReportView, ShareTestBar, ShareLandingRedirect
 │   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DiaryDayCell, DiaryWeekEventLayer, EventFormSheet (+ EventConditionSection) 등
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
-│   ├── auth/                     LoginScreen, AuthGuard
+│   ├── auth/                     LoginScreen, LoginHero, AuthGuard
 │   ├── my-page/                  MyPageScreen, AuthCard, CycleSummaryCard, MyTestsCard, PreferencesCard, SupportCard, AccountManagementCard, AccountEditScreen, WithdrawConfirmDialog, WithdrawReasonScreen, NotificationsScreen, TermsScreen, PrivacyScreen, QnaScreen
-│   └── ui/                       Button, Toast, ChoiceGroup, PageContainer
+│   └── ui/                       Button, Toast, ChoiceGroup, PageContainer, FitStage(시안 좌표계 통째로 확대·축소)
 │
-├── store/                        Zustand: period / condition / settings / media / auth / bookmark / event / diarySticker / diaryPlacement
+├── store/                        Zustand: period / condition / settings / media / auth / bookmark / event / diarySticker / diaryPlacement / intro(기기 소개 시청 여부)
 │
 ├── data/                         어댑터 패턴
-│   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement / BodyTypeReport)
+│   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement / BodyTypeReport / Intro)
 │   ├── adapters/indexeddb/       로컬 구현 (idb-keyval, schema v10, 현재 wiring)
 │   ├── adapters/supabase/        원격 구현 (Supabase JS, 인증 사용자에게 wiring 완료)
 │   └── index.ts                  단일 진입점
@@ -275,11 +278,13 @@ src/
 ├── lib/
 │   ├── date/                     날짜 유틸
 │   ├── insight/                  rule-based 인사이트 생성
+│   ├── loginEntrance.ts          로그인 스티커 fly-in 1회성 신호 (appToast 와 동일 패턴, in-memory)
 │   └── cn.ts                     clsx + tailwind-merge
 │
 ├── hooks/                        재사용 커스텀 훅
 │   ├── useBodyScrollLock.ts      모달 오픈 시 body 스크롤 잠금 (count-based, 중첩 OK)
 │   ├── useEscToClose.ts          Esc 키로 모달 닫기
+│   ├── useBootDelay.ts           스플래시 최소 노출 시간 보장
 │   └── useScrollRestore.ts       목록 화면 스크롤 위치 세션 보존 (하이드레이션 대비 프레임 재시도)
 ├── i18n/                         ko / en 사전 + useT()
 ├── constants/                    공용 상수 (copy 등)
@@ -338,8 +343,9 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] 화면 구현 (Onboarding · Home · Log · Calendar · Insights · Settings) + 샘플 데이터 / edge case / 리팩토링
 
 **인증·동기화**
-- [x] Supabase 기반 셋업 — auth store, 익명 로그인, 어댑터 wiring (`data/index.ts` 분기), Apple/Google OAuth, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 게이트, 로그아웃 후 `/login` 복귀 + 스토어 rehydrate
+- [x] Supabase 기반 셋업 — auth store, 익명 로그인, 어댑터 wiring (`data/index.ts` 분기), Apple/Google OAuth, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 게이트, 로그아웃 후 `/login` 복귀 + 스토어 rehydrate (2026-09-19: 기기 최초 실행 시 `/login` 앞에 소개 슬라이드가 추가됨 — 아래 항목 참고)
 - [x] 계정 관리 — 회원 탈퇴 (`delete-account` Edge Function, 2단계 확인 + 사유 수집 `withdrawal_feedbacks`, migration 0011), 계정 편집(`/settings/account`)
+- [x] 첫 실행 온보딩 (2026-09-19) — `(intro)` 라우트 그룹, 기기 스코프 `introSeen` 플래그(`IntroRepository`, 로컬 전용, 계정과 무관). 스플래시(최소 2초) → 소개 슬라이드 3장(스와이프 + 건너뛰기) → `/login`. 로그인 화면엔 온보딩 직후 1회만 스티커 fly-in 연출(`loginEntrance` 신호). 계정에 기록이 없고 `onboardingCompleted` 가 false면 첫 홈 진입 시 생리일 기입 바텀시트(`PeriodSelectSheet variant="intro"`)가 한 번 더 뜬다 — 선택 없이 시작해도 계정 설정에 완료로 기록되어 다시 묻지 않음
 
 **다이어리**
 - [x] Diary & Event 도메인 — `/log` 를 Diary/Report 토글로 전환, EventCategory(내장 4종 + 사용자 추가) + EventLog(제목/메모/기간/카테고리/생리마크), 생리마크 ↔ PeriodLog 자동 연동. migrations 0006–0007

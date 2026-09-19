@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
+import { LoginHero } from './LoginHero';
 import { useAuthStore, type OAuthProvider } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { consumeAppToast } from '@/lib/appToast';
 
 export function LoginScreen() {
@@ -22,12 +24,21 @@ export function LoginScreen() {
   const user = useAuthStore((s) => s.user);
   const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth);
   const signInAnonymously = useAuthStore((s) => s.signInAnonymously);
+  const settingsHydrate = useSettingsStore((s) => s.hydrate);
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
+  const settingsFailed = useSettingsStore((s) => s.error !== null);
 
   // (auth) 그룹은 AppShell 밖이라 여기서 직접 hydrate — 이미 살아있는 세션이면
   // 아래 useEffect 가 곧바로 `/` 로 보내줌.
   useEffect(() => {
     if (!authHydrated) authHydrate();
   }, [authHydrate, authHydrated]);
+
+  // 설정도 마찬가지 — 안 읽으면 온보딩을 이미 본 기기는 기기 언어와 상관없이
+  // 기본값(en)으로 이 화면을 보게 된다.
+  useEffect(() => {
+    if (!settingsHydrated && !settingsFailed) settingsHydrate();
+  }, [settingsHydrate, settingsHydrated, settingsFailed]);
 
   // Anonymous users must be able to reach this screen (they arrive from
   // MyPage → "로그인/회원가입" to promote to a real OAuth account). Only
@@ -84,19 +95,10 @@ export function LoginScreen() {
   };
 
   return (
-    <main className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-auth-bg px-5">
-      <div className="flex flex-1 items-center justify-center">
-        <img
-          src="/brand/wordmark-dwee.svg"
-          alt={t.app.name}
-          width={161}
-          height={46}
-          className="select-none"
-          draggable={false}
-        />
-      </div>
+    <main className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden bg-auth-bg">
+      <LoginHero />
 
-      <div className="flex flex-col gap-3 pb-24">
+      <div className="flex flex-col gap-3 px-5 pb-[84px]">
         <Button
           size="lg"
           fullWidth
@@ -122,7 +124,7 @@ export function LoginScreen() {
           onClick={handleGuest}
           disabled={guestPending || pending !== null}
           data-testid="guest-sign-in"
-          className="mt-5 self-center rounded-sm px-2 py-1 text-base text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2 disabled:opacity-60"
+          className="mt-3 self-center rounded-sm px-2 py-1 text-base font-medium text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2 disabled:opacity-60"
         >
           {guestPending ? t.auth.signingIn : t.auth.continueWithoutSignIn}
         </button>

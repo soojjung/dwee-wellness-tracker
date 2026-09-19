@@ -19,12 +19,6 @@ export const en = {
       oauthFailed: 'Sign-in didn’t go through. Please try again.',
     },
   },
-  placeholder: {
-    log: 'Daily check-in is coming soon',
-    calendar: 'Calendar is coming soon',
-    magazine: 'Magazine is coming soon',
-    onboarding: 'Onboarding guide is coming soon',
-  },
   nav: {
     home: 'Home',
     log: 'Diary',
@@ -1226,21 +1220,35 @@ export const en = {
     },
   },
   onboarding: {
-    lastPeriodTitle: 'When did your last period start?',
-    lastPeriodHint: 'It’s okay if it’s approximate — you can edit it later.',
-    lastPeriodLabel: 'Start date',
-    cycleLengthTitle: 'How long is your average cycle?',
-    cycleLengthHint: 'Not sure? Start with 28 days.',
-    cycleLengthUnit: 'days',
-    decrease: 'Decrease',
-    increase: 'Increase',
+    skip: 'Skip',
     next: 'Next',
-    back: 'Back',
-    done: 'Get started',
-    saving: 'Saving...',
-    errorMissingDate: 'Please pick a start date.',
-    errorFutureDate: 'Please pick a date today or earlier.',
-    errorCycleRange: 'Please enter a value between 15 and 60 days.',
+    start: 'Get started',
+    slides: {
+      record: {
+        eyebrow: 'Track your period and daily life',
+        title: 'Track more than your period,\nlog your whole day',
+      },
+      diary: {
+        eyebrow: 'A diary that feels like you',
+        title: 'Style your calendar with\nphotos and stickers',
+      },
+      care: {
+        eyebrow: 'Self-care that fits your cycle',
+        title: 'See suggestions based on\nyour cycle and how you feel',
+      },
+    },
+    sample: {
+      eventTitle: 'Dinner plans',
+      eventMemo: '2:00 PM, Westside Mall',
+      eventDate: 'Jun 9, 2026',
+      chips: {
+        plans: 'Plans',
+        meeting: 'Meeting',
+        dinner: 'Dinner',
+        ourApp: 'dwee',
+        rocks: 'rocks!',
+      },
+    },
   },
   myPage: {
     title: 'My page',

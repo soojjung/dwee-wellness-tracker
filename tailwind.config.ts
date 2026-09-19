@@ -62,6 +62,17 @@ const config: Config = {
         },
       },
       keyframes: {
+        // 로그인 화면(001_4) 스티커가 화면 밖에서 제자리로 날아 들어온다. 출발점은
+        // 스티커마다 다르므로 CSS 변수(--fly-x/--fly-y)로 받는다.
+        stickerFlyIn: {
+          '0%': { transform: 'translate(var(--fly-x), var(--fly-y))' },
+          '100%': { transform: 'translate(0, 0)' },
+        },
+        // 첫 로그인 직후의 생리일 기입 시트(001_5)가 아래에서 올라온다.
+        sheetSlideUp: {
+          '0%': { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
         // Top confirm toast (015_8): slides in from just above the viewport
         // and settles at its resting top offset. Paired with a subtle
         // fade for a softer feel.
@@ -98,6 +109,8 @@ const config: Config = {
         },
       },
       animation: {
+        sheetSlideUp: 'sheetSlideUp 320ms cubic-bezier(0.16, 1, 0.3, 1)',
+        stickerFlyIn: 'stickerFlyIn 900ms cubic-bezier(0.22, 1, 0.36, 1) both',
         slideDownFade: 'slideDownFade 280ms cubic-bezier(0.16, 1, 0.3, 1)',
         stickerScan: 'stickerScan 1.4s ease-in-out infinite alternate',
         diaryNudge: 'diaryNudge 900ms ease-in-out',

@@ -24,6 +24,10 @@ export const STORAGE_KEYS = {
   // sticker set into the user's library. Prevents re-seeding after the
   // user manually deletes any of the defaults.
   diaryDefaultStickersSeeded: 'dwee:diary:default_stickers_seeded',
+  // Device-scoped flag: true once the first-launch intro slides were shown
+  // (or skipped). Deliberately left out of `resetAllUserData` — the intro is
+  // once per device, not once per account.
+  introSeen: 'dwee:device:intro_seen',
 } as const;
 
 export const ALL_MEDIA_PHOTO_KEYS = PHOTO_SLOTS.map((s) => STORAGE_KEYS.mediaPhoto(s));

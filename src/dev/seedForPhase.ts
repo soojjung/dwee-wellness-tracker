@@ -6,6 +6,7 @@ import {
   ensureMigrations,
   resetAllUserData,
 } from '@/data';
+import { useSettingsStore } from '@/store/settingsStore';
 import { todayISO, addDaysISO } from '@/lib/date';
 import type { Locale } from '@/types';
 
@@ -36,6 +37,9 @@ export async function seedForPhase(phase: PhaseKind, locale: Locale = 'en') {
     averageCycleLength: CYCLE,
     averagePeriodLength: PERIOD_DURATION,
   });
+  // 스펙은 홈을 먼저 띄운 뒤 이 함수를 부른다. 저장소에만 쓰면 화면의 설정은 여전히
+  // "온보딩 전"이라 첫 진입용 생리일 시트(001_5)가 스냅샷 위에 뜬다.
+  await useSettingsStore.getState().rehydrate();
   const daysAgo = DAYS_AGO_BY_PHASE[phase];
   if (daysAgo === null) return;
 

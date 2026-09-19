@@ -56,6 +56,7 @@ export function HomeScreen() {
   // toast can coexist without stepping on it.
   const [confirmToast, setConfirmToast] = useState<string | null>(null);
   const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
+  const [introPromptDismissed, setIntroPromptDismissed] = useState(false);
 
   useEffect(() => {
     if (!authHydrated) return;
@@ -124,6 +125,14 @@ export function HomeScreen() {
     setPeriodDialogOpen(false);
   }
 
+  // 시작하기(선택 없이도)·바깥 탭 모두 "한 번 물어봤다"로 친다. 계정 설정에 남기므로
+  // 다른 기기에서 같은 계정으로 들어와도 다시 묻지 않는다.
+  async function handleIntroPromptDone(changes: PeriodChange[]) {
+    setIntroPromptDismissed(true);
+    await handlePeriodChanges(changes);
+    if (changes.length === 0) await updateSettings({ onboardingCompleted: true });
+  }
+
   if (!authHydrated || !settingsHydrated || (periodsLoading && !periodsHydrated)) {
     return (
       <PageContainer>
@@ -140,6 +149,10 @@ export function HomeScreen() {
   }
 
   const isEmpty = periods.length === 0;
+  // 로그인·게스트 선택 직후의 첫 홈 진입 (정의서 001_5). 값에서 바로 유도하므로, 기존
+  // 계정의 원격 데이터가 들어와 조건이 깨지면 시트도 같이 사라진다.
+  const introPromptOpen =
+    periodsHydrated && isEmpty && !settings.onboardingCompleted && !introPromptDismissed;
 
   return (
     <PageContainer className="gap-0 pb-24">
@@ -213,6 +226,16 @@ export function HomeScreen() {
 
       <Toast message={toast} />
       <Toast message={confirmToast} variant="topConfirm" />
+
+      {introPromptOpen ? (
+        <PeriodSelectSheet
+          variant="intro"
+          today={today}
+          periods={periods}
+          onSubmit={handleIntroPromptDone}
+          onCancel={() => void handleIntroPromptDone([])}
+        />
+      ) : null}
 
       {periodDialogOpen ? (
         <PeriodSelectSheet
