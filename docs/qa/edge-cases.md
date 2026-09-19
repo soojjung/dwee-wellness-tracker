@@ -19,6 +19,7 @@
 - [ ] HomeEmptyForm 에서:
   - 시작일 미입력 + 저장 → `onboarding.errorMissingDate` 메시지
   - 미래 날짜 + 저장 → `onboarding.errorFutureDate` 메시지
+  - > **2026-09-19 갱신**: 위 두 사전 키(`onboarding.errorMissingDate`/`errorFutureDate`)는 삭제됨 — 첫 진입 흐름이 완전히 바뀌었다. 현재는 [`docs/flows/onboarding.md`](../flows/onboarding.md) 참고.
   - 주기 +/- 동작 (15~60 clamp)
   - 정상 입력 + 저장 → 화면이 **즉시** main 상태로 flip (페이지 리다이렉트 없이)
 - [ ] /log, /insights 도 데이터 있는 상태로 정상 표시
@@ -108,11 +109,13 @@
 |---|---|---|
 | `HomeEmptyForm` repo 저장 실패 시 잘못된 에러 메시지 (`errorMissingDate`) 노출 | `src/components/app/HomeEmptyForm.tsx:34` | `t.home.errorLabel` 로 교체 |
 
-## 검증 외 결정 — `/onboarding` 라우트 부재
+## 검증 외 결정 — `/onboarding` 라우트 부재 (2026-05 당시)
 
 - 기존 spec 의 "온보딩 → 홈" 흐름은 **온보딩 머지(2026-05-22)** 이후 "홈 빈 상태 inline form" 으로 변경됨.
 - 데이터 리셋 후 redirect 목적지도 `/onboarding` → `/` 로 변경됨 (DataResetSection 확정).
-- 본 체크리스트는 변경된 흐름 기준으로 작성.
+- 본 체크리스트는 (당시) 변경된 흐름 기준으로 작성.
+
+> **2026-09-19 갱신**: `/onboarding` 라우트가 다시 생겼다 — 단, 의미가 다르다. "생리일 입력 폼"이 아니라 **기기 최초 실행 시 1회** 보여주는 소개 슬라이드(스플래시 → 슬라이드 1/2/3 → 로그인)다. 위 "부재" 결정은 더 이상 사실이 아니며, 현재 첫 진입 흐름은 [`docs/flows/onboarding.md`](../flows/onboarding.md) 참고.
 
 ---
 

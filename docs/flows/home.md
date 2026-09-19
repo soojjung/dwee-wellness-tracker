@@ -8,6 +8,8 @@
 
 `PeriodSelectSheet`는 최근 N개월 캘린더 그리드를 보여주며, 날짜 셀을 탭하면 `domain/cycle/periodEdit.ts`의 순수 함수로 드래프트를 조작합니다. 저장 시 `PeriodChange[]` diff를 `HomeScreen.handlePeriodChanges`로 전달해 add / update / remove를 일괄 적용합니다.
 
+> 로그인 직후 기록 0건 + `!settings.onboardingCompleted` 상태의 첫 홈 진입에는 같은 컴포넌트가 `variant="intro"`로 다른 배경 위에 뜬다 (헤더 없이 "시작하기" 하나). 결과 분기와 저장 위치는 [`docs/flows/onboarding.md`](./onboarding.md) 참고.
+
 ```mermaid
 flowchart TD
     Icon(["캘린더 아이콘\n(TodayDateHeading 우상단)"])

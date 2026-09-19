@@ -7,6 +7,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { addDaysISO, fromISO, toISO, type ISODate } from '@/lib/date';
+import { cn } from '@/lib/cn';
+import { BOTTOM_CTA_CLASS } from '@/components/ui/Button';
 import { CancelIcon } from '@/components/ui/icons/CancelIcon';
 import { CheckIcon } from '@/components/ui/icons/CheckIcon';
 import type { PeriodLog } from '@/types';
@@ -22,12 +24,19 @@ import {
   type DraftPeriod,
   type PeriodChange,
 } from '@/domain/cycle/periodEdit';
+import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
 
 interface PeriodSelectSheetProps {
   today: ISODate;
   periods: PeriodLog[];
   monthsBack?: number;
   monthsForward?: number;
+  /**
+   * `intro` 는 첫 로그인 직후 한 번 뜨는 생리일 기입(Figma 832:5234, 001_5). 헤더의
+   * 닫기·저장 버튼 대신 하단 "시작하기" 하나로 끝내고, 아무것도 고르지 않아도 누를 수
+   * 있다 — 그때 `onSubmit` 은 빈 배열을 받는다.
+   */
+  variant?: 'default' | 'intro';
   onSubmit: (changes: PeriodChange[]) => Promise<void>;
   onCancel: () => void;
 }
@@ -38,6 +47,8 @@ const DEFAULT_MONTHS_FORWARD = 1;
 // A period that starts today can extend up to this many days ahead.
 const FUTURE_WINDOW_DAYS = 14;
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+// intro 시트가 내려가며 홈이 드러나는 시간. 아래 transition duration 과 맞춘다.
+const INTRO_SLIDE_MS = 300;
 
 interface MonthGrid {
   key: string;
@@ -81,11 +92,15 @@ export function PeriodSelectSheet({
   periods,
   monthsBack = DEFAULT_MONTHS_BACK,
   monthsForward = DEFAULT_MONTHS_FORWARD,
+  variant = 'default',
   onSubmit,
   onCancel,
 }: PeriodSelectSheetProps) {
   const t = useT();
   const locale = useSettingsStore((s) => s.settings.locale);
+  const averagePeriodLength = useSettingsStore((s) => s.settings.averagePeriodLength);
+  const isIntro = variant === 'intro';
+  const [closing, setClosing] = useState(false);
   const [drafts, setDrafts] = useState<DraftPeriod[]>(() => toDrafts(periods));
   const [pendingStart, setPendingStart] = useState<ISODate | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -177,8 +192,40 @@ export function PeriodSelectSheet({
     }
   }
 
-  function handleCancel() {
+  function slideOut() {
+    setClosing(true);
+    // transition 은 다음 프레임에야 시작한다. 딱 맞춰 끊으면 시트가 바닥에 닿기 직전에
+    // 사라지므로 조금 더 기다린다.
+    return new Promise<void>((resolve) => setTimeout(resolve, INTRO_SLIDE_MS + 80));
+  }
+
+  async function handleStart() {
     if (submitting) return;
+    setSubmitting(true);
+    // 시작일 하나만 누르고 바로 시작하는 경우가 흔하다. 버리지 않고, 시작일만 입력했을
+    // 때의 기존 정책(평균 생리 기간만큼)으로 기간을 채워 저장한다.
+    const finalDrafts = pendingStart
+      ? addRange(
+          drafts,
+          pendingStart,
+          defaultPeriodEndDate(pendingStart, averagePeriodLength),
+          nextNewKey(),
+        )
+      : drafts;
+    try {
+      await slideOut();
+      await onSubmit(computeChanges(periods, finalDrafts));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (submitting) return;
+    if (isIntro) {
+      setSubmitting(true);
+      await slideOut();
+    }
     onCancel();
   }
 
@@ -187,36 +234,61 @@ export function PeriodSelectSheet({
       role="dialog"
       aria-modal="true"
       aria-label={t.home.periodSheet.title}
-      className="fixed inset-0 z-40 flex items-end justify-center bg-black/20"
+      className={cn('fixed inset-0 z-40 flex items-end justify-center', !isIntro && 'bg-black/20')}
       onClick={handleCancel}
     >
+      {/* intro 는 홈 위가 아니라 빈 화면 위에 뜬다 (시안 832:5234: 흰 배경 + 20% 딤).
+          불투명한 판으로 홈을 가려 두었다가, 닫힐 때 시트가 내려가는 동안 걷어 내어
+          홈이 드러나게 한다. */}
+      {isIntro && (
+        <div
+          aria-hidden
+          className={cn(
+            'absolute inset-0 mx-auto max-w-md bg-brand-gray50 transition-opacity duration-300',
+            closing && 'opacity-0',
+          )}
+        >
+          <div className="absolute inset-0 bg-black/20" />
+        </div>
+      )}
       <div
-        className="relative flex w-full max-w-md flex-col overflow-hidden rounded-t-[32px] bg-brand-white"
-        style={{ maxHeight: '90dvh' }}
+        className={cn(
+          'relative flex w-full max-w-md flex-col overflow-hidden rounded-t-[32px] bg-brand-white',
+          isIntro && 'animate-sheetSlideUp transition-transform duration-300 ease-in',
+          closing && 'translate-y-full',
+        )}
+        // intro 는 시안대로 화면 위 55px 만 남기고 꽉 채운다 — 하단 CTA 가 늘 같은 자리에 있도록.
+        style={isIntro ? { height: 'calc(100dvh - 55px)' } : { maxHeight: '90dvh' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3">
-          <button
-            type="button"
-            onClick={handleCancel}
-            aria-label={t.home.periodSheet.closeAria}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
-          >
-            <CancelIcon className="h-5 w-5" />
-          </button>
-          <h2 className="text-[20px] font-semibold text-brand-gray900">
+        {isIntro ? (
+          <h2 className="px-4 pb-3 pt-[26px] text-center text-[20px] font-semibold leading-[normal] text-brand-gray900">
             {t.home.periodSheet.title}
           </h2>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!dirty || submitting}
-            aria-label={t.home.periodSheet.saveAria}
-            className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 disabled:cursor-not-allowed disabled:bg-brand-gray200 disabled:text-brand-gray400 enabled:bg-brand-pink500 enabled:text-brand-white enabled:hover:opacity-80"
-          >
-            <CheckIcon className="h-5 w-5" />
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              type="button"
+              onClick={handleCancel}
+              aria-label={t.home.periodSheet.closeAria}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+            >
+              <CancelIcon className="h-5 w-5" />
+            </button>
+            <h2 className="text-[20px] font-semibold text-brand-gray900">
+              {t.home.periodSheet.title}
+            </h2>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!dirty || submitting}
+              aria-label={t.home.periodSheet.saveAria}
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 enabled:bg-brand-pink500 enabled:text-brand-white enabled:hover:opacity-80 disabled:cursor-not-allowed disabled:bg-brand-gray200 disabled:text-brand-gray400"
+            >
+              <CheckIcon className="h-5 w-5" />
+            </button>
+          </div>
+        )}
 
         <div className="mx-auto grid w-full max-w-[358px] grid-cols-7 gap-1.5 bg-brand-white px-4 py-2 text-[12px] font-medium text-brand-gray700">
           {WEEKDAY_KEYS.map((k, i) => (
@@ -270,6 +342,17 @@ export function PeriodSelectSheet({
             })}
           </div>
         </div>
+
+        {isIntro && (
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={submitting}
+            className={cn(BOTTOM_CTA_CLASS, 'flex-shrink-0 bg-brand-pink50 text-brand-gray900')}
+          >
+            {t.onboarding.start}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -284,14 +367,7 @@ interface DayCellProps {
   onClick: (date: ISODate) => void;
 }
 
-function DayCell({
-  date,
-  today,
-  maxSelectable,
-  recordedSet,
-  pendingStart,
-  onClick,
-}: DayCellProps) {
+function DayCell({ date, today, maxSelectable, recordedSet, pendingStart, onClick }: DayCellProps) {
   if (!date) return <div className="h-10 w-full" aria-hidden />;
   const day = Number(date.slice(-2));
   const isToday = date === today;

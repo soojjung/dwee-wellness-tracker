@@ -10,6 +10,7 @@ import { indexedDBEventAdapter } from './adapters/indexeddb/IndexedDBEventAdapte
 import { indexedDBDiaryStickerAdapter } from './adapters/indexeddb/IndexedDBDiaryStickerAdapter';
 import { indexedDBDiaryStickerPlacementAdapter } from './adapters/indexeddb/IndexedDBDiaryStickerPlacementAdapter';
 import { indexedDBBodyTypeReportAdapter } from './adapters/indexeddb/IndexedDBBodyTypeReportAdapter';
+import { indexedDBIntroAdapter } from './adapters/indexeddb/IndexedDBIntroAdapter';
 import { supabaseSettingsAdapter } from './adapters/supabase/SupabaseSettingsAdapter';
 import { supabasePeriodAdapter } from './adapters/supabase/SupabasePeriodAdapter';
 import { supabaseConditionAdapter } from './adapters/supabase/SupabaseConditionAdapter';
@@ -38,6 +39,7 @@ import type { EventRepository } from './repositories/EventRepository';
 import type { DiaryStickerRepository } from './repositories/DiaryStickerRepository';
 import type { DiaryStickerPlacementRepository } from './repositories/DiaryStickerPlacementRepository';
 import type { BodyTypeReportRepository } from './repositories/BodyTypeReportRepository';
+import type { IntroRepository } from './repositories/IntroRepository';
 
 export type {
   SettingsRepository,
@@ -50,6 +52,7 @@ export type {
   DiaryStickerRepository,
   DiaryStickerPlacementRepository,
   BodyTypeReportRepository,
+  IntroRepository,
 };
 export type { NewPeriodInput } from './repositories/PeriodRepository';
 export type { NewConditionInput } from './repositories/ConditionRepository';
@@ -126,6 +129,13 @@ export const bookmarkRepo: BookmarkRepository = {
   list: () => indexedDBBookmarkAdapter.list(),
   add: (slug) => indexedDBBookmarkAdapter.add(slug),
   remove: (slug) => indexedDBBookmarkAdapter.remove(slug),
+};
+
+// The intro-seen flag is about the device, not the account, so it stays in
+// local storage regardless of repo mode.
+export const introRepo: IntroRepository = {
+  isSeen: () => indexedDBIntroAdapter.isSeen(),
+  markSeen: () => indexedDBIntroAdapter.markSeen(),
 };
 
 export const eventCategoryRepo: EventCategoryRepository = {

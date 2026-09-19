@@ -20,12 +20,6 @@ export const ko: Dictionary = {
       oauthFailed: '로그인을 완료하지 못했어요. 다시 시도해 주세요.',
     },
   },
-  placeholder: {
-    log: '오늘 기록은 곧 준비될 예정이에요',
-    calendar: '캘린더 화면은 곧 준비될 예정이에요',
-    magazine: '매거진은 곧 준비될 예정이에요',
-    onboarding: '시작 안내는 곧 준비될 예정이에요',
-  },
   nav: {
     home: '홈',
     log: '다이어리',
@@ -1217,21 +1211,35 @@ export const ko: Dictionary = {
     },
   },
   onboarding: {
-    lastPeriodTitle: '마지막 생리 시작일을 알려주세요',
-    lastPeriodHint: '정확하지 않아도 괜찮아요. 나중에 수정할 수 있어요.',
-    lastPeriodLabel: '시작일',
-    cycleLengthTitle: '평균 생리 주기는 며칠인가요?',
-    cycleLengthHint: '잘 모르겠다면 28일로 시작해 보세요.',
-    cycleLengthUnit: '일',
-    decrease: '줄이기',
-    increase: '늘리기',
+    skip: '건너뛰기',
     next: '다음',
-    back: '이전',
-    done: '시작하기',
-    saving: '저장 중이에요...',
-    errorMissingDate: '시작일을 골라주세요.',
-    errorFutureDate: '오늘 이전 날짜를 골라주세요.',
-    errorCycleRange: '15일에서 60일 사이로 입력해주세요.',
+    start: '시작하기',
+    slides: {
+      record: {
+        eyebrow: '생리와 일상을 함께 기록',
+        title: '생리부터 오늘의 일상까지\n나의 하루를 기록해요',
+      },
+      diary: {
+        eyebrow: '나만의 취향을 담은 다이어리',
+        title: '사진과 스티커로\n나만의 캘린더를 꾸며보세요',
+      },
+      care: {
+        eyebrow: '나에게 맞는 건강 케어',
+        title: '생리 주기와 컨디션에 맞는\n건강 및 일상 케어를 확인해요',
+      },
+    },
+    sample: {
+      eventTitle: '밥 약속',
+      eventMemo: '14시 용산 아이파크 몰',
+      eventDate: '2026.06.09',
+      chips: {
+        plans: '약속이따',
+        meeting: '미팅이따',
+        dinner: '밥약',
+        ourApp: '우리어플',
+        rocks: '짱임',
+      },
+    },
   },
   myPage: {
     title: '마이페이지',
