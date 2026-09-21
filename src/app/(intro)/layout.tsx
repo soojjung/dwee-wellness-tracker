@@ -8,5 +8,9 @@ export const viewport: Viewport = {
 };
 
 export default function IntroLayout({ children }: { children: ReactNode }) {
-  return <div className="mx-auto min-h-dvh w-full max-w-md bg-brand-gray50">{children}</div>;
+  return (
+    <div data-page-bg="white" className="mx-auto min-h-dvh w-full max-w-md bg-brand-gray50">
+      {children}
+    </div>
+  );
 }

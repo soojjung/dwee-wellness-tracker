@@ -1,13 +1,12 @@
 'use client';
 import { useMemo } from 'react';
 import { useT } from '@/i18n/useT';
-import type { PeriodLog } from '@/types';
-import { fromISO, daysBetween } from '@/lib/date';
 import { niceScale, clampOverlayX } from '@/domain/cycle/chartScale';
+import type { MonthlyCyclePoint } from '@/domain/cycle/chartPoints';
 
 interface CycleChartProps {
-  periods: PeriodLog[];
-  months: readonly { year: number; monthIndex: number }[];
+  /** 달별 주기 점 (`monthlyCyclePoints`). 무엇을 주기로 세는지는 도메인이 정한다. */
+  monthly: readonly MonthlyCyclePoint[];
   averageCycleDays: number | null;
 }
 
@@ -26,34 +25,19 @@ const PLOT_BOTTOM_DATA = 154; // last real tick row (min value)
 const PLOT_BOTTOM_ZERO = 176; // "0" baseline label row
 const AXIS_LABEL_LEFT = 9.5;
 
-export function CycleChart({ periods, months, averageCycleDays }: CycleChartProps) {
+export function CycleChart({ monthly, averageCycleDays }: CycleChartProps) {
   const t = useT();
 
   const points: Point[] = useMemo(() => {
-    const sorted = [...periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
     const nowYear = new Date().getFullYear();
     const nowMonth = new Date().getMonth();
-    return months.map(({ year, monthIndex }) => {
-      const inMonth = sorted.find((p) => {
-        const d = fromISO(p.startDate);
-        return d.getFullYear() === year && d.getMonth() === monthIndex;
-      });
-      let cycle: number | null = null;
-      if (inMonth) {
-        const idx = sorted.indexOf(inMonth);
-        if (idx > 0) {
-          const gap = daysBetween(sorted[idx - 1]!.startDate, inMonth.startDate);
-          if (gap >= 15 && gap <= 60) cycle = gap;
-        }
-      }
-      return {
-        monthIndex,
-        monthLabel: t.report.monthShort[(monthIndex + 1) as 1],
-        cycle,
-        isCurrent: year === nowYear && monthIndex === nowMonth,
-      };
-    });
-  }, [periods, months, t]);
+    return monthly.map(({ year, monthIndex, cycleDays }) => ({
+      monthIndex,
+      monthLabel: t.report.monthShort[(monthIndex + 1) as 1],
+      cycle: cycleDays,
+      isCurrent: year === nowYear && monthIndex === nowMonth,
+    }));
+  }, [monthly, t]);
 
   const withData = points.filter((p): p is Point & { cycle: number } => p.cycle !== null);
   const dataMin = withData.length ? Math.min(...withData.map((p) => p.cycle)) : 25;
@@ -83,9 +67,10 @@ export function CycleChart({ periods, months, averageCycleDays }: CycleChartProp
   const linePath = buildSmoothPath(coords);
   const areaPath = buildAreaPath(coords, PLOT_BOTTOM_DATA);
 
-  const avgY = averageCycleDays !== null && averageCycleDays >= yMin && averageCycleDays <= yMax
-    ? yFor(averageCycleDays)
-    : null;
+  const avgY =
+    averageCycleDays !== null && averageCycleDays >= yMin && averageCycleDays <= yMax
+      ? yFor(averageCycleDays)
+      : null;
 
   const avgPillX = pickAvgPillX(coords, gridXStart, gridXEnd);
 
@@ -228,7 +213,10 @@ function buildSmoothPath(coords: { x: number; y: number | null }[]): string {
   const segs: string[] = [];
   let prev: { x: number; y: number } | null = null;
   for (const c of coords) {
-    if (c.y === null) { prev = null; continue; }
+    if (c.y === null) {
+      prev = null;
+      continue;
+    }
     if (!prev) segs.push(`M ${c.x.toFixed(2)} ${c.y.toFixed(2)}`);
     else {
       const mid = (prev.x + c.x) / 2;
@@ -258,4 +246,3 @@ function pickAvgPillX(coords: { x: number; y: number | null }[], min: number, ma
   const mid = withY[Math.floor(withY.length / 2)]!;
   return mid.x;
 }
-

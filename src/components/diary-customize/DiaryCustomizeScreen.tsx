@@ -33,6 +33,8 @@ import { DraggableBottomSheet, type SheetSnap } from '@/components/ui/DraggableB
 import { CameraSheet, type CameraCapture } from './CameraSheet';
 import { StickerScanScreen } from './StickerScanScreen';
 import { CutoutConfirmScreen } from './CutoutConfirmScreen';
+import { CapturedPhotoRatioStep } from './CapturedPhotoRatioStep';
+import { ratioForImage, trimTransparentMargins } from '@/lib/image/stickerCrop';
 
 const WEEK_STARTS_ON = 0;
 
@@ -75,6 +77,7 @@ export function DiaryCustomizeScreen() {
   const router = useRouter();
   const today = todayISO();
   const locale = useSettingsStore((s) => s.settings.locale);
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const holidaySetting = useSettingsStore((s) => s.settings.holidayCountries);
   const holidayCountries = useMemo(
     () => resolveHolidayCountries(holidaySetting, locale),
@@ -121,7 +124,9 @@ export function DiaryCustomizeScreen() {
   // ends through the header's back / done buttons.
   // Camera flow (013_2/3/4). `mode: 'idle'` is the default library view;
   // capture flows through camera → scan → confirm → back to idle.
-  const [cameraMode, setCameraMode] = useState<'idle' | 'camera' | 'scan' | 'confirm'>('idle');
+  const [cameraMode, setCameraMode] = useState<'idle' | 'camera' | 'ratio' | 'scan' | 'confirm'>(
+    'idle',
+  );
   const [captured, setCaptured] = useState<CameraCapture | null>(null);
   // Populated by StickerScanScreen once the cutout API returns a PNG.
   // CutoutConfirmScreen then shows and (on confirm) persists this blob
@@ -170,9 +175,11 @@ export function DiaryCustomizeScreen() {
     [t],
   );
   useEffect(() => {
-    if (!eventsHydrated) return;
+    // 기본 유형의 이름은 시드하는 순간의 언어로 저장소에 굳는다. 설정이 로드되기 전에는
+    // 언어가 기본값(en)이라, 기다리지 않으면 한국어 기기에 "Family / Friend…"가 남는다.
+    if (!eventsHydrated || !settingsHydrated) return;
     if (categories.length === 0) seedBuiltinsIfEmpty(builtinNamer);
-  }, [eventsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
+  }, [eventsHydrated, settingsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
 
   const monthLabel = formatMonthLabel(new Date(cursor.year, cursor.monthIndex, 1), locale);
 
@@ -248,23 +255,20 @@ export function DiaryCustomizeScreen() {
     }
   }
 
-  async function handleCapture(cap: CameraCapture) {
-    // Photo mode skips the scan/confirm dance entirely — the raw capture
-    // becomes a source: 'photo' sticker immediately. Sticker mode runs
-    // the cutout API via the scan overlay.
-    if (cap.mode === 'photo') {
-      await saveAndClose({ blob: cap.blob, ratio: cap.ratio, source: 'photo' });
-      return;
-    }
+  function handleCapture(cap: CameraCapture) {
+    // The camera no longer asks for a ratio up front. A photo used as-is picks
+    // one now (013_5/6); a sticker goes to the cutout scan and never needs one.
     setCaptured(cap);
-    setCameraMode('scan');
+    setCameraMode(cap.mode === 'photo' ? 'ratio' : 'scan');
   }
 
   async function handleCutoutConfirm() {
     if (!captured || !cutoutBlob) return;
     await saveAndClose({
       blob: cutoutBlob,
-      ratio: captured.ratio,
+      // No ratio was chosen for a cutout, so the placement frame follows the
+      // shape of the trimmed subject itself.
+      ratio: await ratioForImage(cutoutBlob),
       source: 'sticker',
     });
   }
@@ -451,6 +455,17 @@ export function DiaryCustomizeScreen() {
           onCapture={handleCapture}
         />
       ) : null}
+      {cameraMode === 'ratio' && captured ? (
+        <CapturedPhotoRatioStep
+          blob={captured.blob}
+          onRetake={() => {
+            setCaptured(null);
+            setCameraMode('camera');
+          }}
+          onClose={closeCameraFlow}
+          onSaved={(cropped, ratio) => saveAndClose({ blob: cropped, ratio, source: 'photo' })}
+        />
+      ) : null}
       {cameraMode === 'scan' && captured ? (
         <StickerScanScreen
           blob={captured.blob}
@@ -459,17 +474,13 @@ export function DiaryCustomizeScreen() {
               ? captured.blob.type
               : 'image/jpeg'
           }
-          onCutoutReady={(png) => {
-            setCutoutBlob(png);
+          onCutoutReady={async (png) => {
+            // 미리보기(013_4)가 실제로 저장될 모양을 보여 주도록 여기서 먼저 다듬는다.
+            setCutoutBlob(await trimTransparentMargins(png));
             setCameraMode('confirm');
           }}
-          onSaveAsPhoto={async () => {
-            await saveAndClose({
-              blob: captured.blob,
-              ratio: captured.ratio,
-              source: 'photo',
-            });
-          }}
+          // 누끼 실패 시의 탈출구도 "사진 그대로" 경로다 — 비율을 고르러 보낸다.
+          onSaveAsPhoto={() => setCameraMode('ratio')}
           onCancel={closeCameraFlow}
         />
       ) : null}
@@ -504,7 +515,7 @@ export function DiaryCustomizeScreen() {
             // staging the cropped blob as `captured` and jumping to
             // scan. The scan screen calls the API, then hands the PNG
             // to CutoutConfirmScreen.
-            setCaptured({ blob, ratio, mode: 'sticker' });
+            setCaptured({ blob, mode: 'sticker' });
             setCameraMode('scan');
           }}
         />

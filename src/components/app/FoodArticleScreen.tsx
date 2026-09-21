@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useHistoryBackClick } from '@/hooks/useHistoryBackClick';
 import { BackIcon } from '@/components/ui/icons';
 import { foodArticle } from '@/content/foods';
 import { splitBody } from '@/content/foods/splitBody';
@@ -16,6 +17,8 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
   const t = useT();
   const locale = useSettingsStore((s) => s.settings.locale);
   const article = foodArticle(id, locale);
+  // 홈에서 들어온 경우 보던 위치로 돌아간다 (홈 쪽은 useScrollRestore 가 받는다).
+  const handleBackClick = useHistoryBackClick();
 
   if (!article) return null;
 
@@ -33,6 +36,7 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <Link
           href="/"
+          onClick={handleBackClick}
           aria-label={t.home.foodArticle.backAriaLabel}
           // DiaryCustomizeScreen 의 반투명 버튼과 같은 값 — 본문이 비쳐 보이도록
           // Gray/400 50% + 2px backdrop blur.

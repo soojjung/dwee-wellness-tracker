@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { currentPhase } from '@/domain/cycle/phase';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
+import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { PeriodSelectSheet } from './PeriodSelectSheet';
 import type { PeriodChange } from '@/domain/cycle/periodEdit';
 import { generateInsights } from '@/lib/insight/generator';
@@ -30,6 +31,8 @@ const INSIGHT_LOOKBACK_DAYS = 90;
 
 export function HomeScreen() {
   const t = useT();
+  // 음식 상세·꾸미기 등에 들어갔다 나오면 마지막으로 보던 위치로 돌아온다.
+  useScrollRestore('home');
   const today = todayISO();
 
   const periods = usePeriodStore((s) => s.periods);

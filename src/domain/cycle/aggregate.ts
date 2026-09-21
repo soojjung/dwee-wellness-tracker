@@ -1,5 +1,6 @@
 import type { PeriodLog } from '@/types';
 import { daysBetween } from '@/lib/date';
+import { CYCLE_GAP_MIN_DAYS, CYCLE_GAP_MAX_DAYS } from './cycleGap';
 
 export function averageCycleLength(periods: PeriodLog[]): number | null {
   if (periods.length < 2) return null;
@@ -7,7 +8,7 @@ export function averageCycleLength(periods: PeriodLog[]): number | null {
   const gaps: number[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const gap = daysBetween(sorted[i - 1]!.startDate, sorted[i]!.startDate);
-    if (gap >= 15 && gap <= 60) gaps.push(gap);
+    if (gap >= CYCLE_GAP_MIN_DAYS && gap <= CYCLE_GAP_MAX_DAYS) gaps.push(gap);
   }
   if (gaps.length === 0) return null;
   return Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length);

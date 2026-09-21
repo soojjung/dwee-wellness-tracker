@@ -283,7 +283,7 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 
 파일: `src/domain/cycle/status.ts` (+ `status.test.ts`, `status.cases.md`)
 
-`/log` 화면의 주기리포트에서 최근 기록을 바탕으로 7단계 상태 코드 중 하나를 반환하는 순수 함수.
+`/log` 화면의 주기리포트에서 최근 기록을 바탕으로 7개 상태 코드(`insufficient`가 두 우선순위에서 반환될 수 있어 판정 단계는 8단계) 중 하나를 반환하는 순수 함수.
 
 ### 반환 타입
 
@@ -304,14 +304,16 @@ interface CycleStatusResult {
 | 1 | `insufficient` | `periods.length < 3` |
 | 2 | `shortPeriod` | 최근 완료 기간 ≤ 2일 |
 | 3 | `longPeriod` | 최근 완료 기간 ≥ 8일 |
-| 4 | `irregular` | 주기 변동폭 ≥ 15일 |
-| 5 | `slightlyIrregular` | 주기 변동폭 8~14일 |
-| 6 | `stable` | 기간 3~7일 + 주기 21~35일 + 변동폭 ≤ 7일 |
-| 7 | `regular` | 위 조건 외 나머지 |
+| 4 | `insufficient` | 유효 주기 간격 0개 (`gaps.length === 0`) — 기록은 3회 이상이지만 모든 간격이 범위 밖이라 판정할 주기가 없음. 예전엔 여기서 끝까지 통과해 근거 없이 `regular`로 떨어졌다. |
+| 5 | `irregular` | 주기 변동폭 ≥ 15일 |
+| 6 | `slightlyIrregular` | 주기 변동폭 8~14일 |
+| 7 | `stable` | 기간 3~7일 + 주기 21~35일 + 변동폭 ≤ 7일 |
+| 8 | `regular` | 위 조건 외 나머지 |
 
-- 이상치 필터: 주기 `[15, 60]일`, 기간 `[1, 14]일` — aggregate.ts 와 동일.
-- `confidence`: gap 수 기준 — 0개: `unknown`, 1개: `low`, 2개: `medium`, 3개+: `high`.
+- 이상치 필터(= "유효 주기" 범위): 주기 `[15, 60]일` — 단일 출처는 `src/domain/cycle/cycleGap.ts`의 `isCountableCycleGap()`. 기간 `[1, 14]일` 필터는 `aggregate.ts`와 동일.
+- `confidence`: 유효 gap 수 기준 — 0개: `unknown`, 1개: `low`, 2개: `medium`, 3개+: `high`.
 - 표시 문자열은 화면이 `t.report.status[status]` 로 조립. 이 함수는 문자열 반환 금지.
+- `src/domain/cycle/chartPoints.ts`의 `monthlyCyclePoints()`도 같은 `cycleGap.ts` 기준으로 달별 주기 차트 점을 계산한다 (`/log` 주기리포트 차트, `docs/flows/log.md` §"CycleChart / RecentCyclesCard" 참고).
 
 상세 판정 기준: `.claude/rules/cycle-logic.md §8`
 
@@ -326,6 +328,7 @@ interface CycleStatusResult {
 | 2026-06-16 | `evaluateNewStart` + `SHORT_CYCLE_THRESHOLD_DAYS` 신규. shortGap 시 ShortCycleConfirmDialog 분기 (extend / replace / saveAnyway). `recordPolicy.ts` 8개 테스트 추가. | `domain/cycle/recordPolicy.ts`, `periodStore.ts` (replace, extendThrough 메서드) | 완료 |
 | 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). `PeriodSelectSheet` + `PeriodSelectSheet`가 소비. | `domain/cycle/periodEdit.ts`, `components/app/PeriodSelectSheet.tsx` | 완료 |
 | 2026-07-28 | `classifyCycleStatus` 신규 — 7단계 주기 상태 판정. 10개 Vitest 케이스. `/log` 화면 주기리포트(CycleReportScreen)에서 소비. | `domain/cycle/status.ts`, `components/report/StatusBadge.tsx` | 완료 |
+| 2026-09-21 | 유효 주기(15~60일) 판정을 `cycleGap.ts`로 단일화하고, 유효 간격 0개일 때 `regular`가 아닌 `insufficient`를 반환하도록 수정(우선순위 4단계 추가). 차트 점 계산(`chartPoints.ts`)도 같은 기준을 공유. | `domain/cycle/cycleGap.ts`(신규), `domain/cycle/status.ts`, `domain/cycle/chartPoints.ts`(신규) | 완료 |
 
 ## 향후 계획
 

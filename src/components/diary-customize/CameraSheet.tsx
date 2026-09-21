@@ -4,14 +4,16 @@ import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { cn } from '@/lib/cn';
-import type { StickerRatio } from '@/types';
+import { centerCropRect } from '@/lib/image/stickerFrame';
+import { AlbumIcon } from '@/components/ui/icons/AlbumIcon';
+import { CameraFlipIcon } from '@/components/ui/icons/CameraFlipIcon';
 
 export type CameraMode = 'photo' | 'sticker';
 
 export interface CameraCapture {
-  /** Cropped, oriented JPEG blob at the selected aspect ratio. */
+  /** JPEG of exactly what the viewfinder showed. No ratio yet — the photo
+   *  path picks one on the next screen, the sticker path infers it. */
   blob: Blob;
-  ratio: StickerRatio;
   mode: CameraMode;
 }
 
@@ -24,16 +26,16 @@ interface CameraSheetProps {
 type Facing = 'user' | 'environment';
 type FatalError = 'permission' | 'unavailable';
 
-const RATIO_ORDER: readonly StickerRatio[] = ['1:1', '4:3'];
 const MODE_ORDER: readonly CameraMode[] = ['photo', 'sticker'];
 
 /**
- * In-app camera (013_2). Live MediaDevices preview + shutter + flip.
- * Bottom pill toggles capture MODE (photo vs sticker) — the parent
- * branches: 'photo' saves the raw JPEG directly, 'sticker' runs it
- * through the sticker-cutout edge function (remove.bg). Top pill toggles
- * the aspect RATIO (1:1 / 4:3) which clips the captured frame before
- * returning to the parent.
+ * In-app camera (013_2, Figma 256:17898 / 256:17943). Full-bleed live
+ * MediaDevices preview with the controls floating over it. The bottom pill
+ * toggles capture MODE (photo vs sticker) and the parent branches on it:
+ * 'photo' goes on to the ratio screen (013_5/6), 'sticker' runs through the
+ * sticker-cutout edge function (remove.bg). There is deliberately no ratio
+ * control here — a ratio only means something for a photo used as-is, so it
+ * is asked after the shot and never for a cutout.
  *
  * Rendered as an overlay above DiaryCustomizeScreen — no route change, so
  * the sticker draft state stays intact if the user backs out.
@@ -45,7 +47,6 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
   const streamRef = useRef<MediaStream | null>(null);
   const [facing, setFacing] = useState<Facing>('environment');
   const [mode, setMode] = useState<CameraMode>('sticker');
-  const [ratio, setRatio] = useState<StickerRatio>('1:1');
   const [error, setError] = useState<FatalError | null>(null);
   const [starting, setStarting] = useState(true);
 
@@ -105,12 +106,10 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
   function handleShutter() {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
-    const capture = grabFrame(video, ratio);
-    if (!capture) return;
-    capture
+    grabFrame(video)
       .then((blob) => {
         stopStream();
-        onCapture({ blob, ratio, mode });
+        onCapture({ blob, mode });
       })
       .catch(() => undefined);
   }
@@ -119,77 +118,57 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex flex-col bg-brand-gray900 text-brand-white"
+      className="fixed inset-0 z-50 overflow-hidden bg-brand-gray900 text-brand-white"
     >
-      {/* Live preview area — the video fills the space and is aspect-cropped
-          on capture. The visible preview intentionally isn't clipped so the
-          user can compose within the framing marks below. */}
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-        {error ? (
-          <div className="flex flex-col items-center gap-4 px-6 text-center">
-            <p className="text-base leading-[1.5] text-brand-gray200">
-              {error === 'permission' ? c.permissionDenied : c.unavailable}
-            </p>
-            <button
-              type="button"
-              onClick={onOpenAlbum}
-              className="rounded-full bg-brand-pink200 px-5 py-2 text-sm font-semibold text-brand-white"
-            >
-              {c.openAlbumFallback}
-            </button>
-          </div>
-        ) : (
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            autoPlay
-            className={cn(
-              'h-full w-full object-cover',
-              starting && 'opacity-0',
-              facing === 'user' && 'scale-x-[-1]',
-            )}
-          />
-        )}
+      {error ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 pb-40 text-center">
+          <p className="text-base leading-[1.5] text-brand-gray200">
+            {error === 'permission' ? c.permissionDenied : c.unavailable}
+          </p>
+          <button
+            type="button"
+            onClick={onOpenAlbum}
+            className="rounded-full bg-brand-pink200 px-5 py-2 text-sm font-semibold text-brand-white"
+          >
+            {c.openAlbumFallback}
+          </button>
+        </div>
+      ) : (
+        // 뷰파인더가 화면 전체다. 셔터는 여기 보이는 영역 그대로를 담는다.
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          autoPlay
+          className={cn(
+            'absolute inset-0 h-full w-full object-cover',
+            starting && 'opacity-0',
+            facing === 'user' && 'scale-x-[-1]',
+          )}
+        />
+      )}
 
-        {/* Close (top-right) */}
-        <button
-          type="button"
-          onClick={() => {
-            stopStream();
-            onClose();
-          }}
-          aria-label={c.close}
-          className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-brand-gray900/60 text-brand-white backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-white"
-        >
-          <CloseIcon />
-        </button>
+      <button
+        type="button"
+        onClick={() => {
+          stopStream();
+          onClose();
+        }}
+        aria-label={c.close}
+        className="absolute right-4 top-[calc(0.5rem+env(safe-area-inset-top,0px))] grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-white"
+      >
+        <CloseIcon />
+      </button>
 
-        {/* Ratio pill (top-left) — spec 13 */}
-        {!error ? (
-          <div className="absolute left-4 top-4">
-            <SlidingPill<StickerRatio>
-              options={RATIO_ORDER}
-              value={ratio}
-              onChange={setRatio}
-              renderLabel={(v) => (v === '1:1' ? c.ratio1x1 : c.ratio4x3)}
-              variant="light"
-            />
-          </div>
-        ) : null}
-      </div>
-
-      {/* Control bar. 맨 아래 스티커·사진 토글이 화면 하단에 붙어 보이지 않도록
-          기본 32px 을 두고, 홈 인디케이터가 있는 기기에서는 그 높이를 더한다. */}
-      <div className="flex flex-col items-center gap-5 bg-brand-gray900 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-6">
-        <div className="flex w-full items-center justify-around px-6">
+      <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-md flex-col items-center gap-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
+        <div className="flex w-full items-center justify-between px-[60px]">
           <button
             type="button"
             onClick={onOpenAlbum}
             aria-label={c.openAlbum}
-            className="grid size-10 place-items-center rounded-full bg-brand-gray800 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-white"
+            className={SIDE_BUTTON_CLASS}
           >
-            <AlbumIcon />
+            <AlbumIcon className="size-[27px]" />
           </button>
 
           <button
@@ -197,9 +176,9 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
             onClick={handleShutter}
             disabled={!!error || starting}
             aria-label={c.shutter}
-            className="grid size-16 place-items-center rounded-full bg-brand-pink200 shadow-[0_0_0_4px_rgba(255,255,255,0.85)] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-white active:scale-95 disabled:opacity-50"
+            className="size-[68px] rounded-full border-[5px] border-brand-gray50 p-1 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200 active:scale-95 disabled:opacity-50"
           >
-            <span className="size-12 rounded-full bg-brand-pink100" />
+            <span className="block size-full rounded-full bg-brand-pink50" />
           </button>
 
           <button
@@ -207,9 +186,9 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
             onClick={handleFlip}
             disabled={!!error || starting}
             aria-label={c.flip}
-            className="grid size-10 place-items-center rounded-full bg-brand-gray800 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-white disabled:opacity-50"
+            className={SIDE_BUTTON_CLASS}
           >
-            <FlipIcon />
+            <CameraFlipIcon className="h-[25px] w-[23.4px]" />
           </button>
         </div>
 
@@ -219,21 +198,20 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
           value={mode}
           onChange={setMode}
           renderLabel={(v) => (v === 'photo' ? c.modePhoto : c.modeSticker)}
-          variant="dark"
         />
       </div>
     </div>
   );
 }
 
+const SIDE_BUTTON_CLASS =
+  'grid size-[45px] place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-white disabled:opacity-50';
+
 interface SlidingPillProps<T extends string> {
   options: readonly T[];
   value: T;
   onChange: (v: T) => void;
   renderLabel: (v: T) => string;
-  /** `light` = white pill with pink highlight (top overlay use).
-   *  `dark` = translucent pill on dark bg (bottom bar use). */
-  variant: 'light' | 'dark';
 }
 
 function SlidingPill<T extends string>({
@@ -241,7 +219,6 @@ function SlidingPill<T extends string>({
   value,
   onChange,
   renderLabel,
-  variant,
 }: SlidingPillProps<T>) {
   const idx = Math.max(0, options.indexOf(value));
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -249,9 +226,7 @@ function SlidingPill<T extends string>({
   // to their own content, so an even split of the track lands the highlight
   // off its button — which shows up as lopsided padding around the label.
   // Measure the active button instead.
-  const [highlight, setHighlight] = useState<{ left: number; width: number } | null>(
-    null,
-  );
+  const [highlight, setHighlight] = useState<{ left: number; width: number } | null>(null);
   useLayoutEffect(() => {
     const el = btnRefs.current[idx];
     if (!el) return;
@@ -262,25 +237,14 @@ function SlidingPill<T extends string>({
     ro.observe(el);
     return () => ro.disconnect();
   }, [idx, options]);
-  const track =
-    variant === 'light'
-      ? 'bg-brand-white/85 text-brand-gray900'
-      : 'bg-brand-gray800/80 text-brand-gray200';
   return (
-    <div
-      className={cn(
-        'relative inline-flex h-9 items-center rounded-full p-1 text-sm font-medium backdrop-blur-sm',
-        track,
-      )}
-    >
+    // 시안의 알약은 테두리뿐이지만 실제 뷰파인더는 어두울 수 있다. 비활성 라벨(gray600)이
+    // 묻히지 않도록 밝은 반투명 바탕을 깐다.
+    <div className="relative inline-flex items-center rounded-full border border-brand-gray200 bg-brand-gray50/75 px-[3px] text-base backdrop-blur-sm">
       <span
         aria-hidden
-        className="absolute bottom-1 top-1 rounded-full bg-brand-pink200 transition-[left,width] duration-200 ease-out"
-        style={
-          highlight
-            ? { left: highlight.left, width: highlight.width }
-            : { opacity: 0 }
-        }
+        className="absolute inset-y-0 rounded-full bg-brand-pink50 transition-[left,width] duration-200 ease-out"
+        style={highlight ? { left: highlight.left, width: highlight.width } : { opacity: 0 }}
       />
       {options.map((opt, i) => (
         <button
@@ -291,10 +255,8 @@ function SlidingPill<T extends string>({
           type="button"
           onClick={() => onChange(opt)}
           className={cn(
-            // `whitespace-nowrap` keeps a label like "스티커"/"Sticker" on one
-            // line — the pill is a fixed 36px tall, so a wrap breaks it.
-            'relative z-10 flex-1 whitespace-nowrap rounded-full px-4 py-1 transition-colors focus-visible:outline-none',
-            value === opt && 'font-semibold text-brand-white',
+            'relative z-10 min-w-[78px] whitespace-nowrap rounded-full px-[18px] py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800',
+            value === opt ? 'font-semibold text-brand-gray900' : 'text-brand-gray600',
           )}
         >
           {renderLabel(opt)}
@@ -305,28 +267,21 @@ function SlidingPill<T extends string>({
 }
 
 /**
- * Capture the current video frame into a Blob, cropped to `ratio` from
- * the center. Uses the video's intrinsic dimensions so the output is
- * device-pixel accurate regardless of on-screen scaling.
+ * Capture what the viewfinder is showing. The <video> is `object-cover`, so
+ * the visible part is the centre of the frame at the element's own aspect —
+ * grab exactly that from the intrinsic pixels so the shot matches the preview
+ * regardless of on-screen scaling.
  */
-async function grabFrame(video: HTMLVideoElement, ratio: StickerRatio): Promise<Blob> {
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
-  // Label "4:3" is kept for user familiarity but the actual crop is
-  // portrait 3:4 (per Figma preview) — width:height = 3:4, so height wins.
-  const target = ratio === '1:1' ? 1 : 3 / 4;
-  const source = vw / vh;
-  let sx = 0;
-  let sy = 0;
-  let sw = vw;
-  let sh = vh;
-  if (source > target) {
-    sw = Math.round(vh * target);
-    sx = Math.round((vw - sw) / 2);
-  } else if (source < target) {
-    sh = Math.round(vw / target);
-    sy = Math.round((vh - sh) / 2);
-  }
+async function grabFrame(video: HTMLVideoElement): Promise<Blob> {
+  const viewAspect =
+    video.clientWidth > 0 && video.clientHeight > 0
+      ? video.clientWidth / video.clientHeight
+      : video.videoWidth / video.videoHeight;
+  const rect = centerCropRect(video.videoWidth, video.videoHeight, viewAspect);
+  const sx = Math.round(rect.sx);
+  const sy = Math.round(rect.sy);
+  const sw = Math.round(rect.sw);
+  const sh = Math.round(rect.sh);
   const canvas = document.createElement('canvas');
   canvas.width = sw;
   canvas.height = sh;
@@ -344,29 +299,17 @@ async function grabFrame(video: HTMLVideoElement, ratio: StickerRatio): Promise<
 
 function CloseIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden
+    >
       <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  );
-}
-
-function AlbumIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
-      <rect x="3" y="6" width="18" height="14" rx="2" />
-      <path d="M3 17l5-5 4 4 3-3 6 6" />
-      <circle cx="9" cy="11" r="1.5" />
-    </svg>
-  );
-}
-
-function FlipIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
-      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-      <path d="M21 4v4h-4" />
-      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-      <path d="M3 20v-4h4" />
     </svg>
   );
 }

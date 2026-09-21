@@ -712,6 +712,7 @@ export const en = {
       12: 'Dec',
     },
     recentTitle: 'Recent cycles',
+    recentExcludedNote: 'Only cycles with 15–60 days between starts are included in your chart and average.',
     row: {
       dates: 'Start / End',
       length: 'Length',
@@ -719,6 +720,7 @@ export const en = {
       ongoing: 'Ongoing',
       notAvailable: '—',
       daysSuffix: 'd',
+      excluded: 'not counted',
     },
     empty: {
       title: 'Not enough cycle data yet',
@@ -728,6 +730,10 @@ export const en = {
     chartEmpty: {
       title: 'Not enough data yet',
       body: 'We need at least 3 period records to spot your pattern!',
+    },
+    chartNoCycles: {
+      title: 'No cycles to chart yet',
+      body: 'Only cycles of 15–60 days are counted.',
     },
     tooltipAria: 'Cycle status detail',
     diary: {
@@ -796,6 +802,7 @@ export const en = {
         editEntry: 'Edit',
         save: 'Save',
         close: 'Close',
+        delete: 'Delete category',
       },
       palette: {
         pink: 'Pink',
@@ -841,8 +848,6 @@ export const en = {
         flip: 'Flip camera',
         modePhoto: 'Photo',
         modeSticker: 'Sticker',
-        ratio1x1: '1:1',
-        ratio4x3: '4:3',
         permissionDenied:
           'Camera access is required. Please allow it in your browser settings and try again.',
         unavailable: 'Camera is not available on this device. Choose from your album instead.',
@@ -920,7 +925,7 @@ export const en = {
       insufficient: {
         badge: 'Not enough data',
         title: 'A little more logging will let us surface a pattern.',
-        criteria: '*Fewer than 3 records',
+        criteria: '*Fewer than 3 records, or no cycles of 15–60 days',
       },
     },
   },

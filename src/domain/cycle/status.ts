@@ -1,5 +1,6 @@
 import type { PeriodLog, Confidence } from '@/types';
 import { daysBetween } from '@/lib/date';
+import { isCountableCycleGap } from './cycleGap';
 
 export type CycleStatus =
   | 'stable'
@@ -18,8 +19,6 @@ export interface CycleStatusResult {
   latestPeriodLengthDays: number | null;
 }
 
-const CYCLE_MIN = 15;
-const CYCLE_MAX = 60;
 const PERIOD_MIN = 1;
 const PERIOD_MAX = 14;
 
@@ -43,7 +42,7 @@ function collectCycleGaps(periods: PeriodLog[]): number[] {
   const gaps: number[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const gap = daysBetween(sorted[i - 1]!.startDate, sorted[i]!.startDate);
-    if (gap >= CYCLE_MIN && gap <= CYCLE_MAX) gaps.push(gap);
+    if (isCountableCycleGap(gap)) gaps.push(gap);
   }
   return gaps;
 }
@@ -80,12 +79,12 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
 
   const gaps = collectCycleGaps(periods);
   const avg = avgOrNull(gaps);
-  const range = gaps.length >= 2 ? Math.max(...gaps) - Math.min(...gaps) : gaps.length === 1 ? 0 : null;
+  const range =
+    gaps.length >= 2 ? Math.max(...gaps) - Math.min(...gaps) : gaps.length === 1 ? 0 : null;
   const latestLen = latestCompletedPeriodLength(periods);
 
   // gaps.length + 1 == number of period records. `high` = 4+ records (§2 of cycle-logic.md).
-  const confidence: Confidence =
-    gaps.length >= 3 ? 'high' : gaps.length >= 2 ? 'medium' : 'low';
+  const confidence: Confidence = gaps.length >= 3 ? 'high' : gaps.length >= 2 ? 'medium' : 'low';
 
   const base = {
     confidence,
@@ -94,11 +93,18 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
     latestPeriodLengthDays: latestLen,
   };
 
+  // 생리 "기간"은 주기 간격 없이도 관찰되는 사실이라, 셀 수 있는 주기가 없어도 먼저 말한다.
   if (latestLen !== null && latestLen <= SHORT_PERIOD_MAX) {
     return { status: 'shortPeriod', ...base };
   }
   if (latestLen !== null && latestLen >= LONG_PERIOD_MIN) {
     return { status: 'longPeriod', ...base };
+  }
+  // 기록은 3회 이상인데 셀 수 있는 주기(cycleGap.ts)가 하나도 없는 경우. 예전에는 아래 조건을
+  // 전부 통과해 맨 끝 기본값 `regular`("비교적 일정한 편")로 떨어졌다 — 근거 없이 일정하다고
+  // 말한 셈. 판정할 주기가 없으면 부족하다고 말한다 (cycle-logic.md §3).
+  if (gaps.length === 0) {
+    return { status: 'insufficient', ...base, confidence: 'unknown' };
   }
   if (range !== null && range >= IRREGULAR_RANGE_MIN) {
     return { status: 'irregular', ...base };
@@ -108,8 +114,7 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
   }
   const inStablePeriod =
     latestLen === null || (latestLen >= STABLE_PERIOD_MIN && latestLen <= STABLE_PERIOD_MAX);
-  const inStableCycle =
-    avg !== null && avg >= STABLE_CYCLE_MIN && avg <= STABLE_CYCLE_MAX;
+  const inStableCycle = avg !== null && avg >= STABLE_CYCLE_MIN && avg <= STABLE_CYCLE_MAX;
   const inStableRange = range !== null && range <= STABLE_RANGE_MAX;
   if (inStablePeriod && inStableCycle && inStableRange) {
     return { status: 'stable', ...base };

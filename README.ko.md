@@ -350,14 +350,16 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 **다이어리**
 - [x] Diary & Event 도메인 — `/log` 를 Diary/Report 토글로 전환, EventCategory(내장 4종 + 사용자 추가) + EventLog(제목/메모/기간/카테고리/생리마크), 생리마크 ↔ PeriodLog 자동 연동. migrations 0006–0007
 - [x] 통합 입력 시트 — `+` 와 날짜 탭 모두 `EventFormSheet` 하나로(생리 토글 + 컨디션 섹션 포함). 일정 유형은 접힌 행 → 펼침 목록(기본 "친구"), 삭제는 `DeleteEventDialog`
+- [x] 일정 유형 삭제 (2026-09-21) — 유형 편집 시트 하단 버튼, 확인 팝업 없이 즉시 삭제(유형이 2개 이상 남아 있을 때만). 그 유형을 쓰던 일정은 남은 유형 중 기본값으로 먼저 옮긴 뒤 삭제(DB FK `on delete restrict`). 유형 편집·추가 시트는 일정 시트 위에 겹쳐 뜨고 작성 중이던 내용은 그대로 유지(`suspended` prop으로 입력만 잠금). 같은 커밋에서 시드 중복 버그도 수정 — 동시 시드 요청을 직렬화하고, 이름·색까지 같은 기본 유형이 이미 두 벌 저장된 계정은 하이드레이션 때 자동 정리
 - [x] 주간 이벤트 바 — 여러 날짜에 걸친 일정을 한 줄 바로 표시 (`domain/event/weekLanes`)
-- [x] 스티커 커스터마이즈 — 앨범/카메라 → 누끼(`sticker-cutout`) 또는 사진 그대로 → 캘린더 위 drag/resize/rotate. `/log/customize`, `DraggableBottomSheet`, 기본 스티커 시드(버전 관리). migrations 0008–0009, 0012
+- [x] 스티커 커스터마이즈 — 앨범/카메라 → 누끼(`sticker-cutout`) 또는 사진 그대로 → 캘린더 위 drag/resize/rotate. 비율(1:1/4:3)은 앨범·카메라 공통으로 "사진 그대로"일 때만, 촬영·선택 **뒤에** 고른다(카메라 첫 화면의 비율 탭 제거, 2026-09-21). 누끼 결과는 투명 여백을 자동으로 다듬고 배치 비율도 그 모양에서 추론. 배치 상자 안 맞춤도 소스별로 구분(2026-09-21) — 사진은 상자를 꽉 채우고(`object-cover`), 누끼는 모양이 제각각이라 통째로 보이도록 상자 안에 맞춘다(`object-contain`, `stickerImageFit()`). `/log/customize`, `DraggableBottomSheet`, 기본 스티커 시드(버전 관리). migrations 0008–0009, 0012
 - [x] 다이어리 탭 스티커 탭 → 꾸미기 — 스티커가 일정 바보다 위 레이어라 겹친 곳은 스티커가 탭을 가로챔. 탭하면 `/log/customize` 로 이동해 해당 스티커를 바로 선택 상태로 열고 라이브러리 시트는 `peek`. `diaryFocusStore.visibleMonth` 를 다이어리·꾸미기가 공유해 보던 달을 유지(로그 탭 재탭 시에만 오늘 달로 리셋). 앨범 선택은 라이브러리 `+` 팝오버와 카메라 앨범 아이콘이 `usePhotoLibraryPicker` 훅(네이티브 `Camera.pickImages` / 웹 file input 폴백) 하나로 통합
 - [x] 공휴일 표시 — 한국·미국 공휴일을 날짜 아래 라벨로 (`domain/holiday`, 한국 음력 표 2025–2030 + 대체공휴일 규칙). 마이페이지 `/settings/holidays` 토글, 기본은 앱 언어 따라 자동. migration 0014
+- [x] 주기리포트 정확도 개선 (2026-09-21) — 유효 주기(15~60일) 판정을 `cycleGap.ts` 하나로 단일화. 기록은 3회 이상인데 셀 수 있는 주기가 하나도 없을 때 예전엔 근거 없이 "일정한 편"으로 표시됐던 것을 "기록 부족" 상태로 고침. `CycleChart`는 기록 부족/유효 주기 0개/정상 3상태로 분기해 안내 문구를 다르게 보여주고, `RecentCyclesCard`는 범위 밖 주기 값에 "· 통계 제외" 꼬리표를 붙임
 
 **홈**
 - [x] 홈 커스터마이즈 — 비파괴 사진 편집(`PhotoTransform`), 드래프트 모드 + `commitPhotoDraft()`, 슬롯 삭제, 종료 경로 드래프트 정리(`CustomizeDraftGuard`). IndexedDB v10, migration 0010
-- [x] 음식 상세 화면 — 주기별 추천 음식 칩 → `/foods/[id]` 읽기 전용 아티클 20편(`src/content/foods/`, en 원문 + ko 번역, 텍스트 없는 원본 히어로 사진 위에 헤드라인을 오버레이)
+- [x] 음식 상세 화면 — 주기별 추천 음식 칩 → `/foods/[id]` 읽기 전용 아티클 20편(`src/content/foods/`, en 원문 + ko 번역, 텍스트 없는 원본 히어로 사진 위에 헤드라인을 오버레이). 상세에서 뒤로 나오면 홈 스크롤 위치 복원(`useScrollRestore` + `useHistoryBackClick`, MyPage 뒤로가기와 같은 훅 공유, 2026-09-21)
 
 **마이페이지**
 - [x] Figma 015 기반 MyPage — 인증 카드, 주기 요약, 환경설정(알림·언어·공휴일)·고객지원 카드, 로그아웃 확인 다이얼로그, 법적 문서(약관·개인정보처리방침), Q&A, 알림 설정(마스터 + 3항목 + 시기 휠), `MyPageBackLink` + 스크롤 복원

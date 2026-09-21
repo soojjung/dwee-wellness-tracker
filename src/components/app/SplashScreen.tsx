@@ -8,6 +8,7 @@ export function SplashScreen() {
     <div
       role="status"
       aria-label={t.app.name}
+      data-page-bg="pink"
       className="fixed inset-0 z-50 mx-auto flex max-w-md items-center justify-center bg-auth-bg"
     >
       <img

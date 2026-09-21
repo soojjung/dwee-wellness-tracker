@@ -3,7 +3,7 @@ import { addDaysISO, daysBetween } from '@/lib/date';
 
 /**
  * 두 시작일 사이가 이 값 미만이면 의도가 모호하다고 보고 사용자에게 확인을 받는다.
- * `aggregate.ts` 의 이상치 필터(`gap >= 15 && gap <= 60`)와 같은 값으로 두 정책을 동기화한다.
+ * `cycleGap.ts` 의 CYCLE_GAP_MIN_DAYS 와 같은 값으로 두 정책을 동기화한다.
  */
 export const SHORT_CYCLE_THRESHOLD_DAYS = 15;
 
@@ -32,10 +32,7 @@ export type NewStartEvaluation =
  *   호출처는 사용자에게 의도(연장/대체/그대로 저장)를 물어야 한다.
  * - `ok`: 일반 흐름으로 진행. `reconcileForNewStart` 로 후속 처리.
  */
-export function evaluateNewStart(
-  existing: PeriodLog[],
-  newStart: string,
-): NewStartEvaluation {
+export function evaluateNewStart(existing: PeriodLog[], newStart: string): NewStartEvaluation {
   const match = existing.find((p) => p.startDate === newStart);
   if (match) return { kind: 'idempotent', match };
 

@@ -1,2 +1,3 @@
 - [Preview test failure - resolved](project_preview_test_broken.md) — grid.preview.test.tsx no longer exists as of 2026-09-14; pnpm test:unit runs clean, don't assume stale
 - [Test filter flag doesn't isolate](feedback_test_filter_flag.md) — use `npx vitest run <path>` not `pnpm test:unit -- <pattern>` to check one file
+- [Verify "existing tests" claims](feedback_verify_existing_test_claims.md) — caller may say "verify-only" for a file with zero actual test coverage; check before trusting
