@@ -712,7 +712,8 @@ export const en = {
       12: 'Dec',
     },
     recentTitle: 'Recent cycles',
-    recentExcludedNote: 'Only cycles with 15–60 days between starts are included in your chart and average.',
+    recentExcludedNote:
+      'Only cycles with 15–60 days between starts are included in your chart and average.',
     row: {
       dates: 'Start / End',
       length: 'Length',
@@ -925,7 +926,7 @@ export const en = {
       insufficient: {
         badge: 'Not enough data',
         title: 'A little more logging will let us surface a pattern.',
-        criteria: '*Fewer than 3 records, or no cycles of 15–60 days',
+        criteria: '*Fewer than 3 records, or fewer than 2 cycles of 15-60 days',
       },
     },
   },
@@ -1350,8 +1351,7 @@ export const en = {
     },
     signOutToast: 'Signed out',
     withdrawDialog: {
-      title:
-        'Deleting your account erases every record, and it can’t be undone.',
+      title: 'Deleting your account erases every record, and it can’t be undone.',
       cancel: 'Cancel',
       confirm: 'Confirm',
     },

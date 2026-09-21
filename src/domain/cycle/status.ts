@@ -23,6 +23,7 @@ const PERIOD_MIN = 1;
 const PERIOD_MAX = 14;
 
 const MIN_RECORDS_FOR_STATUS = 3;
+const MIN_CYCLES_FOR_STATUS = 2;
 
 const STABLE_PERIOD_MIN = 3;
 const STABLE_PERIOD_MAX = 7;
@@ -100,10 +101,10 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
   if (latestLen !== null && latestLen >= LONG_PERIOD_MIN) {
     return { status: 'longPeriod', ...base };
   }
-  // 기록은 3회 이상인데 셀 수 있는 주기(cycleGap.ts)가 하나도 없는 경우. 예전에는 아래 조건을
-  // 전부 통과해 맨 끝 기본값 `regular`("비교적 일정한 편")로 떨어졌다 — 근거 없이 일정하다고
-  // 말한 셈. 판정할 주기가 없으면 부족하다고 말한다 (cycle-logic.md §3).
-  if (gaps.length === 0) {
+  // 기록은 3회 이상인데 셀 수 있는 유효 주기(cycleGap.ts, 15~60일)가 2개 미만인 경우.
+  // 변동폭은 주기가 둘 이상일 때만 의미 있다. 판정할 주기가 부족하면 insufficient 을 반환
+  // (cycle-logic.md §8, 2026-09-21 결정).
+  if (gaps.length < MIN_CYCLES_FOR_STATUS) {
     return { status: 'insufficient', ...base, confidence: 'unknown' };
   }
   if (range !== null && range >= IRREGULAR_RANGE_MIN) {

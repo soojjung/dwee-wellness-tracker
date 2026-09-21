@@ -55,7 +55,7 @@ paths:
 1. **insufficient** — `periods.length < 3` (기록 3회 미만). 나머지 계산 스킵.
 2. **shortPeriod** — 최근 종료된 기록의 기간이 2일 이하 (기간 기반, 주기 무관).
 3. **longPeriod** — 최근 종료된 기록의 기간이 8일 이상 (기간 기반, 주기 무관).
-4. **insufficient** — 유효 주기 간격 0개 (`gaps.length === 0`). 모든 간격이 CYCLE_GAP_MIN_DAYS(15)~CYCLE_GAP_MAX_DAYS(60) 범위 밖. 판정할 주기가 없으므로 `regular` 로 흘려보내지 않는다.
+4. **insufficient** — 유효 주기 간격 2개 미만 (`gaps.length < 2`). 변동폭 판정에는 2개 이상의 주기 데이터 필요.
 5. **irregular** — 최근 주기 변동폭(range) 15일 이상. (변동폭 = max cycle − min cycle)
 6. **slightlyIrregular** — 최근 주기 변동폭 8~14일.
 7. **stable** — 기간 3~7일, 주기 21~35일, 변동 ±7일 이내(변동폭 ≤ 7일) 모두 만족.
@@ -66,22 +66,22 @@ paths:
 - **유효 주기**: `src/domain/cycle/cycleGap.ts`의 `CYCLE_GAP_MIN_DAYS`(15) ~ `CYCLE_GAP_MAX_DAYS`(60) 범위. 이 범위 밖 간격은 모두 제외.
 - `shortPeriod`/`longPeriod` 는 이상치 제외(1~14일)한 뒤에도 최근 완료된 기록이 있어야 판정. 있으면 주기 간격 여부와 무관하게 우선 반환.
 - 반환값은 `{ status, confidence }` — `confidence` 는 `.claude/rules/cycle-logic.md` §2 규칙과 동일하게 `'unknown' | 'low' | 'medium' | 'high'`.
-  - `'unknown'` = insufficient (기록 < 3 또는 유효 간격 0)
-  - `'low'` = 유효 간격 1개
+  - `'unknown'` = insufficient (기록 < 3 또는 유효 간격 < 2)
+  - `'low'` = 유효 간격 1개 (shortPeriod/longPeriod에서만)
   - `'medium'` = 유효 간격 2개
   - `'high'` = 유효 간격 3개 이상
 - 표시 색상/카피는 화면에서 `t.report.status[status]` 로 조립. 도메인은 문자열 반환 금지.
 
 카피 톤(예시, en source-of-truth · ko 번역):
 
-| status | 조건 요약 | ko 예시 |
-|---|---|---|
-| stable | 기간 3~7일, 주기 21~35일, 변동 ±7일 | 현재 생리 패턴이 비교적 일정한 편이에요. |
-| regular | 주기가 조금 짧거나 길지만 일정하게 반복 | 일정한 리듬으로 생리하고 있어요. |
-| slightlyIrregular | 주기 변동 8~14일 | 최근 주기가 조금 달라지고 있어요. 컨디션을 함께 살펴보세요. |
-| irregular | 주기 변동 15일 이상 | 최근 생리 주기의 변화가 큰 편이에요. 조금 더 지켜보는 것을 추천해요. |
-| shortPeriod | 최근 기간 2일 이하 | 생리 기간이 평소보다 짧은 편이에요. |
-| longPeriod | 최근 기간 8일 이상 | 생리 기간이 다소 긴 편이에요. |
-| insufficient | 기록 < 3 또는 유효 간격 0 | 조금 더 기록하면 패턴을 분석해 볼 수 있어요. |
+| status            | 조건 요약                               | ko 예시                                                              |
+| ----------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| stable            | 기간 3~7일, 주기 21~35일, 변동 ±7일     | 현재 생리 패턴이 비교적 일정한 편이에요.                             |
+| regular           | 주기가 조금 짧거나 길지만 일정하게 반복 | 일정한 리듬으로 생리하고 있어요.                                     |
+| slightlyIrregular | 주기 변동 8~14일                        | 최근 주기가 조금 달라지고 있어요. 컨디션을 함께 살펴보세요.          |
+| irregular         | 주기 변동 15일 이상                     | 최근 생리 주기의 변화가 큰 편이에요. 조금 더 지켜보는 것을 추천해요. |
+| shortPeriod       | 최근 기간 2일 이하                      | 생리 기간이 평소보다 짧은 편이에요.                                  |
+| longPeriod        | 최근 기간 8일 이상                      | 생리 기간이 다소 긴 편이에요.                                        |
+| insufficient      | 기록 < 3 또는 유효 간격 0               | 조금 더 기록하면 패턴을 분석해 볼 수 있어요.                         |
 
 의료적 단언은 여전히 금지(§5). 모든 표시 문자열에 "패턴/추정" 뉘앙스 유지.

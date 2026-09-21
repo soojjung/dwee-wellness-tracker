@@ -920,7 +920,7 @@ export const ko: Dictionary = {
       insufficient: {
         badge: '데이터 부족',
         title: '조금 더 기록하면 패턴을 분석해 볼 수 있어요.',
-        criteria: '*기록 3회 미만 또는 15~60일 주기 없음',
+        criteria: '*기록 3회 미만 또는 15~60일 주기 2회 미만',
       },
     },
   },

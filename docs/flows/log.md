@@ -70,16 +70,16 @@ flowchart TD
 
 판정 우선순위:
 
-| 우선순위 | 코드 | 판정 기준 |
-|---|---|---|
-| 1 | `insufficient` | 기록 3회 미만 |
-| 2 | `shortPeriod` | 최근 완료 기간 ≤ 2일 |
-| 3 | `longPeriod` | 최근 완료 기간 ≥ 8일 |
-| 4 | `insufficient` | 유효 주기 간격 0개 (모든 간격이 `cycleGap.ts`의 15~60일 범위 밖) — 판정할 주기가 없으므로 `regular`로 흘려보내지 않음 |
-| 5 | `irregular` | 주기 변동폭 ≥ 15일 |
-| 6 | `slightlyIrregular` | 주기 변동폭 8~14일 |
-| 7 | `stable` | 기간 3~7일, 주기 21~35일, 변동폭 ≤ 7일 |
-| 8 | `regular` | 위 조건 외 나머지 |
+| 우선순위 | 코드                | 판정 기준                                                      |
+| -------- | ------------------- | -------------------------------------------------------------- |
+| 1        | `insufficient`      | 기록 3회 미만                                                  |
+| 2        | `shortPeriod`       | 최근 완료 기간 ≤ 2일                                           |
+| 3        | `longPeriod`        | 최근 완료 기간 ≥ 8일                                           |
+| 4        | `insufficient`      | 유효 주기 간격 2개 미만 (변동폭은 2개 이상의 주기 데이터 필요) |
+| 5        | `irregular`         | 주기 변동폭 ≥ 15일                                             |
+| 6        | `slightlyIrregular` | 주기 변동폭 8~14일                                             |
+| 7        | `stable`            | 기간 3~7일, 주기 21~35일, 변동폭 ≤ 7일                         |
+| 8        | `regular`           | 위 조건 외 나머지                                              |
 
 "유효 주기" 판정 기준(15~60일)은 `src/domain/cycle/cycleGap.ts`의 `isCountableCycleGap()`이 단일 출처다 — 평균(`aggregate.ts`), 상태 판정(`status.ts`), 차트 축(`chartScale.ts`), 아래 `CycleChart`/`RecentCyclesCard`가 모두 이 값을 쓴다.
 
@@ -90,11 +90,11 @@ flowchart TD
 
 `CycleReportCard`는 기록 수와 최근 6개월 안에 셀 수 있는 주기가 있는지에 따라 세 상태 중 하나로 차트를 그린다(`monthlyCyclePoints()`, `src/domain/cycle/chartPoints.ts`):
 
-| 상태 | 조건 | 표시 |
-|---|---|---|
-| `tooFewRecords` | `periods.length < 3` | `t.report.chartEmpty` (기록 부족 안내) |
-| `noCycles` | 기록은 3회 이상인데 최근 6개월에 셀 수 있는 주기가 0개 | `t.report.chartNoCycles` (빈 격자만 보여 주면 기록이 반영 안 된 것처럼 보이는 걸 방지) |
-| `plot` | 그릴 점이 하나라도 있음 | `CycleChart` 렌더 |
+| 상태            | 조건                                                   | 표시                                                                                   |
+| --------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `tooFewRecords` | `periods.length < 3`                                   | `t.report.chartEmpty` (기록 부족 안내)                                                 |
+| `noCycles`      | 기록은 3회 이상인데 최근 6개월에 셀 수 있는 주기가 0개 | `t.report.chartNoCycles` (빈 격자만 보여 주면 기록이 반영 안 된 것처럼 보이는 걸 방지) |
+| `plot`          | 그릴 점이 하나라도 있음                                | `CycleChart` 렌더                                                                      |
 
 `RecentCyclesCard`는 목록에는 셀 수 없는 주기 값도 그대로 보여주되(기록 자체를 숨기지 않음), 15~60일 범위 밖인 행에는 "· 통계 제외" 꼬리표를 붙이고 카드 하단에 각주(`t.report.recentExcludedNote`)를 한 번만 표시한다 — 차트·평균·상태 판정에서는 빠지는 값이라는 걸 알리기 위함.
 
@@ -185,6 +185,7 @@ flowchart TD
 ### Diary 커스터마이즈 (STEP 10.3a–10.3d — 완료)
 
 `edit-star` 아이콘 → `/log/customize` fullscreen 라우트로 이동.
+
 - **달 유지**: `diaryFocusStore.visibleMonth` 를 다이어리와 꾸미기 화면이 공유한다. 꾸미기는 다이어리가 보여주던 달로 열리고(이전엔 항상 오늘 달로 열려 다른 달을 보다가 들어가면 튕기는 버그가 있었음), 돌아왔을 때도 그 달이 유지된다. 하단 탭의 log 탭을 다시 탭할 때(`pingToday`)만 둘 다 오늘 달로 리셋된다. 새로고침·딥링크처럼 기록이 없으면 오늘 달이 기본.
 - **다이어리에서 스티커 탭 → 꾸미기**: `DiaryStickerViewLayer` 가 다이어리 탭에서도 스티커를 탭 가능하게 만든다(이벤트 바보다 위 레이어라, 겹친 곳은 스티커가 이벤트를 가로챈다). 탭하면 `diaryFocusStore.setFocusPlacementId(id)` 로 1회용 값을 저장하고 `/log/customize` 로 이동 — 꾸미기 화면이 마운트되며 그 스티커를 바로 선택 상태로 열고 라이브러리 시트를 `peek` 로 내려 가리지 않게 한다.
 - 데이터: `DiarySticker` (id, storageRef, ratio 1:1|4:3, source photo|sticker, createdAt).
@@ -197,6 +198,7 @@ flowchart TD
 - **스티커 맞춤 규칙(contain vs cover)**: `stickerImageFit(source)` (`src/components/diary/stickerImageFit.ts`)가 배치 상자 안에 이미지를 어떻게 맞출지 정한다 — `source: 'photo'`는 저장 시 이미 그 비율로 정확히 잘라 둔 사진이라 상자를 꽉 채우고(`object-cover`), `source: 'sticker'`(누끼)는 모양이 제각각이라 cover로 채우면 가장자리가 잘린다(기본 헤드셋 스티커가 3:4 상자에서 좌우 4%씩 잘리던 문제) — 상자 안에 통째로 보이도록 맞춘다(`object-contain`). 꾸미기 화면(`PlacedSticker`)과 다이어리(`DiaryStickerViewLayer`)가 이 함수를 공유해 편집 중 모양과 붙인 뒤 모양이 같게 유지한다.
 
 관련 파일:
+
 - `src/app/(fullscreen)/log/customize/page.tsx`
 - `src/components/diary-customize/{DiaryCustomizeScreen,StickerLibrarySheet,PhotoImportModal,PhotoRatioScreen,CapturedPhotoRatioStep,PlacedStickerLayer,PlacedSticker,CameraSheet,StickerScanScreen,CutoutConfirmScreen,DeleteStickersDialog}.tsx`
 - `src/components/diary/DiaryStickerViewLayer.tsx` — 다이어리 탭 캘린더 위 read-only 오버레이
@@ -251,6 +253,7 @@ flowchart TD
 ```
 
 관련:
+
 - Edge function: `supabase/functions/sticker-cutout/index.ts` — remove.bg API 프록시. Auth = Supabase JWT, 일일 20회 제한 (`sticker_cutout_calls` 테이블).
 - Client service: `src/data/services/stickerCutoutService.ts` — `removeStickerBackground({blob, mediaType, signal})`.
 - Pure helper: `src/lib/cutout/base64ToBlob.ts` (+ 테스트/케이스 표).

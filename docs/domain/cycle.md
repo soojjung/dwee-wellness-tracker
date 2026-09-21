@@ -7,29 +7,34 @@ dwee는 사용자의 생리 주기를 4단계로 구분하고 rule-based 로직�
 ## 4-Phase Cycle Definition
 
 ### 월경기 (Menstrual Phase)
+
 - **범위**: 생리 시작일 + 0일 ~ 생리 기간(평균) 이전
 - **생리학적 근거**: 실제 생리가 진행되는 기간. 에스트로겐·프로게스테론 모두 저점.
 - **특징**: 피로, 복통, 집중력 저하 등이 흔함.
 - **경계**: `dayInCycle < averagePeriodLength`
 
 ### 난포기 (Follicular Phase)
+
 - **범위**: 생리 종료 ~ 배란 전 2일
 - **생리학적 근거**: 난소에서 난포가 성숙하며 에스트로겐 상승. 에너지·기분·인지 기능 개선.
 - **경계**: `dayInCycle >= averagePeriodLength && dayInCycle < ovulationDay - 2`
   - `ovulationDay = averageCycleLength - 14`
 
 ### 배란기 (Ovulation Phase)
+
 - **범위**: 배란 예상일 ± 2일 (총 4일)
 - **생리학적 근거**: 난자 배출 시점. LH 급증. 에너지·사회성 피크. 일부는 배란통/소량 출혈.
 - **경계**: `dayInCycle >= ovulationDay - 2 && dayInCycle <= ovulationDay + 1`
   - `±2일` 폭은 배란 시점의 개인차(±2일) 반영
 
 ### 황체기 (Luteal Phase)
+
 - **범위**: 배란 후 ~ 생리 전
 - **생리학적 근거**: 황체에서 프로게스테론 분비. 하강 시 PMS(부종, 감정 기복, 식욕 변화, 피로) 가능.
 - **경계**: `dayInCycle > ovulationDay + 1 && dayInCycle < averageCycleLength`
 
 ### Unknown
+
 - **조건**: 데이터 부족 또는 계산 불가능 상태
 - **반환**: `{ phase: 'unknown', confidence: 'unknown' }`
 
@@ -45,7 +50,7 @@ FUNCTION currentPhase(today, periods, settings) -> PhaseEstimate
 
   last_period = periods[sorted by startDate][length - 1]
   dayInCycle = days_between(last_period.startDate, today)
-  
+
   IF dayInCycle < 0
     RETURN { phase: 'unknown', confidence: 'low' }
   END IF
@@ -68,7 +73,7 @@ FUNCTION currentPhase(today, periods, settings) -> PhaseEstimate
     END IF
 
   confidence = periods.length >= 3 ? 'medium' : 'low'
-  
+
   RETURN { phase, confidence }
 END FUNCTION
 ```
@@ -76,6 +81,7 @@ END FUNCTION
 ### 입력/출력 스펙
 
 #### 입력 (Input)
+
 - `today: string` (ISO 8601, e.g., "2026-06-04")
 - `periods: PeriodLog[]`
   - `PeriodLog.startDate: string` (ISO 8601)
@@ -85,6 +91,7 @@ END FUNCTION
   - `averagePeriodLength: number` (기본값: 5, 범위: 1-14)
 
 #### 출력 (Output)
+
 ```typescript
 interface PhaseEstimate {
   phase: 'menstrual' | 'follicular' | 'ovulation' | 'luteal' | 'unknown';
@@ -102,23 +109,27 @@ interface PhaseEstimate {
 ## 데이터 부족 시 동작
 
 ### 0개 기록
+
 ```
 currentPhase() → { phase: 'unknown', confidence: 'unknown' }
 UI: "아직 예측하기 어려워요"
 ```
 
 ### 1개 기록
+
 ```
 - 해당 기록이 오늘 이전이면: dayInCycle 계산 가능, confidence: 'low'
 - 해당 기록이 미래면: dayInCycle < 0, phase: 'unknown', confidence: 'low'
 ```
 
 ### 2개 이상 기록
+
 - `averageCycleLength()`, `averagePeriodLength()` 계산 가능 (aggregate.ts)
 - confidence: 'low' (3개 미만)
 - confidence: 'medium' (3개 이상)
 
 ### 평균 주기 계산 불가능 시 (e.g., 이상치)
+
 - `aggregate.averageCycleLength()` → `null` 반환
 - `phase.ts` 라인 17에서 `settings.averageCycleLength` fallback
 - 사용자 설정값(기본 28)으로 대체
@@ -126,20 +137,24 @@ UI: "아직 예측하기 어려워요"
 ## 진행 중인 생리 (Ongoing Period)
 
 ### 상황
+
 - `PeriodLog.endDate === undefined` 상태의 생리 기록
 
 ### 처리
+
 - `currentPhase()` 계산: `dayInCycle` 기반이므로 자동 반영
 - `averagePeriodLength()` 계산: `endDate` 있는 항목만 필터링 (aggregate.ts:17)
   - 진행 중인 생리는 기간 추정에 미포함 → 과거 데이터만 사용
 
 ### 결과
+
 - 진행 중인 생리 기간 중: `phase = 'menstrual'` (dayInCycle < periodLen)
 - 기간 추정은 과거 완료된 생리들의 평균값 사용
 
 ## Edge Cases
 
 ### Case 1: dayInCycle < 0 (기록 미래 날짜)
+
 ```
 phase: 'unknown', confidence: 'low'
 원인: 최근 생리 기록이 오늘보다 미래
@@ -147,6 +162,7 @@ phase: 'unknown', confidence: 'low'
 ```
 
 ### Case 2: dayInCycle >= cycle (예상 주기 초과)
+
 ```
 phase: 'unknown', confidence: ?
 원인: 다음 생리가 예상 시점을 지나도 없음
@@ -154,6 +170,7 @@ phase: 'unknown', confidence: ?
 ```
 
 ### Case 3: 극단적 주기 (< 15 또는 > 60일)
+
 ```
 aggregate.ts의 이상치 필터 (lines 10, 21)
 - 주기 < 15일: 제외
@@ -165,6 +182,7 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 ```
 
 ### Case 4: 단일 완료된 생리 기간만 기록
+
 ```
 - averagePeriodLength() → null (최소 1개 endDate 필요하지만, 평균은 불가)
   → settings.averagePeriodLength (기본 5) fallback
@@ -172,51 +190,53 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 
 ## Phase → UI 매핑 테이블
 
-| Phase | 컴포넌트 | i18n 키 | 노출 텍스트 (ko) | 신뢰도 영향 |
-|---|---|---|---|---|
-| menstrual | PhaseAdvicePill | `home.phaseAdvice.menstrual` | "몸이 힘들 수 있어요. 편안하게 보내세요" | 0 (phase만 의존) |
-| follicular | PhaseAdvicePill | `home.phaseAdvice.follicular` | "에너지가 차오르는 시기예요" | 0 |
-| ovulation | PhaseAdvicePill | `home.phaseAdvice.ovulation` | "활동성이 좋은 시기예요" | 0 |
-| luteal | PhaseAdvicePill | `home.phaseAdvice.luteal` | "피곤할 수 있는 날이니 휴식을 추천해요" | 0 |
-| unknown | PhaseAdvicePill | `home.phaseAdvice.unknown` | "오늘도 평안하게 보내세요" | 0 |
-| menstrual | KeywordCards | `home.keywords.menstrual[0-3]` | 4개 카드 (휴식, 마무리, 집순이, 따뜻함) | 0 |
-| follicular | KeywordCards | `home.keywords.follicular[0-3]` | 4개 카드 (시작, 시도, 도전, 사람) | 0 |
-| ovulation | KeywordCards | `home.keywords.ovulation[0-3]` | 4개 카드 (만남, 실행, 발표, 모험) | 0 |
-| luteal | KeywordCards | `home.keywords.luteal[0-3]` | 4개 카드 (정리, 유지, 안정, 내부) | 0 |
-| unknown | KeywordCards | `home.keywords.unknown[0-3]` | 4개 카드 (비우기, 관찰, 천천히, 호흡) | 0 |
-| menstrual | ActivitySuggestions | `home.activities.menstrual` | 카테고리: "셀프 케어", 5개 items | 0 |
-| follicular | ActivitySuggestions | `home.activities.follicular` | 카테고리: "새 시도", 5개 items | 0 |
-| ovulation | ActivitySuggestions | `home.activities.ovulation` | 카테고리: "활동적인 시간", 5개 items | 0 |
-| luteal | ActivitySuggestions | `home.activities.luteal` | 카테고리: "마음 챙기기", 6개 items | 0 |
-| unknown | ActivitySuggestions | `home.activities.unknown` | 카테고리: "부드러운 루틴", 4개 items | 0 |
+| Phase      | 컴포넌트            | i18n 키                         | 노출 텍스트 (ko)                         | 신뢰도 영향      |
+| ---------- | ------------------- | ------------------------------- | ---------------------------------------- | ---------------- |
+| menstrual  | PhaseAdvicePill     | `home.phaseAdvice.menstrual`    | "몸이 힘들 수 있어요. 편안하게 보내세요" | 0 (phase만 의존) |
+| follicular | PhaseAdvicePill     | `home.phaseAdvice.follicular`   | "에너지가 차오르는 시기예요"             | 0                |
+| ovulation  | PhaseAdvicePill     | `home.phaseAdvice.ovulation`    | "활동성이 좋은 시기예요"                 | 0                |
+| luteal     | PhaseAdvicePill     | `home.phaseAdvice.luteal`       | "피곤할 수 있는 날이니 휴식을 추천해요"  | 0                |
+| unknown    | PhaseAdvicePill     | `home.phaseAdvice.unknown`      | "오늘도 평안하게 보내세요"               | 0                |
+| menstrual  | KeywordCards        | `home.keywords.menstrual[0-3]`  | 4개 카드 (휴식, 마무리, 집순이, 따뜻함)  | 0                |
+| follicular | KeywordCards        | `home.keywords.follicular[0-3]` | 4개 카드 (시작, 시도, 도전, 사람)        | 0                |
+| ovulation  | KeywordCards        | `home.keywords.ovulation[0-3]`  | 4개 카드 (만남, 실행, 발표, 모험)        | 0                |
+| luteal     | KeywordCards        | `home.keywords.luteal[0-3]`     | 4개 카드 (정리, 유지, 안정, 내부)        | 0                |
+| unknown    | KeywordCards        | `home.keywords.unknown[0-3]`    | 4개 카드 (비우기, 관찰, 천천히, 호흡)    | 0                |
+| menstrual  | ActivitySuggestions | `home.activities.menstrual`     | 카테고리: "셀프 케어", 5개 items         | 0                |
+| follicular | ActivitySuggestions | `home.activities.follicular`    | 카테고리: "새 시도", 5개 items           | 0                |
+| ovulation  | ActivitySuggestions | `home.activities.ovulation`     | 카테고리: "활동적인 시간", 5개 items     | 0                |
+| luteal     | ActivitySuggestions | `home.activities.luteal`        | 카테고리: "마음 챙기기", 6개 items       | 0                |
+| unknown    | ActivitySuggestions | `home.activities.unknown`       | 카테고리: "부드러운 루틴", 4개 items     | 0                |
 
 **주석**:
+
 - 신뢰도 영향 = 0: 현재 UI가 `phase` 값만 의존, confidence 값은 미사용
 - 추후 UI 개선 시 confidence를 시각적 불확실성 표현(e.g., "참고용") 추가 가능
 
 ## 사용 위치 (Code References)
 
 ### 직접 호출
+
 - `src/components/app/HomeScreen.tsx:70-73`
   ```typescript
-  const phase = useMemo(
-    () => currentPhase(today, periods, settings),
-    [today, periods, settings],
-  );
+  const phase = useMemo(() => currentPhase(today, periods, settings), [today, periods, settings]);
   ```
 
 ### Phase 값 소비
+
 - `PhaseAdvicePill` (line 140): `phase.phase` → i18n lookup
 - `KeywordCards` (line 144): `phase.phase` → i18n lookup
 - `ActivitySuggestions` (line 147): `phase.phase` → i18n lookup
 
 ### 저장소 연결
+
 - `usePeriodStore` → `periods` 배열 제공
 - `useSettingsStore` → `settings` 객체 제공
 
 ## 도메인 표현 규칙 준수
 
 ### ✅ 현황
+
 - 모든 UI 노출 텍스트가 추정형/제안형 사용
 - 의료 단어(진단, 치료, 처방, 정상, 비정상) 없음
 - 다이어트 유도 없음
@@ -234,21 +254,21 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 
 ### 반환 유형 (NewStartEvaluation)
 
-| kind | 조건 | 호출처 동작 |
-|---|---|---|
-| `idempotent` | 같은 startDate 이미 존재 | 추가 없이 무시 |
-| `shortGap` | 가장 가까운 직전 startDate 와의 간격 < 15일 | `ShortCycleConfirmDialog` 노출, 사용자 선택 대기 |
-| `ok` | 위 두 경우 아님 | `reconcileForNewStart` → `addPeriod` 진행 |
+| kind         | 조건                                        | 호출처 동작                                      |
+| ------------ | ------------------------------------------- | ------------------------------------------------ |
+| `idempotent` | 같은 startDate 이미 존재                    | 추가 없이 무시                                   |
+| `shortGap`   | 가장 가까운 직전 startDate 와의 간격 < 15일 | `ShortCycleConfirmDialog` 노출, 사용자 선택 대기 |
+| `ok`         | 위 두 경우 아님                             | `reconcileForNewStart` → `addPeriod` 진행        |
 
 ### 짧은 주기 사용자 선택지
 
 `shortGap` 시 UI가 세 선택지를 제공합니다.
 
-| 선택지 (en) | 선택지 (ko) | 실행 액션 |
-|---|---|---|
-| Still on my period | 아직 생리 중이에요 | `extendThrough(priorId, newEndDate)` — 직전 record의 endDate를 `max(기존, 새 endDate)`로 확장. 새 record 생성 안 함. |
-| Wrong date entered | 날짜를 잘못 입력했어요 | `replacePeriod(priorId, newInput)` — 직전 record 삭제 + 새 record 추가. |
-| Save anyway | 그래도 저장할게요 | `addPeriod(newInput)` — 두 record 모두 보존. |
+| 선택지 (en)        | 선택지 (ko)            | 실행 액션                                                                                                            |
+| ------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Still on my period | 아직 생리 중이에요     | `extendThrough(priorId, newEndDate)` — 직전 record의 endDate를 `max(기존, 새 endDate)`로 확장. 새 record 생성 안 함. |
+| Wrong date entered | 날짜를 잘못 입력했어요 | `replacePeriod(priorId, newInput)` — 직전 record 삭제 + 새 record 추가.                                              |
+| Save anyway        | 그래도 저장할게요      | `addPeriod(newInput)` — 두 record 모두 보존.                                                                         |
 
 ### 장기 생리 알림
 
@@ -266,16 +286,16 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 
 `PeriodSelectSheet`가 내부적으로 유지하는 드래프트 상태를 조작하는 순수 함수 모음. 저장·저장소 호출 없음.
 
-| 함수 | 역할 |
-|---|---|
-| `toDrafts(periods)` | `PeriodLog[]` → `DraftPeriod[]` 변환 (endDate 없으면 startDate 로 대체) |
-| `findContainingDraft(drafts, d)` | `d`를 포함하는 드래프트 반환 (없으면 null) |
-| `findExtendableDraft(drafts, d, gapDays)` | `d` 이전에 끝난 기록 중 gapDays(=7) 이내에 종료된 가장 최근 것 반환 |
-| `removeDay(drafts, key, d, newKey)` | 기간에서 날짜 하나 제거 (중간이면 두 드래프트로 분리) |
-| `extendTo(drafts, key, d)` | 기간의 endDate를 `d`로 연장 후 compact |
-| `addRange(drafts, lo, hi, newKey)` | 새 범위 추가 후 compact (인접·중첩 자동 병합) |
-| `compact(drafts)` | 인접·중첩 구간 병합 (originalId 최소값 보존) |
-| `computeChanges(original, working)` | 드래프트 vs 원본 diff → `PeriodChange[]` (add / update / remove) |
+| 함수                                      | 역할                                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| `toDrafts(periods)`                       | `PeriodLog[]` → `DraftPeriod[]` 변환 (endDate 없으면 startDate 로 대체) |
+| `findContainingDraft(drafts, d)`          | `d`를 포함하는 드래프트 반환 (없으면 null)                              |
+| `findExtendableDraft(drafts, d, gapDays)` | `d` 이전에 끝난 기록 중 gapDays(=7) 이내에 종료된 가장 최근 것 반환     |
+| `removeDay(drafts, key, d, newKey)`       | 기간에서 날짜 하나 제거 (중간이면 두 드래프트로 분리)                   |
+| `extendTo(drafts, key, d)`                | 기간의 endDate를 `d`로 연장 후 compact                                  |
+| `addRange(drafts, lo, hi, newKey)`        | 새 범위 추가 후 compact (인접·중첩 자동 병합)                           |
+| `compact(drafts)`                         | 인접·중첩 구간 병합 (originalId 최소값 보존)                            |
+| `computeChanges(original, working)`       | 드래프트 vs 원본 diff → `PeriodChange[]` (add / update / remove)        |
 
 `PeriodChange[]`는 `HomeScreen.handlePeriodChanges`가 소비해 remove → update → add 순서로 store 메서드를 호출합니다.
 
@@ -289,8 +309,8 @@ aggregate.ts의 이상치 필터 (lines 10, 21)
 
 ```typescript
 interface CycleStatusResult {
-  status: CycleStatus;          // 7단계 코드 (아래 표)
-  confidence: Confidence;       // 'unknown' | 'low' | 'medium' | 'high'
+  status: CycleStatus; // 7단계 코드 (아래 표)
+  confidence: Confidence; // 'unknown' | 'low' | 'medium' | 'high'
   averageCycleDays: number | null;
   cycleRangeDays: number | null;
   latestPeriodLengthDays: number | null;
@@ -299,19 +319,19 @@ interface CycleStatusResult {
 
 ### 판정 우선순위
 
-| 우선순위 | status | 기준 |
-|---|---|---|
-| 1 | `insufficient` | `periods.length < 3` |
-| 2 | `shortPeriod` | 최근 완료 기간 ≤ 2일 |
-| 3 | `longPeriod` | 최근 완료 기간 ≥ 8일 |
-| 4 | `insufficient` | 유효 주기 간격 0개 (`gaps.length === 0`) — 기록은 3회 이상이지만 모든 간격이 범위 밖이라 판정할 주기가 없음. 예전엔 여기서 끝까지 통과해 근거 없이 `regular`로 떨어졌다. |
-| 5 | `irregular` | 주기 변동폭 ≥ 15일 |
-| 6 | `slightlyIrregular` | 주기 변동폭 8~14일 |
-| 7 | `stable` | 기간 3~7일 + 주기 21~35일 + 변동폭 ≤ 7일 |
-| 8 | `regular` | 위 조건 외 나머지 |
+| 우선순위 | status              | 기준                                                                                       |
+| -------- | ------------------- | ------------------------------------------------------------------------------------------ |
+| 1        | `insufficient`      | `periods.length < 3`                                                                       |
+| 2        | `shortPeriod`       | 최근 완료 기간 ≤ 2일                                                                       |
+| 3        | `longPeriod`        | 최근 완료 기간 ≥ 8일                                                                       |
+| 4        | `insufficient`      | 유효 주기 간격 2개 미만 (`gaps.length < 2`) — 변동폭 판정에는 2개 이상의 주기 데이터 필요. |
+| 5        | `irregular`         | 주기 변동폭 ≥ 15일                                                                         |
+| 6        | `slightlyIrregular` | 주기 변동폭 8~14일                                                                         |
+| 7        | `stable`            | 기간 3~7일 + 주기 21~35일 + 변동폭 ≤ 7일                                                   |
+| 8        | `regular`           | 위 조건 외 나머지                                                                          |
 
 - 이상치 필터(= "유효 주기" 범위): 주기 `[15, 60]일` — 단일 출처는 `src/domain/cycle/cycleGap.ts`의 `isCountableCycleGap()`. 기간 `[1, 14]일` 필터는 `aggregate.ts`와 동일.
-- `confidence`: 유효 gap 수 기준 — 0개: `unknown`, 1개: `low`, 2개: `medium`, 3개+: `high`.
+- `confidence`: 유효 gap 수 기준 — 0개 또는 < 2: `unknown`, 1개(shortPeriod/longPeriod만): `low`, 2개: `medium`, 3개+: `high`.
 - 표시 문자열은 화면이 `t.report.status[status]` 로 조립. 이 함수는 문자열 반환 금지.
 - `src/domain/cycle/chartPoints.ts`의 `monthlyCyclePoints()`도 같은 `cycleGap.ts` 기준으로 달별 주기 차트 점을 계산한다 (`/log` 주기리포트 차트, `docs/flows/log.md` §"CycleChart / RecentCyclesCard" 참고).
 
@@ -321,26 +341,29 @@ interface CycleStatusResult {
 
 ## 변경 이력
 
-| 날짜 | 변경 | 영향 범위 | 상태 |
-|---|---|---|---|
-| 2026-06-04 | 초기 문서화 | phase.ts, aggregate.ts, predictor.ts 로직 검증 및 문서화 | 완료 |
-| 2026-06-04 | 황체기 phase advice 카피 완충 어조로 조정 ("휴식을 추천해요" → "잠시 쉬어가도 좋아요" / "rest is recommended" → "taking it easy may help") | `home.phaseAdvice.luteal` ko/en | 완료 |
-| 2026-06-16 | `evaluateNewStart` + `SHORT_CYCLE_THRESHOLD_DAYS` 신규. shortGap 시 ShortCycleConfirmDialog 분기 (extend / replace / saveAnyway). `recordPolicy.ts` 8개 테스트 추가. | `domain/cycle/recordPolicy.ts`, `periodStore.ts` (replace, extendThrough 메서드) | 완료 |
-| 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). `PeriodSelectSheet` + `PeriodSelectSheet`가 소비. | `domain/cycle/periodEdit.ts`, `components/app/PeriodSelectSheet.tsx` | 완료 |
-| 2026-07-28 | `classifyCycleStatus` 신규 — 7단계 주기 상태 판정. 10개 Vitest 케이스. `/log` 화면 주기리포트(CycleReportScreen)에서 소비. | `domain/cycle/status.ts`, `components/report/StatusBadge.tsx` | 완료 |
-| 2026-09-21 | 유효 주기(15~60일) 판정을 `cycleGap.ts`로 단일화하고, 유효 간격 0개일 때 `regular`가 아닌 `insufficient`를 반환하도록 수정(우선순위 4단계 추가). 차트 점 계산(`chartPoints.ts`)도 같은 기준을 공유. | `domain/cycle/cycleGap.ts`(신규), `domain/cycle/status.ts`, `domain/cycle/chartPoints.ts`(신규) | 완료 |
+| 날짜       | 변경                                                                                                                                                                                | 영향 범위                                                                        | 상태 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---- |
+| 2026-06-04 | 초기 문서화                                                                                                                                                                         | phase.ts, aggregate.ts, predictor.ts 로직 검증 및 문서화                         | 완료 |
+| 2026-06-04 | 황체기 phase advice 카피 완충 어조로 조정 ("휴식을 추천해요" → "잠시 쉬어가도 좋아요" / "rest is recommended" → "taking it easy may help")                                          | `home.phaseAdvice.luteal` ko/en                                                  | 완료 |
+| 2026-06-16 | `evaluateNewStart` + `SHORT_CYCLE_THRESHOLD_DAYS` 신규. shortGap 시 ShortCycleConfirmDialog 분기 (extend / replace / saveAnyway). `recordPolicy.ts` 8개 테스트 추가.                | `domain/cycle/recordPolicy.ts`, `periodStore.ts` (replace, extendThrough 메서드) | 완료 |
+| 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). `PeriodSelectSheet` + `PeriodSelectSheet`가 소비. | `domain/cycle/periodEdit.ts`, `components/app/PeriodSelectSheet.tsx`             | 완료 |
+| 2026-07-28 | `classifyCycleStatus` 신규 — 7단계 주기 상태 판정. 10개 Vitest 케이스. `/log` 화면 주기리포트(CycleReportScreen)에서 소비.                                                          | `domain/cycle/status.ts`, `components/report/StatusBadge.tsx`                    | 완료 |
+| 2026-09-21 | 유효 간격 기준을 `gaps.length < 2`로 변경. 유효 간격 1개일 때도 `insufficient` 반환(변동폭은 2개 이상 필요). MIN_CYCLES_FOR_STATUS = 2 상수 신규.                                   | `domain/cycle/status.ts`, `.claude/rules/cycle-logic.md`, `docs/domain/cycle.md` | 완료 |
 
 ## 향후 계획
 
 ### Phase 신뢰도 UI 표현
+
 - 현재: phase 값만 노출, confidence 미사용
 - 미래: "참고용 추정", "안정적 패턴" 등 confidence 기반 서브텍스트 추가
 
 ### 사용자 인터페이션
+
 - 현재: settings의 고정 평균값
 - 미래: 개별 주기 기록 시 실시간 평균 재계산 및 피드백
 
 ### AI/ML 도입 (CLAUDE.md 제외 항목)
+
 - 현재: rule-based (평균값 + 고정 주기)
 - 미래: rule-based → AI 추정으로 전환 시 아키텍처 변경 필요
 - 예: 개인화된 주기 변동 패턴 학습
