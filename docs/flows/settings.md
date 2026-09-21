@@ -225,9 +225,11 @@ Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackL
 | `/settings/notifications` | 292:2765 | live — `NotificationsScreen` |
 | `/settings/holidays` | — | live — `HolidaysScreen` |
 | `/settings/qna` | 015_5 | live — `QnaScreen` (static support email + copy-to-clipboard) |
-| `/settings/terms` | 015_16 | live — `TermsScreen` (제1~15조 + 부칙, Korean-only) |
-| `/settings/privacy` | 015_17 | live — `PrivacyScreen` (제1~17조 + 부칙, Korean-only) |
+| `/settings/terms` | 015_16 | live — `TermsScreen` (제1~15조 + 부칙; ko 원문 + en 번역, 앱 locale 따름) |
+| `/settings/privacy` | 015_17 | live — `PrivacyScreen` (제1~17조 + 부칙; ko 원문 + en 번역, 앱 locale 따름) |
 | `/settings/notices` | 015_4 | stub |
+
+같은 본문(`components/legal/TermsArticle`, `PrivacyArticle`)을 공개 라우트 `/legal/terms`, `/legal/privacy`(`(legal)` 그룹, 세션 불필요, `?lang=en|ko` 고정 가능)가 재사용한다 — App Store Privacy Policy URL 과 OAuth 동의 화면 링크용.
 
 ---
 

@@ -228,6 +228,8 @@ src/
 │   │   └── onboarding/
 │   ├── (auth)/                   로그인 (풀스크린, 탭바 없음, AuthGuard 밖)
 │   │   └── login/
+│   ├── (legal)/                  공개 법적 문서 (세션 불필요, AuthGuard 밖 — App Store/OAuth 동의 화면 링크용)
+│   │   └── legal/terms, legal/privacy
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환 (캘린더 포함)
@@ -257,6 +259,7 @@ src/
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
 │   ├── auth/                     LoginScreen, LoginHero, AuthGuard
+│   ├── legal/                    PublicLegalShell, PublicTermsScreen, PublicPrivacyScreen, TermsArticle, PrivacyArticle, useLegalLocale — `/settings/terms`·`/settings/privacy`(my-page)와 본문 컴포넌트 공유
 │   ├── my-page/                  MyPageScreen, AuthCard, CycleSummaryCard, MyTestsCard, PreferencesCard, SupportCard, AccountManagementCard, AccountEditScreen, WithdrawConfirmDialog, WithdrawReasonScreen, NotificationsScreen, TermsScreen, PrivacyScreen, QnaScreen
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer, FitStage(시안 좌표계 통째로 확대·축소)
 │
@@ -269,7 +272,7 @@ src/
 │   └── index.ts                  단일 진입점
 │
 ├── content/                      정적 콘텐츠 원문
-│   ├── legal/                    이용약관 · 개인정보처리방침 원문 (한국어, locale 무관)
+│   ├── legal/                    이용약관 · 개인정보처리방침 원문 (`*-ko`가 원본/기준, `*-en`은 참고용 번역)
 │   └── foods/                    홈 음식 상세 아티클 (`articles-en`/`articles-ko`, en 원문 · ko 번역, `home.foods` 사전 id 와 1:1 대응)
 │
 ├── domain/
@@ -375,6 +378,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 
 **마이페이지**
 - [x] Figma 015 기반 MyPage — 인증 카드, 주기 요약, 환경설정(알림·언어·공휴일)·고객지원 카드, 로그아웃 확인 다이얼로그, 법적 문서(약관·개인정보처리방침), Q&A, 알림 설정(마스터 + 3항목 + 시기 휠), `MyPageBackLink` + 스크롤 복원
+- [x] 공개 법적 문서 페이지 — `/legal/terms`, `/legal/privacy` (`(legal)` 라우트 그룹, 세션 불필요, `?lang=en|ko` 고정 가능). App Store Privacy Policy URL·OAuth 동의 화면 링크용, `/settings/terms`·`/settings/privacy`와 본문 컴포넌트 공유
 
 **매거진**
 - [x] 인프라 — `/magazine` 목록, `ArticleScreen`, 글 데이터 모듈(`src/data/magazine/articles.ts`), 아티클 4편, 북마크(`/magazine/bookmarks`)
