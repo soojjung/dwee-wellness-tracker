@@ -4,9 +4,19 @@
 
 ## 👩🏻‍💻 App Store metadata
 
-#### 0. Preview screenshots
+#### 0. Preview screenshots & icon
 
-(TBD)
+- Source bundle from the designer (2026-09-22). The 7 previews live in `public/preview/app-preview-{1..7}.jpg`, the favicon in `public/favicon.png`.
+- iPhone set: 7 × **1290 × 2796 (6.7″)**. iPad set: `public/preview/ipad/app-preview-ipad-{1..7}.jpg` (**2048 × 2732**, generated 2026-09-22 — iPhone art at full height, sides extended with the original background color). App icon: `public/app-icon-1024.png` (same wordmark/background as the favicon, rendered at 1024, no alpha).
+
+| Target | Required? | Size (px, portrait) | Status |
+|---|---|---|---|
+| iPhone 6.9″ / 6.7″ | one of the two (smaller iPhones are scaled down) | 1320 × 2868 or 1290 × 2796 | 7 × 1290 × 2796 ✓ |
+| iPhone 6.5″ | optional | 1284 × 2778 or 1242 × 2688 | none (covered by 6.7″) |
+| iPad 13″ / 12.9″ | required when iPad is supported | 2064 × 2752 or 2048 × 2732 | 7 × 2048 × 2732 ✓ (`preview/ipad/`) |
+| App icon | required | 1024 × 1024, no alpha, square corners | `public/app-icon-1024.png` ✓ (favicon artwork) |
+
+- 1–10 images per target, JPG or PNG, no alpha. Re-check the current table in App Store Connect before submitting (Apple changes the reference devices yearly).
 
 #### 1. App name (30 characters max)
 
@@ -60,17 +70,13 @@ Keep your cycle and your everyday notes side by side.
 
 Over time, you can look back on the changes that tend to repeat and understand how your mood and energy move with your cycle.
 
-🌿 Health information that fits your cycle
+🌿 Content that helps you know your body
 
-A woman's body shifts a little with every phase of the cycle.
+From useful reads on your cycle and women's health to tests like the body-type reading that show what makes you you — explore content that helps you understand yourself more deeply.
 
-dwee explains what's going on — cycle phases, hormones, PMS, cramps — in everyday language and easy card-style content.
+✨ The care you need right now
 
-✨ Care that suits you
-
-Based on your cycle, how you've been feeling, and what you've logged, see what kind of care might help right now.
-
-Find healthy routines you can actually fit into your day — movement, food, rest — and make them your own.
+See at a glance how your body shifts with your cycle and how you're feeling, and get suggestions that fit this phase — food, movement, rest — as everyday routines you can actually keep.
 
 🎀 A diary that looks like you
 
