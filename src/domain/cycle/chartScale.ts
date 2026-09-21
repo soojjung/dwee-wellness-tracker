@@ -46,7 +46,7 @@ export function niceScale(dataMin: number, dataMax: number): NiceScaleResult {
 }
 
 /**
- * Clamps an x coordinate so a fixed-width overlay (e.g. the "평균 N일"
+ * Clamps an x coordinate so a fixed-width overlay (e.g. the average-cycle
  * pill) stays fully inside the plot area. `halfWidth` is the pill's own
  * half-extent in the same coord space; callers pass it so the clamp is
  * agnostic to the pill's rendered size.

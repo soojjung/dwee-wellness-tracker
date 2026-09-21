@@ -1,12 +1,9 @@
-import { get, set } from 'idb-keyval';
 import type { PeriodLog } from '@/types';
 import type { PeriodRepository, NewPeriodInput } from '../../repositories/PeriodRepository';
 import { STORAGE_KEYS } from './keys';
+import { listStore, newId } from './kv';
 
-const newId = (): string => crypto.randomUUID();
-const readAll = async (): Promise<PeriodLog[]> =>
-  (await get<PeriodLog[]>(STORAGE_KEYS.periods)) ?? [];
-const writeAll = (list: PeriodLog[]) => set(STORAGE_KEYS.periods, list);
+const { readAll, writeAll } = listStore<PeriodLog>(STORAGE_KEYS.periods);
 
 export const indexedDBPeriodAdapter: PeriodRepository = {
   list: () => readAll(),

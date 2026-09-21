@@ -2,11 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
-import { supabase } from '@/data/adapters/supabase/client';
-import { useSettingsStore } from '@/store/settingsStore';
-import { usePeriodStore } from '@/store/periodStore';
-import { useConditionStore } from '@/store/conditionStore';
-import { migrateLocalToRemote } from '@/data/migration/anonToRemote';
+import { useAuthStore } from '@/store/authStore';
 
 export function AuthCallbackScreen() {
   const t = useT();
@@ -16,35 +12,9 @@ export function AuthCallbackScreen() {
     let cancelled = false;
 
     async function run() {
-      // Supabase JS auto-extracts the session from the URL on import.
-      // Wait briefly for it to settle, then read the resulting session.
-      let session = (await supabase.auth.getSession()).data.session;
-      if (!session) {
-        await new Promise((r) => setTimeout(r, 300));
-        session = (await supabase.auth.getSession()).data.session;
-      }
+      const signedIn = await useAuthStore.getState().completeOAuthCallback(() => cancelled);
       if (cancelled) return;
-
-      const user = session?.user ?? null;
-      if (!user || user.is_anonymous) {
-        router.replace('/login');
-        return;
-      }
-
-      try {
-        const result = await migrateLocalToRemote();
-        if (result.errors.length > 0) {
-          console.warn('[migrate] partial errors', result.errors);
-        }
-        await Promise.all([
-          useSettingsStore.getState().rehydrate(),
-          usePeriodStore.getState().rehydrate(),
-          useConditionStore.getState().rehydrate(),
-        ]);
-      } catch (e) {
-        console.warn('[migrate] failed', e);
-      }
-      if (!cancelled) router.replace('/');
+      router.replace(signedIn ? '/' : '/login');
     }
 
     run();

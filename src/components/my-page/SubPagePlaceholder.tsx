@@ -7,8 +7,7 @@ interface SubPagePlaceholderProps {
 }
 
 /**
- * Temporary placeholder for MyPage sub-routes whose designs will arrive in
- * the next batch (language / notices / Q&A / terms / privacy). Provides a
+ * Temporary placeholder for the 공지사항 sub-route until its design lands. Provides a
  * back link so users aren't stranded when they tap through from MyPage.
  */
 export function SubPagePlaceholder({ title }: SubPagePlaceholderProps) {

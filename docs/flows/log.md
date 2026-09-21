@@ -279,7 +279,7 @@ flowchart TD
 - `src/components/report/CycleReportEmpty.tsx` — 빈 상태 안내
 - `src/components/report/CycleReportCard.tsx` — 카드 래퍼 + `tooFewRecords`/`noCycles`/`plot` 차트 상태 분기
 - `src/domain/cycle/status.ts` — `classifyCycleStatus()` 순수 함수
-- `src/domain/cycle/status.test.ts` — 10개 Vitest 케이스
+- `src/domain/cycle/status.test.ts` — 16개 Vitest 케이스
 - `src/domain/cycle/status.cases.md` — 케이스 테이블
 - `src/domain/cycle/chartScale.ts` — `computeChartScale()` 순수 함수 (y-축 min/max/step 계산). `chartScale.test.ts` + `chartScale.cases.md` 쌍 포함.
 - `src/domain/cycle/chartPoints.ts` — `monthlyCyclePoints()` 순수 함수 (달별 주기 점 계산, `CycleReportCard`/`CycleChart` 소비)

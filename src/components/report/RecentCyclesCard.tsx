@@ -2,10 +2,9 @@
 import { useMemo } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { PeriodLog } from '@/types';
-import { daysBetween, fromISO } from '@/lib/date';
+import type { Locale, PeriodLog } from '@/types';
+import { daysBetween, formatCompactDate } from '@/lib/date';
 import { isCountableCycleGap } from '@/domain/cycle/cycleGap';
-import { format } from 'date-fns';
 
 interface RecentCyclesCardProps {
   periods: PeriodLog[];
@@ -106,15 +105,9 @@ function Row({ label, value, mutedNote }: { label: string; value: string; mutedN
   );
 }
 
-function formatRange(r: Row, locale: 'ko' | 'en', ongoing: string): string {
-  const start = formatShort(r.startDate, locale, false);
+function formatRange(r: Row, locale: Locale, ongoing: string): string {
+  const start = formatCompactDate(r.startDate, locale, { omitYear: false });
   if (!r.endDate) return `${start} ~ ${ongoing}`;
-  const end = formatShort(r.endDate, locale, true);
+  const end = formatCompactDate(r.endDate, locale, { omitYear: true });
   return `${start} ~ ${end}`;
-}
-
-function formatShort(iso: string, locale: 'ko' | 'en', omitYear: boolean): string {
-  const d = fromISO(iso);
-  if (locale === 'ko') return omitYear ? format(d, 'MM.dd') : format(d, 'yy.MM.dd');
-  return omitYear ? format(d, 'MMM d') : format(d, 'MMM d, yy');
 }

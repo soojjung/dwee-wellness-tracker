@@ -20,9 +20,10 @@ export const STORAGE_KEYS = {
   diaryStickerBlob: (id: string) => `dwee:diary:sticker_blob:${id}` as const,
   diaryStickerPlacements: 'dwee:diary:sticker_placements',
   bodyTypeReport: 'dwee:body_type_report',
-  // Device-scoped flag: true once we've attempted to seed the built-in
-  // sticker set into the user's library. Prevents re-seeding after the
-  // user manually deletes any of the defaults.
+  // Prefix for the built-in-sticker seed flag. The live flags are per backend
+  // (`<key>:local`, `<key>:remote:<userId>`) and store the seeded artwork
+  // version, not a boolean; this bare key is the pre-scoping one and is only
+  // ever deleted. See ensureDefaultStickersSeeded in data/index.ts.
   diaryDefaultStickersSeeded: 'dwee:diary:default_stickers_seeded',
   // Device-scoped flag: true once the first-launch intro slides were shown
   // (or skipped). Deliberately left out of `resetAllUserData` — the intro is
@@ -50,8 +51,9 @@ export const ALL_MEDIA_TEXT_KEYS = [
   STORAGE_KEYS.mediaTextOrder,
 ] as const;
 
-// Keys removed from the active schema. Kept here so migrations can clean up
-// orphaned data on user devices. Do not reference outside of migration logic.
+// Keys removed from the active schema. Kept so migrations, `resetAllUserData`,
+// and the one-shot legacy lift in data/bodyTypeReportStorage.ts can clean up
+// orphaned data on user devices. Never use for new writes.
 export const DEPRECATED_KEYS = {
   mediaHomeOverlays: 'dwee:media:home_overlays',
   mediaHomeHero: 'dwee:media:home_hero',

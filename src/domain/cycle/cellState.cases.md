@@ -26,4 +26,5 @@ Last run: 2026-08-19 — 19/19 passed
 
 - `isPeriodDate` 는 문자열 ISO 비교(`>=`, `<=`) 로 판정. 오픈 기록(endDate 없음)은 startDate 당일만 true.
 - `deriveCellMarkers` 는 4개 marker(`background`, `predicted`, `hasCondition`, `isToday`)를 독립적으로 계산.
-- 이 헬퍼들은 `DiaryMonthGrid` 의 날짜 셀 표시(생리 배경·오늘·예측 마커) 판정에 쓰인다.
+- 이 헬퍼들은 `DiaryMonthGrid` 의 날짜 셀 표시(생리 배경·오늘·예측 마커) 판정에 쓰인다. `isPeriodDate` 는 `weekStripDays.buildDays` 에서도 재사용.
+- `src/components/calendar/cellState.ts` 에서 순수 주기 로직이므로 `src/domain/cycle/cellState.ts` 로 이동 (2026-09-21). 동작 변경 없음 — import 경로만 `@/domain/cycle/cellState` 로 바뀜.

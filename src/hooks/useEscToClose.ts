@@ -1,9 +1,10 @@
 'use client';
 import { useEffect } from 'react';
 
-// Closes a modal when the user presses Escape. Only the topmost modal reacts
-// because addEventListener('keydown', ...) captures then propagates — later
-// mounts see the event first via capture: true.
+// Closes a modal when the user presses Escape. Every mounted hook fires (they
+// all sit on the same window capture listener list, and stopPropagation does
+// not stop sibling listeners), so a screen that stacks sheets must pass
+// `active = false` on the covered ones — see EventFormSheet / DiaryScreen.
 export function useEscToClose(onClose: () => void, active: boolean = true): void {
   useEffect(() => {
     if (!active) return;

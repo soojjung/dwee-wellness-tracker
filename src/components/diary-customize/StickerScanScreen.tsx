@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
 import { cn } from '@/lib/cn';
 import { removeStickerBackground } from '@/data/services/stickerCutoutService';
 import type { StickerCutoutError, SupportedImageMediaType } from '@/types';
@@ -70,15 +71,7 @@ export function StickerScanScreen({
   const frameAspect =
     naturalAspect === null ? null : Math.max(naturalAspect, MIN_SCAN_FRAME_ASPECT);
 
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    const u = URL.createObjectURL(blob);
-    setUrl(u);
-    return () => {
-      URL.revokeObjectURL(u);
-      setUrl(null);
-    };
-  }, [blob]);
+  const url = useObjectUrl(blob);
 
   const [error, setError] = useState<StickerCutoutError | null>(null);
   const [attempt, setAttempt] = useState(0);

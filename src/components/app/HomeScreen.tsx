@@ -83,7 +83,7 @@ export function HomeScreen() {
     return () => clearTimeout(id);
   }, [confirmToast]);
 
-  // Cross-route notifications (e.g. "signed out") land here. Run once on
+  // Cross-route notifications queued before navigating here land here. Run once on
   // mount so a message queued right before navigation appears the moment
   // Home renders. Empty queue is a no-op.
   useEffect(() => {

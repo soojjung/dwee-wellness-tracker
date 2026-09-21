@@ -10,7 +10,7 @@ import type {
   HolidayCountry,
 } from '@/types';
 import type { Dictionary } from '@/i18n';
-import { deriveCellMarkers } from '@/components/calendar/cellState';
+import { deriveCellMarkers } from '@/domain/cycle/cellState';
 import { layoutWeekSegments } from '@/domain/event/weekLanes';
 import { holidaysByDate, type Holiday } from '@/domain/holiday';
 import { DiaryDayCell } from './DiaryDayCell';

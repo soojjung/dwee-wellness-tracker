@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { eventCategoryRepo, eventRepo, ensureMigrations } from '@/data';
 import type { NewEventInput, NewEventCategoryInput } from '@/data';
 import type { EventCategory, EventLog } from '@/types';
@@ -115,7 +116,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
         loading: false,
       });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -148,7 +149,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
         }
         set({ categories: sortCategories([...get().categories, ...created]) });
       } catch (e) {
-        set({ error: (e as Error).message });
+        set({ error: errorMessage(e) });
       }
     })();
     // 끝나면(성공이든 실패든) 비워야 실패한 시드를 다음 호출이 다시 시도할 수 있다.
@@ -164,7 +165,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
       set({ events: sortEvents([...get().events, log]) });
       return log;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return null;
     }
   },
@@ -178,7 +179,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
       });
       return next;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return null;
     }
   },
@@ -188,7 +189,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
       await eventRepo.remove(id);
       set({ events: get().events.filter((e) => e.id !== id) });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -198,7 +199,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
       set({ categories: sortCategories([...get().categories, row]) });
       return row;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return null;
     }
   },
@@ -212,7 +213,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
       });
       return next;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return null;
     }
   },
@@ -238,7 +239,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
       });
       return true;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return false;
     }
   },
@@ -259,7 +260,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
         linkedPeriodId: period.id,
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -276,12 +277,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
         linkedPeriodId: undefined,
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 }));
-
-export const selectCategoryById =
-  (id: string) =>
-  (s: EventState): EventCategory | undefined =>
-    s.categories.find((c) => c.id === id);

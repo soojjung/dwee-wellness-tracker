@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { bookmarkRepo, ensureMigrations } from '@/data';
 
 interface BookmarkState {
@@ -26,7 +27,7 @@ export const useBookmarkStore = create<BookmarkState>()((set, get) => ({
       const slugs = await bookmarkRepo.list();
       set({ slugs, hydrated: true, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -38,8 +39,7 @@ export const useBookmarkStore = create<BookmarkState>()((set, get) => ({
       const next = has ? await bookmarkRepo.remove(slug) : await bookmarkRepo.add(slug);
       set({ slugs: next });
     } catch (e) {
-      // Roll back on failure.
-      set({ slugs: get().slugs, error: (e as Error).message });
+      set({ slugs: get().slugs, error: errorMessage(e) });
     }
   },
 

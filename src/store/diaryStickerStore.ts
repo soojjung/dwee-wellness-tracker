@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { diaryStickerRepo, ensureDefaultStickersSeeded, ensureMigrations } from '@/data';
 import type { NewDiaryStickerInput } from '@/data';
 import type { DiarySticker } from '@/types';
@@ -42,7 +43,7 @@ export const useDiaryStickerStore = create<DiaryStickerState>()((set, get) => ({
       revokeAll(get().urls);
       set({ stickers, urls, hydrated: true, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -62,7 +63,7 @@ export const useDiaryStickerStore = create<DiaryStickerState>()((set, get) => ({
       });
       return record;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return null;
     }
   },
@@ -79,7 +80,7 @@ export const useDiaryStickerStore = create<DiaryStickerState>()((set, get) => ({
         urls: nextUrls,
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 }));

@@ -13,7 +13,7 @@ MyPage renders a fixed stack of cards, some conditionally visible:
 |---|---|---|
 | `AuthCard` | yes | signed-out → login CTA row; signed-in → dark profile card |
 | `CycleSummaryCard` | yes | shows status chip when data sufficient; "not enough data" copy otherwise |
-| `MyTestsCard` | yes | `나의 테스트` — one row per quiz; body-type row shows "결과" link (→ result page) when sessionStorage has a report, "체형 분석 해보기" CTA (→ article intro) otherwise. Skips hydration render to avoid flash. |
+| `MyTestsCard` | yes | `나의 테스트` — one row per quiz; body-type row shows "결과" link (→ result page) when `bodyTypeReportStore` has a report (via `BodyTypeReportRepository`, IndexedDB/Supabase), "체형 분석 해보기" CTA (→ article intro) otherwise. Skips render until the store hydrates, to avoid a flash between CTA and result copy. |
 | `PreferencesCard` | yes | notifications row (→ `/settings/notifications`) + language row + holidays row (→ `/settings/holidays`) |
 | `SupportCard` | yes | notices / Q&A / terms / privacy rows |
 | `AccountManagementCard` | signed-in only | sign-out + account deletion rows |
@@ -54,7 +54,7 @@ flowchart TD
     Bounce["redirect → /settings"]
     Form["AccountEditScreen\nemail read-only\nnickname editable"]
     Save{nickname non-empty\nAND changed?}
-    Update["supabase.auth.updateUser\ndata: nickname"]
+    Update["authStore.updateNickname(nickname)"]
     Back["router.push /settings"]
 
     Tap --> Guard
@@ -74,7 +74,7 @@ flowchart TD
     class Update storage;
 ```
 
-The auth store's `onAuthStateChange` listener refreshes `user_metadata` automatically after a successful update — no manual store mutation needed.
+`AccountEditScreen` calls `authStore.updateNickname(nickname)` and never imports the Supabase client directly; the store owns the `supabase.auth.updateUser({ data: { nickname } })` call internally, and its `onAuthStateChange` listener refreshes `user_metadata` automatically after a successful update — no manual store mutation needed in the screen.
 
 ---
 
@@ -166,7 +166,7 @@ flowchart TD
 
 ---
 
-## Language settings screen (015_7)
+## Language settings screen (015_4)
 
 Route: `(app)/settings/language` — rendered by `LanguageSettingsScreen`.
 
@@ -220,7 +220,7 @@ Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackL
 
 | Route | Figma | Status |
 |---|---|---|
-| `/settings/language` | 015_15 | live — `LanguageSettingsScreen` |
+| `/settings/language` | 015_4 | live — `LanguageSettingsScreen` |
 | `/settings/withdraw` | 262:3527 | live — `WithdrawReasonScreen` (fullscreen) |
 | `/settings/notifications` | 292:2765 | live — `NotificationsScreen` |
 | `/settings/holidays` | — | live — `HolidaysScreen` |

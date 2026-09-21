@@ -1,9 +1,9 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { periodRepo, ensureMigrations } from '@/data';
 import type { NewPeriodInput } from '@/data';
 import type { PeriodLog } from '@/types';
-import { averageCycleLength } from '@/domain/cycle/aggregate';
 import { reconcileForNewStart } from '@/domain/cycle/recordPolicy';
 import { isValidISODate } from '@/lib/date';
 
@@ -44,7 +44,7 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
       const periods = await periodRepo.list();
       set({ periods: sortByStart(periods), hydrated: true, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -63,10 +63,7 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
       return null;
     }
     try {
-      const { existingMatch, closeUpdates } = reconcileForNewStart(
-        get().periods,
-        input.startDate,
-      );
+      const { existingMatch, closeUpdates } = reconcileForNewStart(get().periods, input.startDate);
       if (existingMatch) return existingMatch;
       for (const u of closeUpdates) {
         await periodRepo.update(u.id, { endDate: u.endDate });
@@ -80,7 +77,7 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
       set({ periods: sortByStart([...refreshed, log]) });
       return log;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return null;
     }
   },
@@ -116,7 +113,7 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
       if (!next) return;
       set({ periods: sortByStart(get().periods.map((p) => (p.id === id ? next : p))) });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -125,10 +122,7 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
       await periodRepo.remove(id);
       set({ periods: get().periods.filter((p) => p.id !== id) });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 }));
-
-export const selectAverageCycleLength = (s: PeriodState): number | null =>
-  averageCycleLength(s.periods);

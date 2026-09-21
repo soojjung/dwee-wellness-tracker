@@ -1,5 +1,7 @@
 # dwee MVP1 잔여 작업 마스터 계획
 
+> **보관용 문서 (2026-09-21 표기).** 2026-05-15 시점의 계획이며 이후 MVP1 은 완료됐다(v1.0). 본문이 가리키는 파일 경로·컴포넌트 이름(`src/components/home/*`, `src/components/calendar/DayCell.tsx`, `src/app/(app)/calendar` 등)은 구현 과정에서 바뀌어 현재 코드와 일치하지 않는다. 현재 구조는 `README.md` 와 `docs/flows/*.md` 를 기준으로 본다.
+
 ---
 
 ## 메타

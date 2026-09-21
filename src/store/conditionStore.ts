@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { conditionRepo, ensureMigrations } from '@/data';
 import type { NewConditionInput } from '@/data';
 import type { DailyConditionLog } from '@/types';
@@ -34,7 +35,7 @@ export const useConditionStore = create<ConditionState>()((set, get) => ({
         loading: false,
       });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -70,7 +71,7 @@ export const useConditionStore = create<ConditionState>()((set, get) => ({
       set({ byDate: { ...get().byDate, [log.date]: log } });
       return log;
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
       return null;
     }
   },

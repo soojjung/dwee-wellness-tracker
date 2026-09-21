@@ -1,8 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { useEscToClose } from '@/hooks/useEscToClose';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { usePeriodStore } from '@/store/periodStore';
@@ -12,6 +10,9 @@ import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
 import {
   selectPlacementsForMonth,
   useDiaryPlacementStore,
+  toDraft,
+  draftsEqual,
+  createDraftPlacement,
   type DraftPlacement,
 } from '@/store/diaryPlacementStore';
 import { formatMonthLabel, todayISO } from '@/lib/date';
@@ -21,10 +22,12 @@ import {
   type DiarySticker,
   type StickerRatio,
 } from '@/types';
-import { BackIcon } from '@/components/ui/icons';
+import { BackIcon, HeaderCheckGlyph } from '@/components/ui/icons';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DiaryMonthGrid } from '@/components/diary/DiaryMonthGrid';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import { resolveHolidayCountries } from '@/domain/holiday';
+import { useDiaryHydration } from '@/hooks/useDiaryHydration';
 import { StickerLibrarySheet } from './StickerLibrarySheet';
 import { usePhotoLibraryPicker } from '@/hooks/usePhotoLibraryPicker';
 import { PhotoImportModal } from './PhotoImportModal';
@@ -37,40 +40,6 @@ import { CapturedPhotoRatioStep } from './CapturedPhotoRatioStep';
 import { ratioForImage, trimTransparentMargins } from '@/lib/image/stickerCrop';
 
 const WEEK_STARTS_ON = 0;
-
-function toDraft(p: DiaryStickerPlacement): DraftPlacement {
-  return {
-    id: p.id,
-    stickerId: p.stickerId,
-    year: p.year,
-    monthIndex: p.monthIndex,
-    x: p.x,
-    y: p.y,
-    scale: p.scale,
-    rotation: p.rotation,
-    createdAt: p.createdAt,
-    updatedAt: p.updatedAt,
-  };
-}
-
-function draftsEqual(a: DraftPlacement[], b: DraftPlacement[]): boolean {
-  if (a.length !== b.length) return false;
-  const aMap = new Map(a.map((p) => [p.id, p]));
-  for (const p of b) {
-    const other = aMap.get(p.id);
-    if (!other) return false;
-    if (
-      other.stickerId !== p.stickerId ||
-      other.x !== p.x ||
-      other.y !== p.y ||
-      other.scale !== p.scale ||
-      other.rotation !== p.rotation
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
 
 export function DiaryCustomizeScreen() {
   const t = useT();
@@ -119,9 +88,6 @@ export function DiaryCustomizeScreen() {
   // are visible at once (matches 013_1 main state). Picking a sticker
   // auto-collapses to `peek` per spec 9.
   const [sheetSnap, setSheetSnap] = useState<SheetSnap>('medium');
-  // Tapping outside slides the library fully off screen so the month is
-  // unobstructed. Adding a sticker brings it back; otherwise the session
-  // ends through the header's back / done buttons.
   // Camera flow (013_2/3/4). `mode: 'idle'` is the default library view;
   // capture flows through camera → scan → confirm → back to idle.
   const [cameraMode, setCameraMode] = useState<'idle' | 'camera' | 'ratio' | 'scan' | 'confirm'>(
@@ -141,18 +107,24 @@ export function DiaryCustomizeScreen() {
   // confirming just navigates back).
   const [libraryTouched, setLibraryTouched] = useState(false);
 
-  useEffect(() => {
-    if (!periodsHydrated) hydratePeriods();
-  }, [periodsHydrated, hydratePeriods]);
-  useEffect(() => {
-    if (!eventsHydrated) hydrateEvents();
-  }, [eventsHydrated, hydrateEvents]);
-  useEffect(() => {
-    if (!stickersHydrated) hydrateStickers();
-  }, [stickersHydrated, hydrateStickers]);
-  useEffect(() => {
-    hydrateMonth(cursor.year, cursor.monthIndex);
-  }, [cursor.year, cursor.monthIndex, hydrateMonth]);
+  const builtinNamer = useCallback(
+    (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
+    [t],
+  );
+  useDiaryHydration({
+    cursor,
+    periodsHydrated,
+    hydratePeriods,
+    eventsHydrated,
+    hydrateEvents,
+    stickersHydrated,
+    hydrateStickers,
+    hydratePlacementMonth: hydrateMonth,
+    settingsHydrated,
+    categoriesCount: categories.length,
+    seedBuiltinsIfEmpty,
+    builtinNamer,
+  });
 
   useEffect(() => {
     if (initialized) return;
@@ -170,17 +142,6 @@ export function DiaryCustomizeScreen() {
     }
   }, [persistedPlacements, initialized]);
 
-  const builtinNamer = useCallback(
-    (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
-    [t],
-  );
-  useEffect(() => {
-    // 기본 유형의 이름은 시드하는 순간의 언어로 저장소에 굳는다. 설정이 로드되기 전에는
-    // 언어가 기본값(en)이라, 기다리지 않으면 한국어 기기에 "Family / Friend…"가 남는다.
-    if (!eventsHydrated || !settingsHydrated) return;
-    if (categories.length === 0) seedBuiltinsIfEmpty(builtinNamer);
-  }, [eventsHydrated, settingsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
-
   const monthLabel = formatMonthLabel(new Date(cursor.year, cursor.monthIndex, 1), locale);
 
   const isDirty = useMemo(() => {
@@ -189,21 +150,12 @@ export function DiaryCustomizeScreen() {
   }, [initialized, draft, persistedPlacements]);
 
   function handlePickSticker(sticker: DiarySticker) {
-    const id = `draft-${crypto.randomUUID()}`;
-    // Center the new placement with a small pseudo-random offset (spec item 8).
-    const jitter = () => (Math.random() - 0.5) * 60;
-    const next: DraftPlacement = {
-      id,
-      stickerId: sticker.id,
-      year: cursor.year,
-      monthIndex: cursor.monthIndex,
-      x: PLACEMENT_NOMINAL_WIDTH / 2 + jitter(),
-      y: PLACEMENT_NOMINAL_WIDTH / 2 + jitter(),
-      scale: 1,
-      rotation: 0,
-    };
+    const next = createDraftPlacement(sticker.id, cursor.year, cursor.monthIndex, {
+      x: PLACEMENT_NOMINAL_WIDTH / 2,
+      y: PLACEMENT_NOMINAL_WIDTH / 2,
+    });
     setDraft((prev) => [...prev, next]);
-    setSelectedId(id);
+    setSelectedId(next.id);
     // Spec 9: sheet auto-collapses to peek so the freshly placed sticker
     // is visible on the calendar. Peek is the hard minimum ("이것보다 더
     // 내려가지 않기") — the sheet component pins there.
@@ -374,15 +326,7 @@ export function DiaryCustomizeScreen() {
         >
           {/* Same check path as the sticker sheet's header icon (413:6358),
               drawn in the shared 40-unit button viewBox. */}
-          <svg viewBox="0 0 40 40" className="size-full" fill="none" aria-hidden>
-            <path
-              d="M13.0001 20L16.8773 24.9851C17.2777 25.4999 18.0557 25.4999 18.456 24.9851L27 14"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <HeaderCheckGlyph className="size-full" />
         </button>
       </header>
 
@@ -522,89 +466,20 @@ export function DiaryCustomizeScreen() {
       ) : null}
 
       {showDiscardDialog ? (
-        <DiscardDialog
+        <ConfirmDialog
+          titleId="diary-discard-dialog-title"
+          title={t.report.diary.customize.discardDialog.title}
+          body={t.report.diary.customize.discardDialog.body}
+          cancelLabel={t.report.diary.customize.discardDialog.cancel}
+          confirmLabel={t.report.diary.customize.discardDialog.confirm}
           onCancel={() => setShowDiscardDialog(false)}
           onConfirm={() => {
             setShowDiscardDialog(false);
             router.push('/log');
           }}
+          zIndex={50}
         />
       ) : null}
-    </div>
-  );
-}
-
-interface DiscardDialogProps {
-  onCancel: () => void;
-  onConfirm: () => void;
-}
-
-/**
- * Whole-session discard confirmation for the diary customize flow. Fired
- * from the header back button when the sticker draft has any dirty
- * change — confirming drops every placement change made in this session.
- */
-function DiscardDialog({ onCancel, onConfirm }: DiscardDialogProps) {
-  const t = useT();
-  useBodyScrollLock();
-  useEscToClose(onCancel);
-  const copy = t.report.diary.customize.discardDialog;
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="diary-discard-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
-      onClick={onCancel}
-    >
-      <div
-        className="w-full max-w-[300px] overflow-hidden rounded-2xl bg-brand-white shadow-[0_8px_32px_0_rgba(0,0,0,0.18)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex flex-col items-center gap-3 px-6 pb-5 pt-6">
-          <span
-            aria-hidden
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-pink50 text-brand-pink300"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-6 w-6"
-              aria-hidden
-            >
-              <path d="M12 6v8" />
-              <circle cx="12" cy="17.5" r="1.1" fill="currentColor" stroke="none" />
-            </svg>
-          </span>
-          <p
-            id="diary-discard-dialog-title"
-            className="text-center text-sm font-medium leading-[1.5] text-brand-gray900"
-          >
-            {copy.title}
-          </p>
-          <p className="text-center text-xs leading-[1.5] text-brand-gray800">{copy.body}</p>
-        </div>
-        <div className="grid grid-cols-2 border-t border-brand-gray300">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="bg-brand-gray300 py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900"
-          >
-            {copy.cancel}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="bg-brand-gray900 py-3.5 text-sm font-medium text-brand-white transition-colors hover:bg-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-white"
-          >
-            {copy.confirm}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

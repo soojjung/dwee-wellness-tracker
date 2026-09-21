@@ -204,7 +204,6 @@ export function DraggableBottomSheet({
     if (rootRef.current?.hasPointerCapture(e.pointerId)) {
       rootRef.current.releasePointerCapture(e.pointerId);
     }
-    // Snap to nearest defined point.
     const current = dragTopPx ?? snapPx(snap);
     const candidates: SheetSnap[] = ['full', 'medium', 'peek'];
     let best: SheetSnap = snap;

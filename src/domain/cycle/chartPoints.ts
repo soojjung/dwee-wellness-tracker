@@ -1,5 +1,5 @@
 import type { PeriodLog } from '@/types';
-import { daysBetween } from '@/lib/date';
+import { daysBetween, monthKey } from '@/lib/date';
 import { isCountableCycleGap } from './cycleGap';
 
 export interface ChartMonth {
@@ -25,8 +25,8 @@ export function monthlyCyclePoints(
   const sorted = [...periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
   return months.map(({ year, monthIndex }) => {
     // ISODate 는 'YYYY-MM-DD' — Date 로 바꾸지 않고 앞 7자리로 달을 비교한다 (시간대 영향 없음).
-    const monthKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
-    const idx = sorted.findIndex((p) => p.startDate.slice(0, 7) === monthKey);
+    const key = monthKey({ year, monthIndex });
+    const idx = sorted.findIndex((p) => p.startDate.slice(0, 7) === key);
     const current = idx > 0 ? sorted[idx] : undefined;
     const previous = idx > 0 ? sorted[idx - 1] : undefined;
     if (!current || !previous) return { year, monthIndex, cycleDays: null };

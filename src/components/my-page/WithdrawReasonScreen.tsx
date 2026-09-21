@@ -6,7 +6,8 @@ import { useAuthStore } from '@/store/authStore';
 import { queueAppToast } from '@/lib/appToast';
 import { Toast } from '@/components/ui/Toast';
 import { submitWithdrawalFeedback } from '@/data/services/withdrawalFeedbackService';
-import { BackIcon } from '@/components/ui/icons';
+import { useSelectionSet } from '@/hooks/useSelectionSet';
+import { BackIcon, CheckIcon24 } from '@/components/ui/icons';
 
 const MAX_OTHER_LEN = 100;
 
@@ -40,14 +41,14 @@ const REASON_ORDER: readonly ReasonKey[] = [
  * the `(fullscreen)` route group). Multi-select checkboxes + optional
  * free-form text when the user picks "기타". Confirming here triggers
  * the actual `deleteAccount` call, queues the completion toast, and
- * hard-navigates to `/login` (015_16 style).
+ * client-side pushes to `/login` (015_16 style).
  */
 export function WithdrawReasonScreen() {
   const t = useT();
   const router = useRouter();
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
 
-  const [selected, setSelected] = useState<Set<ReasonKey>>(new Set());
+  const { selected, toggle } = useSelectionSet<ReasonKey>();
   const [otherText, setOtherText] = useState('');
   const [overLimitToast, setOverLimitToast] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -71,13 +72,9 @@ export function WithdrawReasonScreen() {
   }, []);
 
   function toggleReason(key: ReasonKey) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+    toggle(key, (next) => {
       // Deselecting 기타 clears the text so a later re-select starts fresh.
       if (key === 'other' && !next.has('other')) setOtherText('');
-      return next;
     });
   }
 
@@ -255,17 +252,7 @@ function CheckCircle({ checked }: CheckCircleProps) {
           : 'border-brand-gray400 bg-brand-white text-transparent')
       }
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-3.5 w-3.5"
-      >
-        <path d="M5 12.5l4.5 4.5L19 7.5" />
-      </svg>
+      <CheckIcon24 className="h-3.5 w-3.5" />
     </span>
   );
 }

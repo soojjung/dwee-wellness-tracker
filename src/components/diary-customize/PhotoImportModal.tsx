@@ -1,10 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
 import type { StickerRatio } from '@/types';
 import type { CameraMode } from './CameraSheet';
+import { HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
 import { PhotoRatioScreen } from './PhotoRatioScreen';
 import { cropToRatio, ratioForImage } from '@/lib/image/stickerCrop';
 
@@ -31,19 +33,8 @@ type Step = 'mode' | 'ratio';
 export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalProps) {
   const t = useT();
   const c = t.report.diary.photoImport;
-  // Create the blob URL inside an effect (rather than useMemo) so React's
-  // StrictMode double-mount can't leave the rendered <img> pointing at a
-  // URL that was already revoked by the simulated cleanup. Rendering is
-  // gated on `previewUrl` being non-null.
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  useEffect(() => {
-    const u = URL.createObjectURL(file);
-    setPreviewUrl(u);
-    return () => {
-      URL.revokeObjectURL(u);
-      setPreviewUrl(null);
-    };
-  }, [file]);
+  // Rendering is gated on `previewUrl` being non-null.
+  const previewUrl = useObjectUrl(file);
 
   const [step, setStep] = useState<Step>('mode');
   // Pre-selected on "cut out": it's the path most album picks are headed for,
@@ -121,7 +112,7 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
             disabled={submitting}
             className="flex size-10 items-center justify-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
           >
-            <CancelGlyph />
+            <HeaderCancelGlyph className="size-full" />
           </button>
           <button
             type="button"
@@ -135,7 +126,7 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
                 : 'bg-brand-gray300 text-brand-gray400')
             }
           >
-            <CheckGlyph />
+            <HeaderCheckGlyph className="size-full" />
           </button>
         </header>
 
@@ -210,32 +201,5 @@ function OptionRow({ title, body, selected, onSelect }: OptionRowProps) {
         <span className="text-sm leading-normal text-brand-gray600">{body}</span>
       </span>
     </button>
-  );
-}
-
-/** Paths lifted from the exported Figma header icons (413:6358). */
-function CancelGlyph() {
-  return (
-    <svg viewBox="0 0 40 40" className="size-full" fill="none" aria-hidden>
-      <path
-        d="M14 14L26 26M26 14L14 26"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CheckGlyph() {
-  return (
-    <svg viewBox="0 0 40 40" className="size-full" fill="none" aria-hidden>
-      <path
-        d="M13.0001 20L16.8773 24.9851C17.2777 25.4999 18.0557 25.4999 18.456 24.9851L27 14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

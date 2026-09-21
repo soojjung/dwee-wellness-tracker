@@ -114,7 +114,7 @@ supabase db push
 **옵션 B (대시보드 SQL Editor):** 각 `migrations/*.sql` 파일을 0001부터 0015까지 순서대로 붙여넣고 RUN.
 
 ### 3. Auth provider 활성화 (Supabase 대시보드 → Authentication → Providers)
-- **Email** — enable. "Confirm email" 은 MVP 단계에서는 off 권장 (signUp 직후 세션 발급되어야 STEP 2.2 흐름이 즉시 로그인됨).
+클라이언트가 실제로 쓰는 provider는 **Apple / Google OAuth + 익명 세션 세 가지뿐**이다 — Email/password 로그인은 구현돼 있지 않다.
 - **Anonymous sign-ins** — enable. `authStore.signInAnonymously()` 가 이 provider 를 사용. 끄면 첫 진입 시 `anonFailed` 에러.
 - **Apple / Google** — 활성화 완료. Apple client_secret JWT 는 6개월 만료 → `scripts/gen-apple-secret.mjs` 로 재생성 후 Supabase 대시보드 → Auth → Providers → Apple → "Secret Key" 에 붙여넣기.
 
@@ -122,7 +122,7 @@ supabase db push
 `src/data/index.ts` 가 `authStore` 의 user 상태를 보고 mode 를 토글 (STEP 2.1 완료). 추가 코드 작업 없음.
 
 ### 5. 기존 IndexedDB 데이터 마이그레이션
-사용자가 익명 상태에서 만든 로컬 데이터는 첫 email/OAuth 로그인 시 1회 Supabase 로 upsert (STEP 2.3 예정). 결정 (C1) 은 local-wins.
+**구현 완료.** 익명 상태에서 만든 로컬 데이터는 첫 Apple/Google OAuth 로그인 시 `authStore.completeOAuthCallback()`이 `migrateLocalToRemote()`(`src/data/migration/anonToRemote.ts`)를 호출해 1회 Supabase 로 옮긴다 — settings + periods + conditions + body-type report 커버, media(Storage 업로드)는 후속 작업으로 미룸. 결정 (C1) 은 local-wins.
 
 ## STEP 2.8 — RLS 검증 SQL
 

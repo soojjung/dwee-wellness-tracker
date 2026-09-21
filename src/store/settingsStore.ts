@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { settingsRepo, ensureMigrations } from '@/data';
 import type { UserSettings } from '@/types';
 import { DEFAULT_USER_SETTINGS } from '@/types/userSettings';
@@ -35,7 +36,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       }
       set({ settings, hydrated: true, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -49,7 +50,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       const next = await settingsRepo.update(patch);
       set({ settings: next });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 }));

@@ -4,19 +4,20 @@ import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/store/authStore';
-import { supabase } from '@/data/adapters/supabase/client';
+import { CheckIcon24, CloseIcon24 } from '@/components/ui/icons';
 import { getNickname } from './AuthCard';
 
 /**
  * 015_3 own-account edit screen. Fullscreen. Email is read-only; nickname
- * is editable and required (save disabled while blank). Persists via
- * `supabase.auth.updateUser({ data: { nickname } })` — the auth store's
- * onAuthStateChange listener refreshes `user_metadata` automatically.
+ * is editable and required (save disabled while blank). Persists through
+ * `authStore.updateNickname`; the store's auth listener refreshes
+ * `user_metadata` automatically.
  */
 export function AccountEditScreen() {
   const t = useT();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const updateNickname = useAuthStore((s) => s.updateNickname);
 
   const isAuthenticated = !!user && !user.is_anonymous;
   const email = user?.email ?? '';
@@ -42,18 +43,14 @@ export function AccountEditScreen() {
 
   const trimmed = nickname.trim();
   const canSave =
-    isAuthenticated &&
-    !submitting &&
-    trimmed.length > 0 &&
-    trimmed !== initialNickname;
+    isAuthenticated && !submitting && trimmed.length > 0 && trimmed !== initialNickname;
 
   async function handleSave() {
     if (!canSave) return;
     setSubmitting(true);
     setErrorFlash(null);
     try {
-      const { error } = await supabase.auth.updateUser({ data: { nickname: trimmed } });
-      if (error) throw error;
+      await updateNickname(trimmed);
       router.push('/settings');
     } catch {
       setErrorFlash(t.myPage.account.saveFailedToast);
@@ -76,7 +73,7 @@ export function AccountEditScreen() {
             aria-label={t.myPage.account.closeAriaLabel}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
           >
-            <CloseIcon />
+            <CloseIcon24 className="h-5 w-5" />
           </button>
           <button
             type="button"
@@ -91,7 +88,7 @@ export function AccountEditScreen() {
                 : 'cursor-default bg-brand-gray300 text-brand-gray500',
             )}
           >
-            <CheckIcon />
+            <CheckIcon24 className="h-4 w-4" />
           </button>
         </header>
 
@@ -134,39 +131,5 @@ export function AccountEditScreen() {
         </main>
       </div>
     </div>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-4 w-4"
-      aria-hidden
-    >
-      <path d="M5 12.5l4.5 4.5L19 7.5" />
-    </svg>
   );
 }

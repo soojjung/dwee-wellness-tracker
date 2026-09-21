@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { mediaRepo, ensureMigrations } from '@/data';
 import {
   DEFAULT_TEXT_ORDER,
@@ -110,6 +111,66 @@ function revokeAll(urls: PhotoUrls): void {
   });
 }
 
+interface DraftSlotUpdate {
+  url: string | null;
+  blob: Blob | null;
+  cleared: boolean;
+}
+
+type DraftSlotPatch = Pick<
+  MediaState,
+  | 'draftPhotoUrls'
+  | 'draftPendingBlobs'
+  | 'draftPhotoTransforms'
+  | 'draftClearedPhotos'
+  | 'draftOwnedUrls'
+  | 'draftPicksConfirmed'
+>;
+
+/**
+ * Shared by draftSetPhoto/draftClearPhoto: revokes the slot's prior owned
+ * URL first (same as each call site did inline), then asks `makeNext` for
+ * the replacement — so draftSetPhoto's `URL.createObjectURL(blob)` still
+ * runs after the revoke, preserving the original call order.
+ */
+function replaceDraftSlot(
+  state: Pick<
+    MediaState,
+    | 'draftPhotoUrls'
+    | 'draftOwnedUrls'
+    | 'draftPendingBlobs'
+    | 'draftPhotoTransforms'
+    | 'draftClearedPhotos'
+  >,
+  slot: PhotoSlot,
+  makeNext: () => DraftSlotUpdate,
+): DraftSlotPatch {
+  const prevUrl = state.draftPhotoUrls[slot] ?? null;
+  let ownedUrls = state.draftOwnedUrls;
+  if (prevUrl && ownedUrls.includes(prevUrl)) {
+    URL.revokeObjectURL(prevUrl);
+    ownedUrls = ownedUrls.filter((u) => u !== prevUrl);
+  }
+  const next = makeNext();
+  const nextUrls = state.draftPhotoUrls.slice();
+  nextUrls[slot] = next.url;
+  const nextBlobs = state.draftPendingBlobs.slice();
+  nextBlobs[slot] = next.blob;
+  // Replacing a photo also invalidates its crop.
+  const nextTx = state.draftPhotoTransforms.slice();
+  nextTx[slot] = null;
+  const nextCleared = state.draftClearedPhotos.slice();
+  nextCleared[slot] = next.cleared;
+  return {
+    draftPhotoUrls: nextUrls,
+    draftPendingBlobs: nextBlobs,
+    draftPhotoTransforms: nextTx,
+    draftClearedPhotos: nextCleared,
+    draftOwnedUrls: next.url ? [...ownedUrls, next.url] : ownedUrls,
+    draftPicksConfirmed: false,
+  };
+}
+
 export const useMediaStore = create<MediaState>()((set, get) => ({
   photoCount: null,
   photoUrls: emptyUrls(),
@@ -164,7 +225,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
         loading: false,
       });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -174,7 +235,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       await mediaRepo.setPhotoCount(count);
       set({ photoCount: count });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -190,7 +251,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
         photoTransforms: replaceTransform(get().photoTransforms, slot, null),
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -203,7 +264,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
         photoTransforms: replaceTransform(get().photoTransforms, slot, null),
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -214,7 +275,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
         photoTransforms: replaceTransform(get().photoTransforms, slot, transform),
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -225,7 +286,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
         photoTransforms: replaceTransform(get().photoTransforms, slot, null),
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -234,7 +295,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       await mediaRepo.setTextPosition(position);
       set({ textPosition: position });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -243,7 +304,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       await mediaRepo.setMainText(text);
       set({ mainText: text });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -252,7 +313,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       await mediaRepo.setSubText(text);
       set({ subText: text });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -263,7 +324,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       await mediaRepo.setTextOrder(next);
       set({ textOrder: next });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -316,17 +377,14 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
     if (!state.draftActive) return;
     try {
       // 1) photoCount — write if it changed.
-      if (
-        state.draftPhotoCount !== null &&
-        state.draftPhotoCount !== state.photoCount
-      ) {
+      if (state.draftPhotoCount !== null && state.draftPhotoCount !== state.photoCount) {
         await mediaRepo.setPhotoCount(state.draftPhotoCount);
       }
 
       // 2) Per-slot blob changes: pending file picks and explicit clears.
-      // For a slot that had both a pending blob AND a transform change, the
-      // blob write comes first because the repo call also clears the stored
-      // transform (mirroring committed setPhoto behavior we removed here).
+      // For a slot that had both a pending blob AND a transform change, write
+      // the blob first and explicitly clear the stored transform — a replacement
+      // photo invalidates the old crop (same pairing as the committed setPhoto path).
       for (const slot of PHOTO_SLOTS) {
         const blob = state.draftPendingBlobs[slot];
         if (blob) {
@@ -388,7 +446,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
         draftPicksConfirmed: false,
       });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -402,58 +460,19 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
   draftSetPhoto(slot: PhotoSlot, blob: Blob) {
     const state = get();
     if (!state.draftActive) return;
-    // Revoke any previously-owned URL at this slot before creating a new one.
-    const prevUrl = state.draftPhotoUrls[slot] ?? null;
-    let ownedUrls = state.draftOwnedUrls;
-    if (prevUrl && ownedUrls.includes(prevUrl)) {
-      URL.revokeObjectURL(prevUrl);
-      ownedUrls = ownedUrls.filter((u) => u !== prevUrl);
-    }
-    const url = URL.createObjectURL(blob);
-    const nextUrls = state.draftPhotoUrls.slice();
-    nextUrls[slot] = url;
-    const nextBlobs = state.draftPendingBlobs.slice();
-    nextBlobs[slot] = blob;
-    // Replacing a photo also invalidates its crop.
-    const nextTx = state.draftPhotoTransforms.slice();
-    nextTx[slot] = null;
-    const nextCleared = state.draftClearedPhotos.slice();
-    nextCleared[slot] = false;
-    set({
-      draftPhotoUrls: nextUrls,
-      draftPendingBlobs: nextBlobs,
-      draftPhotoTransforms: nextTx,
-      draftClearedPhotos: nextCleared,
-      draftOwnedUrls: [...ownedUrls, url],
-      draftPicksConfirmed: false,
-    });
+    set(
+      replaceDraftSlot(state, slot, () => ({
+        url: URL.createObjectURL(blob),
+        blob,
+        cleared: false,
+      })),
+    );
   },
 
   draftClearPhoto(slot: PhotoSlot) {
     const state = get();
     if (!state.draftActive) return;
-    const prevUrl = state.draftPhotoUrls[slot] ?? null;
-    let ownedUrls = state.draftOwnedUrls;
-    if (prevUrl && ownedUrls.includes(prevUrl)) {
-      URL.revokeObjectURL(prevUrl);
-      ownedUrls = ownedUrls.filter((u) => u !== prevUrl);
-    }
-    const nextUrls = state.draftPhotoUrls.slice();
-    nextUrls[slot] = null;
-    const nextBlobs = state.draftPendingBlobs.slice();
-    nextBlobs[slot] = null;
-    const nextTx = state.draftPhotoTransforms.slice();
-    nextTx[slot] = null;
-    const nextCleared = state.draftClearedPhotos.slice();
-    nextCleared[slot] = true;
-    set({
-      draftPhotoUrls: nextUrls,
-      draftPendingBlobs: nextBlobs,
-      draftPhotoTransforms: nextTx,
-      draftClearedPhotos: nextCleared,
-      draftOwnedUrls: ownedUrls,
-      draftPicksConfirmed: false,
-    });
+    set(replaceDraftSlot(state, slot, () => ({ url: null, blob: null, cleared: true })));
   },
 
   draftSetPhotoTransform(slot: PhotoSlot, transform: PhotoTransform) {
@@ -476,5 +495,4 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
     if (!get().draftActive) return;
     set({ draftPicksConfirmed: true });
   },
-
 }));

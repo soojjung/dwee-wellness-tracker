@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { useMediaStore } from '@/store/mediaStore';
 import { useMediaCustomizeView } from '@/store/useMediaCustomizeView';
 import { slotsForCount, type PhotoSlot, type PhotoTransform } from '@/domain/home/decor';
+import { BackIcon24 } from '@/components/ui/icons';
 import { TransformedPhoto } from './TransformedPhoto';
 
 export function PhotoEditScreen() {
@@ -31,10 +32,7 @@ export function PhotoEditScreen() {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
 
-  const slots = useMemo(
-    () => (photoCount ? slotsForCount(photoCount) : []),
-    [photoCount],
-  );
+  const slots = useMemo(() => (photoCount ? slotsForCount(photoCount) : []), [photoCount]);
 
   // Only redirect on structurally invalid entry (no active draft session or
   // no count). Empty slots are allowed — they show as "+ Add photo"
@@ -87,12 +85,12 @@ export function PhotoEditScreen() {
             aria-label={t.home.customize.photoEdit.back}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
           >
-            <BackIcon />
+            <BackIcon24 className="h-5 w-5" />
           </Link>
         </header>
 
         <main className="flex flex-1 flex-col items-center justify-start">
-          <div className="aspect-square w-full max-h-full overflow-hidden">
+          <div className="aspect-square max-h-full w-full overflow-hidden">
             <div className={wrapperClass}>
               {slots.map((slot) => (
                 <SlotCell
@@ -111,9 +109,7 @@ export function PhotoEditScreen() {
             </div>
           </div>
           <p className="mt-10 px-10 text-center text-sm leading-[1.5] text-brand-gray800">
-            {allFilled
-              ? t.home.customize.photoEdit.hint
-              : t.home.customize.photoEdit.hintMissing}
+            {allFilled ? t.home.customize.photoEdit.hint : t.home.customize.photoEdit.hintMissing}
           </p>
         </main>
 
@@ -221,23 +217,6 @@ function SlotCell({
         <XIcon />
       </button>
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M15 5l-7 7 7 7" />
-    </svg>
   );
 }
 

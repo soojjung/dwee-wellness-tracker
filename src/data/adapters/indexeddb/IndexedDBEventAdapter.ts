@@ -1,15 +1,9 @@
-import { get, set } from 'idb-keyval';
 import type { EventLog } from '@/types';
-import type {
-  EventRepository,
-  NewEventInput,
-} from '../../repositories/EventRepository';
+import type { EventRepository, NewEventInput } from '../../repositories/EventRepository';
 import { STORAGE_KEYS } from './keys';
+import { listStore, newId } from './kv';
 
-const newId = (): string => crypto.randomUUID();
-const readAll = async (): Promise<EventLog[]> =>
-  (await get<EventLog[]>(STORAGE_KEYS.events)) ?? [];
-const writeAll = (list: EventLog[]) => set(STORAGE_KEYS.events, list);
+const { readAll, writeAll } = listStore<EventLog>(STORAGE_KEYS.events);
 
 export const indexedDBEventAdapter: EventRepository = {
   list: () => readAll(),

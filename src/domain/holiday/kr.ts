@@ -36,8 +36,8 @@ interface LunarYear {
   readonly extras?: readonly BaseEntry[];
 }
 
-// 출처: month2k / time.is 공휴일 달력 (2026-09 확인). 2029·2030 은 음력 날짜만
-// 확정이고 선거일은 아직 지정 전이라 비워 둔다.
+// 출처: month2k / time.is 공휴일 달력 (2026-09 확인). 2027·2029·2030 은 음력 날짜만
+// 확정이고 선거일·임시공휴일은 아직 지정 전이라 비워 둔다.
 const LUNAR_TABLE: Readonly<Record<number, LunarYear>> = {
   2025: {
     seollal: '2025-01-29',

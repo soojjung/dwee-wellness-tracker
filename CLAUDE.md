@@ -23,7 +23,7 @@
 - Apple Health / Google Fit 연동
 - 체중·칼로리·다이어트 유도 (단, 주기 단계별 영양/음식 제안은 허용)
 - 임신·피임·성생활·커뮤니티
-- 클라이언트측 ML/AI 라이브러리 금지 (rule-based only). 단, 매거진 진단처럼 명시적 사용자 트리거가 있는 케이스는 서버측 외부 LLM API (예: Anthropic Vision) 허용 — 결과 톤은 "추정/참고용" 유지.
+- 클라이언트측 ML/AI 라이브러리 금지 (rule-based only). 단, 매거진 진단처럼 명시적 사용자 트리거가 있는 케이스는 서버측 외부 LLM API (현재 OpenAI Vision `gpt-4o`, `supabase/functions/body-type-analyze`) 허용 — 결과 톤은 "추정/참고용" 유지.
 
 ## 도메인 표현 규칙
 
@@ -42,7 +42,7 @@
 - domain/cycle, lib/insight는 부수효과 없는 순수 함수로 작성 (외부 호출·저장 금지).
 - 날짜 계산은 `lib/date/` 또는 `domain/cycle/`에 모음. 화면에서 직접 계산 금지.
 - 저장소 직접 import 금지. 반드시 Repository 인터페이스 경유.
-- 하드코딩 문구는 `constants/copy.ts`에 모아 재사용.
+- 사용자 노출 문구는 `src/i18n/locales/{en,ko}.ts` 사전에만 두고 `useT()` 로 사용 (인라인 문자열 금지).
 - 컴포넌트는 작게 분리. 100줄 넘으면 분할 검토.
 - Store(Zustand): `'use client'`, hydrate/loading/error 3-state, mutation은 repo → in-memory 순. 외부에 set 노출 금지.
 - 주석은 "왜"가 비자명할 때만. "무엇"은 코드로 말한다.

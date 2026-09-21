@@ -4,11 +4,12 @@ import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { formatMonthLabel, fromISO, todayISO } from '@/lib/date';
+import { todayISO } from '@/lib/date';
 import { defaultCategoryId } from '@/domain/event/builtins';
 import type { DailyConditionLog, EventCategory, EventLog } from '@/types';
-import { BinIcon, ChevronDownIcon } from '@/components/ui/icons';
+import { BinIcon, HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
 import { MyPageToggle } from '@/components/my-page/MyPageToggle';
+import { DateRow } from '@/components/ui/DateRow';
 import { CategorySelector } from './CategorySelector';
 import { DeleteEventDialog } from './DeleteEventDialog';
 import { InlineDatePicker } from './InlineDatePicker';
@@ -229,7 +230,7 @@ export function EventFormSheet({
             onClick={handleClose}
             className="grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-60"
           >
-            <CloseIcon />
+            <HeaderCancelGlyph className="size-10" />
           </button>
           <h2 className="absolute left-1/2 -translate-x-1/2 text-[20px] font-semibold text-brand-gray900">
             {headerTitle}
@@ -248,7 +249,7 @@ export function EventFormSheet({
                 : 'bg-brand-gray400 text-brand-gray200')
             }
           >
-            <CheckIcon />
+            <HeaderCheckGlyph className="size-10" />
           </button>
         </header>
 
@@ -375,85 +376,5 @@ export function EventFormSheet({
         </div>
       ) : null}
     </div>
-  );
-}
-
-interface DateRowProps {
-  label: string;
-  value: string;
-  locale: 'en' | 'ko';
-  expanded: boolean;
-  onToggle: () => void;
-}
-
-function DateRow({ label, value, locale, expanded, onToggle }: DateRowProps) {
-  const formatted = formatDateShort(value, locale);
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={expanded}
-      className="flex w-full items-center justify-between px-4 py-3 text-left"
-    >
-      <span className="text-sm text-brand-gray700">{label}</span>
-      <span
-        className={
-          'flex items-center gap-2 text-base font-medium ' +
-          (expanded ? 'text-brand-pink300' : 'text-brand-gray900')
-        }
-      >
-        <span>{formatted}</span>
-        <ChevronDownIcon
-          className={'h-2 w-3 transition-transform ' + (expanded ? 'rotate-180' : '')}
-        />
-      </span>
-    </button>
-  );
-}
-
-function formatDateShort(iso: string, locale: 'en' | 'ko'): string {
-  const d = fromISO(iso);
-  if (locale === 'ko') {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}.${m}.${day}`;
-  }
-  return `${formatMonthLabel(d, 'en')} ${d.getDate()}`;
-}
-
-// Figma 256:15854 (icon_cancel) 의 벡터 그대로 — 아래 CheckIcon 과 같은 방식으로 40 viewBox 를
-// 버튼(40px)에 1:1 로 얹는다. 예전 16px 글리프는 X 폭 8px·선 1px 이라 시안(12px·2px)보다 작았다.
-function CloseIcon() {
-  return (
-    <svg
-      viewBox="0 0 40 40"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className="size-10"
-      aria-hidden
-    >
-      <path d="M14 14L26 26M26 14L14 26" />
-    </svg>
-  );
-}
-
-// Figma 256:15860 의 벡터 그대로 — 40 viewBox 를 버튼 크기(40px)에 1:1 로 얹어
-// 체크 크기·선 굵기·둥근 꺾임이 시안과 같아진다.
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 40 40"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className="size-10"
-      aria-hidden
-    >
-      <path d="M13.0001 20L16.8773 24.9851C17.2777 25.4999 18.0557 25.4999 18.456 24.9851L27 14" />
-    </svg>
   );
 }

@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { isValidISODate, ISO_DATE_RE, formatFullDate, fromISO, calendarGrid } from './index';
+import {
+  isValidISODate,
+  ISO_DATE_RE,
+  formatFullDate,
+  formatMonthName,
+  formatMonthDay,
+  formatCompactDate,
+  formatDateShort,
+  fromISO,
+  calendarGrid,
+} from './index';
 
 describe('ISO_DATE_RE', () => {
   it('matches a well-formed YYYY-MM-DD string', () => {
@@ -98,6 +108,100 @@ describe('formatFullDate', () => {
 
   it('renders the first day of the next month correctly', () => {
     expect(formatFullDate('2026-02-01', 'en')).toBe('Sunday, February 1, 2026');
+  });
+});
+
+describe('formatMonthName', () => {
+  it('renders ko month name for a mid-year date', () => {
+    expect(formatMonthName('2026-06-15', 'ko')).toBe('6월');
+  });
+
+  it('renders en month name for a mid-year date', () => {
+    expect(formatMonthName('2026-06-15', 'en')).toBe('June');
+  });
+
+  it('renders ko month name for December (year-end boundary)', () => {
+    expect(formatMonthName('2026-12-01', 'ko')).toBe('12월');
+  });
+
+  it('renders en month name for December (year-end boundary)', () => {
+    expect(formatMonthName('2026-12-01', 'en')).toBe('December');
+  });
+
+  it('produces the same output for an ISO string and its equivalent Date object', () => {
+    const iso = '2026-06-15';
+    expect(formatMonthName(fromISO(iso), 'ko')).toBe(formatMonthName(iso, 'ko'));
+  });
+});
+
+describe('formatMonthDay', () => {
+  it('renders ko month/day without a year for a mid-month date', () => {
+    expect(formatMonthDay('2026-06-15', 'ko')).toBe('6월 15일');
+  });
+
+  it('renders en month/day without a year for a mid-month date', () => {
+    expect(formatMonthDay('2026-06-15', 'en')).toBe('Jun 15');
+  });
+
+  it('renders ko month/day for Jan 1 (year-start boundary)', () => {
+    expect(formatMonthDay('2026-01-01', 'ko')).toBe('1월 1일');
+  });
+
+  it('renders en month/day for Jan 1 (year-start boundary)', () => {
+    expect(formatMonthDay('2026-01-01', 'en')).toBe('Jan 1');
+  });
+
+  it('produces the same output for an ISO string and its equivalent Date object', () => {
+    const iso = '2026-06-15';
+    expect(formatMonthDay(fromISO(iso), 'en')).toBe(formatMonthDay(iso, 'en'));
+  });
+});
+
+describe('formatCompactDate', () => {
+  it('renders ko date with year when omitYear is false', () => {
+    expect(formatCompactDate('2026-06-15', 'ko', { omitYear: false })).toBe('26.06.15');
+  });
+
+  it('renders ko date without year when omitYear is true', () => {
+    expect(formatCompactDate('2026-06-15', 'ko', { omitYear: true })).toBe('06.15');
+  });
+
+  it('renders en date with year when omitYear is false', () => {
+    expect(formatCompactDate('2026-06-15', 'en', { omitYear: false })).toBe('Jun 15, 26');
+  });
+
+  it('renders en date without year when omitYear is true', () => {
+    expect(formatCompactDate('2026-06-15', 'en', { omitYear: true })).toBe('Jun 15');
+  });
+
+  it('produces the same output for an ISO string and its equivalent Date object', () => {
+    const iso = '2026-06-15';
+    expect(formatCompactDate(fromISO(iso), 'ko', { omitYear: false })).toBe(
+      formatCompactDate(iso, 'ko', { omitYear: false }),
+    );
+  });
+});
+
+describe('formatDateShort', () => {
+  it('renders ko date as yyyy.MM.dd', () => {
+    expect(formatDateShort('2026-06-15', 'ko')).toBe('2026.06.15');
+  });
+
+  it('renders en date as "Month Year Day" (documented quirk, not "Month Day, Year")', () => {
+    expect(formatDateShort('2026-06-15', 'en')).toBe('June 2026 15');
+  });
+
+  it('renders ko date for the last day of the year (boundary)', () => {
+    expect(formatDateShort('2026-12-31', 'ko')).toBe('2026.12.31');
+  });
+
+  it('renders en date for the last day of the year (boundary, same quirk)', () => {
+    expect(formatDateShort('2026-12-31', 'en')).toBe('December 2026 31');
+  });
+
+  it('produces the same output for an ISO string and its equivalent Date object', () => {
+    const iso = '2026-06-15';
+    expect(formatDateShort(fromISO(iso), 'en')).toBe(formatDateShort(iso, 'en'));
   });
 });
 

@@ -1,10 +1,10 @@
 'use client';
 import { useRef } from 'react';
-import { Camera } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { PHOTO_COUNTS, type PhotoCount } from '@/domain/home/decor';
+import { pickNativePhotos } from '@/lib/image/pickNativePhotos';
 
 const COUNT_TO_KEY: Record<PhotoCount, 'one' | 'two' | 'four'> = {
   1: 'one',
@@ -30,16 +30,10 @@ export function PhotoCountSection({ selected, onPick }: PhotoCountSectionProps) 
     // camera / file browser options. Album permission is the only prompt.
     if (Capacitor.isNativePlatform()) {
       try {
-        const result = await Camera.pickImages({ limit: count, quality: 90 });
-        const blobs: Blob[] = [];
-        for (const photo of result.photos.slice(0, count)) {
-          if (!photo.webPath) continue;
-          const res = await fetch(photo.webPath);
-          blobs.push(await res.blob());
-        }
-        if (blobs.length) onPick(count, blobs);
+        const files = await pickNativePhotos(count);
+        if (files.length) onPick(count, files);
       } catch {
-        // User cancelled or picker unavailable — no-op.
+        // 사용자가 취소했거나 피커를 열 수 없는 경우 — 아무것도 하지 않는다.
       }
       return;
     }
@@ -100,14 +94,28 @@ function PhotoLayoutIcon({ count }: { count: PhotoCount }) {
   }
   if (count === 2) {
     return (
-      <svg viewBox="0 0 20 20" fill="none" stroke="#353434" strokeWidth="2" className="h-5 w-5" aria-hidden>
+      <svg
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="#353434"
+        strokeWidth="2"
+        className="h-5 w-5"
+        aria-hidden
+      >
         <rect x="1" y="1" width="18" height="18" rx="3" />
         <line x1="1" y1="10" x2="19" y2="10" />
       </svg>
     );
   }
   return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="#353434" strokeWidth="2" className="h-5 w-5" aria-hidden>
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="#353434"
+      strokeWidth="2"
+      className="h-5 w-5"
+      aria-hidden
+    >
       <rect x="1" y="1" width="18" height="18" rx="3" />
       <line x1="1" y1="10" x2="19" y2="10" />
       <line x1="10" y1="1" x2="10" y2="19" />

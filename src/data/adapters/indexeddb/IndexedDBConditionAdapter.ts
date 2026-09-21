@@ -5,8 +5,8 @@ import type {
   NewConditionInput,
 } from '../../repositories/ConditionRepository';
 import { STORAGE_KEYS } from './keys';
+import { newId } from './kv';
 
-const newId = (): string => crypto.randomUUID();
 type ConditionMap = Record<string, DailyConditionLog>;
 
 const readAll = async (): Promise<ConditionMap> =>

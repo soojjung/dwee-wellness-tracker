@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
@@ -7,15 +7,15 @@ import { useMediaStore } from '@/store/mediaStore';
 import { useMediaCustomizeView } from '@/store/useMediaCustomizeView';
 import {
   DEFAULT_PHOTO_TRANSFORM,
-  clampPhotoTransform,
-  computePhotoRender,
   photoTransformEqual,
   slotsForCount,
   type PhotoSlot,
   type PhotoTransform,
   type RenderSize,
 } from '@/domain/home/decor';
+import { AlbumIcon, CheckIcon24, CloseIcon24 } from '@/components/ui/icons';
 import { CancelEditDialog } from './CancelEditDialog';
+import { PhotoCell } from './PhotoCell';
 
 interface PhotoEditDetailScreenProps {
   initialSlot: PhotoSlot;
@@ -229,7 +229,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
             aria-label={t.home.customize.photoEditDetail.cancelAriaLabel}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
           >
-            <CloseIcon />
+            <CloseIcon24 className="h-5 w-5" />
           </button>
           <button
             type="button"
@@ -244,7 +244,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
                 : 'cursor-default bg-brand-gray300 text-brand-gray500',
             )}
           >
-            <CheckIcon />
+            <CheckIcon24 className="h-4 w-4" />
           </button>
         </header>
 
@@ -275,7 +275,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
               onClick={() => fileRef.current?.click()}
               className="inline-flex items-center gap-2 rounded-full bg-brand-gray300 px-7 py-4 text-sm font-medium text-brand-gray900 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 focus-visible:ring-offset-2"
             >
-              <AlbumIcon />
+              <AlbumIcon className="h-[18px] w-[18px]" />
               {t.home.customize.photoEditDetail.changePhoto}
             </button>
           </div>
@@ -305,252 +305,5 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
         />
       ) : null}
     </div>
-  );
-}
-
-interface PhotoCellProps {
-  slot: PhotoSlot;
-  url: string | null;
-  active: boolean;
-  transform: PhotoTransform;
-  natural: RenderSize | undefined;
-  cellSize: RenderSize;
-  onSelect: (slot: PhotoSlot) => void;
-  onTransformChange: (slot: PhotoSlot, tx: PhotoTransform) => void;
-  onNaturalLoad: (slot: PhotoSlot, size: RenderSize) => void;
-  onCellSize: (slot: PhotoSlot, size: RenderSize) => void;
-}
-
-function PhotoCell({
-  slot,
-  url,
-  active,
-  transform,
-  natural,
-  cellSize,
-  onSelect,
-  onTransformChange,
-  onNaturalLoad,
-  onCellSize,
-}: PhotoCellProps) {
-  const cellRef = useRef<HTMLDivElement | null>(null);
-
-  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const gestureRef = useRef<{
-    baseTx: PhotoTransform;
-    baseCell: RenderSize;
-    pinchDist: number | null;
-    dragStart: { x: number; y: number } | null;
-  } | null>(null);
-
-  useLayoutEffect(() => {
-    const el = cellRef.current;
-    if (!el) return;
-    function update() {
-      const rect = el!.getBoundingClientRect();
-      onCellSize(slot, { w: rect.width, h: rect.height });
-    }
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [slot, onCellSize]);
-
-  if (!url) return <div className="bg-brand-gray300" aria-hidden />;
-
-  const ready = !!natural && cellSize.w > 0 && cellSize.h > 0;
-  const rendered = ready ? computePhotoRender(transform, natural!, cellSize) : null;
-
-  function clamp(next: PhotoTransform): PhotoTransform {
-    if (!natural || cellSize.w <= 0)
-      return { ...next, scale: Math.max(1, Math.min(4, next.scale)) };
-    return clampPhotoTransform(next, natural, cellSize);
-  }
-
-  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (!active) {
-      onSelect(slot);
-      return;
-    }
-    e.currentTarget.setPointerCapture(e.pointerId);
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size === 1) {
-      gestureRef.current = {
-        baseTx: transform,
-        baseCell: cellSize,
-        pinchDist: null,
-        dragStart: { x: e.clientX, y: e.clientY },
-      };
-    } else if (pointers.current.size === 2) {
-      const values = [...pointers.current.values()];
-      const p1 = values[0]!;
-      const p2 = values[1]!;
-      gestureRef.current = {
-        baseTx: transform,
-        baseCell: cellSize,
-        pinchDist: pointDistance(p1, p2),
-        dragStart: null,
-      };
-    }
-  }
-
-  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!active || !pointers.current.has(e.pointerId) || !gestureRef.current) return;
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const g = gestureRef.current;
-    if (pointers.current.size === 1 && g.dragStart) {
-      const dxPx = e.clientX - g.dragStart.x;
-      const dyPx = e.clientY - g.dragStart.y;
-      const cw = g.baseCell.w || 1;
-      const ch = g.baseCell.h || 1;
-      onTransformChange(
-        slot,
-        clamp({
-          scale: g.baseTx.scale,
-          offsetXNorm: g.baseTx.offsetXNorm + dxPx / cw,
-          offsetYNorm: g.baseTx.offsetYNorm + dyPx / ch,
-        }),
-      );
-    } else if (pointers.current.size === 2 && g.pinchDist) {
-      const values = [...pointers.current.values()];
-      const p1 = values[0]!;
-      const p2 = values[1]!;
-      const dist = pointDistance(p1, p2);
-      const multiplier = dist / g.pinchDist;
-      onTransformChange(
-        slot,
-        clamp({
-          scale: g.baseTx.scale * multiplier,
-          offsetXNorm: g.baseTx.offsetXNorm,
-          offsetYNorm: g.baseTx.offsetYNorm,
-        }),
-      );
-    }
-  }
-
-  function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-    pointers.current.delete(e.pointerId);
-    if (pointers.current.size === 0) {
-      gestureRef.current = null;
-    } else if (pointers.current.size === 1) {
-      const remaining = [...pointers.current.values()][0]!;
-      gestureRef.current = {
-        baseTx: transform,
-        baseCell: cellSize,
-        pinchDist: null,
-        dragStart: { x: remaining.x, y: remaining.y },
-      };
-    }
-  }
-
-  return (
-    <div
-      ref={cellRef}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      role="button"
-      tabIndex={0}
-      aria-pressed={active}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect(slot);
-        }
-      }}
-      className={cn(
-        'relative h-full w-full touch-none select-none overflow-hidden bg-brand-gray300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-pink200',
-        active && 'z-10',
-      )}
-      style={{ cursor: active ? 'grab' : 'pointer' }}
-    >
-      <img
-        src={url}
-        alt=""
-        aria-hidden
-        draggable={false}
-        onLoad={(e) => {
-          const img = e.currentTarget;
-          onNaturalLoad(slot, { w: img.naturalWidth, h: img.naturalHeight });
-        }}
-        className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
-        style={
-          rendered
-            ? {
-                width: rendered.renderedW,
-                height: rendered.renderedH,
-                transform: `translate(calc(-50% + ${rendered.offsetPxX}px), calc(-50% + ${rendered.offsetPxY}px))`,
-              }
-            : { width: '100%', height: '100%', objectFit: 'cover' as const }
-        }
-      />
-      {active ? (
-        // border-width 는 브라우저가 정수 CSS px 로 스냅해서 2.5px 이 2px 로 그려진다.
-        // inset box-shadow 는 소수점 폭을 그대로 유지하므로 테두리를 shadow 로 그린다.
-        // 핑크 한 겹만 — 안쪽에 얹었던 흰 선은 회색 줄처럼 보여 뺐다.
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_2.5px_theme(colors.brand.pink200)]"
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function pointDistance(a: { x: number; y: number }, b: { x: number; y: number }): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-4 w-4"
-      aria-hidden
-    >
-      <path d="M5 12.5l4.5 4.5L19 7.5" />
-    </svg>
-  );
-}
-
-function AlbumIcon() {
-  // Figma `icon_album` (public/icons/ui/album.svg) — fill 로 그려진 아이콘이라
-  // currentColor 를 써서 버튼 글자색을 따라가게 한다.
-  return (
-    <svg viewBox="0 0 18 18" fill="currentColor" className="h-[18px] w-[18px]" aria-hidden>
-      <path d="M16.9277 13.75C16.5767 15.6005 14.9527 17 13 17H5C3.04731 17 1.42334 15.6005 1.07227 13.75H16.9277Z" />
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M13 1C15.2091 1 17 2.79086 17 5V12.25H13.3105L6.2373 5.17676C5.55391 4.49344 4.44609 4.49344 3.7627 5.17676L1 7.93945V5C1 2.79086 2.79086 1 5 1H13ZM12.5 4C11.6716 4 11 4.67157 11 5.5C11 6.32843 11.6716 7 12.5 7C13.3284 7 14 6.32843 14 5.5C14 4.67157 13.3284 4 12.5 4Z"
-      />
-      <path d="M4.82324 6.2373C4.92085 6.13977 5.07915 6.13977 5.17676 6.2373L11.1895 12.25H1V10.0605L4.82324 6.2373Z" />
-    </svg>
   );
 }

@@ -1,6 +1,7 @@
 // Migrates IndexedDB-only data to Supabase the first time a user
 // signs in (STEP 2.3). Media (storage uploads) deferred to a
-// follow-up STEP — this only covers settings + periods + conditions.
+// follow-up STEP — this covers settings + periods + conditions + the
+// body-type report.
 //
 // Adapters are imported directly (not through `@/data` proxies) so
 // reads stay on IndexedDB while writes hit Supabase, regardless of

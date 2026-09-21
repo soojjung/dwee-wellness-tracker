@@ -4,8 +4,8 @@ import { MyPageCard } from './MyPageCard';
 import { MyPageRow } from './MyPageRow';
 
 /**
- * `고객 지원` card. All four rows navigate to sub-pages that will be filled
- * in a later design batch — the routes exist as placeholders today.
+ * `고객 지원` card. Q&A / terms / privacy have real screens; 공지사항 still
+ * renders `SubPagePlaceholder` until its design lands.
  */
 export function SupportCard() {
   const t = useT();

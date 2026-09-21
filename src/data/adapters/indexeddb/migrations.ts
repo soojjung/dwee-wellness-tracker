@@ -12,11 +12,10 @@ import { slotsForCount, type PhotoCount } from '@/domain/home/decor';
 type Migration = () => Promise<void>;
 
 const migrations: Record<number, Migration> = {
-  1: async () => {
-    /* 초기 schema, no-op */
-  },
+  1: async () => {},
   2: async () => {
-    // Drop legacy hero-overlay records left over from the removed sticker feature.
+    // Drop records from the removed home-hero overlay feature (unrelated to
+    // today's diary stickers).
     await del(DEPRECATED_KEYS.mediaHomeOverlays);
   },
   3: async () => {

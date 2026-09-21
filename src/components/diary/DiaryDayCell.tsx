@@ -1,7 +1,7 @@
 'use client';
 import { useT } from '@/i18n/useT';
 import { fromISO } from '@/lib/date';
-import type { CellMarkers } from '@/components/calendar/cellState';
+import type { CellMarkers } from '@/domain/cycle/cellState';
 
 interface DiaryDayCellProps {
   date: string;

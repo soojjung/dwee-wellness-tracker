@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -50,25 +49,5 @@ export function Button({ variant, size, fullWidth, className, children, ...rest 
     <button {...rest} className={buttonClasses({ variant, size, fullWidth, className })}>
       {children}
     </button>
-  );
-}
-
-export interface LinkButtonProps extends SharedProps {
-  href: string;
-  children?: ReactNode;
-}
-
-export function LinkButton({
-  variant,
-  size,
-  fullWidth,
-  className,
-  href,
-  children,
-}: LinkButtonProps) {
-  return (
-    <Link href={href} className={buttonClasses({ variant, size, fullWidth, className })}>
-      {children}
-    </Link>
   );
 }

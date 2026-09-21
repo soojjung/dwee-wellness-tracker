@@ -40,7 +40,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 - AI 챗봇, 실제 푸시
 - Apple Health / Google Fit 연동
-- 체중·칼로리·운동·다이어트 유도 (주기 단계별 영양/음식 제안은 허용)
+- 체중·칼로리·다이어트 유도 (주기 단계별 영양/음식 제안은 허용)
 - 임신·피임·성생활·커뮤니티
 - 클라이언트측 ML/AI 라이브러리 (rule-based only). 단, 명시적 사용자 트리거가 있는 매거진 진단 등은 서버측 외부 LLM API 허용 — 결과 톤은 "추정/참고용" 유지.
 
@@ -55,7 +55,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 | 모바일       | Capacitor 6 (iOS)                                                      |
 | 상태         | Zustand (+ persist)                                                    |
 | 저장         | IndexedDB (`idb-keyval`, 로컬) + Supabase (원격) via Repository 추상화 |
-| 인증         | Supabase Auth (익명 세션)                                              |
+| 인증         | Supabase Auth (Apple/Google OAuth + 익명 세션)                         |
 | 스타일       | Tailwind CSS                                                           |
 | 폼           | react-hook-form                                                        |
 | 날짜         | date-fns                                                               |
@@ -74,7 +74,9 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 │   ├── requirement-planner.md       모호한 요청 → 요구사항/STEP 계획
 │   ├── senior-code-craftsman.md     클린 아키텍처·strict TS·i18n·타입체크까지 책임지는 구현 에이전트
 │   ├── docs-diagram-curator.md      README/문서/Mermaid 다이어그램 관리
-│   └── unit-test-author.md          domain/lib 순수 함수에 대한 Vitest 테스트 + cases.md 작성
+│   ├── unit-test-author.md          domain/lib 순수 함수에 대한 Vitest 테스트 + cases.md 작성
+│   ├── i18n-localization-expert.md  en(source)/ko 사전 동기화 · 톤 리뷰 · locale 인프라
+│   └── menstrual-cycle-expert.md    주기 도메인 로직·카피 검토
 │
 ├── commands/                커스텀 슬래시 커맨드
 │   └── commit.md            /commit — 브랜치 관리 + 검증 게이트 + curator + PR (상세 ↓)
@@ -82,6 +84,7 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 ├── rules/                   도메인별 규약 (CLAUDE.md 가 80줄 넘으면 여기로 이전)
 │   ├── cycle-logic.md       주기 도메인 계산 규칙
 │   ├── health-copy.md       헬스 카피 톤 / 의료 단언 금지
+│   ├── mermaid.md           Mermaid 다이어그램 렌더 안전 규칙 (라벨 인용부호 등)
 │   ├── modals.md            모달·다이얼로그·바텀시트 작성 규칙 (훅 2개 필수, 백드롭, a11y, z-index)
 │   ├── screens.md           화면 분리 / hydrate 패턴
 │   └── storage.md           Repository · Adapter 패턴
@@ -96,47 +99,44 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 
 **`/commit` 가 자동으로 해주는 것**
 
-브랜치 정리 → 검증 게이트 (`lint → typecheck → test:unit`) → e2e (`pnpm test:e2e` 별도) → 단위 테스트 보강 → 문서 갱신 → PR 생성 → Figma 동기화 → 결과 보고. 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
+변경 확인 → main 동기화·브랜치 정리 → 새 브랜치 → 검증 게이트 (`lint → typecheck → test:unit`, e2e `pnpm test:e2e` 는 별도) → 단위 테스트 보강 → 문서 갱신 → 커밋 → push + PR → 결과 보고. Figma 스냅샷 자동 동기화는 2026-07-29 부로 **비활성화**(수동 동기화로 전환, `commit.md` 안에 주석으로 보존). 상세 절차는 [`.claude/commands/commit.md`](./.claude/commands/commit.md) 참조.
 
-`test:e2e` 는 5개 phase × 2개 locale(en/ko) 매트릭스로 시각 스냅샷을 찍습니다. 현재 커버리지:
+`test:e2e` 커버리지: home / log / customize 세 spec 은 5개 phase × 2개 locale(en/ko) 매트릭스로 시각 스냅샷을 찍습니다. magazine 은 phase 매트릭스가 아니라 고정 시나리오 3개, photo-edit 은 아래 이유로 skip 처리돼 있습니다.
 
 | spec | 화면 | 비고 |
 |------|------|------|
-| `tests/home.spec.ts` | 홈 | Figma "Snapshots (ko)" 자동 동기화 대상 |
-| `tests/customize.spec.ts` | 홈 커스터마이즈 | e2e baseline 전용 |
-| `tests/log.spec.ts` | 주기리포트(/log) | e2e baseline 전용 |
-| `tests/magazine.spec.ts` | 매거진 | e2e baseline 전용 |
+| `tests/home.spec.ts` | 홈 | 5 phase × 2 locale |
+| `tests/customize.spec.ts` | 홈 커스터마이즈 | 5 phase × 2 locale |
+| `tests/log.spec.ts` | 주기리포트(/log) | 5 phase × 2 locale |
+| `tests/magazine.spec.ts` | 매거진 | 고정 시나리오 3개 (목록 / 아티클 / 진단 picker) — phase 매트릭스 아님 |
 | `tests/photo-edit.spec.ts` | 사진 편집 | **skipped** — Playwright WebKit이 IndexedDB에 Blob을 저장할 때 null DOMException을 던지는 Playwright-only 버그. 실제 Safari/WKWebView·Chromium은 정상 동작. |
 
 ```mermaid
 flowchart LR
-    S0([STEP 0\n변경 확인])
-    S1([STEP 1–2\nmain 동기화\n브랜치 정리])
-    S2([STEP 3\n새 브랜치 생성])
-    S3([STEP 4\n검증 게이트])
-    S4([STEP 5\ndocs 갱신])
-    S5([STEP 6\n커밋])
-    S6([STEP 7\npush + PR])
-    S7([STEP 8\nFigma sync])
-    S8([STEP 9\n결과 보고])
+    S1(["STEP 1\n변경 확인"])
+    S2(["STEP 2\nmain 동기화\n브랜치 정리"])
+    S3(["STEP 3\n새 브랜치 생성"])
+    S4(["STEP 4\n검증 게이트\n+ 4.5 단위테스트 보강"])
+    S5(["STEP 5\ndocs 갱신"])
+    S6(["STEP 6\n커밋"])
+    S7(["STEP 7\npush + PR"])
+    S8(["STEP 8\n결과 보고"])
 
-    S0 -->|변경 있음| S1
-    S1 -->|main 위| S2
-    S1 -->|작업 브랜치| S3
-    S2 --> S3
-    S3 -->|통과| S4
-    S3 -->|실패| X([중단 · 보고])
-    S4 --> S5
+    S1 -->|"변경 있음"| S2
+    S2 -->|"main 위"| S3
+    S2 -->|"작업 브랜치"| S4
+    S3 --> S4
+    S4 -->|"통과"| S5
+    S4 -->|"실패"| X(["중단 · 보고"])
     S5 --> S6
-    S6 -->|snapshots 변경| S7
-    S6 -->|변경 없음| S8
+    S6 --> S7
     S7 --> S8
 
     classDef step fill:#FDE2EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef gate fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
     classDef stop fill:#F5F3F4,stroke:#C9C6C7,color:#353434;
-    class S0,S1,S2,S5,S6,S7,S8 step;
-    class S3,S4 gate;
+    class S1,S2,S3,S6,S7,S8 step;
+    class S4,S5 gate;
     class X stop;
 ```
 
@@ -154,7 +154,7 @@ flowchart LR
 ```bash
 cp .env.example .env.local
 # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY 채우기
-# NEXT_PUBLIC_SITE_URL — OG 메타데이터 base URL (배포 시 실제 도메인으로 교체)
+# SITE_URL — OG 메타데이터 base URL (배포 시 실제 도메인으로 교체, 빌드 시점에 서버 컴포넌트만 읽음)
 ```
 
 `.env.local` 이 비어 있어도 dev/build 는 통과합니다(placeholder fallback). 단 익명 로그인은 실패하며 `auth.error.missingConfig` 토스트가 뜹니다.
@@ -232,7 +232,7 @@ src/
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환 (캘린더 포함)
 │   │   ├── magazine/             매거진 글 목록
-│   │   └── settings/             마이페이지 + 서브 라우트 (language/notifications/qna/terms/privacy — 실장; notices — stub)
+│   │   └── settings/             마이페이지 + 서브 라우트 (language/notifications/holidays/qna/terms/privacy — 실장; notices — stub)
 │   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
 │       ├── home/customize/       홈 커스터마이즈 + 사진 편집
 │       ├── log/customize/        다이어리 스티커 라이브러리 + 배치 편집
@@ -252,7 +252,7 @@ src/
 │   ├── app/                      AppShell, BottomTabNav, HomeScreen, HomeHero, SplashScreen, 카드 등
 │   ├── home-customize/           HomeCustomizeScreen, PhotoLayout, TextSettingsSection 등
 │   ├── magazine/                 MagazineScreen, ArticleScreen, ArticleSectionView, BookmarkToggleButton, BookmarksScreen 등
-│   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker), PhotoPreviewView (선택 직후 미리보기), DiagnoseResultScreen, DiagnoseResultTopBar, ReportView, ShareTestBar, ShareLandingRedirect
+│   ├── diagnose/                 DiagnoseScreen (상태머신·슬롯 picker) + 단계별 뷰(Intro/Consent/Loading/Error), PhotoPreviewView (선택 직후 미리보기), DiagnoseResultScreen, DiagnoseResultTopBar, ReportView, ShareTestBar, ShareLandingRedirect
 │   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DiaryDayCell, DiaryWeekEventLayer, EventFormSheet (+ EventConditionSection) 등
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
@@ -260,7 +260,7 @@ src/
 │   ├── my-page/                  MyPageScreen, AuthCard, CycleSummaryCard, MyTestsCard, PreferencesCard, SupportCard, AccountManagementCard, AccountEditScreen, WithdrawConfirmDialog, WithdrawReasonScreen, NotificationsScreen, TermsScreen, PrivacyScreen, QnaScreen
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer, FitStage(시안 좌표계 통째로 확대·축소)
 │
-├── store/                        Zustand: period / condition / settings / media / auth / bookmark / event / diarySticker / diaryPlacement / intro(기기 소개 시청 여부)
+├── store/                        Zustand: period / condition / settings / media / auth / bookmark / event / diarySticker / diaryPlacement / diaryFocus(다이어리↔꾸미기 공유 월) / bodyTypeReport / intro(기기 소개 시청 여부)
 │
 ├── data/                         어댑터 패턴
 │   ├── repositories/             인터페이스 (Period / Condition / Settings / Media / Bookmark / Event / EventCategory / DiarySticker / DiaryStickerPlacement / BodyTypeReport / Intro)
@@ -273,21 +273,33 @@ src/
 │   └── foods/                    홈 음식 상세 아티클 (`articles-en`/`articles-ko`, en 원문 · ko 번역, `home.foods` 사전 id 와 1:1 대응)
 │
 ├── domain/
-│   ├── cycle/                    순수 함수: aggregate, predictor, phase, fertile window
+│   ├── cycle/                    순수 함수: aggregate, predictor, phase, status, cellState, periodEdit, cycleGap, fertile window
+│   ├── event/                    이벤트/카테고리 순수 함수: builtins, builtinDedupe, weekLanes, badges, palette
+│   ├── holiday/                  공휴일 순수 함수: KR 음력 표, US 규칙, 날짜 유틸
+│   ├── diary/                    기본 스티커 메타 정의
 │   └── home/                     decor 타입·상수 (PhotoCount, TextPosition 등)
 ├── lib/
-│   ├── date/                     날짜 유틸
-│   ├── insight/                  rule-based 인사이트 생성
+│   ├── date/                     날짜 유틸 (month, monthWeeks 포함)
+│   ├── insight/                  rule-based 인사이트 생성 (테스트 없음)
+│   ├── image/                    canvas·이미지 헬퍼 (pickNativePhotos, canvas, videoFrame 등)
 │   ├── loginEntrance.ts          로그인 스티커 fly-in 1회성 신호 (appToast 와 동일 패턴, in-memory)
+│   ├── errorMessage.ts           에러 메시지 정규화
 │   └── cn.ts                     clsx + tailwind-merge
 │
 ├── hooks/                        재사용 커스텀 훅
 │   ├── useBodyScrollLock.ts      모달 오픈 시 body 스크롤 잠금 (count-based, 중첩 OK)
 │   ├── useEscToClose.ts          Esc 키로 모달 닫기
 │   ├── useBootDelay.ts           스플래시 최소 노출 시간 보장
-│   └── useScrollRestore.ts       목록 화면 스크롤 위치 세션 보존 (하이드레이션 대비 프레임 재시도)
+│   ├── useScrollRestore.ts       목록 화면 스크롤 위치 세션 보존 (하이드레이션 대비 프레임 재시도)
+│   ├── useHistoryBackClick.ts    인앱 히스토리면 router.back(), 아니면 href 폴백
+│   ├── useCoreStoresHydration.ts (fullscreen) 라우트에서 settings/auth/bookmark 스토어 1회 hydrate
+│   ├── useHorizontalSwipe.ts     좌우 스와이프 제스처
+│   ├── useObjectUrl.ts           Blob → Object URL 생성/해제
+│   ├── useSelectionSet.ts        다중 선택 상태 관리
+│   ├── useDiaryHydration.ts      다이어리 관련 스토어 하이드레이션
+│   └── usePhotoLibraryPicker.tsx 앨범 사진 선택 (네이티브 Camera.pickImages / 웹 file input 폴백)
 ├── i18n/                         ko / en 사전 + useT()
-├── constants/                    공용 상수 (copy 등)
+├── constants/                    app.ts / conditionOptions.ts
 ├── dev/                          개발/테스트 전용 시드 헬퍼 (프로덕션 번들 제외)
 │   ├── DevBridge.tsx             e2e 테스트용 window 브릿지 (dev only)
 │   ├── ensureAnon.ts             e2e 익명 세션 보장 헬퍼

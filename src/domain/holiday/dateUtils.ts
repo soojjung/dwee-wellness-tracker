@@ -42,7 +42,6 @@ export function nthWeekday(year: number, month: number, dow: number, n: number):
   return addDays(first, offset + (n - 1) * 7);
 }
 
-/** 그 달의 마지막 특정 요일. */
 export function lastWeekday(year: number, month: number, dow: number): ISODate {
   const firstOfNext = month === 12 ? iso(year + 1, 1, 1) : iso(year, month + 1, 1);
   const last = addDays(firstOfNext, -1);
