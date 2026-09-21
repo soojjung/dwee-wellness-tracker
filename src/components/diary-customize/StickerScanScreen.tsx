@@ -2,8 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { cn } from '@/lib/cn';
 import { removeStickerBackground } from '@/data/services/stickerCutoutService';
 import type { StickerCutoutError, SupportedImageMediaType } from '@/types';
+
+// Figma 256:17988 (013_3) 의 사진 상자 358×544.
+const MIN_SCAN_FRAME_ASPECT = 358 / 544;
 
 interface StickerScanScreenProps {
   /** Captured photo (JPEG/PNG/WebP) sent to the cutout API. */
@@ -57,6 +61,14 @@ export function StickerScanScreen({
     setAreaHeight(el.getBoundingClientRect().height);
     return () => observer.disconnect();
   }, []);
+
+  // 카메라 촬영본은 뷰파인더(화면) 비율이라 세로로 아주 길다. 그대로 두면 가늘고 긴
+  // 띠로 보이므로, 시안 013_3 의 사진 상자(358×544)보다 좁은 사진은 그 비율의 상자에
+  // 채워서(cover) 보여 준다. 그보다 넓은 사진은 원래 비율 그대로다. 보이는 모양만
+  // 그렇고, 누끼 API 에는 원본 전체가 간다.
+  const [naturalAspect, setNaturalAspect] = useState<number | null>(null);
+  const frameAspect =
+    naturalAspect === null ? null : Math.max(naturalAspect, MIN_SCAN_FRAME_ASPECT);
 
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -122,13 +134,31 @@ export function StickerScanScreen({
           {url ? (
             // Shrink-to-fit wrapper: its box equals the rendered photo, so
             // the absolutely positioned scan overlay is bounded by the photo.
-            <div className="relative min-w-0 max-w-full overflow-hidden">
+            <div
+              className={cn(
+                'relative min-w-0 max-w-full overflow-hidden',
+                frameAspect === null && 'invisible',
+              )}
+              style={
+                frameAspect !== null && areaHeight !== undefined
+                  ? { aspectRatio: frameAspect, width: `min(100%, ${areaHeight * frameAspect}px)` }
+                  : undefined
+              }
+            >
               <img
                 src={url}
                 alt=""
                 aria-hidden
-                className="block h-auto w-auto max-w-full object-contain"
-                style={{ maxHeight: areaHeight }}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalHeight > 0) setNaturalAspect(img.naturalWidth / img.naturalHeight);
+                }}
+                className={
+                  frameAspect === null
+                    ? 'block h-auto w-auto max-w-full object-contain'
+                    : 'block h-full w-full object-cover'
+                }
+                style={frameAspect === null ? { maxHeight: areaHeight } : undefined}
               />
               {!error ? <ScanSweep /> : null}
             </div>

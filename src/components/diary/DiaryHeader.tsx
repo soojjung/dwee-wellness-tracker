@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatMonthLabel } from '@/lib/date';
-import { ChevronDownIcon, EditStarIcon, PeriodAddIcon } from '@/components/ui/icons';
+import { ChevronDownIcon, EditStarIcon, PlusIcon } from '@/components/ui/icons';
 import { LogViewToggle, type LogView } from './LogViewToggle';
 
 interface DiaryHeaderProps {
@@ -65,7 +65,8 @@ export function DiaryHeader({
             aria-label={t.report.diary.addAria}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gray400/40 text-brand-gray900 transition-colors hover:bg-brand-gray400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
           >
-            <PeriodAddIcon className="h-[18px] w-4" />
+            {/* 여기서 여는 건 일반 일정 시트다. 물방울(생리 기록 추가)은 주기리포트 헤더 몫. */}
+            <PlusIcon />
           </button>
         </div>
       </div>

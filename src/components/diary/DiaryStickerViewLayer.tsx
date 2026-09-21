@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DiarySticker, DiaryStickerPlacement, StickerRatio, StickerSource } from '@/types';
 import { PLACEMENT_BASE_SIZE, PLACEMENT_NOMINAL_WIDTH } from '@/types';
+import { cn } from '@/lib/cn';
+import { stickerImageFit } from './stickerImageFit';
 
 interface DiaryStickerViewLayerProps {
   placements: DiaryStickerPlacement[];
@@ -117,7 +119,7 @@ function ViewSticker({
       src={imageUrl}
       alt=""
       draggable={false}
-      className={'h-full w-full object-cover ' + (source === 'photo' ? 'rounded-lg' : '')}
+      className={cn('h-full w-full', stickerImageFit(source), source === 'photo' && 'rounded-lg')}
     />
   );
 

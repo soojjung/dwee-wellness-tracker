@@ -4,6 +4,7 @@ import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { PeriodLog } from '@/types';
 import { daysBetween, fromISO } from '@/lib/date';
+import { isCountableCycleGap } from '@/domain/cycle/cycleGap';
 import { format } from 'date-fns';
 
 interface RecentCyclesCardProps {
@@ -17,6 +18,8 @@ interface Row {
   endDate?: string;
   lengthDays: number | null;
   cycleDays: number | null;
+  /** 주기 값은 있지만 셀 수 있는 범위 밖이라 차트·평균·상태 판정에서 빠지는 행. */
+  cycleExcluded: boolean;
 }
 
 export function RecentCyclesCard({ periods, maxRows = 6 }: RecentCyclesCardProps) {
@@ -27,12 +30,14 @@ export function RecentCyclesCard({ periods, maxRows = 6 }: RecentCyclesCardProps
     const sorted = [...periods].sort((a, b) => b.startDate.localeCompare(a.startDate));
     return sorted.slice(0, maxRows).map((cur, i) => {
       const next = sorted[i + 1];
+      const cycleDays = next ? daysBetween(next.startDate, cur.startDate) : null;
       return {
         id: cur.id,
         startDate: cur.startDate,
         endDate: cur.endDate,
         lengthDays: cur.endDate ? daysBetween(cur.startDate, cur.endDate) + 1 : null,
-        cycleDays: next ? daysBetween(next.startDate, cur.startDate) : null,
+        cycleDays,
+        cycleExcluded: cycleDays !== null && !isCountableCycleGap(cycleDays),
       };
     });
   }, [periods, maxRows]);
@@ -70,19 +75,33 @@ export function RecentCyclesCard({ periods, maxRows = 6 }: RecentCyclesCardProps
                   ? `${r.cycleDays}${t.report.row.daysSuffix}`
                   : t.report.row.notAvailable
               }
+              // 목록은 기록 그대로 보여 주되, 차트·평균에서 빠지는 값이라는 걸 표시한다.
+              mutedNote={r.cycleExcluded ? t.report.row.excluded : undefined}
             />
           </li>
         ))}
       </ul>
+      {rows.some((r) => r.cycleExcluded) ? (
+        <p className="pt-1 text-xs leading-normal text-brand-gray600">
+          {t.report.recentExcludedNote}
+        </p>
+      ) : null}
     </section>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, mutedNote }: { label: string; value: string; mutedNote?: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-sm text-brand-gray600">{label}</span>
-      <span className="text-base font-medium text-brand-gray900">{value}</span>
+      <span
+        className={
+          'text-base font-medium ' + (mutedNote ? 'text-brand-gray500' : 'text-brand-gray900')
+        }
+      >
+        {value}
+        {mutedNote ? <span className="text-xs font-normal"> · {mutedNote}</span> : null}
+      </span>
     </div>
   );
 }

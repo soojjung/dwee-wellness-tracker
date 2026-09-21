@@ -5,9 +5,11 @@
  * spans that need coarser steps, etc.).
  */
 
+import { CYCLE_GAP_MIN_DAYS, CYCLE_GAP_MAX_DAYS } from './cycleGap';
+
 const MAX_TICKS = 7;
-export const CYCLE_HARD_MIN = 15;
-export const CYCLE_HARD_MAX = 60;
+export const CYCLE_HARD_MIN = CYCLE_GAP_MIN_DAYS;
+export const CYCLE_HARD_MAX = CYCLE_GAP_MAX_DAYS;
 
 export interface NiceScaleResult {
   yMin: number;
@@ -27,10 +29,7 @@ export interface NiceScaleResult {
  */
 export function niceScale(dataMin: number, dataMax: number): NiceScaleResult {
   const rawMin = Math.max(Math.floor(dataMin), CYCLE_HARD_MIN);
-  const rawMax = Math.min(
-    Math.ceil(dataMax === dataMin ? dataMax + 1 : dataMax),
-    CYCLE_HARD_MAX,
-  );
+  const rawMax = Math.min(Math.ceil(dataMax === dataMin ? dataMax + 1 : dataMax), CYCLE_HARD_MAX);
   const candidates = [1, 2, 5, 10];
   for (const step of candidates) {
     const yMin = Math.floor(rawMin / step) * step;
@@ -52,12 +51,7 @@ export function niceScale(dataMin: number, dataMax: number): NiceScaleResult {
  * half-extent in the same coord space; callers pass it so the clamp is
  * agnostic to the pill's rendered size.
  */
-export function clampOverlayX(
-  x: number,
-  minX: number,
-  maxX: number,
-  halfWidth: number,
-): number {
+export function clampOverlayX(x: number, minX: number, maxX: number, halfWidth: number): number {
   const safeMin = minX + halfWidth;
   const safeMax = maxX - halfWidth;
   if (safeMin > safeMax) return (minX + maxX) / 2;

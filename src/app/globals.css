@@ -26,6 +26,22 @@ body {
     sans-serif;
 }
 
+/* 상태바 뒤·주소창 뒤·오버스크롤 영역은 페이지 콘텐츠가 아니라 브라우저가 body 배경색으로
+   칠한다 (iOS Safari 26 은 theme-color 메타도 여기엔 쓰지 않는다). body 는 앱 공통 회색이라,
+   배경이 다른 풀스크린 화면(로그인·스플래시 = 핑크, 소개 슬라이드 = 흰색)은 위아래에 회색 띠가
+   남았다. 그런 화면이 자기 색을 `data-page-bg` 로 밝히면 body 가 그 색을 따른다.
+
+   모바일 폭에서만 적용한다 — 데스크톱에서는 가운데 448px 열 바깥이 회색 여백으로 남는 것이
+   앱 전체의 의도된 모양이다. 스플래시(핑크)는 흰 레이아웃 안에서도 뜨므로 pink 가 뒤에 와서 이긴다. */
+@media (max-width: 28rem) {
+  body:has([data-page-bg='white']) {
+    background-color: theme('colors.brand.gray50');
+  }
+  body:has([data-page-bg='pink']) {
+    background-color: theme('colors.auth.bg');
+  }
+}
+
 @layer utilities {
   /* iOS 노치·홈 인디케이터 여백. layout.tsx 의 `viewportFit: 'cover'` 와 짝을
      이루며, 안전영역이 없는 기기에서는 0 이라 데스크톱 렌더는 그대로다.

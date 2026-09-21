@@ -40,6 +40,11 @@ interface EventFormSheetProps {
   onTogglePeriodMark?: () => void | Promise<void>;
   onEditCategory?: (category: EventCategory) => void;
   onAddCategory?: () => void;
+  /**
+   * 일정 유형 추가·편집 화면이 이 시트를 덮고 있는 동안 true. 시트는 작성 중인 내용을
+   * 지키려고 마운트된 채로 남지만, 그동안은 입력(Esc·포커스)을 받지 않아야 한다.
+   */
+  suspended?: boolean;
 }
 
 type ExpandedField = 'none' | 'start' | 'end' | 'category';
@@ -56,6 +61,7 @@ export function EventFormSheet({
   onTogglePeriodMark,
   onEditCategory,
   onAddCategory,
+  suspended = false,
 }: EventFormSheetProps) {
   const t = useT();
   const locale = useSettingsStore((s) => s.settings.locale);
@@ -64,9 +70,15 @@ export function EventFormSheet({
   const [memo, setMemo] = useState(initial?.memo ?? '');
   const [startDate, setStartDate] = useState(initial?.startDate ?? defaultDate);
   const [endDate, setEndDate] = useState(initial?.endDate ?? defaultDate);
-  const [categoryId, setCategoryId] = useState<string | null>(
+  const [pickedCategoryId, setCategoryId] = useState<string | null>(
     initial?.categoryId ?? defaultCategoryId(categories),
   );
+  // 고른 유형이 이 시트 위에 뜬 편집 화면에서 삭제될 수 있다. 그때는 스토어가 일정을
+  // 옮기는 것과 같은 규칙(기본 유형)으로 물러난다 — 없는 유형을 가리킨 채 저장하면 안 된다.
+  const categoryId =
+    pickedCategoryId && categories.some((c) => c.id === pickedCategoryId)
+      ? pickedCategoryId
+      : defaultCategoryId(categories);
   const [expanded, setExpanded] = useState<ExpandedField>('none');
   const [submitting, setSubmitting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -185,7 +197,8 @@ export function EventFormSheet({
 
   useBodyScrollLock();
   // While the delete confirm is up, Esc belongs to it — otherwise both close.
-  useEscToClose(handleClose, !confirmingDelete);
+  // 위에 덮인 유형 화면이 Esc 를 가져간다 — 둘 다 받으면 이 시트까지 닫혀 입력이 날아간다.
+  useEscToClose(handleClose, !confirmingDelete && !suspended);
 
   const headerTitle =
     mode === 'edit' ? t.report.diary.editSheet.title : t.report.diary.eventSheet.title;
@@ -195,6 +208,7 @@ export function EventFormSheet({
       role="dialog"
       aria-modal="true"
       aria-label={headerTitle}
+      inert={suspended}
       className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={handleClose}
     >
@@ -213,7 +227,7 @@ export function EventFormSheet({
             aria-label={t.report.diary.eventSheet.close}
             disabled={submitting}
             onClick={handleClose}
-            className="grid size-10 place-items-center rounded-full bg-brand-gray100 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-60"
+            className="grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-60"
           >
             <CloseIcon />
           </button>
@@ -408,18 +422,20 @@ function formatDateShort(iso: string, locale: 'en' | 'ko'): string {
   return `${formatMonthLabel(d, 'en')} ${d.getDate()}`;
 }
 
+// Figma 256:15854 (icon_cancel) 의 벡터 그대로 — 아래 CheckIcon 과 같은 방식으로 40 viewBox 를
+// 버튼(40px)에 1:1 로 얹는다. 예전 16px 글리프는 X 폭 8px·선 1px 이라 시안(12px·2px)보다 작았다.
 function CloseIcon() {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 40 40"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="2"
       strokeLinecap="round"
-      className="h-4 w-4"
+      className="size-10"
       aria-hidden
     >
-      <path d="M6 6l12 12M18 6L6 18" />
+      <path d="M14 14L26 26M26 14L14 26" />
     </svg>
   );
 }

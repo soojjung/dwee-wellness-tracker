@@ -6,6 +6,7 @@ import { useEscToClose } from '@/hooks/useEscToClose';
 import type { StickerRatio } from '@/types';
 import type { CameraMode } from './CameraSheet';
 import { PhotoRatioScreen } from './PhotoRatioScreen';
+import { cropToRatio, ratioForImage } from '@/lib/image/stickerCrop';
 
 interface PhotoImportModalProps {
   file: File;
@@ -26,10 +27,6 @@ interface PhotoImportModalProps {
  * screen before saving.
  */
 type Step = 'mode' | 'ratio';
-
-// A source photo wider than this reads as square-ish, so 1:1 crops it least.
-// Below it, the portrait 3:4 frame is the better fit.
-const SQUARE_ASPECT_CUTOFF = 0.875;
 
 export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalProps) {
   const t = useT();
@@ -241,58 +238,4 @@ function CheckGlyph() {
       />
     </svg>
   );
-}
-
-/** The cutout path skips the ratio step, so the placement frame is inferred
- *  from the source photo instead. */
-async function ratioForImage(file: File): Promise<StickerRatio> {
-  try {
-    const bitmap = await loadImage(file);
-    return bitmap.width / bitmap.height >= SQUARE_ASPECT_CUTOFF ? '1:1' : '4:3';
-  } catch {
-    return '1:1';
-  }
-}
-
-async function cropToRatio(file: File, ratio: StickerRatio): Promise<Blob | null> {
-  const bitmap = await loadImage(file);
-  // "4:3" label = portrait 3:4 aspect (width:height = 3:4).
-  const targetAspect = ratio === '1:1' ? 1 : 3 / 4;
-  const srcAspect = bitmap.width / bitmap.height;
-  let sx = 0;
-  let sy = 0;
-  let sw = bitmap.width;
-  let sh = bitmap.height;
-  if (srcAspect > targetAspect) {
-    sw = bitmap.height * targetAspect;
-    sx = (bitmap.width - sw) / 2;
-  } else {
-    sh = bitmap.width / targetAspect;
-    sy = (bitmap.height - sh) / 2;
-  }
-  const canvas = document.createElement('canvas');
-  canvas.width = sw;
-  canvas.height = sh;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-  ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, sw, sh);
-  return await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92),
-  );
-}
-
-function loadImage(file: File): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = (e) => {
-      URL.revokeObjectURL(url);
-      reject(e);
-    };
-    img.src = url;
-  });
 }

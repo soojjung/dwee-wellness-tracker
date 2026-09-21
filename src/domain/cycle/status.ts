@@ -1,5 +1,6 @@
 import type { PeriodLog, Confidence } from '@/types';
 import { daysBetween } from '@/lib/date';
+import { isCountableCycleGap } from './cycleGap';
 
 export type CycleStatus =
   | 'stable'
@@ -18,12 +19,11 @@ export interface CycleStatusResult {
   latestPeriodLengthDays: number | null;
 }
 
-const CYCLE_MIN = 15;
-const CYCLE_MAX = 60;
 const PERIOD_MIN = 1;
 const PERIOD_MAX = 14;
 
 const MIN_RECORDS_FOR_STATUS = 3;
+const MIN_CYCLES_FOR_STATUS = 2;
 
 const STABLE_PERIOD_MIN = 3;
 const STABLE_PERIOD_MAX = 7;
@@ -43,7 +43,7 @@ function collectCycleGaps(periods: PeriodLog[]): number[] {
   const gaps: number[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const gap = daysBetween(sorted[i - 1]!.startDate, sorted[i]!.startDate);
-    if (gap >= CYCLE_MIN && gap <= CYCLE_MAX) gaps.push(gap);
+    if (isCountableCycleGap(gap)) gaps.push(gap);
   }
   return gaps;
 }
@@ -80,12 +80,12 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
 
   const gaps = collectCycleGaps(periods);
   const avg = avgOrNull(gaps);
-  const range = gaps.length >= 2 ? Math.max(...gaps) - Math.min(...gaps) : gaps.length === 1 ? 0 : null;
+  const range =
+    gaps.length >= 2 ? Math.max(...gaps) - Math.min(...gaps) : gaps.length === 1 ? 0 : null;
   const latestLen = latestCompletedPeriodLength(periods);
 
   // gaps.length + 1 == number of period records. `high` = 4+ records (§2 of cycle-logic.md).
-  const confidence: Confidence =
-    gaps.length >= 3 ? 'high' : gaps.length >= 2 ? 'medium' : 'low';
+  const confidence: Confidence = gaps.length >= 3 ? 'high' : gaps.length >= 2 ? 'medium' : 'low';
 
   const base = {
     confidence,
@@ -94,11 +94,18 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
     latestPeriodLengthDays: latestLen,
   };
 
+  // 생리 "기간"은 주기 간격 없이도 관찰되는 사실이라, 셀 수 있는 주기가 없어도 먼저 말한다.
   if (latestLen !== null && latestLen <= SHORT_PERIOD_MAX) {
     return { status: 'shortPeriod', ...base };
   }
   if (latestLen !== null && latestLen >= LONG_PERIOD_MIN) {
     return { status: 'longPeriod', ...base };
+  }
+  // 기록은 3회 이상인데 셀 수 있는 유효 주기(cycleGap.ts, 15~60일)가 2개 미만인 경우.
+  // 변동폭은 주기가 둘 이상일 때만 의미 있다. 판정할 주기가 부족하면 insufficient 을 반환
+  // (cycle-logic.md §8, 2026-09-21 결정).
+  if (gaps.length < MIN_CYCLES_FOR_STATUS) {
+    return { status: 'insufficient', ...base, confidence: 'unknown' };
   }
   if (range !== null && range >= IRREGULAR_RANGE_MIN) {
     return { status: 'irregular', ...base };
@@ -108,8 +115,7 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
   }
   const inStablePeriod =
     latestLen === null || (latestLen >= STABLE_PERIOD_MIN && latestLen <= STABLE_PERIOD_MAX);
-  const inStableCycle =
-    avg !== null && avg >= STABLE_CYCLE_MIN && avg <= STABLE_CYCLE_MAX;
+  const inStableCycle = avg !== null && avg >= STABLE_CYCLE_MIN && avg <= STABLE_CYCLE_MAX;
   const inStableRange = range !== null && range <= STABLE_RANGE_MAX;
   if (inStablePeriod && inStableCycle && inStableRange) {
     return { status: 'stable', ...base };

@@ -81,3 +81,9 @@ paths:
 
 - iOS 노치·홈 인디케이터 여백은 `src/app/globals.css`의 `.pt-safe`/`.pb-safe` 유틸리티(`env(safe-area-inset-*)`)로 전역 정의돼 있다. 화면마다 같은 `env()` 계산을 다시 적지 말고 이 클래스를 쓸 것.
 - 기본 여백(예: 8px)까지 함께 필요하면 `pt-safe` 옆에 별도 padding 클래스를 붙이지 않는다 — 같은 CSS property 를 두 클래스가 다투면 나중에 생성된 쪽이 이겨 하나가 무시된다. `pt-[calc(0.5rem+env(safe-area-inset-top,0px))]` 처럼 한 클래스로 합쳐 쓸 것.
+
+## 12) 풀스크린 화면의 상태바·주소창 뒤 배경 (`data-page-bg`)
+
+- 상태바 뒤·주소창 뒤·오버스크롤 영역은 화면 콘텐츠가 아니라 브라우저가 **`body` 배경색**으로 칠한다(iOS Safari 는 `theme-color` 메타도 여기엔 쓰지 않는다). `body`는 앱 공통 회색이라, 배경이 다른 풀스크린 화면(로그인·스플래시 = 핑크, 소개 슬라이드 = 흰색)을 그대로 두면 위아래에 회색 띠가 남는다.
+- 그런 화면은 최상위 wrapper div에 `data-page-bg="pink"` 또는 `"white"`를 붙인다. `src/app/globals.css`가 모바일 폭(`max-width: 28rem`)에서만 `body:has([data-page-bg=...])`로 `body` 배경을 그 색으로 맞춘다(데스크톱은 가운데 448px 열 바깥의 회색 여백이 의도된 모양이라 제외). 현재 사용처: `(auth)/layout.tsx`(pink), `(intro)/layout.tsx`(white), `SplashScreen`(pink).
+- 새 값이 필요하면 `globals.css`의 `@media` 블록에 규칙을 추가하고 여기 목록에 한 줄 추가할 것 — 값 없이 속성만 붙이면 조용히 무시된다(다른 페이지 배경 없이는 아무 효과 없음).

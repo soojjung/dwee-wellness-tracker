@@ -38,9 +38,12 @@ export function StatusTooltip({ title, criteria, onDismiss }: StatusTooltipProps
       // 꼬리가 모서리 라운딩 위에 걸치면 깎인 만큼 몸통과 떨어져 보인다.
       className="absolute -right-4 top-[calc(100%+12px)] z-20 w-[240px] rounded-2xl bg-brand-gray900 p-4 text-left shadow-[0_4px_16px_0_rgba(0,0,0,0.16)]"
     >
+      {/* 꼬리 = 45° 돌린 정사각형. 둥글리는 건 끝(돌리기 전 좌상단)뿐이다 — 네 모서리를 다
+          둥글리면 몸통 가장자리 선에 걸치는 좌우 모서리가 깎여 밑동이 패이고, 꼬리가 몸통에서
+          떨어져 얹힌 것처럼 보인다. 1px 더 밀어 넣어 이음매도 몸통 안에 숨긴다. */}
       <span
         aria-hidden
-        className="absolute -top-1.5 right-[18px] size-3 rotate-45 rounded-[2px] bg-brand-gray900"
+        className="absolute -top-[5px] right-[18px] size-3 rotate-45 rounded-tl-[2px] bg-brand-gray900"
       />
       <p className="text-sm font-medium leading-normal text-brand-white">{title}</p>
       <p className="mt-1 text-xs leading-normal text-brand-gray500">{criteria}</p>

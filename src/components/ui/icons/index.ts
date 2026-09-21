@@ -13,3 +13,4 @@ export { BinIcon } from './BinIcon';
 export { AlbumIcon } from './AlbumIcon';
 export { RetryIcon } from './RetryIcon';
 export { PeriodAddIcon } from './PeriodAddIcon';
+export { PlusIcon } from './PlusIcon';

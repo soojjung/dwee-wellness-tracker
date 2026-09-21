@@ -709,6 +709,7 @@ export const ko: Dictionary = {
       12: '12월',
     },
     recentTitle: '최근 주기 기록',
+    recentExcludedNote: '시작일 간격이 15~60일을 벗어난 기록은 차트와 평균에 넣지 않아요.',
     row: {
       dates: '시작 / 종료일',
       length: '기간',
@@ -716,6 +717,7 @@ export const ko: Dictionary = {
       ongoing: '진행 중',
       notAvailable: '—',
       daysSuffix: '일',
+      excluded: '통계 제외',
     },
     empty: {
       title: '아직 주기 데이터가 부족해요',
@@ -725,6 +727,10 @@ export const ko: Dictionary = {
     chartEmpty: {
       title: '아직 주기 데이터가 부족해요.',
       body: '최소 3회 이상의 생리 기록이 필요해요!',
+    },
+    chartNoCycles: {
+      title: '아직 차트에 보여줄 주기가 없어요.',
+      body: '시작일 간격이 15~60일인 기록만 주기로 계산돼요.',
     },
     tooltipAria: '주기 상태 자세히',
     diary: {
@@ -793,6 +799,7 @@ export const ko: Dictionary = {
         editEntry: '편집',
         save: '완료',
         close: '닫기',
+        delete: '일정 유형 삭제',
       },
       palette: {
         pink: '핑크',
@@ -838,8 +845,6 @@ export const ko: Dictionary = {
         flip: '카메라 전환',
         modePhoto: '사진',
         modeSticker: '스티커',
-        ratio1x1: '1:1',
-        ratio4x3: '4:3',
         permissionDenied: '카메라 사용 권한이 필요해요. 브라우저 설정에서 허용해주세요.',
         unavailable: '이 기기에서는 카메라를 사용할 수 없어요. 앨범에서 선택해주세요.',
         openAlbumFallback: '앨범 열기',
@@ -915,7 +920,7 @@ export const ko: Dictionary = {
       insufficient: {
         badge: '데이터 부족',
         title: '조금 더 기록하면 패턴을 분석해 볼 수 있어요.',
-        criteria: '*기록 3회 미만',
+        criteria: '*기록 3회 미만 또는 15~60일 주기 2회 미만',
       },
     },
   },

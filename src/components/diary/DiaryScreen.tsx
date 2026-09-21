@@ -52,12 +52,14 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const upsertCondition = useConditionStore((s) => s.upsert);
 
   const settings = useSettingsStore((s) => s.settings);
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
 
   const events = useEventStore((s) => s.events);
   const categories = useEventStore((s) => s.categories);
   const eventsHydrated = useEventStore((s) => s.hydrated);
   const hydrateEvents = useEventStore((s) => s.hydrate);
   const seedBuiltinsIfEmpty = useEventStore((s) => s.seedBuiltinsIfEmpty);
+  const removeCategory = useEventStore((s) => s.removeCategory);
   const addEvent = useEventStore((s) => s.addEvent);
   const updateEvent = useEventStore((s) => s.updateEvent);
   const removeEvent = useEventStore((s) => s.removeEvent);
@@ -139,15 +141,32 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   );
 
   useEffect(() => {
-    if (!eventsHydrated) return;
+    // 기본 유형의 이름은 시드하는 순간의 언어로 저장소에 굳는다. 설정이 로드되기 전에는
+    // 언어가 기본값(en)이라, 기다리지 않으면 한국어 기기에 "Family / Friend…"가 남는다.
+    if (!eventsHydrated || !settingsHydrated) return;
     if (categories.length === 0) seedBuiltinsIfEmpty(builtinNamer);
-  }, [eventsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
+  }, [eventsHydrated, settingsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
+
+  // 일정 유형 추가·편집 화면은 일정 시트 "위에" 뜬다. 그동안에도 일정 시트는 마운트해 둬야
+  // 한다 — 입력값(제목·메모·날짜·컨디션)이 시트 안의 state 라, 언마운트하면 유형 화면에서
+  // 돌아왔을 때 전부 비어 있다.
+  const categorySheetOpen = sheet.kind === 'addCategory' || sheet.kind === 'editCategory';
+  const eventSheet: EventPrev | null =
+    sheet.kind === 'addEvent' || sheet.kind === 'editEvent'
+      ? sheet
+      : sheet.kind === 'addCategory' || sheet.kind === 'editCategory'
+        ? sheet.prev
+        : null;
 
   // 상세와 편집 시트가 같은 일정을 본다 — 편집은 상세 위에 겹쳐 열리므로 둘 다 활성.
+  const activeEventId =
+    sheet.kind === 'eventDetail'
+      ? sheet.eventId
+      : eventSheet?.kind === 'editEvent'
+        ? eventSheet.eventId
+        : null;
   const activeEvent: EventLog | null =
-    sheet.kind === 'eventDetail' || sheet.kind === 'editEvent'
-      ? (events.find((e) => e.id === sheet.eventId) ?? null)
-      : null;
+    activeEventId !== null ? (events.find((e) => e.id === activeEventId) ?? null) : null;
 
   async function handleAddEvent(input: EventFormInput): Promise<boolean> {
     const log = await addEvent({
@@ -402,11 +421,12 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       {/* + button and day-cell taps both open EventFormSheet in add mode —
           it hosts the period toggle and an optional condition section, so
           there's no separate day-detail or 생리/일정 chooser popover. */}
-      {sheet.kind === 'addEvent' && categories.length > 0 ? (
+      {eventSheet?.kind === 'addEvent' && categories.length > 0 ? (
         <EventFormSheet
           mode="add"
           categories={categories}
-          defaultDate={sheet.date ?? today}
+          defaultDate={eventSheet.date ?? today}
+          suspended={categorySheetOpen}
           onClose={() => setSheet({ kind: 'none' })}
           onSubmit={handleAddEvent}
           onEditCategory={openEditCategoryFromEvent}
@@ -415,7 +435,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       ) : null}
       {/* 일정 탭 → 상세(읽기 전용) → [편집] → 편집 시트 (Figma 012_7/8). 편집 시트는
           상세 위에 겹쳐 열리고, X·저장은 상세로 돌아오며 삭제만 다이어리로 나간다. */}
-      {(sheet.kind === 'eventDetail' || sheet.kind === 'editEvent') && activeEvent ? (
+      {(sheet.kind === 'eventDetail' || eventSheet?.kind === 'editEvent') && activeEvent ? (
         <EventDetailScreen
           event={activeEvent}
           category={categories.find((c) => c.id === activeEvent.categoryId) ?? null}
@@ -428,9 +448,10 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           onEdit={() => setSheet({ kind: 'editEvent', eventId: activeEvent.id })}
         />
       ) : null}
-      {sheet.kind === 'editEvent' && activeEvent ? (
+      {eventSheet?.kind === 'editEvent' && activeEvent ? (
         <EventFormSheet
           mode="edit"
+          suspended={categorySheetOpen}
           categories={categories}
           initial={activeEvent}
           initialCondition={conditionByDate[activeEvent.startDate] ?? null}
@@ -469,6 +490,15 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           initial={activeCategoryForEdit}
           onClose={() => returnToEventSheet(sheet.prev)}
           onSubmit={(input) => handleUpdateCategory(activeCategoryForEdit.id, input)}
+          // 마지막 하나는 지울 수 없다 — 0개가 되면 기본 유형 시드가 다시 돈다.
+          onDelete={
+            categories.length > 1
+              ? async () => {
+                  const removed = await removeCategory(activeCategoryForEdit.id);
+                  if (removed) returnToEventSheet(sheet.prev);
+                }
+              : undefined
+          }
         />
       ) : null}
       {sheet.kind === 'monthPicker' ? (

@@ -1,6 +1,8 @@
 'use client';
 import { useRef } from 'react';
 import { useT } from '@/i18n/useT';
+import { cn } from '@/lib/cn';
+import { stickerImageFit } from '@/components/diary/stickerImageFit';
 import {
   PLACEMENT_BASE_SIZE,
   PLACEMENT_NOMINAL_WIDTH,
@@ -161,7 +163,7 @@ export function PlacedSticker({
           src={imageUrl}
           alt=""
           draggable={false}
-          className="h-full w-full object-cover"
+          className={cn('h-full w-full', stickerImageFit(source))}
         />
       </button>
       {selected ? (
