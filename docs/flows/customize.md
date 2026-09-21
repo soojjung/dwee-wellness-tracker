@@ -168,8 +168,8 @@ flowchart LR
     Screen -->|"draftSet* / draftClear*"| DraftStore
     DraftStore -->|"홈 꾸미기 '편집 완료'"| Commit
     Commit --> Repo
-    Repo --> IDB
-    Repo -.->|"MVP2.2"| SB
+    Repo -->|"local"| IDB
+    Repo -->|"remote"| SB
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;

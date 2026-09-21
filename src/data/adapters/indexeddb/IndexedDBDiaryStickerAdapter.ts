@@ -5,12 +5,11 @@ import type {
   NewDiaryStickerInput,
 } from '../../repositories/DiaryStickerRepository';
 import { STORAGE_KEYS } from './keys';
+import { listStore, newId } from './kv';
 
-const newId = (): string => crypto.randomUUID();
-
-const readList = async (): Promise<DiarySticker[]> =>
-  (await get<DiarySticker[]>(STORAGE_KEYS.diaryStickers)) ?? [];
-const writeList = (list: DiarySticker[]) => set(STORAGE_KEYS.diaryStickers, list);
+const { readAll: readList, writeAll: writeList } = listStore<DiarySticker>(
+  STORAGE_KEYS.diaryStickers,
+);
 
 export const indexedDBDiaryStickerAdapter: DiaryStickerRepository = {
   list: () => readList(),

@@ -1,8 +1,8 @@
 'use client';
 import { useRef } from 'react';
-import { Camera } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { supportedMediaType } from '@/lib/image/fileToBase64';
+import { pickNativePhotos } from '@/lib/image/pickNativePhotos';
 import type { SupportedImageMediaType } from '@/types';
 
 export interface PickedPhoto {
@@ -33,16 +33,12 @@ export function useBodyPhotoPicker({ limit, onPicked }: Options) {
       return;
     }
     try {
-      const result = await Camera.pickImages({ limit, quality: 90 });
+      const files = await pickNativePhotos(limit);
       const picked: PickedPhoto[] = [];
-      for (const photo of result.photos.slice(0, limit)) {
-        if (!photo.webPath) continue;
-        const blob = await (await fetch(photo.webPath)).blob();
-        // 피커가 주는 blob 은 MIME 이 비어 있을 수 있다. pickImages 는 기본으로
-        // jpeg 를 돌려주므로 그때는 jpeg 로 본다.
-        const file = new File([blob], `body-${picked.length}.jpg`, {
-          type: blob.type || 'image/jpeg',
-        });
+      for (const raw of files) {
+        // Renamed to this screen's own convention ('body-N.jpg') — the shared
+        // primitive names by its own index ('photo-N.jpg').
+        const file = new File([raw], `body-${picked.length}.jpg`, { type: raw.type });
         const mediaType = supportedMediaType(file);
         if (!mediaType) continue;
         picked.push({ file, previewUrl: URL.createObjectURL(file), mediaType });

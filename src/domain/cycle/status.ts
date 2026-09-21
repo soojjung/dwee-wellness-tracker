@@ -84,7 +84,8 @@ export function classifyCycleStatus(periods: PeriodLog[]): CycleStatusResult {
     gaps.length >= 2 ? Math.max(...gaps) - Math.min(...gaps) : gaps.length === 1 ? 0 : null;
   const latestLen = latestCompletedPeriodLength(periods);
 
-  // gaps.length + 1 == number of period records. `high` = 4+ records (§2 of cycle-logic.md).
+  // Confidence is keyed on countable gaps (15–60d), not raw record count — records whose
+  // gap was filtered out don't raise it. `high` = 3+ gaps (cycle-logic.md §8).
   const confidence: Confidence = gaps.length >= 3 ? 'high' : gaps.length >= 2 ? 'medium' : 'low';
 
   const base = {

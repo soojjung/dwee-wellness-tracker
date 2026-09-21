@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
 import { cropToRatio } from '@/lib/image/stickerCrop';
 import type { StickerRatio } from '@/types';
 import { PhotoRatioScreen } from './PhotoRatioScreen';
@@ -26,18 +27,9 @@ export function CapturedPhotoRatioStep({
 }: CapturedPhotoRatioStepProps) {
   const [ratio, setRatio] = useState<StickerRatio>('1:1');
   const [submitting, setSubmitting] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrl = useObjectUrl(blob);
 
   useBodyScrollLock();
-
-  useEffect(() => {
-    const url = URL.createObjectURL(blob);
-    setPreviewUrl(url);
-    return () => {
-      URL.revokeObjectURL(url);
-      setPreviewUrl(null);
-    };
-  }, [blob]);
 
   async function handleConfirm() {
     if (submitting) return;

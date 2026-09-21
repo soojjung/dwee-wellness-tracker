@@ -9,11 +9,13 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
 import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
 import { useDiaryPlacementStore, selectPlacementsForMonth } from '@/store/diaryPlacementStore';
-import { todayISO, toISO } from '@/lib/date';
+import { todayISO, shiftMonth } from '@/lib/date';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
 import { resolveHolidayCountries } from '@/domain/holiday';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe';
+import { useDiaryHydration } from '@/hooks/useDiaryHydration';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
@@ -94,27 +96,26 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   );
   const hydratePlacementMonth = useDiaryPlacementStore((s) => s.hydrateMonth);
 
-  useEffect(() => {
-    if (!periodsHydrated) hydratePeriods();
-  }, [periodsHydrated, hydratePeriods]);
-
-  useEffect(() => {
-    if (!eventsHydrated) hydrateEvents();
-  }, [eventsHydrated, hydrateEvents]);
-
-  useEffect(() => {
-    if (!stickersHydrated) hydrateStickers();
-  }, [stickersHydrated, hydrateStickers]);
-
-  useEffect(() => {
-    hydratePlacementMonth(cursor.year, cursor.monthIndex);
-  }, [cursor.year, cursor.monthIndex, hydratePlacementMonth]);
-
-  useEffect(() => {
-    const start = toISO(new Date(cursor.year, cursor.monthIndex, 1));
-    const end = toISO(new Date(cursor.year, cursor.monthIndex + 1, 0));
-    hydrateConditionRange(start, end);
-  }, [cursor.year, cursor.monthIndex, hydrateConditionRange]);
+  const builtinNamer = useCallback(
+    (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
+    [t],
+  );
+  useDiaryHydration({
+    cursor,
+    periodsHydrated,
+    hydratePeriods,
+    eventsHydrated,
+    hydrateEvents,
+    stickersHydrated,
+    hydrateStickers,
+    hydratePlacementMonth,
+    settingsHydrated,
+    categoriesCount: categories.length,
+    seedBuiltinsIfEmpty,
+    builtinNamer,
+    withConditionRange: true,
+    hydrateConditionRange,
+  });
 
   // Log-tab tap → jump to today's month + pulse the today cell. On mount only
   // the pulse fires: the month comes from `visibleMonth` (today after a tab tap,
@@ -134,18 +135,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     [settings.holidayCountries, settings.locale],
   );
   const prediction = useMemo(() => predictNextPeriod(periods, settings), [periods, settings]);
-
-  const builtinNamer = useCallback(
-    (key: BuiltinCategoryKey) => t.report.diary.eventCategory.builtin[key],
-    [t],
-  );
-
-  useEffect(() => {
-    // 기본 유형의 이름은 시드하는 순간의 언어로 저장소에 굳는다. 설정이 로드되기 전에는
-    // 언어가 기본값(en)이라, 기다리지 않으면 한국어 기기에 "Family / Friend…"가 남는다.
-    if (!eventsHydrated || !settingsHydrated) return;
-    if (categories.length === 0) seedBuiltinsIfEmpty(builtinNamer);
-  }, [eventsHydrated, settingsHydrated, categories.length, seedBuiltinsIfEmpty, builtinNamer]);
 
   // 일정 유형 추가·편집 화면은 일정 시트 "위에" 뜬다. 그동안에도 일정 시트는 마운트해 둬야
   // 한다 — 입력값(제목·메모·날짜·컨디션)이 시트 안의 state 라, 언마운트하면 유형 화면에서
@@ -258,12 +247,14 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       ? (categories.find((c) => c.id === sheet.categoryId) ?? null)
       : null;
 
-  const swipeContainerRef = useRef<HTMLDivElement>(null);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [swipeAnimating, setSwipeAnimating] = useState(false);
-  const dragRef = useRef<{ id: number; startX: number; startY: number; captured: boolean } | null>(
-    null,
-  );
+  const {
+    containerRef: swipeContainerRef,
+    offset: swipeOffset,
+    animating: swipeAnimating,
+    handlers: swipeHandlers,
+  } = useHorizontalSwipe({
+    onCommit: (direction) => setCursor((c) => shiftMonth(c, direction)),
+  });
 
   // Spec 8: onboarding nudge — the calendar pulls slightly left and returns
   // on first mount of the diary tab in this session, hinting that swipe
@@ -279,65 +270,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     const t = window.setTimeout(() => setNudgeOnMount(false), 1000);
     return () => window.clearTimeout(t);
   }, []);
-
-  function commitSwipe(direction: -1 | 0 | 1, containerWidth: number) {
-    if (direction === 0) {
-      setSwipeAnimating(true);
-      setSwipeOffset(0);
-      return;
-    }
-    // Slide fully out of view in the swipe direction, then swap month +
-    // instantly snap the new month in from the opposite side (offset 0).
-    setSwipeAnimating(true);
-    setSwipeOffset(direction * -containerWidth);
-    window.setTimeout(() => {
-      setCursor((c) => {
-        const total = c.year * 12 + c.monthIndex + direction;
-        return { year: Math.floor(total / 12), monthIndex: ((total % 12) + 12) % 12 };
-      });
-      setSwipeAnimating(false);
-      setSwipeOffset(0);
-    }, 220);
-  }
-
-  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    dragRef.current = {
-      id: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      captured: false,
-    };
-    setSwipeAnimating(false);
-  }
-
-  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    const s = dragRef.current;
-    if (!s || s.id !== e.pointerId) return;
-    const dx = e.clientX - s.startX;
-    const dy = e.clientY - s.startY;
-    if (!s.captured) {
-      // Only start owning the gesture once horizontal intent dominates so
-      // vertical scrolls (calendar list, page scroll) still work.
-      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
-      s.captured = true;
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    }
-    setSwipeOffset(dx);
-  }
-
-  function handlePointerEnd(e: React.PointerEvent<HTMLDivElement>) {
-    const s = dragRef.current;
-    if (!s || s.id !== e.pointerId) return;
-    dragRef.current = null;
-    if (!s.captured) return;
-    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    const width = swipeContainerRef.current?.getBoundingClientRect().width ?? 0;
-    const threshold = Math.max(60, width * 0.2);
-    if (swipeOffset <= -threshold) commitSwipe(1, width);
-    else if (swipeOffset >= threshold) commitSwipe(-1, width);
-    else commitSwipe(0, width);
-  }
 
   return (
     <>
@@ -369,10 +301,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
             // hijacking the swipe gesture on desktop; `touch-pan-y`
             // lets vertical page scroll still work on mobile.
             className="relative touch-pan-y select-none overflow-hidden"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerEnd}
-            onPointerCancel={handlePointerEnd}
+            {...swipeHandlers}
           >
             {/* Two nested divs so nudge (CSS keyframe transform on the outer)
               and swipe (inline transform on the inner) don't collide on

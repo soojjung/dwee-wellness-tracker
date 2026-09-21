@@ -1,7 +1,7 @@
 'use client';
 import { useRef } from 'react';
-import { Camera } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { pickNativePhotos } from '@/lib/image/pickNativePhotos';
 
 interface Options {
   onPicked: (file: File) => void;
@@ -24,13 +24,11 @@ export function usePhotoLibraryPicker({ onPicked }: Options) {
       return;
     }
     try {
-      const result = await Camera.pickImages({ limit: 1, quality: 90 });
-      const photo = result.photos[0];
-      if (!photo?.webPath) return;
-      const blob = await (await fetch(photo.webPath)).blob();
-      // 피커가 주는 blob 은 MIME 이 비어 있을 수 있다. pickImages 는 기본으로
-      // jpeg 를 돌려주므로 그때는 jpeg 로 본다.
-      onPicked(new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' }));
+      const [file] = await pickNativePhotos(1);
+      if (!file) return;
+      // Renamed to this screen's own convention — the shared primitive names
+      // by index ('photo-0.jpg'), this call site always wants 'photo.jpg'.
+      onPicked(new File([file], 'photo.jpg', { type: file.type }));
     } catch {
       // 사용자가 취소했거나 피커를 열 수 없는 경우 — 아무것도 하지 않는다.
     }

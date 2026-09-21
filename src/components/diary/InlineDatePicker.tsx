@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
-import { calendarGrid, formatMonthLabel, fromISO, todayISO } from '@/lib/date';
+import { calendarGrid, formatMonthLabel, fromISO, shiftMonth, todayISO } from '@/lib/date';
 import { ChevronDownIcon } from '@/components/ui/icons';
 import { YearMonthWheelPicker } from './YearMonthWheelPicker';
 
@@ -36,22 +36,13 @@ export function InlineDatePicker({
     () => calendarGrid(cursor.year, cursor.monthIndex, WEEK_STARTS_ON),
     [cursor],
   );
-  const monthLabel = formatMonthLabel(
-    new Date(cursor.year, cursor.monthIndex, 1),
-    locale,
-  );
+  const monthLabel = formatMonthLabel(new Date(cursor.year, cursor.monthIndex, 1), locale);
 
   function goPrev() {
-    setCursor(({ year, monthIndex }) => {
-      const d = new Date(year, monthIndex - 1, 1);
-      return { year: d.getFullYear(), monthIndex: d.getMonth() };
-    });
+    setCursor((c) => shiftMonth(c, -1));
   }
   function goNext() {
-    setCursor(({ year, monthIndex }) => {
-      const d = new Date(year, monthIndex + 1, 1);
-      return { year: d.getFullYear(), monthIndex: d.getMonth() };
-    });
+    setCursor((c) => shiftMonth(c, 1));
   }
 
   return (
@@ -88,10 +79,7 @@ export function InlineDatePicker({
 
       <div className="grid grid-cols-7 py-1 text-center text-xs text-brand-gray500">
         {WEEKDAY_KEYS.map((k, i) => (
-          <span
-            key={k}
-            className={i === 0 || i === 6 ? '' : 'text-brand-gray700'}
-          >
+          <span key={k} className={i === 0 || i === 6 ? '' : 'text-brand-gray700'}>
             {t.calendar.weekdays[k]}
           </span>
         ))}
@@ -105,9 +93,7 @@ export function InlineDatePicker({
           const day = fromISO(cell.date).getDate();
           const isSelected = cell.date === selectedDate;
           const isToday = cell.date === today;
-          const disabled =
-            (!!minDate && cell.date < minDate) ||
-            (!!maxDate && cell.date > maxDate);
+          const disabled = (!!minDate && cell.date < minDate) || (!!maxDate && cell.date > maxDate);
 
           // Figma spec 12/13:
           //   - Today's date: Pink/300 text, no background circle.

@@ -1,30 +1,32 @@
-# 공통 컴포넌트 설계 — 모달
+# 공통 컴포넌트 — 모달
 
-## 위치 & 추출 시점
+모달·다이얼로그·바텀시트 작성 규칙의 단일 소스는 [`.claude/rules/modals.md`](../../.claude/rules/modals.md)다. 핵심만 요약:
 
-- 현재 모달·다이얼로그: `ConsentModal` (`src/components/diagnose/DiagnoseScreen.tsx`), `ShortCycleConfirmDialog` (`src/components/app/ShortCycleConfirmDialog.tsx`), `PeriodSelectSheet` (`src/components/app/PeriodSelectSheet.tsx`).
-- 아직 공통 `Modal` 컴포넌트로 추출되지 않음. 세 번째 이상 중복되면 `src/components/ui/Modal.tsx` 로 추출.
+- 조건부 렌더링되는 모달은 본문에서 `useBodyScrollLock()` + `useEscToClose(onClose)` 두 훅을 반드시 호출한다.
+- z-index: 일반 모달 `z-40`, 다른 모달 위에 겹치는 컨센트/확인 모달은 `z-50`.
+- 배경 오패시티: 기본 `bg-black/40` (가벼운 sheet 는 `bg-black/20`도 허용, 풀스크린 뷰어는 `bg-brand-gray900/70`).
+- `role="dialog"` + `aria-modal="true"` + 제목과 연결된 `aria-labelledby` 필수.
 
-## 필수 원칙
+## 재사용 컴포넌트
 
-### 1) 배경(dim) 클릭 시 닫기
-- overlay div 의 `onClick` 에서 `if (e.target === e.currentTarget) onClose()`. 카드 내부 클릭이 버블링되어도 target 비교로 걸러지므로 별도 stopPropagation 불필요.
-- **예외**: 되돌리기 어려운 확인 다이얼로그(데이터 삭제 등)는 backdrop 클릭 닫기를 걸지 않는다. 명시적 취소/확인 버튼만 사용.
+- **2버튼 확인 팝업**: `src/components/ui/ConfirmDialog.tsx`. 가로 2등분(취소/확인) 팝업 7종(`DiscardDraftDialog`, `CancelEditDialog`, `LogoutConfirmDialog`, `WithdrawConfirmDialog`, `DeleteStickersDialog`, `DiaryCustomizeScreen`의 `DiscardDialog`, `DeleteEventDialog`)이 모두 이 컴포넌트의 얇은 래퍼다. 새 2버튼 확인 팝업을 추가할 때는 직접 마크업을 복붙하지 말고 `ConfirmDialog`를 사용할 것.
+- **바텀시트**: `src/components/ui/DraggableBottomSheet.tsx` (3-snap: peek/medium/full, 전체 표면 드래그).
 
-### 2) body scroll lock
-- 모달 mount 동안 `document.body.style.overflow = 'hidden'`, unmount 시 이전 값 복원.
-- useEffect cleanup 필수. 모달 뒤 페이지가 스크롤 되어 컨텍스트가 흐트러지는 것을 방지.
+## 예시 — 카드 레벨 aria 배치
 
-### 3) 접근성
-- overlay: `role="dialog"` + `aria-modal="true"` + `aria-labelledby={titleId}`.
-- 제목 요소에 대응 `id` 지정.
-- Escape 키 닫기는 추후 공통 훅으로 정리 (현재 미구현).
+overlay(바깥 dim div)가 아니라 **안쪽 카드**에 `role="dialog"` + `aria-modal="true"` + `aria-labelledby`를 붙이는 패턴은 `DiagnoseConsentModal.tsx`의 `ConsentModal`을 참고:
 
-### 4) 스타일 토큰
-- Dim: `bg-black/30` (30%). Figma 의 `dim 15%` 는 로딩 화면 배경에만 사용 (모달과 다른 용도).
-- 카드: `bg-brand-gray50 rounded-2xl`, 폭은 콘텐츠에 맞춰 조절 (예: `max-w-[333px]`).
-- z-index: overlay `z-50`, 로딩 오버레이 `z-40` 보다 위.
+```tsx
+<div onClick={backdropCancel} className="fixed inset-0 z-50 ... bg-black/30">
+  <div role="dialog" aria-modal="true" aria-labelledby="diagnose-consent-title" className="...">
+    <h2 id="diagnose-consent-title">{c.title}</h2>
+    ...
+  </div>
+</div>
+```
 
-### 5) 카피
-- 모든 텍스트는 `useT()` 훅 경유. 인라인 문자열 금지.
-- 취소/확인 라벨은 사전에서 (예: `t.magazine.diagnose.consent.cancel`).
+바깥 div는 배경 dim + 클릭 취소(`onClick`에서 `e.target === e.currentTarget` 체크)만 맡고, 접근성 속성은 실제 콘텐츠 카드에 건다.
+
+## 관련 문서
+
+- [`.claude/rules/modals.md`](../../.claude/rules/modals.md) — 훅 위치, 스크롤 컨테이너, 카피 규칙 전체

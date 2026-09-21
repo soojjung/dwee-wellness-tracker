@@ -232,9 +232,10 @@ function seedFlagKey(scope: string): string {
 
 /**
  * Seeds the built-in sticker set (Figma frame 2563:1601) into the user's
- * library on first use. Runs at most once per backend — a subsequent call
- * (after the user deletes any of the defaults) is a no-op so we don't
- * resurrect stickers the user intentionally removed. If the library already
+ * library on first use. Runs at most once per backend per artwork version — a
+ * subsequent call (after the user deletes any of the defaults) is a no-op so we
+ * don't resurrect stickers the user intentionally removed, while a run where
+ * every insert failed stays retryable. If the library already
  * contains stickers when we first look, we mark seeded without inserting so
  * cross-device sync (Supabase) doesn't duplicate.
  */

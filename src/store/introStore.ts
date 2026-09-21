@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { ensureMigrations, introRepo } from '@/data';
 
 interface IntroState {
@@ -28,7 +29,7 @@ export const useIntroStore = create<IntroState>()((set, get) => ({
       // AuthGuard waits on this flag before it can route a signed-out visitor,
       // so a storage failure must still resolve — straight to /login rather
       // than a splash that never goes away.
-      set({ seen: true, hydrated: true, loading: false, error: (e as Error).message });
+      set({ seen: true, hydrated: true, loading: false, error: errorMessage(e) });
     }
   },
 
@@ -39,7 +40,7 @@ export const useIntroStore = create<IntroState>()((set, get) => ({
       set({ seen: true });
     } catch (e) {
       // Still let the person through; worst case the intro shows once more.
-      set({ seen: true, error: (e as Error).message });
+      set({ seen: true, error: errorMessage(e) });
     }
   },
 }));

@@ -1,4 +1,5 @@
 import type { StickerRatio } from '@/types';
+import { canvasToBlob } from './canvas';
 import {
   STICKER_RATIO_ASPECT,
   centerCropRect,
@@ -45,9 +46,7 @@ export async function cropToRatio(blob: Blob, ratio: StickerRatio): Promise<Blob
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-  return await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92),
-  );
+  return canvasToBlob(canvas, 'image/jpeg', 0.92);
 }
 
 // 경계는 이 크기로 줄인 사본에서 찾는다. 누끼 PNG 는 수천 px 일 수 있어 원본 전체를
@@ -94,9 +93,7 @@ export async function trimTransparentMargins(png: Blob): Promise<Blob> {
     const outCtx = out.getContext('2d');
     if (!outCtx) return png;
     outCtx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-    const trimmed = await new Promise<Blob | null>((resolve) =>
-      out.toBlob((b) => resolve(b), 'image/png'),
-    );
+    const trimmed = await canvasToBlob(out, 'image/png');
     return trimmed ?? png;
   } catch {
     return png;

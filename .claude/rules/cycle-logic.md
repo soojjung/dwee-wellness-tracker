@@ -21,7 +21,9 @@ paths:
 ## 3) 데이터 부족 처리
 
 - 추정값 강제 생성 금지. 부족하면 `null` 또는 `confidence: 'unknown'` 반환.
-- 화면 노출은 `COPY.home.insufficientData` ("아직 예측하기 어려워요").
+- `home.insufficientData` 키는 삭제됨(Home 예측 카드 폐기와 함께). 현재 "데이터 부족" 노출 지점:
+  - MyPage `CycleSummaryCard` → `t.myPage.cycle.insufficient` (`classifyCycleStatus` 가 `status: 'insufficient'` 반환 시)
+  - `/log` 주기리포트 차트 → `t.report.chartEmpty` ("Not enough data yet" / "아직 예측하기 어려워요")
 
 ## 4) 이상치 정책
 
@@ -66,8 +68,8 @@ paths:
 - **유효 주기**: `src/domain/cycle/cycleGap.ts`의 `CYCLE_GAP_MIN_DAYS`(15) ~ `CYCLE_GAP_MAX_DAYS`(60) 범위. 이 범위 밖 간격은 모두 제외.
 - `shortPeriod`/`longPeriod` 는 이상치 제외(1~14일)한 뒤에도 최근 완료된 기록이 있어야 판정. 있으면 주기 간격 여부와 무관하게 우선 반환.
 - 반환값은 `{ status, confidence }` — `confidence` 는 `.claude/rules/cycle-logic.md` §2 규칙과 동일하게 `'unknown' | 'low' | 'medium' | 'high'`.
-  - `'unknown'` = insufficient (기록 < 3 또는 유효 간격 < 2)
-  - `'low'` = 유효 간격 1개 (shortPeriod/longPeriod에서만)
+  - `'unknown'` = insufficient 분기(기록 < 3 또는 유효 간격 < 2)에서만
+  - `'low'` = 유효 간격 0~1개 (shortPeriod/longPeriod가 insufficient 분기보다 먼저 반환되므로, 간격이 0개여도 이 분기에 걸리면 `low`로 남는다)
   - `'medium'` = 유효 간격 2개
   - `'high'` = 유효 간격 3개 이상
 - 표시 색상/카피는 화면에서 `t.report.status[status]` 로 조립. 도메인은 문자열 반환 금지.

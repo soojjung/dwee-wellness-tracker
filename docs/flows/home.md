@@ -4,7 +4,7 @@
 
 ## 생리 기록 진입점
 
-**우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 컴포넌트의 캘린더 아이콘을 탭하면 `PeriodSelectSheet` (바텀 시트 캘린더)가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)과 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합은 제거되었습니다.
+**우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 컴포넌트의 캘린더 아이콘을 탭하면 `PeriodSelectSheet` (바텀 시트 캘린더)가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)과 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합은 완전히 삭제되었습니다 — 두 컴포넌트 파일 모두 저장소에 남아 있지 않습니다.
 
 `PeriodSelectSheet`는 최근 N개월 캘린더 그리드를 보여주며, 날짜 셀을 탭하면 `domain/cycle/periodEdit.ts`의 순수 함수로 드래프트를 조작합니다. 저장 시 `PeriodChange[]` diff를 `HomeScreen.handlePeriodChanges`로 전달해 add / update / remove를 일괄 적용합니다.
 
@@ -59,16 +59,16 @@ flowchart TD
 
 ### isEmpty 분기 상세
 
-- **HomeHero**: `isEmpty && !isCustom && !hasUserText` 조건이 모두 참일 때만 `editHint` 가이드 문구 표시.  
+- **HomeHero**: `!isCustom && !hasUserText` 조건이 모두 참일 때만 `editHint` 가이드 문구 표시 (isEmpty 는 이 조건에 관여하지 않음 — 데이터 상태에서도 사진·텍스트 미설정이면 같은 힌트가 뜬다).  
   `isCustom` = photoCount 슬롯이 전부 채워진 경우, `hasUserText` = mainText 또는 subText 가 비어있지 않은 경우.  
-  배경은 기본 `bg-brand-gray300`. 사진이 있으면 `PhotoLayout`(1/2/4 그리드), 텍스트가 있으면 `HomeHeroText` 오버레이 표시.
+  기본(커스터마이즈 전) 히어로는 `/home/default-hero.jpg`. 사진이 설정되면 `PhotoLayout`(1/2/4 그리드), 텍스트가 있으면 `HomeHeroText` 오버레이 표시.
 - **WeekStrip**: 예측 데이터 없이 오늘 날짜 원만 표시 (pink50 배경, pink800 텍스트)
 - **PhaseAdvicePill**: 숨김 → `EmptyHintCard`(`t.home.empty.bodyPrefix` + 캘린더 아이콘 인라인 + `t.home.empty.bodySuffix`) 로 대체
 - **Keywords / Activities / Foods**: 각 섹션에 `EmptyHintCard` placeholder 삽입. 섹션 간 간격 `gap-12`.
 
 > 이전 `setupMode` (인라인 `SetupPeriodPicker` 캘린더 picker) 는 삭제됨.  
 > 이전 우하단 `AddPeriodFab` 도 삭제됨.  
-> 이전 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합도 제거됨 — 파일은 남아 있으나 `HomeScreen`에서 미사용.  
+> 이전 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합도 파일째 삭제됨.  
 > 기록 진입은 `TodayDateHeading` 캘린더 아이콘 → `PeriodSelectSheet` 로 통일.
 
 ## 데이터 흐름 (데이터 상태)
@@ -109,7 +109,7 @@ WeekStrip은 날짜마다 `CycleState`(`'actualPeriod' | 'predictedPeriod' | 'pr
 | `null` / 오늘 (isEmpty) | 없음 | `brand-pink50` (today circle) | `brand-pink800` |
 | `null` / 오늘 (데이터 있음, 해당 없음) | 강조 원 | 위 분류 우선 | — |
 
-가임기 예측은 `domain/cycle/fertile.ts`의 `predictFertileWindow(predictedDate, predictionConfidence)` 순수 함수가 담당하며, `predictionConfidence`가 낮으면 null을 반환해 weekeStrip에 표시하지 않습니다.
+가임기 예측은 `domain/cycle/fertile.ts`의 `predictFertileWindow(predictedDate, predictionConfidence)` 순수 함수가 담당하며, `predictionConfidence`가 낮으면 null을 반환해 WeekStrip에 표시하지 않습니다.
 
 ## ActivitySuggestions / FoodSuggestions 구조
 
@@ -125,10 +125,10 @@ WeekStrip은 날짜마다 `CycleState`(`'actualPeriod' | 'predictedPeriod' | 'pr
 ## 검증 케이스
 
 - `periods.length === 0` → isEmpty 분기. 모든 콘텐츠 섹션에 EmptyHintCard. WeekStrip은 오늘만 표시.
-- `periods.length === 1` → 데이터 상태. `cycle_regularity` 인사이트는 안 뜸 (rule이 `cycleLengths.length < 2` 로 null).
-- `periods.length >= 2` → 두 인사이트 모두 평가됨, 적합한 것만 카드로 표시.
+- `periods.length === 1` → 데이터 상태. `cycle_regularity` 인사이트는 안 뜸 (rule이 `cycleLengths.length < 2` 로 null). `cycle_phase`/`pain_pattern`/`mood_trend` 등 나머지 세 rule은 각자 조건 충족 시 평가됨.
+- `periods.length >= 2` → `generateInsights()`에 등록된 4개 rule(`cycleRegularity`/`cyclePhase`/`painPattern`/`moodTrend`) 모두 평가됨, 조건에 맞는 것만 카드로 표시.
 - `prediction.predictedDate === null` → "Not enough data yet" / "아직 예측하기 어려워요" 표시.
 - 다음 생리까지 0일 → "around today" / "오늘 즈음" 표시.
 - 다음 생리 예정일이 지남 (`diff < 0`) → "N days late" / "N일 지남" 표시.
-- 짧은 주기 (`evaluateNewStart` → `shortGap`) → `ShortCycleConfirmDialog` 노출. 세 선택지: extend / replace / saveAnyway. (상세: `docs/qa/edge-cases.md` 시나리오 6)
+- 짧은 주기 확인 다이얼로그(`evaluateNewStart` → `shortGap` → `ShortCycleConfirmDialog`)는 **현재 도달 불가** — `ShortCycleConfirmDialog`는 삭제됐고 `evaluateNewStart`를 호출하는 UI가 없다. 순수 함수와 테스트만 남아 있다 (상세: `docs/domain/cycle.md` §신규 기록 입력 정책).
 - 의료적 단정 표현 없음 — 모든 phase 카피에 "추정/보여요/패턴" / "estimated/pattern/reference" 어휘 동반 (health-copy.md §1).

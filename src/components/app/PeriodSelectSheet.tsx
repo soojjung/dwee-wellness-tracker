@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { addMonths, format, getDay, getDaysInMonth } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { addMonths } from 'date-fns';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { addDaysISO, fromISO, toISO, type ISODate } from '@/lib/date';
+import { addDaysISO, fromISO, monthKey, type ISODate } from '@/lib/date';
+import { buildMonth, type MonthGrid } from '@/lib/date/monthWeeks';
 import { cn } from '@/lib/cn';
 import { BOTTOM_CTA_CLASS } from '@/components/ui/Button';
 import { CancelIcon } from '@/components/ui/icons/CancelIcon';
@@ -15,6 +15,7 @@ import type { PeriodLog } from '@/types';
 import {
   EXTEND_GAP_DAYS,
   addRange,
+  collectRecordedDates,
   computeChanges,
   extendTo,
   findContainingDraft,
@@ -49,43 +50,6 @@ const FUTURE_WINDOW_DAYS = 14;
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 // intro 시트가 내려가며 홈이 드러나는 시간. 아래 transition duration 과 맞춘다.
 const INTRO_SLIDE_MS = 300;
-
-interface MonthGrid {
-  key: string;
-  labelKo: string;
-  labelEn: string;
-  weeks: Array<Array<ISODate | null>>;
-}
-
-function buildMonth(year: number, monthIndex: number): MonthGrid {
-  const first = new Date(year, monthIndex, 1);
-  const leading = getDay(first);
-  const total = getDaysInMonth(first);
-  const cells: Array<ISODate | null> = [];
-  for (let i = 0; i < leading; i++) cells.push(null);
-  for (let d = 1; d <= total; d++) cells.push(toISO(new Date(year, monthIndex, d)));
-  while (cells.length % 7 !== 0) cells.push(null);
-  const weeks: Array<Array<ISODate | null>> = [];
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
-  return {
-    key: `${year}-${String(monthIndex + 1).padStart(2, '0')}`,
-    labelKo: format(first, 'M월', { locale: ko }),
-    labelEn: format(first, 'MMMM'),
-    weeks,
-  };
-}
-
-function collectRecordedDates(drafts: DraftPeriod[]): Set<ISODate> {
-  const set = new Set<ISODate>();
-  for (const p of drafts) {
-    let cursor = p.startDate;
-    while (cursor <= p.endDate) {
-      set.add(cursor);
-      cursor = addDaysISO(cursor, 1);
-    }
-  }
-  return set;
-}
 
 export function PeriodSelectSheet({
   today,
@@ -128,7 +92,7 @@ export function PeriodSelectSheet({
 
   const currentMonthKey = useMemo(() => {
     const anchor = fromISO(today);
-    return `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}`;
+    return monthKey({ year: anchor.getFullYear(), monthIndex: anchor.getMonth() });
   }, [today]);
 
   const maxSelectable = useMemo(() => addDaysISO(today, FUTURE_WINDOW_DAYS), [today]);

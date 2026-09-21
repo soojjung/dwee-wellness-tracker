@@ -3,8 +3,15 @@ import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/data/adapters/supabase/client';
 import { getRepoMode, setRepoMode, resetAllUserData, type RepoMode } from '@/data';
-import { deleteAccount as deleteAccountRequest, type DeleteAccountError } from '@/data/services/accountService';
+import {
+  deleteAccount as deleteAccountRequest,
+  type DeleteAccountError,
+} from '@/data/services/accountService';
+import { migrateLocalToRemote } from '@/data/migration/anonToRemote';
 import { rehydrateAllData } from './rehydrateAll';
+import { useSettingsStore } from './settingsStore';
+import { usePeriodStore } from './periodStore';
+import { useConditionStore } from './conditionStore';
 
 export type AuthErrorKind = 'anonFailed' | 'networkOffline' | 'missingConfig' | 'oauthFailed';
 export type OAuthProvider = 'apple' | 'google';
@@ -30,6 +37,15 @@ interface AuthState {
   signInWithOAuth: (provider: OAuthProvider) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<{ ok: true } | { ok: false; error: DeleteAccountError }>;
+  /** Persists the nickname to `user_metadata`; the auth listener refreshes `user`. Throws on failure. */
+  updateNickname: (nickname: string) => Promise<void>;
+  /**
+   * Runs on `/auth/callback` after the provider redirect. Resolves `false` when
+   * no real (non-anonymous) session came back; otherwise migrates the local
+   * anonymous data into the account and resolves `true`. `isCancelled` lets the
+   * screen skip the migration once it has unmounted (StrictMode double-mount).
+   */
+  completeOAuthCallback: (isCancelled?: () => boolean) => Promise<boolean>;
 }
 
 let subscribed = false;
@@ -140,9 +156,43 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       if (error) throw error;
       // Browser is navigating to the provider — no further code runs here
       // until the redirect back to /auth/callback.
-    } catch (e) {
+    } catch {
       set({ error: 'oauthFailed', loading: false });
     }
+  },
+
+  async updateNickname(nickname) {
+    const { error } = await supabase.auth.updateUser({ data: { nickname } });
+    if (error) throw error;
+  },
+
+  async completeOAuthCallback(isCancelled) {
+    // Supabase JS auto-extracts the session from the URL on import.
+    // Wait briefly for it to settle, then read the resulting session.
+    let session = (await supabase.auth.getSession()).data.session;
+    if (!session) {
+      await new Promise((r) => setTimeout(r, 300));
+      session = (await supabase.auth.getSession()).data.session;
+    }
+    if (isCancelled?.()) return false;
+
+    const user = session?.user ?? null;
+    if (!user || user.is_anonymous) return false;
+
+    try {
+      const result = await migrateLocalToRemote();
+      if (result.errors.length > 0) {
+        console.warn('[migrate] partial errors', result.errors);
+      }
+      await Promise.all([
+        useSettingsStore.getState().rehydrate(),
+        usePeriodStore.getState().rehydrate(),
+        useConditionStore.getState().rehydrate(),
+      ]);
+    } catch (e) {
+      console.warn('[migrate] failed', e);
+    }
+    return true;
   },
 
   async signOut() {

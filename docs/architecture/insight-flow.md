@@ -5,11 +5,13 @@
 
 ## After (STEP 9.0)
 
+> **2026-08-16 갱신**: `dataNeededRule`은 Home에서 은퇴했다(주석 처리, `src/lib/insight/generator.ts`). MyPage의 `CycleSummaryCard`가 더 엄격한 3-기록 임계값으로 이미 "기록 부족" 상태를 보여주고, Home 자체의 빈 상태 히어로가 첫 생리 기록을 유도하기 때문. 현재 `generateInsights()`에 등록된 규칙은 4개: `cycleRegularityRule`, `cyclePhaseRule`, `painPatternRule`, `moodTrendRule`.
+
 ```mermaid
 flowchart TD
     subgraph domain["lib/insight (순수 함수)"]
-        R1["dataNeededRule(ctx)"]
-        R2["cycleRegularityRule(ctx)"]
+        R1["cycleRegularityRule(ctx)"]
+        R2["cyclePhaseRule(ctx)\npainPatternRule(ctx)\nmoodTrendRule(ctx)"]
         GEN["generator.ts<br/>generateInsights()"]
     end
 
@@ -19,12 +21,12 @@ flowchart TD
 
     subgraph ui["UI Layer (app/)"]
         IC["InsightCard 컴포넌트<br/>useT() 호출"]
-        T["i18n Dictionary (ko / en)<br/>t.insight.cycleRegularity.bodyPrefix<br/>t.insight.cycleRegularity.bodySuffix<br/>t.insight.dataNeeded.body"]
-        OUT["최종 렌더<br/>'최근 평균 주기는 약 28일로 추정돼요.'"]
+        T["i18n Dictionary (ko / en)<br/>t.insight.cyclePhase.title<br/>t.insight.cyclePhase.body[phase]"]
+        OUT["최종 렌더<br/>'Likely ovulation phase — you may feel more active.'"]
     end
 
-    R1 -->|"{ kind: 'data_needed', confidence: 'unknown' }"| IR
-    R2 -->|"{ kind: 'cycle_regularity', averageDays: 28, confidence: 'medium' }"| IR
+    R1 -->|"{ kind: 'cycle_regularity', averageDays: 28, confidence: 'medium' }"| IR
+    R2 -->|"{ kind: 'cycle_phase' | 'pain_pattern' | 'mood_trend', ... }"| IR
     IR --> GEN
     GEN -->|"Insight[]"| IC
     IC -->|"kind 분기 → prefix/suffix 조립"| T

@@ -98,12 +98,10 @@ function Hero({
   return (
     <div className="relative h-[372px] w-full overflow-hidden">
       {/* Cutout portrait sized against Figma: source is 401×1382 (very tall).
-          Rendered at h-[720px] the natural width is ~209px, so the person
-          appears at a moderate scale (not filling the whole right side).
-          Top offset -[130px] shifts the head out of frame; combined with
-          h-[322px] the crop lands at roughly neck stub → mid-thigh, matching
-          the reference. The box stops 8px shy of the hero bottom to keep
-          clearance for the white card's rounded-corner overlap. */}
+          Clipped to a 260×372 box at the hero's right edge. Rendering the image
+          at h-[700px] (natural width ~203px) with -top-[72px] crops it to roughly
+          neck stub → mid-thigh, so the person reads at a moderate scale instead
+          of filling the whole right side. */}
       <div className="pointer-events-none absolute right-0 top-0 h-[372px] w-[260px] overflow-hidden">
         <img
           src={image}

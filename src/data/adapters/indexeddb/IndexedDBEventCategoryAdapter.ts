@@ -1,15 +1,12 @@
-import { get, set } from 'idb-keyval';
 import type { EventCategory } from '@/types';
 import type {
   EventCategoryRepository,
   NewEventCategoryInput,
 } from '../../repositories/EventCategoryRepository';
 import { STORAGE_KEYS } from './keys';
+import { listStore, newId } from './kv';
 
-const newId = (): string => crypto.randomUUID();
-const readAll = async (): Promise<EventCategory[]> =>
-  (await get<EventCategory[]>(STORAGE_KEYS.eventCategories)) ?? [];
-const writeAll = (list: EventCategory[]) => set(STORAGE_KEYS.eventCategories, list);
+const { readAll, writeAll } = listStore<EventCategory>(STORAGE_KEYS.eventCategories);
 
 export const indexedDBEventCategoryAdapter: EventCategoryRepository = {
   list: () => readAll(),

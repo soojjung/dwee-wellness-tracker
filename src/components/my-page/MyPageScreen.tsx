@@ -11,8 +11,8 @@ import { AccountManagementCard } from './AccountManagementCard';
 
 /**
  * MyPage (previously `/settings`). Layout mirrors Figma 015_1 (signed-out)
- * and 015_2 (signed-in). Sub-page routes for language / notices / Q&A /
- * terms / privacy are stubbed placeholders until the next design batch.
+ * and 015_2 (signed-in). 공지사항 is the only sub-route still on
+ * `SubPagePlaceholder`.
  */
 export function MyPageScreen() {
   const t = useT();

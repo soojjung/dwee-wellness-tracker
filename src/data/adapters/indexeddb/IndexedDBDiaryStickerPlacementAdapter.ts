@@ -1,16 +1,12 @@
-import { get, set } from 'idb-keyval';
 import type { DiaryStickerPlacement } from '@/types';
 import type {
   DiaryStickerPlacementRepository,
   NewDiaryStickerPlacementInput,
 } from '../../repositories/DiaryStickerPlacementRepository';
 import { STORAGE_KEYS } from './keys';
+import { listStore, newId } from './kv';
 
-const newId = (): string => crypto.randomUUID();
-const readAll = async (): Promise<DiaryStickerPlacement[]> =>
-  (await get<DiaryStickerPlacement[]>(STORAGE_KEYS.diaryStickerPlacements)) ?? [];
-const writeAll = (list: DiaryStickerPlacement[]) =>
-  set(STORAGE_KEYS.diaryStickerPlacements, list);
+const { readAll, writeAll } = listStore<DiaryStickerPlacement>(STORAGE_KEYS.diaryStickerPlacements);
 
 export const indexedDBDiaryStickerPlacementAdapter: DiaryStickerPlacementRepository = {
   async listByMonth(year, monthIndex) {

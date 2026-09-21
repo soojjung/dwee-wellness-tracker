@@ -1,6 +1,6 @@
-# Edge case 수동 검증 체크리스트 (STEP 10.2)
+# Edge case 수동 검증 체크리스트
 
-> 코드 리뷰 기반 — 브라우저에서 사용자가 직접 검증해야 하는 시나리오 5종.
+> 코드 리뷰 기반 — 브라우저에서 사용자가 직접 검증해야 하는 시나리오.
 > 사전 준비: `pnpm dev`, 크롬 DevTools → Application → IndexedDB.
 
 ## 1. 첫 사용 (IndexedDB 완전 초기화)
@@ -11,39 +11,32 @@
 3. 페이지 새로고침
 
 ### 기대 동작
-- [ ] `/login` 접근 시 LoginScreen 정상 노출
-- [ ] "로그인 없이 사용하기" → `/` 이동 (구 `/onboarding` 으로 가지 않음)
-- [ ] HomeScreen empty 상태 진입: **HomeHero** + **HomeEmptyForm** 노출
-  - HomeHero 는 기본 이미지(`/brand/home-hero.png`) 보여줌
-  - 우상단 연필/+ 버튼 클릭 가능
-- [ ] HomeEmptyForm 에서:
-  - 시작일 미입력 + 저장 → `onboarding.errorMissingDate` 메시지
-  - 미래 날짜 + 저장 → `onboarding.errorFutureDate` 메시지
-  - > **2026-09-19 갱신**: 위 두 사전 키(`onboarding.errorMissingDate`/`errorFutureDate`)는 삭제됨 — 첫 진입 흐름이 완전히 바뀌었다. 현재는 [`docs/flows/onboarding.md`](../flows/onboarding.md) 참고.
-  - 주기 +/- 동작 (15~60 clamp)
-  - 정상 입력 + 저장 → 화면이 **즉시** main 상태로 flip (페이지 리다이렉트 없이)
-- [ ] /log, /insights 도 데이터 있는 상태로 정상 표시
-- [ ] /log (Diary 뷰) 에 생리 셀 / 예측 ring 출력
-
-### 자동 점검됨
-- LoginScreen → `/` href 확정 (grep: 0건의 `/onboarding` 참조)
+- [ ] 기기 최초 실행이므로 `/onboarding`(스플래시 → 소개 슬라이드 3장) → `/login` 순으로 진입. 상세: [`docs/flows/onboarding.md`](../flows/onboarding.md)
+- [ ] "로그인 없이 사용하기" → `/` 이동, 익명 세션 발급
+- [ ] HomeScreen empty 상태 진입 (`periods.length === 0`):
+  - `HomeHero` — `/home/default-hero.jpg` 기본 이미지, `!isCustom && !hasUserText` 라 `editHint` 안내 노출
+  - `WeekStrip` — 예측 데이터 없이 오늘 날짜 원만 표시
+  - `PhaseAdvicePill` / Keywords / Activities / Foods 섹션 → 각각 `EmptyHintCard` placeholder
+- [ ] 계정에 기록이 없고 `onboardingCompleted` 가 false면 첫 홈 진입 시 생리일 기입 바텀시트(`PeriodSelectSheet variant="intro"`)가 한 번 더 뜬다 — 선택 없이 시작해도 완료로 기록되어 다시 묻지 않음
+- [ ] 우상단 캘린더 아이콘 탭 → `PeriodSelectSheet` (바텀 시트 캘린더) 오픈, 날짜 선택 후 저장하면 화면이 즉시 데이터 상태로 전환 (리다이렉트 없음)
+- [ ] `/log` Diary 뷰: 빈 그리드에 생리 셀 없음. Report 뷰: `CycleReportEmpty` 안내
 
 ---
 
-## 2. 데이터 없음 (각 화면별 empty state)
+## 2. 데이터 없음 / 부족 (각 화면별 empty·insufficient state)
 
 ### 기대 동작
-- [ ] **HomeScreen** (periods=0): HomeHero + HomeEmptyForm. emptyHello + emptyDescription 출력
-- [ ] **HomeScreen** (periods=1): main 상태 진입. 하지만 cycleRegularity 카드는 안 보임 (avg 계산 불가). data_needed insight 만 노출 (룰 진입은 periods<2)
-- [ ] **InsightsScreen** (periods=0): `data_needed` 카드 1개 (룰이 항상 트리거). `noInsights` 메시지는 표시되지 않음
-- [ ] **InsightsScreen** (periods≥2, conditions=0): cycle_regularity + cycle_phase 만. pain/mood 룰은 conditions 없으면 null 반환
-- [ ] **DiaryScreen — Diary 뷰** (periods=0): 빈 그리드. 셀에 background 없음. `emptyMonth` 노티스 출력
-- [ ] **ConditionForm** (오늘 기록 없음): 모든 ChoiceGroup 미선택 상태 (`value: null`), 배지 없음
+- [ ] **HomeScreen** (`periods.length === 0`): EmptyHintCard 계열만 노출, 인사이트 섹션 없음 (`generateInsights()`가 호출되긴 하지만 각 rule이 자체 조건으로 null 반환)
+- [ ] **HomeScreen** (`periods.length === 1`): 데이터 상태 진입. `cycleRegularityRule` 은 `cycleLengths.length < 2` 로 null (카드 없음). 나머지 세 rule(`cyclePhaseRule`/`painPatternRule`/`moodTrendRule`)은 조건 충족 시 각자 평가
+- [ ] **HomeScreen** (`periods.length >= 2`, conditions=0): `cycleRegularityRule` + `cyclePhaseRule` 만 카드로 뜸. `painPatternRule`/`moodTrendRule` 은 `conditions.length === 0` 이면 null
+- [ ] **MyPage `CycleSummaryCard`** (`periods.length < 3`): `classifyCycleStatus()` 가 `status: 'insufficient'` 반환 → `t.myPage.cycle.insufficient` 표시
+- [ ] **`/log` Report `CycleReportCard`** (`periods.length < 3`): `t.report.chartEmpty` (기록 부족 안내). 기록 3회 이상인데 최근 6개월에 셀 수 있는 주기가 0개면 `t.report.chartNoCycles` (상세: [`docs/flows/log.md`](../flows/log.md))
+- [ ] **DiaryScreen — Diary 뷰** (`periods.length === 0`): 빈 그리드. 셀에 배경 없음
+- [ ] **EventFormSheet / EventConditionSection** (오늘 기록 없음): 모든 `ConditionRow` 미선택 상태, 저장 안 해도 폼 제출 가능(컨디션은 선택 사항)
 
 ### 자동 점검됨
-- dataNeededRule: `periods.length >= 2 ? null : ...` → periods<2 일 때 트리거 (코드 검증 완료)
-- painPatternRule: `if (periods.length < 2 || conditions.length === 0) return null` (코드 검증 완료)
-- moodTrendRule: 동일
+- `src/lib/insight/generator.ts`: `dataNeededRule` 은 2026-08-16 부로 주석 처리(은퇴) — import 안 됨. 현재 등록된 4개 rule: `cycleRegularityRule`/`cyclePhaseRule`/`painPatternRule`/`moodTrendRule`
+- `painPatternRule`/`moodTrendRule`: `if (periods.length < 2 || conditions.length === 0) return null` (코드 검증 완료)
 
 ---
 
@@ -54,16 +47,16 @@
 2. 또는 DevTools → IndexedDB → `dwee:periods` 직접 편집해서 비현실적 gap 삽입 (예: 7일짜리 + 70일짜리)
 
 ### 기대 동작
-- [ ] aggregate.ts `averageCycleLength`:
-  - gap < 15 또는 > 60 자동 필터링
-  - 모든 gap 이 이상치면 `null` 반환 → HomeScreen `insufficientData` 표시
+- [ ] `aggregate.ts` `averageCycleLength`:
+  - gap < 15 또는 > 60 자동 필터링 (`cycleGap.ts`의 `CYCLE_GAP_MIN_DAYS`/`CYCLE_GAP_MAX_DAYS`)
+  - 모든 gap 이 이상치면 `null` 반환 → `settings.averageCycleLength`(기본 28) fallback
   - 일부만 이상치면 정상 gap 만으로 평균 계산
-- [ ] aggregate.ts `averagePeriodLength`:
+- [ ] `aggregate.ts` `averagePeriodLength`:
   - length < 1 또는 > 14 필터링
   - endDate 미입력 row 는 자동 제외
 
 ### 자동 점검됨
-- aggregate.ts: `if (gap >= 15 && gap <= 60) gaps.push(gap)` (코드 검증 완료)
+- `cycleGap.ts`: `gap >= CYCLE_GAP_MIN_DAYS(15) && gap <= CYCLE_GAP_MAX_DAYS(60)` (코드 검증 완료)
 - length 필터: `.filter((l) => l >= 1 && l <= 14)` (코드 검증 완료)
 
 ---
@@ -75,47 +68,38 @@
 2. 또는 시드 후 첫 period 만 endDate 직접 제거
 
 ### 기대 동작
-- [ ] PeriodLog 타입: `endDate?: string` 이라 undefined 허용
-- [ ] `isPeriodDate()`: endDate 있으면 range, 없으면 startDate 만 매치 (단일 일자)
+- [ ] `PeriodLog` 타입: `endDate?: string` 이라 undefined 허용
+- [ ] `isPeriodDate()`(`src/domain/cycle/cellState.ts`): endDate 있으면 range, 없으면 startDate 만 매치 (단일 일자)
 - [ ] DiaryScreen (Diary 뷰): 해당 startDate 셀만 menstrual 배경, 나머지는 default
 - [ ] WeekStrip: 동일 (startDate 하루만)
-- [ ] averagePeriodLength: 해당 row 제외하고 계산 진행
-- [ ] 다음 주기 시작 기록도 정상 진행 (StartPeriodControl 으로 추가)
+- [ ] `averagePeriodLength`: 해당 row 제외하고 계산 진행
+- [ ] 다음 주기 시작 기록도 정상 진행 (`PeriodSelectSheet` 또는 `LogEntryDialog` 으로 추가)
 
 ### 자동 점검됨
-- cellState.isPeriodDate: `if (p.endDate) { ... } else if (date === p.startDate) return true` (코드 검증 완료)
-- aggregate.averagePeriodLength: `p is PeriodLog & { endDate: string }` 필터 (코드 검증 완료)
+- `cellState.isPeriodDate`: `if (p.endDate) { ... } else if (date === p.startDate) return true` (코드 검증 완료)
+- `aggregate.averagePeriodLength`: `p is PeriodLog & { endDate: string }` 필터 (코드 검증 완료)
 
 ---
 
 ## 5. 언어 전환 (ko ↔ en)
 
 ### 기대 동작
-- [ ] /settings → 언어 → `English` 탭 → 화면 전체 텍스트 영어로 교체 (HomeScreen, ConditionForm, DiaryScreen, InsightsScreen, BottomTabNav 라벨 모두)
+- [ ] `/settings` → 언어 → `English` 탭 → 화면 전체 텍스트 영어로 교체 (HomeScreen, DiaryScreen, `/log` Report, EventFormSheet, BottomTabNav 라벨 모두)
 - [ ] 다시 `한국어` 탭 → 한국어로 교체
-- [ ] 전환 후 새로고침 → 선택 locale 유지 (`settings.locale` IndexedDB 영속)
-- [ ] InsightCard 본문 동적 보간(`averageDays`, `count`) 도 locale 따라 prefix/suffix 교체
-- [ ] DayDetailSheet 의 condition 라벨 (mood/energy/...) 도 교체
+- [ ] 전환 후 새로고침 → 선택 locale 유지 (`settings.locale` IndexedDB/Supabase 영속)
+- [ ] InsightCard 본문 동적 보간(`averageDays` 등) 도 locale 따라 prefix/suffix 교체
+- [ ] `EventConditionSection` / `LogEntryDialog` 의 condition 라벨 (mood/energy/pain/bloating/appetite/skin/sleep/exercise) 도 교체
 
 ### 자동 점검됨
-- 모든 사용자 노출 텍스트가 `useT()` 경유 (grep: 사용자 노출 한국어 인라인 0건)
-- useT 는 `useSettingsStore((s) => s.settings.locale)` 구독 → 변경 시 Zustand 가 re-render 트리거 (코드 검증 완료)
+- 모든 사용자 노출 텍스트가 `useT()` 경유 (그렙: 사용자 노출 한국어 인라인 0건)
+- `useT` 는 `useSettingsStore((s) => s.settings.locale)` 구독 → 변경 시 Zustand 가 re-render 트리거 (코드 검증 완료)
 
 ---
 
-## 발견된 수정 사항
+## 검증 외 결정 — `/onboarding` 라우트 의미 변화
 
-| 항목 | 위치 | 수정 |
-|---|---|---|
-| `HomeEmptyForm` repo 저장 실패 시 잘못된 에러 메시지 (`errorMissingDate`) 노출 | `src/components/app/HomeEmptyForm.tsx:34` | `t.home.errorLabel` 로 교체 |
-
-## 검증 외 결정 — `/onboarding` 라우트 부재 (2026-05 당시)
-
-- 기존 spec 의 "온보딩 → 홈" 흐름은 **온보딩 머지(2026-05-22)** 이후 "홈 빈 상태 inline form" 으로 변경됨.
-- 데이터 리셋 후 redirect 목적지도 `/onboarding` → `/` 로 변경됨 (DataResetSection 확정).
-- 본 체크리스트는 (당시) 변경된 흐름 기준으로 작성.
-
-> **2026-09-19 갱신**: `/onboarding` 라우트가 다시 생겼다 — 단, 의미가 다르다. "생리일 입력 폼"이 아니라 **기기 최초 실행 시 1회** 보여주는 소개 슬라이드(스플래시 → 슬라이드 1/2/3 → 로그인)다. 위 "부재" 결정은 더 이상 사실이 아니며, 현재 첫 진입 흐름은 [`docs/flows/onboarding.md`](../flows/onboarding.md) 참고.
+- 2026-05-22 온보딩 머지 당시 `/onboarding` 은 "생리일 입력 폼"이었고, 이후 한동안 라우트 자체가 없었다(홈 빈 상태 inline form 으로 대체).
+- **2026-09-19 갱신**: `/onboarding` 라우트가 다시 생겼다 — 단, 의미가 다르다. "생리일 입력 폼"이 아니라 **기기 최초 실행 시 1회** 보여주는 소개 슬라이드(스플래시 → 슬라이드 1/2/3 → 로그인)다. 현재 첫 진입 흐름은 [`docs/flows/onboarding.md`](../flows/onboarding.md) 참고.
 
 ---
 
@@ -126,36 +110,15 @@
 
 ---
 
-## 6. 짧은 주기 입력 (직전 startDate 와 < 15일 간격)
+## 6. 짧은 주기 입력 — 현재 도달 불가 (참고용으로만 보존)
 
-> 도메인: `evaluateNewStart` (`src/domain/cycle/recordPolicy.ts`) → `ShortCycleConfirmDialog`.
-> 임계치 `SHORT_CYCLE_THRESHOLD_DAYS = 15` 는 `aggregate.ts` 의 outlier 필터와 동기화.
+> `evaluateNewStart`(`src/domain/cycle/recordPolicy.ts`)와 이를 소비하던 `ShortCycleConfirmDialog` 는 더 이상 연결돼 있지 않다. `ShortCycleConfirmDialog.tsx` 파일 자체가 삭제됐고, `PeriodSelectSheet`/`LogEntryDialog` 어느 쪽도 `evaluateNewStart` 를 호출하지 않는다. 아래는 순수 함수·테스트로만 남아 있는 예전 설계를 참고용으로 남겨 둔 것이며, 브라우저에서 재현 가능한 시나리오가 아니다.
 
-### 시나리오: 6/10 기록 → 6/16 다시 입력
+### (참고) 원래 설계: 6/10 기록 → 6/16 다시 입력 시
 
-홈 우상단 캘린더 아이콘 → 6/16 입력 → 저장.
+- `shortGap` 판정(직전 startDate 와 15일 미만 간격) 시 세 선택지 제공 예정: "아직 생리 중이에요"(`extendThrough`) / "날짜를 잘못 입력했어요"(`replace`) / "그래도 저장할게요"(`add`).
+- `DailyConditionLog` 는 `date` 키 기반(PK)이라 `PeriodLog.id` 와 FK 관계가 없다 — `replace` 로 직전 PeriodLog가 삭제되어도 같은 날짜의 condition은 보존된다.
 
-### 기대 동작
+### 자동 점검됨 (도메인 함수 단위로는 계속 유효)
 
-- [ ] `PeriodRangeDialog` 닫히고 `ShortCycleConfirmDialog` 가 열림
-- [ ] 본문: "직전 생리 시작일이 **6**일 전이에요." 표시
-- [ ] **세 선택지** 노출 (각 클릭 시 동작):
-  - **아직 생리 중이에요** → `extendThrough(priorId, 새 endDate)`. 직전 record 의 `endDate` 가 `max(기존 endDate, 새 endDate)` 로 확장. 새 record 는 생성되지 않음.
-  - **날짜를 잘못 입력했어요** → `replace(priorId, 새 input)`. 직전 record 삭제 + 새 record 추가.
-  - **그래도 저장할게요** → 정상 `add`. 직전·새 record 모두 보존.
-- [ ] 취소 → 두 다이얼로그 모두 닫히고 아무 쓰기도 발생하지 않음
-
-### 데이터 정합성 노트
-
-- **`DailyConditionLog` 는 `date` 키 기반** (PK 가 날짜) — `PeriodLog.id` 와 FK 관계 없음.
-- 따라서 `replace` 로 직전 PeriodLog 가 삭제되어도 같은 날짜의 condition 은 그대로 보존. orphan 위험 없음.
-- 단, 사용자 멘탈 모델에서는 "그 날의 컨디션" 이 직전 생리와 같이 사라질 거라 기대할 수도 있으므로, 향후 UX 리뷰 대상.
-
-### 장기 생리(7일+) 안내
-
-- `extend` 선택 후 결과 기간이 `LONG_PERIOD_NOTICE_DAYS = 7` 일 초과면 토스트로 안내 ("총 N일로 저장했어요. 다르면 언제든 수정해 주세요").
-- 의료 단정 아닌 정보 제공 톤. 통계 이상치 컷오프(14일)와는 별개 — 사용자 인지용 알림.
-
-### 자동 점검됨
-
-- `src/domain/cycle/recordPolicy.test.ts` 의 `evaluateNewStart` describe 블록: idempotent / no prior / 14일 gap / 6일 gap (본 시나리오) / 15일 경계 / 가장 가까운 prior 선택 / 미래 record 무시 / 임계치 동기화 — 8 케이스.
+- `src/domain/cycle/recordPolicy.test.ts` 의 `evaluateNewStart` describe 블록: idempotent / no prior / 14일 gap / 6일 gap / 15일 경계 / 가장 가까운 prior 선택 / 미래 record 무시 / 임계치 동기화 — 8 케이스, 모두 통과. UI 미연결 상태와 무관하게 순수 함수 자체는 정확하다.

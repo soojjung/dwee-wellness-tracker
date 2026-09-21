@@ -2,17 +2,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
-import { addDaysISO, fromISO } from '@/lib/date';
+import { fromISO } from '@/lib/date';
 import type { PeriodLog, Confidence } from '@/types';
-import { isPeriodDate } from '@/components/calendar/cellState';
-import { predictFertileWindow } from '@/domain/cycle/fertile';
+import { buildDays } from '@/domain/cycle/weekStripDays';
+import {
+  cellChipClasses,
+  formatTodayChip,
+  stateLabelColorClass,
+  stateLabelFor,
+  todayEmptyChipClasses,
+} from './weekStripStyles';
 
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
-const PAST_DAYS = 60;
-const FUTURE_DAYS = 60;
 const CONTENT_PADDING_PX = 20;
-
-type CycleState = 'actualPeriod' | 'predictedPeriod' | 'predictedFertile' | null;
 
 interface WeekStripProps {
   today: string;
@@ -131,9 +133,7 @@ export function WeekStrip({
                 <span
                   className={cn(
                     'text-xs',
-                    isToday
-                      ? 'font-semibold text-brand-gray900'
-                      : 'font-medium text-brand-gray600',
+                    isToday ? 'font-semibold text-brand-gray900' : 'font-medium text-brand-gray600',
                   )}
                 >
                   {weekdayLabel}
@@ -169,109 +169,4 @@ export function WeekStrip({
       </div>
     </div>
   );
-}
-
-interface Day {
-  date: string;
-  state: CycleState;
-}
-
-function buildDays(
-  today: string,
-  periods: PeriodLog[],
-  predictedDate: string | null,
-  averagePeriodLength: number,
-  predictionConfidence: Confidence,
-): Day[] {
-  const days: Day[] = [];
-  const predictedPeriod = predictedRange(predictedDate, averagePeriodLength);
-  const fertile = predictFertileWindow(predictedDate, predictionConfidence);
-  for (let offset = -PAST_DAYS; offset <= FUTURE_DAYS; offset += 1) {
-    const date = addDaysISO(today, offset);
-    days.push({ date, state: computeState(date, periods, predictedPeriod, fertile) });
-  }
-  return days;
-}
-
-// Priority: actual period > predicted period > predicted fertile > default.
-function computeState(
-  date: string,
-  periods: PeriodLog[],
-  predictedPeriod: { start: string; end: string } | null,
-  fertile: { start: string; end: string } | null,
-): CycleState {
-  if (isPeriodDate(date, periods)) return 'actualPeriod';
-  if (predictedPeriod && date >= predictedPeriod.start && date <= predictedPeriod.end)
-    return 'predictedPeriod';
-  if (fertile && date >= fertile.start && date <= fertile.end) return 'predictedFertile';
-  return null;
-}
-
-function predictedRange(
-  predictedDate: string | null,
-  length: number,
-): { start: string; end: string } | null {
-  if (!predictedDate) return null;
-  const span = Math.max(1, length);
-  return { start: predictedDate, end: addDaysISO(predictedDate, span - 1) };
-}
-
-// Fill for actual data, outline for predicted, subtle outline for default.
-function cellChipClasses(state: CycleState): string {
-  switch (state) {
-    case 'actualPeriod':
-      return 'bg-brand-pink100 text-brand-pink900';
-    case 'predictedPeriod':
-      return 'border border-brand-pink200 bg-brand-white text-brand-pink500';
-    case 'predictedFertile':
-      return 'border border-brand-lavender100 bg-brand-white text-brand-lavender400';
-    case null:
-      return 'border border-brand-gray300 bg-brand-white text-brand-gray600';
-  }
-}
-
-function todayEmptyChipClasses(): string {
-  return 'bg-brand-gray900 text-brand-white';
-}
-
-function stateLabelColorClass(state: CycleState): string {
-  switch (state) {
-    case 'actualPeriod':
-    case 'predictedPeriod':
-      return 'text-brand-pink500';
-    case 'predictedFertile':
-      return 'text-brand-lavender400';
-    case null:
-      return 'text-brand-gray600';
-  }
-}
-
-function stateLabelFor(
-  state: CycleState,
-  copy: { actualPeriod: string; predictedPeriod: string; predictedFertile: string },
-): string | null {
-  switch (state) {
-    case 'actualPeriod':
-      return copy.actualPeriod;
-    case 'predictedPeriod':
-      return copy.predictedPeriod;
-    case 'predictedFertile':
-      return copy.predictedFertile;
-    case null:
-      return null;
-  }
-}
-
-function formatTodayChip(args: {
-  todayState: CycleState;
-  daysUntilNext: number | null;
-  dDayPrefix: string;
-  dDaySuffix: string;
-  todayLabel: string;
-  menstrualLabel: string;
-}): string {
-  if (args.todayState === 'actualPeriod') return args.menstrualLabel;
-  if (args.daysUntilNext === null) return args.todayLabel;
-  if (args.daysUntilNext <= 0) return args.todayLabel;
-  return `${args.dDayPrefix}${args.daysUntilNext}${args.dDaySuffix}`;
 }

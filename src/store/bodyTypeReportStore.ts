@@ -1,5 +1,6 @@
 'use client';
 import { create } from 'zustand';
+import { errorMessage } from '@/lib/errorMessage';
 import { bodyTypeReportRepo, ensureMigrations } from '@/data';
 import { readLegacyLocalReport, clearLegacyLocalReport } from '@/data/bodyTypeReportStorage';
 import type { BodyTypeReport } from '@/types';
@@ -40,7 +41,7 @@ export const useBodyTypeReportStore = create<BodyTypeReportState>()((set, get) =
       }
       set({ report, hydrated: true, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -51,7 +52,7 @@ export const useBodyTypeReportStore = create<BodyTypeReportState>()((set, get) =
       const report = await bodyTypeReportRepo.get();
       set({ report, hydrated: true, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: errorMessage(e), loading: false });
     }
   },
 
@@ -62,7 +63,7 @@ export const useBodyTypeReportStore = create<BodyTypeReportState>()((set, get) =
       await bodyTypeReportRepo.save(report);
     } catch (e) {
       // 저장에 실패해도 이번 결과는 보여준다 — 다시 진단하게 만드는 것보다 낫다.
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 
@@ -72,7 +73,7 @@ export const useBodyTypeReportStore = create<BodyTypeReportState>()((set, get) =
       await bodyTypeReportRepo.clear();
       clearLegacyLocalReport();
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: errorMessage(e) });
     }
   },
 }));

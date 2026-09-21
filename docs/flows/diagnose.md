@@ -10,6 +10,10 @@
 
 ## 상태 머신
 
+<img src="../diagrams/body-type-diagnose.png" width="860" alt="체형 진단 흐름 — 동의 모달, 네이티브/웹 사진 선택, 미리보기, Edge Function 분석, 성공 시 저장·결과 화면, 실패 시 오류 카드에서 재시도" />
+
+> 원본: [`docs/diagrams/body-type-diagnose.excalidraw`](../diagrams/body-type-diagnose.excalidraw) (Excalidraw). 공유 단계는 아래 [공유 (Share)](#공유-share) 절 참고.
+
 `DiagnoseScreen` 은 `step` 상태 하나로 전체 플로우를 관리합니다.
 
 ```

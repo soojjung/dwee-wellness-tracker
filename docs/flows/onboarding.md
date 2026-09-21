@@ -6,6 +6,10 @@
 
 ## 라우팅 흐름
 
+<img src="../diagrams/login-flow.png" width="720" alt="로그인 시나리오 — 게스트(익명 세션 → local 모드)와 Apple/Google OAuth(콜백 → 마이그레이션 → remote 모드), 로그아웃 후 /login 복귀" />
+
+> 원본: [`docs/diagrams/login-flow.excalidraw`](../diagrams/login-flow.excalidraw) (Excalidraw). 로그인 게이트 이후의 분기를 그린 것이고, 첫 실행 라우팅은 아래 Mermaid 참고.
+
 `AuthGuard`는 `(app)`/`(fullscreen)` 레이아웃만 감싼다. `(intro)`/`(auth)` 그룹(즉 `/onboarding`, `/login`)에는 가드가 없어 — `OnboardingScreen`·`LoginScreen` 이 각자 authStore 를 직접 hydrate 하고, 이미 세션이 있으면 스스로 `/`로 돌아간다.
 
 ```mermaid

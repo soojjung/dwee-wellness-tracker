@@ -1,6 +1,6 @@
 # periodEdit — Unit test cases
 
-Last run: 2026-07-15 — 40/40 passed
+Last run: 2026-09-21 — 50/50 passed
 
 | # | 설명 (`it` title) | 입력 | 기대 결과 | 결과 |
 |---|---|---|---|---|
@@ -49,9 +49,15 @@ Last run: 2026-07-15 — 40/40 passed
 | 43 | detects split as update + add | `original=[log('a','05-01','05-05')]`, `working=[a:05-01~05-02, new:1:05-04~05-05]` | update + add | ✅ |
 | 44 | handles mixed add/update/remove in one call | `original=[a,b]`, `working=[a (updated), new:1 (add)]` — b missing | update a + add new + remove b | ✅ |
 | 45 | treats a PeriodLog with no endDate as a single-day record for change detection | `original=[log('a','2026-05-01')]`, `working=[a:05-01~05-01]` | `[]` (no change) | ✅ |
+| 46 | returns an empty set for an empty drafts list | `drafts=[]` | `Set()` | ✅ |
+| 47 | collects every day of a single-day draft | `drafts=['a':05-01~05-01]` | `{'2026-05-01'}` | ✅ |
+| 48 | collects every day of a multi-day draft inclusive of both endpoints | `drafts=['a':05-01~05-03]` | `{'05-01','05-02','05-03'}` | ✅ |
+| 49 | merges dates from multiple non-overlapping drafts | `drafts=['a':05-01~05-02,'b':06-01~06-02]` | union of both ranges | ✅ |
+| 50 | spans a month boundary correctly | `drafts=['a':01-30~02-02]` | `{'01-30','01-31','02-01','02-02'}` | ✅ |
 
 ---
 
 - Row 12: `cutoff = addDaysISO('2026-05-12', -7) = '2026-05-05'`. The endDate `'2026-05-05' >= cutoff` is inclusive, so the period qualifies.
 - Row 20: `compact` preferentially keeps the first period's key/originalId; only promotes from the second when the first has `originalId: null`.
 - Row 43: `removeDay` on a middle day produces two drafts; `computeChanges` maps the kept half to an update and the new fragment to an add.
+- Rows 46-50: `collectRecordedDates` moved here from `src/components/app/PeriodSelectSheet.tsx` (as-is) — it builds the "already recorded" date set the sheet's calendar grid highlights.

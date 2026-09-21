@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
+import { CheckIcon24, CloseIcon24 } from '@/components/ui/icons';
 
 interface CutoutConfirmScreenProps {
   /** Transparent PNG returned by the sticker-cutout edge function. */
@@ -25,18 +26,7 @@ export function CutoutConfirmScreen({
 }: CutoutConfirmScreenProps) {
   const t = useT();
   const c = t.report.diary.cutout;
-  // Create the blob URL inside an effect (rather than useMemo) so React's
-  // StrictMode double-mount can't leave the rendered <img> pointing at a
-  // URL that was already revoked by the simulated cleanup.
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    const u = URL.createObjectURL(blob);
-    setUrl(u);
-    return () => {
-      URL.revokeObjectURL(u);
-      setUrl(null);
-    };
-  }, [blob]);
+  const url = useObjectUrl(blob);
 
   useBodyScrollLock();
   useEscToClose(onClose);
@@ -57,7 +47,7 @@ export function CutoutConfirmScreen({
             aria-label={c.close}
             className="grid size-10 place-items-center rounded-full bg-brand-gray200 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
           >
-            <CloseIcon />
+            <CloseIcon24 className="h-5 w-5" />
           </button>
         </div>
 
@@ -66,12 +56,7 @@ export function CutoutConfirmScreen({
           style={{ backgroundImage: CHECKER_BG, backgroundSize: '18px 18px' }}
         >
           {url ? (
-            <img
-              src={url}
-              alt=""
-              aria-hidden
-              className="max-h-full max-w-full object-contain"
-            />
+            <img src={url} alt="" aria-hidden className="max-h-full max-w-full object-contain" />
           ) : null}
         </div>
 
@@ -90,7 +75,7 @@ export function CutoutConfirmScreen({
             aria-label={c.confirm}
             className="grid size-12 place-items-center rounded-full bg-brand-pink200 text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800"
           >
-            <CheckIcon />
+            <CheckIcon24 className="h-5 w-5" />
           </button>
         </div>
       </div>
@@ -102,14 +87,6 @@ export function CutoutConfirmScreen({
 // alpha; mock uses opaque photo, but the pattern still signals intent).
 const CHECKER_BG =
   'linear-gradient(45deg, #F0EEEF 25%, transparent 25%), linear-gradient(-45deg, #F0EEEF 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #F0EEEF 75%), linear-gradient(-45deg, transparent 75%, #F0EEEF 75%)';
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  );
-}
 
 function RetryIcon() {
   return (
@@ -127,14 +104,6 @@ function RetryIcon() {
           in the upper-left. Matches Figma 013_4 retry icon. */}
       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
       <path d="M3 3v5h5" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
-      <path d="M5 12.5l4.5 4.5L19 7.5" />
     </svg>
   );
 }

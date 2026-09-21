@@ -4,9 +4,10 @@ import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { cn } from '@/lib/cn';
-import { centerCropRect } from '@/lib/image/stickerFrame';
+import { grabFrame } from '@/lib/image/videoFrame';
 import { AlbumIcon } from '@/components/ui/icons/AlbumIcon';
 import { CameraFlipIcon } from '@/components/ui/icons/CameraFlipIcon';
+import { CloseIcon24 } from '@/components/ui/icons/CloseIcon24';
 
 export type CameraMode = 'photo' | 'sticker';
 
@@ -157,7 +158,7 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
         aria-label={c.close}
         className="absolute right-4 top-[calc(0.5rem+env(safe-area-inset-top,0px))] grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-white"
       >
-        <CloseIcon />
+        <CloseIcon24 className="h-5 w-5" />
       </button>
 
       <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-md flex-col items-center gap-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
@@ -263,53 +264,5 @@ function SlidingPill<T extends string>({
         </button>
       ))}
     </div>
-  );
-}
-
-/**
- * Capture what the viewfinder is showing. The <video> is `object-cover`, so
- * the visible part is the centre of the frame at the element's own aspect —
- * grab exactly that from the intrinsic pixels so the shot matches the preview
- * regardless of on-screen scaling.
- */
-async function grabFrame(video: HTMLVideoElement): Promise<Blob> {
-  const viewAspect =
-    video.clientWidth > 0 && video.clientHeight > 0
-      ? video.clientWidth / video.clientHeight
-      : video.videoWidth / video.videoHeight;
-  const rect = centerCropRect(video.videoWidth, video.videoHeight, viewAspect);
-  const sx = Math.round(rect.sx);
-  const sy = Math.round(rect.sy);
-  const sw = Math.round(rect.sw);
-  const sh = Math.round(rect.sh);
-  const canvas = document.createElement('canvas');
-  canvas.width = sw;
-  canvas.height = sh;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('canvas-context-unavailable');
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-  return await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error('canvas-toBlob-null'))),
-      'image/jpeg',
-      0.92,
-    );
-  });
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-      aria-hidden
-    >
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
   );
 }

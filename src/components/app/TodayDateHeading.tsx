@@ -1,9 +1,7 @@
 'use client';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
-import { fromISO } from '@/lib/date';
+import { formatMonthDay } from '@/lib/date';
 import { PeriodAddIcon } from '@/components/ui/icons';
 
 interface TodayDateHeadingProps {
@@ -14,8 +12,7 @@ interface TodayDateHeadingProps {
 export function TodayDateHeading({ date, onCalendarClick }: TodayDateHeadingProps) {
   const t = useT();
   const locale = useSettingsStore((s) => s.settings.locale);
-  const d = fromISO(date);
-  const datePart = locale === 'ko' ? format(d, 'M월 d일', { locale: ko }) : format(d, 'MMM d');
+  const datePart = formatMonthDay(date, locale);
 
   return (
     <div className="flex items-center justify-between">

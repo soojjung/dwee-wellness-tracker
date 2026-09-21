@@ -10,6 +10,7 @@ paths:
 ## 0) 화면 플로우 다이어그램
 
 - 분기/state machine을 가진 화면은 `docs/flows/<name>.md`에 Mermaid로 기록.
+- 사용자 시나리오형 그림(행위자 범례 + 번호 단계)은 `docs/diagrams/<name>.excalidraw` + 같은 이름 `.png` 로 두고 해당 flow 문서 상단에 `<img>` 로 삽입. 현재: login-flow, body-type-diagnose, diary-sticker-capture.
 - 현재 등록: [onboarding](../../docs/flows/onboarding.md), [home](../../docs/flows/home.md), [calendar (DiaryScreen 내장)](../../docs/flows/calendar.md), [customize](../../docs/flows/customize.md), [log](../../docs/flows/log.md), [diagnose](../../docs/flows/diagnose.md), [settings (MyPage)](../../docs/flows/settings.md)
 
 ## 1) 라우트 그룹
@@ -57,13 +58,13 @@ paths:
 
 ## 7) 상태 3-state
 
-- 데이터 화면(홈/캘린더/인사이트)은 loading / error / empty 모두 표시.
-- 빈 상태 카피는 사전(`empty.*`, `home.insufficientData` 등)에서.
+- 데이터 화면(홈/캘린더/주기리포트)은 loading / error / empty 모두 표시.
+- 빈 상태 카피는 사전(`empty.*`, `t.myPage.cycle.insufficient`, `t.report.chartEmpty` 등)에서. `home.insufficientData` 키는 삭제됨 — 자세한 내용은 `.claude/rules/cycle-logic.md` §3.
 
 ## 8) BottomTabNav
 
 - 4개 탭(home/log/magazine/settings). calendar 탭은 없음 — 캘린더는 `/log` Diary 뷰 안에 통합.
-- 탭 추가/삭제는 `BottomTabNav.tsx`의 `TABS` 배열만 수정.
+- `BottomTabNav`는 `SHOW_NAV_PATHS`(`['/', '/log', '/magazine', '/settings']`, 4개 탭 루트) 정확히 일치하는 경로에서만 렌더된다 — 서브 라우트(`/settings/account`, `/log/customize` 등)는 탭바가 없다. `BottomTabNav.tsx`의 `TABS` 배열은 탭 목록(아이콘·라벨·href)이고 `SHOW_NAV_PATHS`는 노출 여부 판정이라 **서로 다른 배열**이다. 탭을 추가/삭제할 땐 두 배열을 함께 수정할 것 — `TABS`만 고치면 새 탭이 서브 라우트에서 사라지거나, 반대로 탭 없는 화면에 탭바가 뜨는 불일치가 생긴다.
 - 활성 탭 판정: 루트(`/`)는 정확 일치, 그 외는 `startsWith`.
 
 ## 9) 탭 화면 하단 여백

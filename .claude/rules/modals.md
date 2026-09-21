@@ -19,6 +19,7 @@ useEscToClose(onClose); // Esc 로 닫기 (submitting 중이면 handleClose 가 
 
 - 조건부 렌더링되는 모달만 사용 (마운트 = 오픈). 항상 마운트되는 컴포넌트에 넣지 말 것.
 - `useBodyScrollLock` 는 body/html 의 `overflow: hidden` 을 count-based 로 관리 — 중첩 모달 OK.
+- **알려진 예외**: `PhotoRatioScreen` 은 `useEscToClose`만 호출하고 `useBodyScrollLock`이 빠져 있다. `StickerScanScreen` 은 반대로 `useBodyScrollLock`만 호출하고 `useEscToClose`가 빠져 있다. 둘 다 풀스크린 단계 화면이라 body 스크롤/Esc 취소 영향이 적어 방치된 상태 — 새 코드를 이 패턴 그대로 복붙하지 말 것. 고칠 때는 코드가 아니라 이 문서를 먼저 갱신.
 
 ## 2) 백드롭 클릭 취소
 
@@ -64,4 +65,6 @@ useEscToClose(onClose); // Esc 로 닫기 (submitting 중이면 handleClose 가 
 className="bg-brand-gray300 py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/60 ..."
 ```
 
-`DiscardDraftDialog` 가 최초 적용 사례이며 `CancelEditDialog`, `LogoutConfirmDialog`, `WithdrawConfirmDialog`, `DeleteStickersDialog`, `DiaryCustomizeScreen`(`DiscardDialog`) 이 따른다. 동일 클래스 문자열이 여러 파일에 복붙되어 있으므로 새 2버튼 팝업 추가 시 이 값을 그대로 재사용할 것 — 값이 또 어긋나면 공유 컴포넌트/클래스 상수로 추출 검토.
+`DiscardDraftDialog` 가 최초 적용 사례이며 `CancelEditDialog`, `LogoutConfirmDialog`, `WithdrawConfirmDialog`, `DeleteStickersDialog`, `DiaryCustomizeScreen`(`DiscardDialog`), `DeleteEventDialog` 가 따른다.
+
+**공유 컴포넌트로 추출 완료**: 위 7개 모두 `src/components/ui/ConfirmDialog.tsx`의 얇은 래퍼다 — 취소 버튼 색상을 포함한 마크업 전체(핑크 경고 배지, 제목/본문, 취소·확인 분할 푸터, `useBodyScrollLock`/`useEscToClose`)가 이 컴포넌트에 있다. 새 2버튼 확인 팝업을 추가할 때는 클래스를 복붙하지 말고 `ConfirmDialog`를 직접 사용할 것.

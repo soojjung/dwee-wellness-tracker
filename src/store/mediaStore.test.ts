@@ -51,7 +51,7 @@ function stubUrlGlobals() {
       revokeObjectURL: (u: string) => void;
     };
   };
-  anyGlobal.URL.createObjectURL = ((_b: Blob) => {
+  anyGlobal.URL.createObjectURL = (() => {
     const url = `blob:mock:${urlCounter++}`;
     createdUrls.push(url);
     return url;

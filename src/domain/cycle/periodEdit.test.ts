@@ -1,6 +1,7 @@
 import { beforeEach, describe, it, expect } from 'vitest';
 import {
   addRange,
+  collectRecordedDates,
   compact,
   computeChanges,
   extendTo,
@@ -289,10 +290,7 @@ describe('computeChanges', () => {
   });
 
   it('detects add for a draft with no originalId', () => {
-    const changes = computeChanges(
-      [],
-      [draft('new:1', '2026-05-01', '2026-05-03', null)],
-    );
+    const changes = computeChanges([], [draft('new:1', '2026-05-01', '2026-05-03', null)]);
     expect(changes).toEqual([{ kind: 'add', startDate: '2026-05-01', endDate: '2026-05-03' }]);
   });
 
@@ -331,12 +329,9 @@ describe('computeChanges', () => {
   });
 
   it('handles mixed add/update/remove in one call', () => {
-    const original = [
-      log('a', '2026-04-01', '2026-04-05'),
-      log('b', '2026-05-01', '2026-05-05'),
-    ];
+    const original = [log('a', '2026-04-01', '2026-04-05'), log('b', '2026-05-01', '2026-05-05')];
     const working = [
-      draft('a', '2026-04-01', '2026-04-07', 'a'),   // update
+      draft('a', '2026-04-01', '2026-04-07', 'a'), // update
       draft('new:1', '2026-06-01', '2026-06-03', null), // add
       // 'b' is absent → remove
     ];
@@ -351,5 +346,40 @@ describe('computeChanges', () => {
     const original = [log('a', '2026-05-01')]; // no endDate
     const working = [draft('a', '2026-05-01', '2026-05-01', 'a')];
     expect(computeChanges(original, working)).toEqual([]);
+  });
+});
+
+describe('collectRecordedDates', () => {
+  it('returns an empty set for an empty drafts list', () => {
+    expect(collectRecordedDates([])).toEqual(new Set());
+  });
+
+  it('collects every day of a single-day draft', () => {
+    const drafts = [draft('a', '2026-05-01', '2026-05-01', 'a')];
+    expect(collectRecordedDates(drafts)).toEqual(new Set(['2026-05-01']));
+  });
+
+  it('collects every day of a multi-day draft inclusive of both endpoints', () => {
+    const drafts = [draft('a', '2026-05-01', '2026-05-03', 'a')];
+    expect(collectRecordedDates(drafts)).toEqual(
+      new Set(['2026-05-01', '2026-05-02', '2026-05-03']),
+    );
+  });
+
+  it('merges dates from multiple non-overlapping drafts', () => {
+    const drafts = [
+      draft('a', '2026-05-01', '2026-05-02', 'a'),
+      draft('b', '2026-06-01', '2026-06-02', 'b'),
+    ];
+    expect(collectRecordedDates(drafts)).toEqual(
+      new Set(['2026-05-01', '2026-05-02', '2026-06-01', '2026-06-02']),
+    );
+  });
+
+  it('spans a month boundary correctly', () => {
+    const drafts = [draft('a', '2026-01-30', '2026-02-02', 'a')];
+    expect(collectRecordedDates(drafts)).toEqual(
+      new Set(['2026-01-30', '2026-01-31', '2026-02-01', '2026-02-02']),
+    );
   });
 });

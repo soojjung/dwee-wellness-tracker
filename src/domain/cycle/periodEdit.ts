@@ -29,10 +29,7 @@ export function sortDrafts(drafts: DraftPeriod[]): DraftPeriod[] {
   return [...drafts].sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
-export function findContainingDraft(
-  drafts: DraftPeriod[],
-  d: ISODate,
-): DraftPeriod | null {
+export function findContainingDraft(drafts: DraftPeriod[], d: ISODate): DraftPeriod | null {
   return drafts.find((p) => d >= p.startDate && d <= p.endDate) ?? null;
 }
 
@@ -103,14 +100,8 @@ export function removeDay(
   return sortDrafts(out);
 }
 
-export function extendTo(
-  drafts: DraftPeriod[],
-  targetKey: string,
-  d: ISODate,
-): DraftPeriod[] {
-  const next = drafts.map((p) =>
-    p.key === targetKey && p.endDate < d ? { ...p, endDate: d } : p,
-  );
+export function extendTo(drafts: DraftPeriod[], targetKey: string, d: ISODate): DraftPeriod[] {
+  const next = drafts.map((p) => (p.key === targetKey && p.endDate < d ? { ...p, endDate: d } : p));
   return compact(next);
 }
 
@@ -121,10 +112,19 @@ export function addRange(
   newKey: string,
 ): DraftPeriod[] {
   const [lo, hi] = startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
-  return compact([
-    ...drafts,
-    { key: newKey, originalId: null, startDate: lo, endDate: hi },
-  ]);
+  return compact([...drafts, { key: newKey, originalId: null, startDate: lo, endDate: hi }]);
+}
+
+export function collectRecordedDates(drafts: DraftPeriod[]): Set<ISODate> {
+  const set = new Set<ISODate>();
+  for (const p of drafts) {
+    let cursor = p.startDate;
+    while (cursor <= p.endDate) {
+      set.add(cursor);
+      cursor = addDaysISO(cursor, 1);
+    }
+  }
+  return set;
 }
 
 export type PeriodChange =
@@ -132,10 +132,7 @@ export type PeriodChange =
   | { kind: 'update'; id: string; startDate: ISODate; endDate: ISODate }
   | { kind: 'remove'; id: string };
 
-export function computeChanges(
-  original: PeriodLog[],
-  working: DraftPeriod[],
-): PeriodChange[] {
+export function computeChanges(original: PeriodLog[], working: DraftPeriod[]): PeriodChange[] {
   const originalById = new Map(original.map((p) => [p.id, p]));
   const seen = new Set<string>();
   const changes: PeriodChange[] = [];

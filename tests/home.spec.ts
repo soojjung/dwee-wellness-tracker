@@ -2,15 +2,14 @@ import { test, expect, type Page } from '@playwright/test';
 import { freezeClock } from './clock';
 
 const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal', 'unknown'] as const;
-const LOCALES = ['en', 'ko'] as const;
+type Locale = 'en' | 'ko';
 
-const KEYWORDS_TITLE: Record<(typeof LOCALES)[number], string> = {
+const KEYWORDS_TITLE: Record<Locale, string> = {
   en: 'Your keyword right now',
   ko: '지금 필요한 키워드는',
 };
 
 type Phase = (typeof PHASES)[number];
-type Locale = (typeof LOCALES)[number];
 
 declare global {
   interface Window {
