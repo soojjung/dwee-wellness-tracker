@@ -10,6 +10,7 @@ paths:
 ## 0) 화면 플로우 다이어그램
 
 - 분기/state machine을 가진 화면은 `docs/flows/<name>.md`에 Mermaid로 기록.
+- 사용자 시나리오형 그림(행위자 범례 + 번호 단계)은 `docs/diagrams/<name>.excalidraw` + 같은 이름 `.png` 로 두고 해당 flow 문서 상단에 `<img>` 로 삽입. 현재: login-flow, body-type-diagnose, diary-sticker-capture.
 - 현재 등록: [onboarding](../../docs/flows/onboarding.md), [home](../../docs/flows/home.md), [calendar (DiaryScreen 내장)](../../docs/flows/calendar.md), [customize](../../docs/flows/customize.md), [log](../../docs/flows/log.md), [diagnose](../../docs/flows/diagnose.md), [settings (MyPage)](../../docs/flows/settings.md)
 
 ## 1) 라우트 그룹

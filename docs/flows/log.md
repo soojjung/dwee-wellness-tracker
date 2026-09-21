@@ -219,6 +219,10 @@ flowchart TD
 
 ### 스티커 업로드 분기 — 사진 그대로 vs 누끼
 
+<img src="../diagrams/diary-sticker-capture.png" width="760" alt="다이어리 스티커 흐름 — 앨범/촬영 분기, 사진이면 비율 크롭, 스티커면 remove.bg 스캔 → 누끼 확인 → 저장 → 보관함·캘린더 드래프트, 실패 시 재시도/사진으로 저장/취소" />
+
+> 원본: [`docs/diagrams/diary-sticker-capture.excalidraw`](../diagrams/diary-sticker-capture.excalidraw) (Excalidraw).
+
 앨범(`PhotoImportModal`)과 카메라(`CameraSheet`) 모두 확정 전에 **모드 선택** (사진 그대로 / 누끼)을 제공하고, **비율(1:1 · 4:3)을 언제 정하는지도 이제 둘이 같은 규칙**을 따릅니다 — 비율은 사진을 "그대로" 쓸 때만 의미가 있으므로, 촬영/선택 직후에만 묻고 누끼 경로는 아예 건너뜁니다.
 
 - **사진 그대로**: 카메라는 셔터 직후 `CapturedPhotoRatioStep`(013_5/6, `PhotoRatioScreen` 래퍼)으로, 앨범은 모드를 고른 직후 풀스크린 `PhotoRatioScreen` 으로 넘어가 비율을 고르고 가운데 기준으로 크롭해 저장합니다. 카메라 시트 자체에는 비율 토글이 없습니다 — 남은 토글은 모드(사진/스티커)뿐이고, 셔터는 뷰파인더에 보이는 영역 그대로를 JPEG 로 담아 바로 부모에 넘깁니다 (`PhotoImportModal` 미경유). 카메라 시트 안의 앨범 아이콘은 `usePhotoLibraryPicker` 훅으로 OS 앨범을 직접 엽니다.

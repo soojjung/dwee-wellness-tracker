@@ -3,7 +3,7 @@
 A local-first menstrual cycle and condition tracker — built as a sandbox for
 clean architecture, type-safe i18n, and incremental cloud sync.
 
-[Live demo](https://dwee-neon.vercel.app/) · [Architecture notes](./docs/architecture/data-layer.md) · [Engineering harness](#engineering-harness-claude)
+[Live demo](https://dwee-neon.vercel.app/) · [Architecture notes](./docs/architecture/data-layer.md) · [Flow diagrams](./docs/diagrams) · [Engineering harness](#engineering-harness-claude)
 
 ---
 
@@ -199,7 +199,7 @@ pnpm dev                        # http://localhost:3000
 pnpm test                       # lint → typecheck → unit (e2e is separate: pnpm test:e2e)
 ```
 
-Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
+Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Hand-drawn flow diagrams (Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — login, body-type diagnose, diary sticker capture. Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
 
 ---
 
