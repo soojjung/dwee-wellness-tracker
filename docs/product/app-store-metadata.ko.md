@@ -123,3 +123,9 @@ dwee는 원활한 앱 이용을 할 수 있도록 필요한 접근 권한을 요
 생리만 기록하고 끝내지 마세요. 🌷
 생리 주기부터 컨디션, 감정과 일상까지 한곳에 기록해보세요.
 매일의 기록이 쌓일수록 나만의 변화와 패턴을 발견하고 내 몸을 조금 더 이해할 수 있어요.
+
+#### 7. 필수 URL
+
+- Privacy Policy URL: `https://dwee-neon.vercel.app/legal/privacy/?lang=en` (ko: `?lang=ko`)
+- Support URL: `https://dwee-neon.vercel.app/legal/support/?lang=en`
+- 둘 다 `(legal)` 라우트 그룹의 공개 페이지 — 세션 없이 열림. 배포 후 실제 URL 로 재확인.
