@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { DevBridge } from '@/dev/DevBridge';
+import { NativeChrome } from '@/components/app/NativeChrome';
 
 // en-US is the primary market (see .claude memory: feedback_localization).
 // OG metadata is server-rendered once — social crawlers can't see client i18n —
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-dvh bg-brand-gray200 text-neutral-900 antialiased">
         <DevBridge />
+        <NativeChrome />
         {children}
       </body>
     </html>

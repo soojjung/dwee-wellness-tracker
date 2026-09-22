@@ -361,6 +361,8 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] 로그인 화면 연령·약관 동의 (STEP 1.5, 2026-09-22) — `ConsentCheck`(만 14세 이상 + 공개 `/legal/terms`·`/legal/privacy` 링크 동의) 체크 전까지 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt`(로컬 전용, Supabase 컬럼 없음)에 기록, 로그아웃 시 초기화되어 다음 사람에게 다시 묻는다
 - [x] 네이티브 OAuth 복귀 (STEP 2, 2026-09-22) — Capacitor 에서는 시스템 브라우저(`@capacitor/browser`)로 진행하고 `dwee://auth/callback` 로 돌아온 URL 을 `appUrlOpen` 이 `/auth/callback/` 로 넘겨 웹과 같은 경로로 마무리(`lib/auth/nativeCallback.ts`). Info.plist `dwee` 스킴 등록은 `pnpm ios:setup`(Phase 2, 2026-09-22), Supabase Redirect URL 은 출시 계획 Phase 3
 - [x] 로컬 알림 (STEP 4, 2026-09-22) — `domain/notification/schedule.ts`(순수, Vitest 9)가 기록·설정으로 예정 D-N일·지연(예정일+2)·가임기 시작 알림을 09:00 로 계획, `hooks/useNotificationSync` 가 `@capacitor/local-notifications` 로 취소 후 재예약. 권한은 마스터 토글 ON 때 요청, 웹은 "앱에서만 알림" 안내. 실기기 발송 검증은 Phase 4
+- [x] 네이티브 카메라 (STEP 3, 2026-09-23) — B안: 앱 안에서도 `CameraSheet` 의 `getUserMedia` 커스텀 카메라 유지(모드 pill 이 뷰파인더 위에 있어야 해서 OS 카메라 미채택). 권한 거부 카피만 네이티브용(`camera.permissionDeniedNative`, 설정 앱 안내)으로 분기
+- [x] 앱 껍데기 (STEP 5, 2026-09-23) — `@capacitor/status-bar`(루트 `NativeChrome` 이 어두운 글리프, 카메라 시트만 밝은 글리프), `@capacitor/keyboard` `resize: native`, `capacitor.config.ts` `backgroundColor #F5F3F4`(splash-screen 플러그인 없이 단색 LaunchScreen 이 스플래시), 버전 1.0.0, `DevBridge` 프로덕션 비활성 확인, 로그인 힌트에 만 14세 안내
 
 **다이어리**
 - [x] Diary & Event 도메인 — `/log` 를 Diary/Report 토글로 전환, EventCategory(내장 4종 + 사용자 추가) + EventLog(제목/메모/기간/카테고리/생리마크), 생리마크 ↔ PeriodLog 자동 연동. migrations 0006–0007

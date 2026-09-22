@@ -52,7 +52,7 @@
 **현재 구현의 범위와 빈 곳 (2026-09-23 점검)** — 게이트는 자기 신고 한 단계다: `ConsentCheck`(만 14세 이상 + 약관 동의) 체크 전엔 Apple/Google/게스트 버튼 비활성, 체크 후 `settings.ageConfirmedAt` 에 시각 기록(기기 로컬 전용, Supabase 컬럼 없음 → 재설치·로그아웃 시 다시 묻는다). 생년월일·계정 나이 확인·보호자 동의는 없다. COPPA 는 "13세 미만인 걸 실제로 알면서" 수집하는 걸 금지하므로 게이트 + 미만 차단이면 의무가 성립하지 않고, 생년월일을 굳이 받지 않는 것도 그 이유(받으면 "알게" 된다). 다만 약관 제3조⑤·방침 제10조가 약속한 "확인되면 계정 삭제·정보 파기"를 이행할 수단이 아직 없어 두 가지를 후속으로 둔다:
 1. **신고·삭제 창구** (Phase 3, 법적 문서) — 방침 제10조에 "만 14세 미만 아동의 가입을 알게 된 보호자·본인은 `/legal/support` 의 지원 이메일로 알려주시면 확인 후 지체 없이 삭제합니다" 한 줄 추가(ko 원문 + en 번역). 운영 절차: 이메일 수신 → 계정 식별 → `delete-account` 와 같은 경로로 삭제.
 2. **동의 기록의 서버 보관** (Phase 3, DB — 선택) — `profiles.age_confirmed_at` 컬럼을 추가하고 로컬 `ageConfirmedAt` 을 로그인 시 올려 두면 분쟁 시 "언제 14세 이상이라고 동의했는지"를 보여줄 수 있다. 필수는 아니며 마이그레이션 1건 규모. 도입하면 재설치 후 다시 묻지 않게 할 수도 있다.
-3. 게이트 안내 카피 — 지금은 "계속하려면 위 항목에 체크해 주세요" 뿐이라 14세 미만은 왜 못 들어오는지 알 수 없다. 심사 지적 가능성은 낮지만 `consent.hint` 에 연령 요건을 한 줄 덧붙이는 건 STEP 5 에서 검토.
+3. 게이트 안내 카피 — 지금은 "계속하려면 위 항목에 체크해 주세요" 뿐이라 14세 미만은 왜 못 들어오는지 알 수 없다. 심사 지적 가능성은 낮지만 `consent.hint` 에 연령 요건을 한 줄 덧붙이는 건 STEP 5 에서 검토. → ✅ STEP 5 에서 반영("Check the box above — dwee is for ages 14 and up.").
 
 ## 2. 코드 준비 (Phase 1)
 
@@ -67,7 +67,7 @@
   - 로그아웃 후 `/login` 복귀, 익명→로그인 마이그레이션이 네이티브에서도 도는지 확인.
 - **STEP 3 — 카메라·앨범** ✅ 코드 2026-09-23 (B안: 커스텀 카메라 유지): 네이티브에서도 `CameraSheet` 의 `getUserMedia` 라이브 프리뷰를 그대로 쓴다(WKWebView iOS 14.3+). OS 카메라(`Camera.getPhoto`)로 바꾸면 사진/스티커 모드 pill 을 뷰파인더 위에 못 얹어 Figma 013_2 와 달라지므로 채택하지 않음. 코드 변경은 권한 거부 카피뿐 — 네이티브에서는 `camera.permissionDeniedNative`(설정 앱 > dwee > 카메라 안내), 웹은 기존 `permissionDenied`(브라우저 설정) 유지. 앨범은 이미 `Camera.pickImages`. 실기기 검증(프리뷰·전후면 전환·권한 팝업)은 Phase 4. 원안: `Camera.getPhoto({ source: Camera })` 분기.
 - **STEP 4 — 로컬 알림** ✅ 코드 2026-09-22 (A안 채택): `@capacitor/local-notifications` 추가. 순수 스케줄러 `domain/notification/schedule.ts`(Vitest 9) — 예정 D-N일(설정 휠), 지연 = 예정일 +2일, 가임기 = 추정 시작일, 모두 09:00, 지난 날짜·기록 없음(예측 불가)이면 예약 없음. `hooks/useNotificationSync`(AppShell)가 기록·설정 변경마다 전부 취소 후 재예약, 로그아웃·탈퇴 시 취소. 권한은 마스터 토글 ON 때 1회 요청(거부 시 토글 안 켜지고 안내). 웹은 "앱에서만 알림" 안내. 실기기 발송 검증은 Phase 4. 원안: `@capacitor/local-notifications` 추가. 예측 결과(`predictNextPeriod`)와 설정(예정 D-N일, 지연, 가임기)으로 알림 시각을 계산하는 순수 함수를 `domain/notification/` 에 두고(Vitest), 기록·설정이 바뀔 때마다 예약을 전부 취소 후 재예약. 권한 요청은 마스터 토글을 켤 때 1회. 웹(PWA)에서는 토글을 두되 "앱에서만 알림이 와요" 안내. 카피는 en 원본·ko 번역.
-- **STEP 5 — 앱 껍데기 정리**: `@capacitor/status-bar`(밝은 배경 → 어두운 아이콘), `@capacitor/splash-screen`, `NEXT_PUBLIC_SITE_URL` 프로덕션 값, `package.json` 버전 1.0.0, 개발용 `DevBridge` 가 프로덕션 번들에서 비활성인지 확인(현재 `NODE_ENV` 가드 있음), 키보드가 올라올 때 시트·입력창 동작 점검.
+- **STEP 5 — 앱 껍데기 정리** ✅ 코드 2026-09-23: `@capacitor/status-bar` — 루트 레이아웃의 `NativeChrome` 이 어두운 글리프(`Style.Light`)로 고정, 어두운 `CameraSheet` 만 열려 있는 동안 밝은 글리프로 전환(`lib/native/statusBar.ts`). `@capacitor/keyboard` `resize: 'native'` — 키보드가 뜨면 WebView 를 줄여 바텀시트 입력창이 키보드 위로 올라오게(실기기 확인은 Phase 4). **`@capacitor/splash-screen` 은 넣지 않음** — `setup-ios.mjs` 가 만든 `#F5F3F4` 단색 LaunchScreen 이 곧 스플래시이고 `capacitor.config.ts` `backgroundColor` 를 같은 색으로 맞춰 전환 플래시가 없다(첫 실행 소개 스플래시는 앱 안에 따로 있음). `package.json` 1.0.0 → `ios:setup` 이 `MARKETING_VERSION` 반영. `DevBridge` 는 `NODE_ENV` 가드로 프로덕션 export 에서 시드 본문이 비워진 고아 청크(2.3 KB)만 남고 어디서도 참조되지 않음을 `out/` 에서 확인. `consent.hint` 에 만 14세 안내 추가(§1.2 후속 3). **남은 것**: `SITE_URL` 프로덕션 값은 리포가 아니라 Vercel 환경변수 — 도메인 확정(현재 `dwee-neon.vercel.app`) 후 Phase 3 에서 설정. 원안: status-bar, splash-screen, SITE_URL, 1.0.0, DevBridge 확인, 키보드 점검.
 
 ## 3. 네이티브 프로젝트 (Phase 2)
 
@@ -90,7 +90,7 @@
 - **Edge Functions**: `body-type-analyze`(갱신된 프롬프트 재배포 필요), `sticker-cutout`, `delete-account` 배포 상태와 시크릿(OPENAI_API_KEY, remove.bg 키, service role) 확인. 일일 한도(10회 / 누끼 한도)가 심사 시 막히지 않도록 리뷰 계정은 한도 여유 확인.
 - **DB**: 마이그레이션 0001~0015 가 프로덕션에 모두 적용됐는지 대시보드에서 확인(CLI 이력은 비어 있음). §1.2 후속 2(`profiles.age_confirmed_at`) 도입 여부를 여기서 결정.
 - **법적 문서**: §1.2 후속 1 — 개인정보처리방침 제10조에 만 14세 미만 신고·삭제 창구(지원 이메일) 문장 추가, ko 원문 + en 번역 동기.
-- **Vercel**: 프로덕션 도메인 확정(현재 `dwee-neon.vercel.app`), 환경변수 3종, OG 이미지 URL.
+- **Vercel**: 프로덕션 도메인 확정(현재 `dwee-neon.vercel.app`), 환경변수 3종(`SITE_URL` 은 확정 도메인으로 — 루트 레이아웃 `metadataBase`, 빌드 시점에 굳음), OG 이미지 URL.
 
 ## 5. QA (Phase 4)
 

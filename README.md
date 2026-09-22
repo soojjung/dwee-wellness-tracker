@@ -194,7 +194,7 @@ Solo project. End-to-end ownership of:
 - Storage: IndexedDB schema v10 (local), Supabase migrations through 0015 (remote), three Edge Functions (`body-type-analyze`, `sticker-cutout`, `delete-account`).
 - Notifications: local reminders (period due / delay / fertile window) scheduled on device via `@capacitor/local-notifications` from the pure `domain/notification` planner; web build shows settings only.
 - Not wired yet: background sync, multi-device conflict resolution.
-- Next: iOS release prep (native OAuth, public legal pages, local notifications) — see [`docs/product/release-plan-v1.md`](./docs/product/release-plan-v1.md).
+- iOS release prep (Phase 1–2) done: public legal pages, consent gate, native OAuth return, local notifications, in-app camera, status bar / keyboard shell, regenerable Xcode project (`pnpm ios:setup`), version 1.0.0. Next: console setup + TestFlight — see [`docs/product/release-plan-v1.md`](./docs/product/release-plan-v1.md).
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript strict · Zustand · IndexedDB (`idb-keyval`) · Supabase (Postgres + Auth + Edge Functions) · Tailwind · react-hook-form · Vitest · Playwright · Capacitor 6 (iOS).
 
