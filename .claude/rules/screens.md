@@ -17,7 +17,7 @@ paths:
 
 - `(intro)` — 풀스크린, BottomTabNav 없음. 흰 테마(`(auth)`와 색이 달라 그룹을 분리). 기기 최초 실행 시 1회만 보이는 소개 슬라이드(`/onboarding`) 전용. `AuthGuard`가 감싸지 않는다 — `OnboardingScreen`이 자체적으로 hydrate·리다이렉트.
 - `(auth)` — 풀스크린, BottomTabNav 없음. 로그인(`/login`) 전용. 마찬가지로 `AuthGuard` 밖.
-- `(legal)` — 공개 문서(`/legal/terms`, `/legal/privacy`). `AuthGuard` 밖, 세션 없이 열린다(App Store·OAuth 동의 화면 URL). `PublicLegalShell` 이 settings 만 hydrate 하고 `?lang=` 으로 언어 고정. 본문은 `components/legal/*Article` 로 `/settings/*` 화면과 공유.
+- `(legal)` — 공개 문서(`/legal/terms`, `/legal/privacy`, `/legal/support`). `AuthGuard` 밖, 세션 없이 열린다(App Store·OAuth 동의 화면 URL). `PublicLegalShell` 이 settings 만 hydrate 하고 `?lang=` 으로 언어 고정. 본문은 `components/legal/*Article` 로 `/settings/*` 화면과 공유.
 - `(app)` — `<AppShell>` 자동 래핑. BottomTabNav 항상 표시.
 - `(fullscreen)` — 풀스크린, BottomTabNav 없음. AppShell 밖의 몰입형 편집 화면 전용.  
   현재 포함: `/home/customize`, `/home/customize/edit-photos`, `/home/customize/edit-photos/[slot]`, `/log/customize`, `/foods/[id]`, `/magazine/[slug]`, `/magazine/bookmarks`, `/magazine/personal-body-type/diagnose`, `/magazine/personal-body-type/diagnose/result`, `/magazine/personal-body-type/share/[type]`, `/settings/account`, `/settings/withdraw`.

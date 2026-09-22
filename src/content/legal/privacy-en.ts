@@ -412,7 +412,7 @@ export const PRIVACY_EN: PrivacyDocument = {
         {
           kind: 'kv',
           rows: [
-            { label: 'Processor', value: 'Anthropic, PBC' },
+            { label: 'Processor', value: 'OpenAI, L.L.C.' },
             { label: 'Outsourced task', value: 'Body-type analysis AI processing' },
             {
               label: 'Personal information processed',
@@ -422,7 +422,7 @@ export const PRIVACY_EN: PrivacyDocument = {
             {
               label: 'Processing method',
               value:
-                'Transmitted with each API request and deleted immediately after analysis is complete. It may be retained automatically for up to 30 days under Anthropic’s abuse-monitoring policy, and is not used to train AI models.',
+                'Transmitted with each API request and deleted immediately after analysis is complete. It may be retained automatically for up to 30 days under OpenAI’s API data policy (abuse monitoring), and is not used to train AI models.',
             },
           ],
         },
@@ -476,11 +476,11 @@ export const PRIVACY_EN: PrivacyDocument = {
             },
           ],
         },
-        { kind: 'subhead', text: '2. Anthropic (body-type analysis AI)' },
+        { kind: 'subhead', text: '2. OpenAI (body-type analysis AI)' },
         {
           kind: 'kv',
           rows: [
-            { label: 'Recipient', value: 'Anthropic, PBC (contact: privacy@anthropic.com)' },
+            { label: 'Recipient', value: 'OpenAI, L.L.C. (contact: privacy@openai.com)' },
             { label: 'Destination country', value: 'United States' },
             { label: 'Items transferred', value: 'Photo the User provides for body-type analysis' },
             {
@@ -490,7 +490,7 @@ export const PRIVACY_EN: PrivacyDocument = {
             {
               label: 'Retention and use period',
               value:
-                'Deleted immediately after analysis is complete. It may, however, be retained automatically for up to 30 days under Anthropic’s abuse-monitoring policy, and is not used to train AI models.',
+                'Deleted immediately after analysis is complete. It may, however, be retained automatically for up to 30 days under OpenAI’s API data policy (abuse monitoring), and is not used to train AI models.',
             },
             {
               label: 'Method of transfer',

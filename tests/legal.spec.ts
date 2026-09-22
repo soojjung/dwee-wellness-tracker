@@ -17,3 +17,11 @@ test('legal — terms renders publicly and the toggle switches language', async 
   await page.getByRole('link', { name: 'English' }).click();
   await expect(page.getByRole('heading', { level: 2 })).toHaveText('dwee Terms of Service');
 });
+
+test('legal — support page renders publicly with the contact email', async ({ page }) => {
+  await page.goto('/legal/support/?lang=en');
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText('Email us');
+  await expect(page.getByRole('link', { name: 'sojjung3@gmail.com' })).toBeVisible();
+  await page.goto('/legal/support/?lang=ko');
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText('이메일 문의하기');
+});

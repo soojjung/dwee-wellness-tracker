@@ -229,7 +229,7 @@ src/
 │   ├── (auth)/                   로그인 (풀스크린, 탭바 없음, AuthGuard 밖)
 │   │   └── login/
 │   ├── (legal)/                  공개 법적 문서 (세션 불필요, AuthGuard 밖 — App Store/OAuth 동의 화면 링크용)
-│   │   └── legal/terms, legal/privacy
+│   │   └── legal/terms, legal/privacy, legal/support
 │   ├── (app)/                    인증 후 메인 (AppShell + BottomTabNav)
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환 (캘린더 포함)
@@ -259,7 +259,7 @@ src/
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
 │   ├── auth/                     LoginScreen, LoginHero, AuthGuard
-│   ├── legal/                    PublicLegalShell, PublicTermsScreen, PublicPrivacyScreen, TermsArticle, PrivacyArticle, useLegalLocale — `/settings/terms`·`/settings/privacy`(my-page)와 본문 컴포넌트 공유
+│   ├── legal/                    PublicLegalShell, PublicTermsScreen, PublicPrivacyScreen, PublicSupportScreen, SupportContactCard, TermsArticle, PrivacyArticle, useLegalLocale — `/settings/terms`·`/settings/privacy`(my-page)와 본문 컴포넌트 공유
 │   ├── my-page/                  MyPageScreen, AuthCard, CycleSummaryCard, MyTestsCard, PreferencesCard, SupportCard, AccountManagementCard, AccountEditScreen, WithdrawConfirmDialog, WithdrawReasonScreen, NotificationsScreen, TermsScreen, PrivacyScreen, QnaScreen
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer, FitStage(시안 좌표계 통째로 확대·축소)
 │
