@@ -29,7 +29,7 @@ stateDiagram-v2
 
 Report 탭이 활성화되면 `<CycleReportScreen />` 을 렌더합니다. 구성 요소:
 
-1. **ReportHeader** — 화면 제목 + 우상단 새 기록 버튼 (LogEntryDialog 트리거).
+1. **ReportHeader** — 화면 제목 + 우상단 새 기록 버튼 (LogEntryDialog 트리거). 이 시트는 일정 시트(`EventFormSheet`)와 같은 껍데기(위 120px 남기는 높이, ○X / 제목 / ○✓ 헤더, ✓가 저장)이고 컨디션 칸은 `EventConditionSection` 을 공유한다 (Figma 904:6959, 2026-09-22).
 2. **StatusBadge** — `classifyCycleStatus()` 결과를 7단계 코드(`stable` / `regular` / `slightlyIrregular` / `irregular` / `shortPeriod` / `longPeriod` / `insufficient`)로 표시. 탭하면 StatusTooltip이 열림.
 3. **CycleChart** — 최근 주기 길이 시계열 차트.
 4. **RecentCyclesCard** — 최근 생리 기록 목록 (날짜 + 기간).

@@ -879,7 +879,7 @@ export const ko: Dictionary = {
     todaySkin: '피부',
     todaySleep: '수면',
     todayExercise: '운동',
-    memoPlaceholder: '오늘의 메모 (선택)',
+    memoPlaceholder: '오늘의 메모',
     save: '저장',
     saving: '저장 중이에요...',
   },
