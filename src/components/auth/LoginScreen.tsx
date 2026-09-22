@@ -25,6 +25,7 @@ export function LoginScreen() {
   const authHydrate = useAuthStore((s) => s.hydrate);
   const authHydrated = useAuthStore((s) => s.hydrated);
   const authError = useAuthStore((s) => s.error);
+  const authLoading = useAuthStore((s) => s.loading);
   const user = useAuthStore((s) => s.user);
   const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth);
   const signInAnonymously = useAuthStore((s) => s.signInAnonymously);
@@ -70,6 +71,13 @@ export function LoginScreen() {
     const id = setTimeout(() => setConfirmToast(null), 2400);
     return () => clearTimeout(id);
   }, [confirmToast]);
+
+  // Native only: the system-browser sheet was dismissed without completing
+  // OAuth (authStore drops `loading` on `browserFinished`) — re-enable the
+  // buttons. On web the page has navigated away by the time this could fire.
+  useEffect(() => {
+    if (pending && !authLoading && !user) setPending(null);
+  }, [pending, authLoading, user]);
 
   useEffect(() => {
     if (!authError) return;

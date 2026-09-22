@@ -1,6 +1,10 @@
 'use client';
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
+import { NATIVE_AUTH_REDIRECT, toWebCallbackPath } from '@/lib/auth/nativeCallback';
 import { supabase, isSupabaseConfigured } from '@/data/adapters/supabase/client';
 import { getRepoMode, setRepoMode, resetAllUserData, type RepoMode } from '@/data';
 import {
@@ -49,6 +53,31 @@ interface AuthState {
 }
 
 let subscribed = false;
+let nativeUrlListenerRegistered = false;
+let callbackArrived = false;
+
+/**
+ * Native only: the OAuth provider hands control back through the `dwee://`
+ * scheme (see lib/auth/nativeCallback). Forward that URL to the web callback
+ * page so the same code path finishes the sign-in, and close the system
+ * browser sheet that is still covering the app on iOS.
+ */
+function registerNativeAuthReturn(): void {
+  if (nativeUrlListenerRegistered || !Capacitor.isNativePlatform()) return;
+  nativeUrlListenerRegistered = true;
+  void CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+    const path = toWebCallbackPath(url);
+    if (!path) return;
+    callbackArrived = true;
+    void Browser.close().catch(() => undefined);
+    window.location.replace(path);
+  });
+  // The user can dismiss the browser sheet without finishing. Without this the
+  // login screen would sit on "Connecting..." forever.
+  void Browser.addListener('browserFinished', () => {
+    if (!callbackArrived) useAuthStore.setState({ loading: false });
+  });
+}
 
 function classifyError(e: unknown): AuthErrorKind {
   const msg = (e as Error)?.message?.toLowerCase() ?? '';
@@ -100,6 +129,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       return;
     }
     set({ loading: true, error: null });
+    registerNativeAuthReturn();
 
     if (!subscribed) {
       subscribed = true;
@@ -147,6 +177,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (typeof window === 'undefined') return;
     set({ loading: true, error: null });
     try {
+      if (Capacitor.isNativePlatform()) {
+        // Google blocks OAuth inside WebViews and `capacitor://localhost` is
+        // not a redirect target Supabase can send anyone back to, so the
+        // flow runs in the system browser and returns via the custom scheme.
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: NATIVE_AUTH_REDIRECT, skipBrowserRedirect: true },
+        });
+        if (error || !data.url) throw error ?? new Error('no oauth url');
+        await Browser.open({ url: data.url, windowName: '_self' });
+        return;
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
