@@ -886,7 +886,7 @@ export const en = {
     todaySkin: 'Skin',
     todaySleep: 'Sleep',
     todayExercise: 'Exercise',
-    memoPlaceholder: 'Optional note for today',
+    memoPlaceholder: 'Note for today',
     save: 'Save',
     saving: 'Saving...',
   },

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { BinIcon } from '@/components/ui/icons';
+import { BinIcon, HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
 import type { ColorPaletteId, EventCategory } from '@/types';
 import { ColorPaletteSelector } from './ColorPaletteSelector';
 
@@ -92,26 +92,17 @@ export function EventCategoryFormSheet({
         {/* Figma 012_9 header: matches EventFormSheet — circular X (left),
             centered title, circular ✓ (right — pink200 when canSave,
             gray400 when disabled). */}
+        {/* Figma 873:5486 — 일정 시트와 같은 40px ○X / ○✓ (공용 헤더 글리프), 화면명 18px. */}
         <header className="relative flex items-center justify-between px-4 pb-3 pt-4">
           <button
             type="button"
             onClick={handleClose}
             aria-label={t.report.diary.categorySheet.close}
-            className="grid size-9 place-items-center rounded-full bg-brand-gray100 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+            className="grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              className="h-4 w-4"
-              aria-hidden
-            >
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
+            <HeaderCancelGlyph className="size-10" />
           </button>
-          <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-brand-gray900">
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-brand-gray900">
             {title}
           </h2>
           <button
@@ -120,22 +111,13 @@ export function EventCategoryFormSheet({
             aria-label={t.report.diary.categorySheet.save}
             disabled={!canSave}
             className={
-              'grid size-9 place-items-center rounded-full text-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
-              (canSave ? 'bg-brand-pink200' : 'bg-brand-gray400')
+              'grid size-10 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+              (canSave
+                ? 'bg-brand-pink200 text-brand-pink50'
+                : 'bg-brand-gray400 text-brand-gray200')
             }
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-              aria-hidden
-            >
-              <path d="M5 12.5l4.5 4.5L19 7.5" />
-            </svg>
+            <HeaderCheckGlyph className="size-10" />
           </button>
         </header>
 

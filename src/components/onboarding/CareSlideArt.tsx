@@ -92,15 +92,16 @@ export function CareSlideArt() {
             WebkitMaskImage: 'url(/onboarding/keyword-cloud.svg)',
             maskRepeat: 'no-repeat',
             WebkitMaskRepeat: 'no-repeat',
-            maskPosition: '42px 25.7px',
-            WebkitMaskPosition: '42px 25.7px',
+            // 구름은 시안(841:5038)처럼 카드 가운데. 세로는 카드 안에서 살짝 위쪽.
+            maskPosition: 'center 0px',
+            WebkitMaskPosition: 'center 0px',
             maskSize: '200.4px 137.3px',
             WebkitMaskSize: '200.4px 137.3px',
           }}
         >
-          {/* 카드는 기울어 있어도 글자는 시안처럼 수평으로 둔다. 구름은 카드 중심보다
-              오른쪽에 있어서, 글자가 긴 언어(en)도 잘리지 않게 구름 가운데로 옮긴다. */}
-          <div className="flex translate-x-[44px] translate-y-[14px] rotate-[15deg] flex-col gap-1">
+          {/* 글자도 카드와 함께 기운다. 구름 모양의 중심(뾰족한 위쪽이 아니라 몸통)에
+              오도록 살짝 내린다. */}
+          <div className="flex translate-y-[6px] flex-col gap-1">
             <p className="text-[11.2px] font-medium leading-normal">{keyword.subtitle}</p>
             <p className="text-[16.8px] font-semibold leading-normal">
               {keyword.main} {keyword.emoji}

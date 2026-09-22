@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
-import { Button } from '@/components/ui/Button';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { usePeriodStore } from '@/store/periodStore';
@@ -10,18 +9,9 @@ import { useConditionStore } from '@/store/conditionStore';
 import { defaultPeriodEndDate, resolvePeriodEndOnStartChange } from '@/domain/cycle/recordPolicy';
 import { DateRow } from '@/components/ui/DateRow';
 import { InlineDatePicker } from '@/components/diary/InlineDatePicker';
-import {
-  MOOD_VALUES,
-  ENERGY_VALUES,
-  PAIN_VALUES,
-  BLOATING_VALUES,
-  APPETITE_VALUES,
-  SKIN_VALUES,
-  SLEEP_VALUES,
-  EXERCISE_VALUES,
-} from '@/constants/conditionOptions';
 import type { Mood, Energy, Pain, Bloating, Appetite, Skin, Sleep, Exercise } from '@/types';
-import { ConditionRow } from './ConditionRow';
+import { EventConditionSection } from '@/components/diary/EventConditionSection';
+import { HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
 
 const MEMO_MAX = 200;
 
@@ -133,31 +123,46 @@ export function LogEntryDialog({
     <div
       role="dialog"
       aria-modal="true"
+      aria-label={t.log.addEntryTitle}
       className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={handleClose}
     >
+      {/* Figma 904:6959 — 일정 시트(EventFormSheet)와 같은 껍데기: 위 120px 을 남기는 높이,
+          둥근 헤더의 ○X / 제목 / ○✓. 취소·저장 푸터는 없고 ✓ 가 저장이다. */}
       <div
-        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-brand-gray200 shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:rounded-3xl"
+        className="flex h-[calc(100dvh-120px-env(safe-area-inset-top,0px))] w-full max-w-md flex-col rounded-t-3xl bg-brand-gray200 shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between px-6 py-4">
-          <h2 className="text-base font-semibold text-brand-gray900">{t.log.addEntryTitle}</h2>
+        <header className="relative flex items-center justify-between px-4 pb-3 pt-4">
           <button
             type="button"
             aria-label={t.home.cancel}
             disabled={submitting}
             onClick={handleClose}
-            className="text-xl text-brand-gray800"
+            className="grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900 disabled:opacity-60"
           >
-            ×
+            <HeaderCancelGlyph className="size-10" />
+          </button>
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-[20px] font-semibold text-brand-gray900">
+            {t.log.addEntryTitle}
+          </h2>
+          <button
+            type="button"
+            aria-label={t.log.save}
+            disabled={disabled}
+            onClick={handleSave}
+            className={
+              'grid size-10 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink800 ' +
+              (disabled
+                ? 'bg-brand-gray400 text-brand-gray200'
+                : 'bg-brand-pink200 text-brand-pink50')
+            }
+          >
+            <HeaderCheckGlyph className="size-10" />
           </button>
         </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
-          {/* Period date card — matches EventFormSheet's date rows: tap
-              label to expand an inline calendar underneath, pink accent
-              on the active row. Replaces the native `<input type="date">`
-              browser picker which read as raw / unstyled. */}
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-6 pt-2">
           <div className="overflow-hidden rounded-2xl bg-brand-white">
             <DateRow
               label={t.home.startPeriodStartLabel}
@@ -196,91 +201,36 @@ export function LogEntryDialog({
             ) : null}
           </div>
 
-          <section className="space-y-4 rounded-2xl bg-brand-white p-4">
-            <h3 className="text-sm font-medium text-brand-gray800">
-              {t.log.conditionSectionLabel}
-            </h3>
-            <ConditionRow
-              label={t.log.todayMood}
-              values={MOOD_VALUES}
-              labels={t.condition.mood}
-              value={mood}
-              onChange={setMood}
-            />
-            <ConditionRow
-              label={t.log.todayEnergy}
-              values={ENERGY_VALUES}
-              labels={t.condition.energy}
-              value={energy}
-              onChange={setEnergy}
-            />
-            <ConditionRow
-              label={t.log.todayPain}
-              values={PAIN_VALUES}
-              labels={t.condition.pain}
-              value={pain}
-              onChange={setPain}
-            />
-            <ConditionRow
-              label={t.log.todayBloating}
-              values={BLOATING_VALUES}
-              labels={t.condition.bloating}
-              value={bloating}
-              onChange={setBloating}
-            />
-            <ConditionRow
-              label={t.log.todayAppetite}
-              values={APPETITE_VALUES}
-              labels={t.condition.appetite}
-              value={appetite}
-              onChange={setAppetite}
-            />
-            <ConditionRow
-              label={t.log.todaySkin}
-              values={SKIN_VALUES}
-              labels={t.condition.skin}
-              value={skin}
-              onChange={setSkin}
-            />
-            <ConditionRow
-              label={t.log.todaySleep}
-              values={SLEEP_VALUES}
-              labels={t.condition.sleep}
-              value={sleep}
-              onChange={setSleep}
-            />
-            <ConditionRow
-              label={t.log.todayExercise}
-              values={EXERCISE_VALUES}
-              labels={t.condition.exercise}
-              value={exercise}
-              onChange={setExercise}
-            />
+          <EventConditionSection
+            mood={mood}
+            energy={energy}
+            pain={pain}
+            bloating={bloating}
+            appetite={appetite}
+            skin={skin}
+            sleep={sleep}
+            exercise={exercise}
+            onChangeMood={setMood}
+            onChangeEnergy={setEnergy}
+            onChangePain={setPain}
+            onChangeBloating={setBloating}
+            onChangeAppetite={setAppetite}
+            onChangeSkin={setSkin}
+            onChangeSleep={setSleep}
+            onChangeExercise={setExercise}
+          />
+
+          {/* 시안에는 없지만 기존 기능(하루 메모)이라 유지 — 일정 시트의 메모 칸과 같은 모양. */}
+          <div className="overflow-hidden rounded-2xl bg-brand-white">
             <textarea
               value={memo}
               maxLength={MEMO_MAX}
               placeholder={t.log.memoPlaceholder}
               onChange={(e) => setMemo(e.target.value)}
-              className="min-h-[72px] w-full resize-none rounded-2xl border border-brand-gray300 px-4 py-3 text-sm text-brand-gray900 placeholder:text-brand-gray600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2"
+              className="block min-h-[72px] w-full resize-none bg-transparent px-4 py-3 text-sm text-brand-gray900 placeholder:text-brand-gray400 focus-visible:outline-none"
             />
-          </section>
+          </div>
         </div>
-
-        <footer className="flex gap-2 border-t border-brand-gray300 bg-brand-gray200 px-6 py-4">
-          <Button
-            variant="ghost"
-            size="md"
-            fullWidth
-            disabled={submitting}
-            onClick={handleClose}
-            className="bg-brand-white text-brand-gray900"
-          >
-            {t.home.cancel}
-          </Button>
-          <Button variant="primary" size="md" fullWidth disabled={disabled} onClick={handleSave}>
-            {submitting ? t.log.saving : t.log.save}
-          </Button>
-        </footer>
       </div>
     </div>
   );
