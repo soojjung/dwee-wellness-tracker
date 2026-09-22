@@ -6,6 +6,9 @@ export type ISODate = string;
 
 export const todayISO = (): ISODate => format(startOfDay(new Date()), 'yyyy-MM-dd');
 
+/** Full ISO 8601 timestamp (UTC) for audit-style fields such as consent times. */
+export const nowISODateTime = (): string => new Date().toISOString();
+
 export const toISO = (d: Date): ISODate => format(d, 'yyyy-MM-dd');
 
 export const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

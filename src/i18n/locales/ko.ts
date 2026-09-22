@@ -17,6 +17,15 @@ export const ko: Dictionary = {
       missingConfig: '서버 연결 설정이 비어있어요. 관리자에게 문의해 주세요.',
       oauthFailed: '로그인을 완료하지 못했어요. 다시 시도해 주세요.',
     },
+    consent: {
+      prefix: '만 14세 이상이며 ',
+      terms: '이용약관',
+      join: '과 ',
+      privacy: '개인정보처리방침',
+      suffix: '에 동의합니다',
+      ariaLabel: '만 14세 이상 확인 및 약관 동의',
+      hint: '계속하려면 위 항목에 체크해 주세요',
+    },
   },
   nav: {
     home: '홈',

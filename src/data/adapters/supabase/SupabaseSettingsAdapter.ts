@@ -15,9 +15,10 @@ interface ProfileRow {
 }
 
 function rowToSettings(row: ProfileRow): UserSettings {
-  // Only known Supabase columns are mapped; new notification sub-toggles are
-  // not persisted server-side yet (they live in IndexedDB only until push
-  // infrastructure is wired). Spread defaults so those fields fall back safely.
+  // Only known Supabase columns are mapped; the notification sub-toggles
+  // (IndexedDB only until push infrastructure is wired) and `ageConfirmedAt`
+  // (deliberately per-install, see UserSettings) never reach the server.
+  // Spread defaults so those fields fall back safely.
   return {
     ...DEFAULT_USER_SETTINGS,
     locale: row.locale,

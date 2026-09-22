@@ -258,7 +258,7 @@ src/
 │   ├── diary/                    DiaryScreen, DiaryHeader, LogViewToggle, DiaryMonthGrid, DiaryDayCell, DiaryWeekEventLayer, EventFormSheet (+ EventConditionSection) 등
 │   ├── diary-customize/          DiaryCustomizeScreen, StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer 등
 │   ├── report/                   CycleReportScreen, StatusBadge, CycleChart, RecentCyclesCard 등
-│   ├── auth/                     LoginScreen, LoginHero, AuthGuard
+│   ├── auth/                     LoginScreen, LoginHero, AuthGuard, ConsentCheck
 │   ├── legal/                    PublicLegalShell, PublicTermsScreen, PublicPrivacyScreen, PublicSupportScreen, SupportContactCard, TermsArticle, PrivacyArticle, useLegalLocale — `/settings/terms`·`/settings/privacy`(my-page)와 본문 컴포넌트 공유
 │   ├── my-page/                  MyPageScreen, AuthCard, CycleSummaryCard, MyTestsCard, PreferencesCard, SupportCard, AccountManagementCard, AccountEditScreen, WithdrawConfirmDialog, WithdrawReasonScreen, NotificationsScreen, TermsScreen, PrivacyScreen, QnaScreen
 │   └── ui/                       Button, Toast, ChoiceGroup, PageContainer, FitStage(시안 좌표계 통째로 확대·축소)
@@ -361,6 +361,8 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] Supabase 기반 셋업 — auth store, 익명 로그인, 어댑터 wiring (`data/index.ts` 분기), Apple/Google OAuth, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 게이트, 로그아웃 후 `/login` 복귀 + 스토어 rehydrate (2026-09-19: 기기 최초 실행 시 `/login` 앞에 소개 슬라이드가 추가됨 — 아래 항목 참고)
 - [x] 계정 관리 — 회원 탈퇴 (`delete-account` Edge Function, 2단계 확인 + 사유 수집 `withdrawal_feedbacks`, migration 0011), 계정 편집(`/settings/account`)
 - [x] 첫 실행 온보딩 (2026-09-19) — `(intro)` 라우트 그룹, 기기 스코프 `introSeen` 플래그(`IntroRepository`, 로컬 전용, 계정과 무관). 스플래시(최소 2초) → 소개 슬라이드 3장(스와이프 + 건너뛰기) → `/login`. 로그인 화면엔 온보딩 직후 1회만 스티커 fly-in 연출(`loginEntrance` 신호). 계정에 기록이 없고 `onboardingCompleted` 가 false면 첫 홈 진입 시 생리일 기입 바텀시트(`PeriodSelectSheet variant="intro"`)가 한 번 더 뜬다 — 선택 없이 시작해도 계정 설정에 완료로 기록되어 다시 묻지 않음
+- [x] 로그인 화면 연령·약관 동의 (STEP 1.5, 2026-09-22) — `ConsentCheck`(만 14세 이상 + 공개 `/legal/terms`·`/legal/privacy` 링크 동의) 체크 전까지 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt`(로컬 전용, Supabase 컬럼 없음)에 기록, 로그아웃 시 초기화되어 다음 사람에게 다시 묻는다
+- [x] 네이티브 OAuth 복귀 (STEP 2, 2026-09-22) — Capacitor 에서는 시스템 브라우저(`@capacitor/browser`)로 진행하고 `dwee://auth/callback` 로 돌아온 URL 을 `appUrlOpen` 이 `/auth/callback/` 로 넘겨 웹과 같은 경로로 마무리(`lib/auth/nativeCallback.ts`). Info.plist 스킴 등록·Supabase Redirect URL 은 출시 계획 Phase 2·3
 
 **다이어리**
 - [x] Diary & Event 도메인 — `/log` 를 Diary/Report 토글로 전환, EventCategory(내장 4종 + 사용자 추가) + EventLog(제목/메모/기간/카테고리/생리마크), 생리마크 ↔ PeriodLog 자동 연동. migrations 0006–0007

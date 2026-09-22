@@ -190,7 +190,7 @@ Solo project. End-to-end ownership of:
 **Status — v1.0 (MVP1 complete).**
 
 - Shipped: cycle record/predict/insights, condition log, diary (events, holidays, stickers), cycle report, magazine + body-type diagnose, home customization, onboarding, MyPage (language, notifications UI, legal, account edit/delete).
-- Auth: login gate on cold start, anonymous + Apple/Google OAuth, anonymous→account migration, 6-store rehydrate on mode switch.
+- Auth: login gate on cold start, age/terms consent gate before any sign-in path (STEP 1.5), anonymous + Apple/Google OAuth (system browser + `dwee://auth/callback` return on Capacitor, STEP 2), anonymous→account migration, 6-store rehydrate on mode switch.
 - Storage: IndexedDB schema v10 (local), Supabase migrations through 0015 (remote), three Edge Functions (`body-type-analyze`, `sticker-cutout`, `delete-account`).
 - Not wired yet: notification delivery (settings only), background sync, multi-device conflict resolution.
 - Next: iOS release prep (native OAuth, public legal pages, local notifications) — see [`docs/product/release-plan-v1.md`](./docs/product/release-plan-v1.md).

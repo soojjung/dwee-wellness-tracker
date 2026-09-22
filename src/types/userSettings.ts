@@ -20,6 +20,13 @@ export interface UserSettings {
    * 의 `resolveHolidayCountries` 가 한다.
    */
   holidayCountries: readonly HolidayCountry[] | null;
+  /**
+   * ISO datetime of the login-screen consent tap (14+ and terms/privacy).
+   * `null` = not yet confirmed on this install. Kept local-only (not a
+   * Supabase column) and wiped by `resetAllUserData`, so a sign-out asks
+   * again — the next person on the device may not be the same one.
+   */
+  ageConfirmedAt: string | null;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -33,4 +40,5 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   onboardingCompleted: false,
   locale: 'en',
   holidayCountries: null,
+  ageConfirmedAt: null,
 };

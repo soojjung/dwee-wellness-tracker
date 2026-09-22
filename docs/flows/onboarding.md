@@ -58,6 +58,14 @@ stateDiagram-v2
 - **Leaving**: 마지막 "다음" 또는 "건너뛰기" 시 `leaving=true` + `queueLoginEntrance()`(로그인 스티커 연출 예약) + `markSeen()`을 호출한다. `leaving` 이 true 인 동안은 `introSeen` 이 이미 true 로 바뀌어도 스플래시로 되돌아가지 않는다 — 안 그러면 로그인 화면 앞에 로고가 한 번 더 번쩍인다. `/login`은 슬라이드 마운트 시점에 미리 `router.prefetch`된다.
 - 이미 세션이 있는 상태로 `/onboarding` 에 진입하면(예: 직접 URL 이동) `OnboardingScreen` 은 곧장 `/`로 리다이렉트한다.
 
+## 로그인 화면 동의 체크 (연령 확인)
+
+`LoginScreen` 은 `settings.ageConfirmedAt` 이 `null` 이면 버튼 위에 `ConsentCheck`("만 14세 이상이며 이용약관과 개인정보처리방침에 동의합니다", 두 문서는 공개 `/legal/terms`·`/legal/privacy` 링크)를 띄우고, 체크 전에는 Apple/Google/게스트 버튼을 모두 비활성 + 하단 안내 문구를 보여 준다. 어느 버튼이든 누르는 순간 `settingsStore.confirmAge()` 가 타임스탬프를 먼저 저장한 뒤(OAuth 는 리다이렉트 전에) 로그인을 진행하므로, 같은 설치에서는 다시 묻지 않는다. 기준 연령은 출시 계획 §1.2 의 A안(만 14세).
+
+## 네이티브(Capacitor) OAuth 복귀
+
+앱 안에서는 `window.location.origin` 이 `capacitor://localhost` 라 Supabase 가 돌려보낼 수 없고 Google 은 WebView 안 OAuth 를 막는다. 그래서 `authStore.signInWithOAuth` 는 네이티브에서 `redirectTo: 'dwee://auth/callback'` + `skipBrowserRedirect` 로 URL 만 받아 `@capacitor/browser` 의 시스템 브라우저 시트에서 진행하고, 제공자가 커스텀 스킴으로 돌아오면 `@capacitor/app` 의 `appUrlOpen` 이 그 URL 의 query/hash 를 그대로 `/auth/callback/` 로 넘긴다(`lib/auth/nativeCallback.ts`). 이후는 웹과 동일하게 `AuthCallbackScreen` → `completeOAuthCallback` 이 세션·마이그레이션을 처리한다. 사용자가 시트를 닫아 버리면 `browserFinished` 이벤트로 로딩 상태를 풀어 버튼을 되살린다. Info.plist 의 `dwee` URL 스킴 등록과 Supabase Redirect URL 추가는 출시 계획 Phase 2·3.
+
 ## 로그인 화면 진입 연출
 
 `LoginHero`의 스티커 5개(헤드폰·말차·토스트·레몬워터 + 기존 workout.png)가 화면 밖에서 날아 들어오는 연출은 **온보딩 직후 첫 진입에만** 재생된다. `src/lib/loginEntrance.ts`가 `appToast`와 같은 패턴의 모듈 스코프 1회성 신호를 들고 있다 — `queueLoginEntrance()`로 예약, `consumeLoginEntrance()`로 소비 즉시 초기화. 로그아웃 후 재진입, 마이페이지 → 로그인, 앱 재실행 등 다른 모든 경로는 신호가 비어 있어 스티커가 제자리(rest)에 바로 보인다. 이미지 디코드가 끝난 뒤에야 함께 출발하도록 `wait → fly` 두 단계를 거친다(`tailwind.config.ts`의 `stickerFlyIn`). `LoginScreen`은 이제 settingsStore 도 hydrate 한다 — 안 하면 재방문한 ko 기기가 en 기본값으로 보이던 버그가 있었다.
@@ -81,6 +89,7 @@ stateDiagram-v2
 |---|---|---|---|
 | `introSeen` | IndexedDB `dwee:device:intro_seen` (`IntroRepository`→`indexedDBIntroAdapter`, **로컬 전용** — Supabase 어댑터 없음, 리포 모드와 무관) | 기기 단위 | 지워지지 않음 — `resetAllUserData()` 대상에서 의도적으로 제외 |
 | `settings.onboardingCompleted` | `SettingsRepository` (IndexedDB 로컬 또는 로그인 시 Supabase) | 계정 단위 | 로그아웃/`resetAllUserData()` 시 로컬 캐시와 함께 초기화되지만, 로그인된 계정 자체의 원격 값은 남아 다른 기기에서도 그대로 적용 |
+| `settings.ageConfirmedAt` | `SettingsRepository` 의 **로컬 필드** — IndexedDB 에만 저장, Supabase `profiles` 컬럼 없음(`SupabaseSettingsAdapter` 가 매핑하지 않음) | 설치(기기) 단위 | 로그아웃/탈퇴의 `resetAllUserData()` 로 지워져 다음 로그인 때 다시 묻는다 — 같은 기기를 다른 사람이 쓸 수 있으므로 의도된 동작 |
 | `loginEntrance` 연출 신호 | 모듈 스코프 in-memory 변수(`src/lib/loginEntrance.ts`) — 저장소 아님 | 현재 탭의 이번 세션 | 새로고침하면 사라짐. `consumeLoginEntrance()` 호출 즉시 1회성으로 소비됨 |
 
 ## Figma 노드 ID

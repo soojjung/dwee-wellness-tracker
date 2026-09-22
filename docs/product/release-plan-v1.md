@@ -52,10 +52,10 @@
 ## 2. 코드 준비 (Phase 1)
 
 - **STEP 1 — 공개 법적 페이지** ✅ 2026-09-22: `(legal)` 라우트 그룹(AuthGuard 밖)에 `/legal/privacy`, `/legal/terms` 추가 — `PUBLIC_PREFIXES` 등록 대신 그룹 자체가 가드 밖. 영문판 `terms-en.ts`·`privacy-en.ts`(한국어 원문 우선 명시) 추가, 앱 locale 을 따르되 `?lang=en|ko` 로 고정 가능. 마이페이지 화면과 본문 컴포넌트(`components/legal/*Article`) 공유. App Store Privacy Policy URL = `https://dwee-neon.vercel.app/legal/privacy/?lang=en`, Support URL = `https://dwee-neon.vercel.app/legal/support/?lang=en` (`/legal/support`, Q&A 카드 공유). 같은 날 개인정보처리방침의 체형 분석 처리자를 Anthropic → OpenAI 로 정정(실제 Edge Function 기준).
-- **STEP 1.5 — 연령 확인**: 로그인 화면(또는 첫 온보딩)에 연령 확인 체크와 약관·개인정보처리방침 동의 링크를 추가. 체크 전에는 [Apple/Google 로그인]·[로그인 없이 계속] 비활성. 확인 사실은 설정에 저장(`ageConfirmedAt`)해 다시 묻지 않음. 기준 연령과 14세 미만 처리 방식은 §1.2 결정에 따름. App Store 연령 등급은 별도로 설문(12+ 예상).
+- **STEP 1.5 — 연령 확인** ✅ 2026-09-22 (A안, 만 14세): 로그인 화면에 `ConsentCheck`(14세 이상 + 약관·개인정보처리방침 동의, 공개 `/legal/*` 링크). 체크 전 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt` 에 저장 — 로컬 전용(Supabase 컬럼 없음), 로그아웃 시 초기화되어 다시 묻는다. App Store 연령 등급은 별도로 설문(12+ 예상).
 - **STEP 1.7 — Sentry**: `@sentry/nextjs`(웹·번들 오류) + `@sentry/capacitor`(네이티브 크래시) 설정. 개인정보(이메일·기록 내용)는 이벤트에서 제외(`beforeSend` 스크럽), 소스맵 업로드는 CI 없이 로컬 빌드 시 `sentry-cli` 로. 개인정보처리방침 en/ko 에 "오류 로그(기기 모델·OS·앱 버전·오류 내용) 수집, 보관 90일" 추가. 연령 정책 B 채택 시 14세 미만은 초기화 건너뜀.
-- **STEP 2 — 네이티브 인증 흐름**:
-  - `@capacitor/app`, `@capacitor/browser` 추가.
+- **STEP 2 — 네이티브 인증 흐름** ✅ 코드 2026-09-22 (콘솔·Xcode 항목은 Phase 2·3에서): `@capacitor/app`·`@capacitor/browser` 추가. 네이티브에서는 `signInWithOAuth({ redirectTo: 'dwee://auth/callback', skipBrowserRedirect: true })` → `Browser.open()` → `appUrlOpen` 수신 시 URL 의 query/hash 를 그대로 `/auth/callback/` 로 넘겨(`lib/auth/nativeCallback.ts`, Vitest 9) 웹과 같은 `AuthCallbackScreen`·`completeOAuthCallback` 이 마무리. 시트를 그냥 닫으면 `browserFinished` 로 로딩 해제. Apple 도 우선 같은 브라우저 방식(네이티브 Sign in with Apple 플러그인은 실기기 검증 가능해질 때 전환 검토). `capacitor.config.ts` appId 를 `com.innerglow.dwee` 로 교체. **남은 것**: Info.plist `CFBundleURLTypes` 에 `dwee` 스킴(Phase 2), Supabase Redirect URLs 에 `dwee://auth/callback`(Phase 3), 실기기 왕복 검증(Phase 4).
+  - 원안: `@capacitor/app`, `@capacitor/browser` 추가.
   - 네이티브에서는 `signInWithOAuth({ skipBrowserRedirect: true, redirectTo: 'dwee://auth/callback' })` → `Browser.open()` 으로 시스템 브라우저에서 진행 → `App.addListener('appUrlOpen')` 으로 돌아온 URL 에서 세션 복원(`exchangeCodeForSession` 또는 해시 토큰 처리).
   - Apple 은 네이티브 Sign in with Apple(`@capacitor-community/apple-sign-in`) + `signInWithIdToken` 으로 전환하면 심사·UX 모두 유리. Google 은 시스템 브라우저 방식 유지.
   - 웹(PWA)은 기존 `window.location.origin` 경로 유지 — 플랫폼 분기는 `Capacitor.isNativePlatform()`.
