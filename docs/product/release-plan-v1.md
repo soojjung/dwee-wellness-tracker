@@ -52,7 +52,7 @@
 ## 2. 코드 준비 (Phase 1)
 
 - **STEP 1 — 공개 법적 페이지**: `/legal/privacy`, `/legal/terms` 를 `(fullscreen)` 밖의 공개 라우트로 추가하고 `AuthGuard.PUBLIC_PREFIXES` 에 등록. 기존 `src/content/legal/*` 재사용. Vercel 배포 URL 이 App Store 의 Privacy Policy URL·Support URL 이 된다. 마이페이지의 기존 화면은 그대로 두거나 공개 페이지로 링크.
-- **STEP 1.5 — 연령 확인**: 로그인 화면(또는 첫 온보딩)에 연령 확인 체크와 약관·개인정보처리방침 동의 링크를 추가. 체크 전에는 [Apple/Google 로그인]·[로그인 없이 계속] 비활성. 확인 사실은 설정에 저장(`ageConfirmedAt`)해 다시 묻지 않음. 기준 연령과 14세 미만 처리 방식은 §1.2 결정에 따름. App Store 연령 등급은 별도로 설문(12+ 예상).
+- **STEP 1.5 — 연령 확인** ✅ 2026-09-22 (A안, 만 14세): 로그인 화면에 `ConsentCheck`(14세 이상 + 약관·개인정보처리방침 동의, 공개 `/legal/*` 링크). 체크 전 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt` 에 저장 — 로컬 전용(Supabase 컬럼 없음), 로그아웃 시 초기화되어 다시 묻는다. App Store 연령 등급은 별도로 설문(12+ 예상).
 - **STEP 1.7 — Sentry**: `@sentry/nextjs`(웹·번들 오류) + `@sentry/capacitor`(네이티브 크래시) 설정. 개인정보(이메일·기록 내용)는 이벤트에서 제외(`beforeSend` 스크럽), 소스맵 업로드는 CI 없이 로컬 빌드 시 `sentry-cli` 로. 개인정보처리방침 en/ko 에 "오류 로그(기기 모델·OS·앱 버전·오류 내용) 수집, 보관 90일" 추가. 연령 정책 B 채택 시 14세 미만은 초기화 건너뜀.
 - **STEP 2 — 네이티브 인증 흐름**:
   - `@capacitor/app`, `@capacitor/browser` 추가.

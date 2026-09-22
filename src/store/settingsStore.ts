@@ -5,6 +5,7 @@ import { settingsRepo, ensureMigrations } from '@/data';
 import type { UserSettings } from '@/types';
 import { DEFAULT_USER_SETTINGS } from '@/types/userSettings';
 import { detectInitialLocale } from '@/i18n/detectLocale';
+import { nowISODateTime } from '@/lib/date';
 
 interface SettingsState {
   settings: UserSettings;
@@ -14,6 +15,8 @@ interface SettingsState {
   hydrate: () => Promise<void>;
   rehydrate: () => Promise<void>;
   update: (patch: Partial<UserSettings>) => Promise<void>;
+  /** Records the login-screen consent (14+ and terms/privacy) once per install. */
+  confirmAge: () => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>()((set, get) => ({
@@ -52,5 +55,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     } catch (e) {
       set({ error: errorMessage(e) });
     }
+  },
+
+  async confirmAge() {
+    if (get().settings.ageConfirmedAt) return;
+    await get().update({ ageConfirmedAt: nowISODateTime() });
   },
 }));

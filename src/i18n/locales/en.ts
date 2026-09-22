@@ -17,6 +17,15 @@ export const en = {
       missingConfig: 'Something’s not set up on our end. Please contact support.',
       oauthFailed: 'Sign-in didn’t go through. Please try again.',
     },
+    consent: {
+      prefix: 'I’m 14 or older and agree to the ',
+      terms: 'Terms of Service',
+      join: ' and ',
+      privacy: 'Privacy Policy',
+      suffix: '.',
+      ariaLabel: 'Confirm you are 14 or older and agree to the terms',
+      hint: 'Check the box above to continue',
+    },
   },
   nav: {
     home: 'Home',

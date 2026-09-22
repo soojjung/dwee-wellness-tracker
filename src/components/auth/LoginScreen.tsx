@@ -5,6 +5,7 @@ import { useT } from '@/i18n/useT';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 import { LoginHero } from './LoginHero';
+import { ConsentCheck } from './ConsentCheck';
 import { useAuthStore, type OAuthProvider } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { consumeAppToast } from '@/lib/appToast';
@@ -18,6 +19,9 @@ export function LoginScreen() {
   const [confirmToast, setConfirmToast] = useState<string | null>(null);
   const [pending, setPending] = useState<OAuthProvider | null>(null);
   const [guestPending, setGuestPending] = useState(false);
+  // Consent is asked once per install (settings.ageConfirmedAt); until it is
+  // ticked every sign-in path stays disabled.
+  const [consentChecked, setConsentChecked] = useState(false);
   const authHydrate = useAuthStore((s) => s.hydrate);
   const authHydrated = useAuthStore((s) => s.hydrated);
   const authError = useAuthStore((s) => s.error);
@@ -27,6 +31,10 @@ export function LoginScreen() {
   const settingsHydrate = useSettingsStore((s) => s.hydrate);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const settingsFailed = useSettingsStore((s) => s.error !== null);
+  const ageConfirmedAt = useSettingsStore((s) => s.settings.ageConfirmedAt);
+  const confirmAge = useSettingsStore((s) => s.confirmAge);
+  const consentRequired = settingsHydrated && ageConfirmedAt === null;
+  const canProceed = !consentRequired || consentChecked;
 
   // (auth) 그룹은 AppShell 밖이라 여기서 직접 hydrate — 이미 살아있는 세션이면
   // 아래 useEffect 가 곧바로 `/` 로 보내줌.
@@ -76,17 +84,22 @@ export function LoginScreen() {
     setPending(null);
   }, [authError, t]);
 
-  const handleOAuth = (provider: OAuthProvider) => {
+  const handleOAuth = async (provider: OAuthProvider) => {
+    if (!canProceed) return;
     setNotice(null);
     setPending(provider);
+    // Written before the redirect so the answer survives the round trip to
+    // the provider (the local settings record is what comes back to).
+    await confirmAge();
     void signInWithOAuth(provider);
   };
 
   const handleGuest = async () => {
-    if (guestPending || pending) return;
+    if (guestPending || pending || !canProceed) return;
     setNotice(null);
     setGuestPending(true);
     try {
+      await confirmAge();
       await signInAnonymously();
       router.replace('/');
     } catch {
@@ -99,11 +112,15 @@ export function LoginScreen() {
       <LoginHero />
 
       <div className="flex flex-col gap-3 px-5 pb-[84px]">
+        {consentRequired ? (
+          <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
+        ) : null}
         <Button
           size="lg"
           fullWidth
           onClick={() => handleOAuth('apple')}
-          disabled={pending !== null}
+          disabled={pending !== null || !canProceed}
+          className="disabled:opacity-60"
         >
           <AppleGlyph />
           <span>{pending === 'apple' ? t.auth.signingIn : t.auth.signInWithApple}</span>
@@ -113,7 +130,8 @@ export function LoginScreen() {
           size="lg"
           fullWidth
           onClick={() => handleOAuth('google')}
-          disabled={pending !== null}
+          disabled={pending !== null || !canProceed}
+          className="disabled:opacity-60"
         >
           <GoogleGlyph />
           <span>{pending === 'google' ? t.auth.signingIn : t.auth.signInWithGoogle}</span>
@@ -122,12 +140,17 @@ export function LoginScreen() {
         <button
           type="button"
           onClick={handleGuest}
-          disabled={guestPending || pending !== null}
+          disabled={guestPending || pending !== null || !canProceed}
           data-testid="guest-sign-in"
           className="mt-3 self-center rounded-sm px-2 py-1 text-base font-medium text-auth-linkMuted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2 disabled:opacity-60"
         >
           {guestPending ? t.auth.signingIn : t.auth.continueWithoutSignIn}
         </button>
+        {consentRequired && !consentChecked ? (
+          <p className="-mt-1 text-center text-xs text-auth-linkMuted" role="status">
+            {t.auth.consent.hint}
+          </p>
+        ) : null}
       </div>
 
       <Toast message={notice} />
