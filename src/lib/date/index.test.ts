@@ -9,6 +9,7 @@ import {
   formatDateShort,
   fromISO,
   calendarGrid,
+  atLocalHour,
 } from './index';
 
 describe('ISO_DATE_RE', () => {
@@ -259,5 +260,18 @@ describe('calendarGrid', () => {
       const curr = fromISO(grid[i]!.date);
       expect((curr.getTime() - prev.getTime()) / 86_400_000).toBe(1);
     }
+  });
+});
+
+describe('atLocalHour', () => {
+  it('returns the local wall-clock instant on that calendar day', () => {
+    const d = atLocalHour('2026-06-15', 9);
+    expect([d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()]).toEqual([
+      2026, 5, 15, 9, 0,
+    ]);
+  });
+  it('keeps hour 0 on the same day (no UTC shift)', () => {
+    const d = atLocalHour('2026-01-01', 0);
+    expect([d.getDate(), d.getHours()]).toEqual([1, 0]);
   });
 });

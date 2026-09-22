@@ -1203,6 +1203,27 @@ export const ko: Dictionary = {
         title: '가임기',
         subtitle: '가임기가 시작됐어요 / 가임기가 종료됐어요',
       },
+      push: {
+        periodDue: {
+          title: '생리가 다가오고 있어요',
+          bodyPrefix: '다음 생리가 ',
+          bodySuffix: '일 뒤로 예상돼요. 이번 주는 조금 여유롭게 보내요.',
+        },
+        periodDueToday: {
+          title: '오늘 생리가 예상돼요',
+          body: '오늘 즈음 생리가 예상돼요. 시작하면 기록해 주세요.',
+        },
+        periodDelay: {
+          title: '아직 생리 기록이 없어요',
+          body: '예상일이 지났어요. 혹시 시작됐나요? 편하실 때 기록해 주세요.',
+        },
+        fertile: {
+          title: '가임기 예상 시작',
+          body: '가임기가 오늘 시작될 것으로 예상돼요.',
+        },
+      },
+      permissionDenied: '기기 설정에서 dwee 알림이 꺼져 있어요. 알림을 받으려면 설정에서 켜주세요.',
+      webOnlyHint: '알림은 dwee 앱에서만 전달돼요.',
     },
     settings: {
       title: '설정',
