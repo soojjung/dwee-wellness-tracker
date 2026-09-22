@@ -26,7 +26,7 @@
 | Bundle ID | **`com.innerglow.dwee`** (사업자명 기준 reverse-DNS, Android 패키지명 규칙도 통과). `capacitor.config.ts` 의 `app.dwee` 를 교체 |
 | 기기 범위 | **iPhone + iPad** 지원. iPad 스크린샷(12.9″)과 `max-w-md` 셸이 iPad 에서 가운데 정렬로 보이는지 검증 항목 추가 |
 | 알림 | **v1.0 에 로컬 알림 포함** — `@capacitor/local-notifications` 로 생리 예정·지연·가임기 알림을 기기 내 예약(서버 푸시 아님). 기존 설정 화면 토글이 실제로 동작하게 연결 |
-| 연령 하한 | 사용자 희망: **만 10세부터**. 현황: 약관 제3조⑤·개인정보처리방침 제10조는 만 14세 기준이고 앱 안에 확인 절차 없음. 만 10~13세를 받으려면 한국(만 14세 미만 법정대리인 동의)·미국(COPPA, 13세 미만 검증 가능한 보호자 동의) 요건이 생김 → 아래 §1.2 에서 방식 결정 필요 |
+| 연령 하한 | **만 14세 이상** (2026-09-22 확정, §1.2 A안). 약관 제3조⑤·개인정보처리방침 제10조 기준 그대로, 로그인 화면 `ConsentCheck` 로 확인(STEP 1.5). 10~13세 허용은 1.x 에서 B 방식(로컬 전용 모드)으로 법률 검토 후 재검토 |
 | Android | 이번 릴리스 제외. iOS 안정화 후 별도 계획 |
 | 크래시 리포팅 | **Sentry** (`@sentry/nextjs` + `@sentry/capacitor`). 개인정보처리방침에 오류 로그 수집 항목 추가 (아래 §1.1) |
 
@@ -39,7 +39,7 @@
 | Bugsnag / Datadog RUM | 상용, 기능 풍부 | 규모 대비 과함 |
 | 미도입 | Supabase 로그·앱스토어 크래시 리포트(Xcode Organizer)만 사용 | 출시 초기에 원인 파악이 어려움. 최소 Sentry 권장 |
 
-### 1.2 만 10세 하한을 두는 방법 (결정 대기)
+### 1.2 만 10세 하한을 두는 방법 (2026-09-22 결정: **A. 만 14세 유지**)
 
 | 방식 | 내용 | 비용·위험 |
 |---|---|---|
@@ -47,14 +47,14 @@
 | B. 10~13세는 **로컬 전용 모드** | 연령 확인에서 14세 미만이면 계정 생성·클라우드 동기화·사진 AI(체형 진단·누끼)·오류 로그 전송을 끄고 기기 안 기록만 허용. 개인정보를 서버로 보내지 않으므로 보호자 동의 없이 운영 가능하다는 논리 | 분기 코드(AuthGuard·설정·진단 진입·Sentry 초기화) + 약관·방침 개정 + 법률 검토 권장. 익명 Supabase 세션도 서버 식별자를 남기므로 완전 오프라인으로 설계해야 함 |
 | C. 10~13세 **보호자 동의** 플로우 | 보호자 이메일 인증 등 검증 가능한 동의 절차 구현 | COPPA 의 "검증 가능한 동의" 기준이 엄격해 개발·운영 부담 큼. 1.0 범위로는 비추천 |
 
-미국이 주 시장이라 COPPA 를 피하기 어렵고, 한국도 만 14세 미만은 법정대리인 동의가 필요하다. **권장: 1.0 은 A 로 출시하고, 10~13세 허용은 B 방식으로 1.x 에서 법률 검토 후 도입.**
+미국이 주 시장이라 COPPA 를 피하기 어렵고, 한국도 만 14세 미만은 법정대리인 동의가 필요하다. **결정: 1.0 은 A 로 출시. 10~13세 허용은 B 방식으로 1.x 에서 법률 검토 후 재검토.**
 
 ## 2. 코드 준비 (Phase 1)
 
 - **STEP 1 — 공개 법적 페이지** ✅ 2026-09-22: `(legal)` 라우트 그룹(AuthGuard 밖)에 `/legal/privacy`, `/legal/terms` 추가 — `PUBLIC_PREFIXES` 등록 대신 그룹 자체가 가드 밖. 영문판 `terms-en.ts`·`privacy-en.ts`(한국어 원문 우선 명시) 추가, 앱 locale 을 따르되 `?lang=en|ko` 로 고정 가능. 마이페이지 화면과 본문 컴포넌트(`components/legal/*Article`) 공유. App Store Privacy Policy URL = `https://dwee-neon.vercel.app/legal/privacy/?lang=en`, Support URL = `https://dwee-neon.vercel.app/legal/support/?lang=en` (`/legal/support`, Q&A 카드 공유). 같은 날 개인정보처리방침의 체형 분석 처리자를 Anthropic → OpenAI 로 정정(실제 Edge Function 기준).
 - **STEP 1.5 — 연령 확인** ✅ 2026-09-22 (A안, 만 14세): 로그인 화면에 `ConsentCheck`(14세 이상 + 약관·개인정보처리방침 동의, 공개 `/legal/*` 링크). 체크 전 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt` 에 저장 — 로컬 전용(Supabase 컬럼 없음), 로그아웃 시 초기화되어 다시 묻는다. App Store 연령 등급은 별도로 설문(12+ 예상).
-- **STEP 1.7 — Sentry**: `@sentry/nextjs`(웹·번들 오류) + `@sentry/capacitor`(네이티브 크래시) 설정. 개인정보(이메일·기록 내용)는 이벤트에서 제외(`beforeSend` 스크럽), 소스맵 업로드는 CI 없이 로컬 빌드 시 `sentry-cli` 로. 개인정보처리방침 en/ko 에 "오류 로그(기기 모델·OS·앱 버전·오류 내용) 수집, 보관 90일" 추가. 연령 정책 B 채택 시 14세 미만은 초기화 건너뜀.
-- **STEP 2 — 네이티브 인증 흐름** ✅ 코드 2026-09-22 (콘솔·Xcode 항목은 Phase 2·3에서): `@capacitor/app`·`@capacitor/browser` 추가. 네이티브에서는 `signInWithOAuth({ redirectTo: 'dwee://auth/callback', skipBrowserRedirect: true })` → `Browser.open()` → `appUrlOpen` 수신 시 URL 의 query/hash 를 그대로 `/auth/callback/` 로 넘겨(`lib/auth/nativeCallback.ts`, Vitest 9) 웹과 같은 `AuthCallbackScreen`·`completeOAuthCallback` 이 마무리. 시트를 그냥 닫으면 `browserFinished` 로 로딩 해제. Apple 도 우선 같은 브라우저 방식(네이티브 Sign in with Apple 플러그인은 실기기 검증 가능해질 때 전환 검토). `capacitor.config.ts` appId 를 `com.innerglow.dwee` 로 교체. **남은 것**: Info.plist `CFBundleURLTypes` 에 `dwee` 스킴(Phase 2), Supabase Redirect URLs 에 `dwee://auth/callback`(Phase 3), 실기기 왕복 검증(Phase 4).
+- **STEP 1.7 — Sentry**: `@sentry/nextjs`(웹·번들 오류) + `@sentry/capacitor`(네이티브 크래시) 설정. 개인정보(이메일·기록 내용)는 이벤트에서 제외(`beforeSend` 스크럽), 소스맵 업로드는 CI 없이 로컬 빌드 시 `sentry-cli` 로. 개인정보처리방침 en/ko 에 "오류 로그(기기 모델·OS·앱 버전·오류 내용) 수집, 보관 90일" 추가.
+- **STEP 2 — 네이티브 인증 흐름** ✅ 코드 2026-09-22 (콘솔·Xcode 항목은 Phase 2·3에서): `@capacitor/app`·`@capacitor/browser` 추가. 네이티브에서는 `signInWithOAuth({ redirectTo: 'dwee://auth/callback', skipBrowserRedirect: true })` → `Browser.open()` → `appUrlOpen` 수신 시 URL 의 query/hash 를 그대로 `/auth/callback/` 로 넘겨(`lib/auth/nativeCallback.ts`, Vitest 9) 웹과 같은 `AuthCallbackScreen`·`completeOAuthCallback` 이 마무리. 시트를 그냥 닫으면 `browserFinished` 로 로딩 해제. Apple 도 우선 같은 브라우저 방식(네이티브 Sign in with Apple 플러그인은 실기기 검증 가능해질 때 전환 검토). `capacitor.config.ts` appId 를 `com.innerglow.dwee` 로 교체. **남은 것**: ~~Info.plist `CFBundleURLTypes` 에 `dwee` 스킴(Phase 2)~~ ✅ `setup-ios.mjs`, Supabase Redirect URLs 에 `dwee://auth/callback`(Phase 3), 실기기 왕복 검증(Phase 4).
   - 원안: `@capacitor/app`, `@capacitor/browser` 추가.
   - 네이티브에서는 `signInWithOAuth({ skipBrowserRedirect: true, redirectTo: 'dwee://auth/callback' })` → `Browser.open()` 으로 시스템 브라우저에서 진행 → `App.addListener('appUrlOpen')` 으로 돌아온 URL 에서 세션 복원(`exchangeCodeForSession` 또는 해시 토큰 처리).
   - Apple 은 네이티브 Sign in with Apple(`@capacitor-community/apple-sign-in`) + `signInWithIdToken` 으로 전환하면 심사·UX 모두 유리. Google 은 시스템 브라우저 방식 유지.
@@ -66,7 +66,9 @@
 
 ## 3. 네이티브 프로젝트 (Phase 2)
 
-- `pnpm add @capacitor/app @capacitor/browser @capacitor/status-bar @capacitor/splash-screen` → `npx cap add ios` → `pnpm cap:sync`.
+✅ 스크립트 2026-09-22: `npx cap add ios` → `pnpm ios:setup`(`scripts/setup-ios.mjs`, idempotent) → `pnpm cap:sync` 로 재생성 가능. 스크립트가 처리하는 것 — Info.plist 카메라·사진 보관함 문구(en) + `en/ko.lproj/InfoPlist.strings` 를 Xcode 타깃에 등록(xcodeproj gem), `CFBundleURLTypes` 에 `dwee` 스킴, `CFBundleLocalizations`(en, ko), `ITSAppUsesNonExemptEncryption=false`, iPhone 세로 고정(iPad 는 전 방향 유지), 배포 타깃 15.0(pbxproj + Podfile), `MARKETING_VERSION` 은 package.json 버전, 1024 아이콘 복사, LaunchScreen 을 `#F5F3F4` 단색 뷰로 교체. 시뮬레이터 `xcodebuild` 성공 확인. `NSPhotoLibraryAddUsageDescription` 은 앱이 사진을 저장하지 않으므로 제외. **남은 것(Xcode 수동)**: Signing team, Sign in with Apple capability. `@capacitor/status-bar`·`splash-screen` 은 STEP 5 에서.
+
+- 원안: `pnpm add @capacitor/app @capacitor/browser @capacitor/status-bar @capacitor/splash-screen` → `npx cap add ios` → `pnpm cap:sync`.
 - `capacitor.config.ts`: `appId` 확정값, `ios.contentInset`, `server.iosScheme`(필요 시) 정리.
 - Xcode 설정:
   - Info.plist: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`(+ 저장 시 `NSPhotoLibraryAddUsageDescription`), `CFBundleURLTypes` 에 `dwee` 스킴, 한국어·영어 `InfoPlist.strings` 로 권한 문구 현지화.

@@ -203,19 +203,16 @@ pnpm test:e2e:update    # baseline PNG 갱신 (의도된 UI 변경 후)
 
 ### iOS (Capacitor)
 
+`ios/` 는 gitignore 상태이며 필요할 때 다시 생성합니다.
+
 ```bash
+npx cap add ios   # Xcode 프로젝트 생성 (최초 1회)
+pnpm ios:setup    # scripts/setup-ios.mjs — Info.plist·en/ko 문구·아이콘·런치 스크린
 pnpm cap:sync     # next build && cap sync
-pnpm cap:ios      # Xcode 열기
+pnpm cap:ios      # next build → cap sync → Xcode 열기
 ```
 
-`@capacitor/camera` 플러그인을 사용하므로 `ios/App/App/Info.plist` 에 아래 키가 없으면 앱스토어 심사 및 런타임에서 거부됩니다.
-
-```xml
-<key>NSPhotoLibraryUsageDescription</key>
-<string>홈 화면 사진을 선택하기 위해 사진 라이브러리에 접근합니다.</string>
-```
-
-`cap sync` 는 이 키를 자동으로 추가하지 않습니다. Xcode 에서 수동으로 추가하거나 `ios/App/App/Info.plist` 를 직접 편집하세요.
+`setup-ios.mjs` 는 여러 번 실행해도 안전합니다(idempotent). 하는 일: 카메라·사진 보관함 권한 문구(en 은 Info.plist, ko 는 `InfoPlist.strings`), OAuth 복귀용 `dwee://` URL 스킴 등록, iPhone 세로 고정(iPad 는 전 방향), 배포 타깃 iOS 15, `public/app-icon-1024.png` 를 아이콘 세트에 복사, 런치 스크린을 `#F5F3F4` 단색으로 교체. `cap sync` 는 이 중 아무것도 자동으로 해 주지 않으므로 프로젝트를 새로 만들면 반드시 한 번 실행하세요. Xcode 에서 직접 해야 하는 것: Signing team, **Sign in with Apple** capability.
 
 ---
 
@@ -362,7 +359,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] 계정 관리 — 회원 탈퇴 (`delete-account` Edge Function, 2단계 확인 + 사유 수집 `withdrawal_feedbacks`, migration 0011), 계정 편집(`/settings/account`)
 - [x] 첫 실행 온보딩 (2026-09-19) — `(intro)` 라우트 그룹, 기기 스코프 `introSeen` 플래그(`IntroRepository`, 로컬 전용, 계정과 무관). 스플래시(최소 2초) → 소개 슬라이드 3장(스와이프 + 건너뛰기) → `/login`. 로그인 화면엔 온보딩 직후 1회만 스티커 fly-in 연출(`loginEntrance` 신호). 계정에 기록이 없고 `onboardingCompleted` 가 false면 첫 홈 진입 시 생리일 기입 바텀시트(`PeriodSelectSheet variant="intro"`)가 한 번 더 뜬다 — 선택 없이 시작해도 계정 설정에 완료로 기록되어 다시 묻지 않음
 - [x] 로그인 화면 연령·약관 동의 (STEP 1.5, 2026-09-22) — `ConsentCheck`(만 14세 이상 + 공개 `/legal/terms`·`/legal/privacy` 링크 동의) 체크 전까지 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt`(로컬 전용, Supabase 컬럼 없음)에 기록, 로그아웃 시 초기화되어 다음 사람에게 다시 묻는다
-- [x] 네이티브 OAuth 복귀 (STEP 2, 2026-09-22) — Capacitor 에서는 시스템 브라우저(`@capacitor/browser`)로 진행하고 `dwee://auth/callback` 로 돌아온 URL 을 `appUrlOpen` 이 `/auth/callback/` 로 넘겨 웹과 같은 경로로 마무리(`lib/auth/nativeCallback.ts`). Info.plist 스킴 등록·Supabase Redirect URL 은 출시 계획 Phase 2·3
+- [x] 네이티브 OAuth 복귀 (STEP 2, 2026-09-22) — Capacitor 에서는 시스템 브라우저(`@capacitor/browser`)로 진행하고 `dwee://auth/callback` 로 돌아온 URL 을 `appUrlOpen` 이 `/auth/callback/` 로 넘겨 웹과 같은 경로로 마무리(`lib/auth/nativeCallback.ts`). Info.plist `dwee` 스킴 등록은 `pnpm ios:setup`(Phase 2, 2026-09-22), Supabase Redirect URL 은 출시 계획 Phase 3
 - [x] 로컬 알림 (STEP 4, 2026-09-22) — `domain/notification/schedule.ts`(순수, Vitest 9)가 기록·설정으로 예정 D-N일·지연(예정일+2)·가임기 시작 알림을 09:00 로 계획, `hooks/useNotificationSync` 가 `@capacitor/local-notifications` 로 취소 후 재예약. 권한은 마스터 토글 ON 때 요청, 웹은 "앱에서만 알림" 안내. 실기기 발송 검증은 Phase 4
 
 **다이어리**

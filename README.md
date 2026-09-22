@@ -207,6 +207,16 @@ pnpm dev                        # http://localhost:3000
 pnpm test                       # lint → typecheck → unit (e2e is separate: pnpm test:e2e)
 ```
 
+**iOS (Capacitor):** `ios/` is git-ignored and regenerated on demand.
+
+```bash
+npx cap add ios                 # generate the Xcode project (once)
+pnpm ios:setup                  # scripts/setup-ios.mjs — Info.plist, en/ko strings, icon, launch screen
+pnpm cap:ios                    # next build → cap sync → open Xcode
+```
+
+`setup-ios.mjs` is idempotent: it adds camera/photo usage descriptions (en in Info.plist, ko via `InfoPlist.strings`), registers the `dwee://` URL scheme for the OAuth return, sets the deployment target to iOS 15, copies `public/app-icon-1024.png` into the icon set and turns the launch screen into a plain `#F5F3F4` view. Still manual in Xcode: Signing team and the **Sign in with Apple** capability.
+
 Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Hand-drawn flow diagrams (Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — login, body-type diagnose, diary sticker capture, local notifications ([`docs/flows/notifications.md`](./docs/flows/notifications.md)). Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
 
 ---
