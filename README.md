@@ -207,7 +207,7 @@ pnpm dev                        # http://localhost:3000
 pnpm test                       # lint → typecheck → unit (e2e is separate: pnpm test:e2e)
 ```
 
-Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Hand-drawn flow diagrams (Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — login, body-type diagnose, diary sticker capture. Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
+Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Hand-drawn flow diagrams (Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — login, body-type diagnose, diary sticker capture, local notifications ([`docs/flows/notifications.md`](./docs/flows/notifications.md)). Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
 
 ---
 

@@ -328,7 +328,7 @@ constants/, types/            ← 어디서든 import 가능
 - **순수 도메인**: `domain/cycle/`, `lib/insight/`는 외부 호출/저장 없이 입력→출력만.
 - **단일 진입점**: store는 어댑터를 직접 import 하지 않고 `@/data` 한 곳만 import.
 
-상세: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md) · 흐름 다이어그램(Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — 로그인, 체형 진단, 다이어리 스티커 촬영
+상세: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md) · 흐름 다이어그램(Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — 로그인, 체형 진단, 다이어리 스티커 촬영, 로컬 알림([`docs/flows/notifications.md`](./docs/flows/notifications.md))
 
 ---
 
