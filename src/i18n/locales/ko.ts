@@ -798,6 +798,8 @@ export const ko: Dictionary = {
         modePhoto: '사진',
         modeSticker: '스티커',
         permissionDenied: '카메라 사용 권한이 필요해요. 브라우저 설정에서 허용해주세요.',
+        permissionDeniedNative:
+          '기기 설정에서 dwee 카메라 권한이 꺼져 있어요. 설정 > dwee > 카메라에서 켜고 다시 시도해주세요.',
         unavailable: '이 기기에서는 카메라를 사용할 수 없어요. 앨범에서 선택해주세요.',
         openAlbumFallback: '앨범 열기',
       },

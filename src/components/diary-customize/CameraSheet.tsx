@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useT } from '@/i18n/useT';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
@@ -40,6 +41,11 @@ const MODE_ORDER: readonly CameraMode[] = ['photo', 'sticker'];
  *
  * Rendered as an overlay above DiaryCustomizeScreen — no route change, so
  * the sticker draft state stays intact if the user backs out.
+ *
+ * The same MediaDevices preview is used inside the Capacitor shell (WKWebView
+ * supports getUserMedia since iOS 14.3) rather than the OS camera, so the
+ * mode pill stays over the viewfinder. Only the permission-denied copy
+ * differs there: the switch lives in the iOS Settings app, not the browser.
  */
 export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProps) {
   const t = useT();
@@ -124,7 +130,11 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
       {error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 pb-40 text-center">
           <p className="text-base leading-[1.5] text-brand-gray200">
-            {error === 'permission' ? c.permissionDenied : c.unavailable}
+            {error === 'permission'
+              ? Capacitor.isNativePlatform()
+                ? c.permissionDeniedNative
+                : c.permissionDenied
+              : c.unavailable}
           </p>
           <button
             type="button"

@@ -804,6 +804,8 @@ export const en = {
         modeSticker: 'Sticker',
         permissionDenied:
           'Camera access is required. Please allow it in your browser settings and try again.',
+        permissionDeniedNative:
+          'Camera access is turned off for dwee. Turn it on in Settings > dwee > Camera and try again.',
         unavailable: 'Camera is not available on this device. Choose from your album instead.',
         openAlbumFallback: 'Open album',
       },
