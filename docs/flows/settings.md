@@ -9,14 +9,14 @@ Figma refs: 015_1 (signed-out), 015_2 (signed-in), 015_3 (account edit).
 
 MyPage renders a fixed stack of cards, some conditionally visible:
 
-| Card | Always visible | Condition |
-|---|---|---|
-| `AuthCard` | yes | signed-out → login CTA row; signed-in → dark profile card |
-| `CycleSummaryCard` | yes | shows status chip when data sufficient; "not enough data" copy otherwise |
-| `MyTestsCard` | yes | `나의 테스트` — one row per quiz; body-type row shows "결과" link (→ result page) when `bodyTypeReportStore` has a report (via `BodyTypeReportRepository`, IndexedDB/Supabase), "체형 분석 해보기" CTA (→ article intro) otherwise. Skips render until the store hydrates, to avoid a flash between CTA and result copy. |
-| `PreferencesCard` | yes | notifications row (→ `/settings/notifications`) + language row + holidays row (→ `/settings/holidays`) |
-| `SupportCard` | yes | notices / Q&A / terms / privacy rows |
-| `AccountManagementCard` | signed-in only | sign-out + account deletion rows |
+| Card                    | Always visible | Condition                                                                                                                                                                                                                                                                                                                |
+| ----------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AuthCard`              | yes            | signed-out → login CTA row; signed-in → dark profile card                                                                                                                                                                                                                                                                |
+| `CycleSummaryCard`      | yes            | shows status chip when data sufficient; "not enough data" copy otherwise                                                                                                                                                                                                                                                 |
+| `MyTestsCard`           | yes            | `나의 테스트` — one row per quiz; body-type row shows "결과" link (→ result page) when `bodyTypeReportStore` has a report (via `BodyTypeReportRepository`, IndexedDB/Supabase), "체형 분석 해보기" CTA (→ article intro) otherwise. Skips render until the store hydrates, to avoid a flash between CTA and result copy. |
+| `PreferencesCard`       | yes            | notifications row (→ `/settings/notifications`) + language row + holidays row (→ `/settings/holidays`)                                                                                                                                                                                                                   |
+| `SupportCard`           | yes            | notices / Q&A / terms / privacy rows                                                                                                                                                                                                                                                                                     |
+| `AccountManagementCard` | signed-in only | sign-out + account deletion rows                                                                                                                                                                                                                                                                                         |
 
 ---
 
@@ -180,11 +180,13 @@ Route: `(app)/settings/notifications` — rendered by `NotificationsScreen`.
 
 Matches Figma 292:2765. One master toggle expands into three per-topic sub-toggles:
 
-| Toggle key | Topic |
-|---|---|
-| `notifPeriodDueEnabled` | Period due reminder |
-| `notifPeriodDelayEnabled` | Period delay alert |
-| `notifFertileEnabled` | Fertile window reminder |
+| Toggle key                | Topic                   |
+| ------------------------- | ----------------------- |
+| `notifPeriodDueEnabled`   | Period due reminder     |
+| `notifPeriodDelayEnabled` | Period delay alert      |
+| `notifFertileEnabled`     | Fertile window reminder |
+
+**Delivery (STEP 4, native only)** — full write-up with the Excalidraw flow in [notifications.md](./notifications.md). Summary: `hooks/useNotificationSync` (mounted in `AppShell`) turns the records + these settings into `domain/notification/schedule.planNotifications()` — period due = predicted start − lead days, period delay = predicted start + 2 days, fertile = estimated window start, each at 09:00 local; nothing is scheduled without a prediction or for a day already past. `lib/notifications/localNotifications` cancels the three fixed ids and re-schedules via `@capacitor/local-notifications` on every change, and on sign-out/delete. The master toggle asks for OS permission once; a denial keeps it off and shows `permissionDenied`. The web/PWA build shows `webOnlyHint` instead.
 
 `notifPeriodDueLeadDays` (0–14, persisted to `UserSettings`) controls a 3-row wheel picker for lead time when period-due is enabled. The wheel appears inline under the period-due row; it's built on the shared `WheelColumn` (`src/components/ui/WheelColumn.tsx` — the same scroll-snap column the diary's year/month picker uses), so drag/flick scrolling settles a value in the center, and tapping a neighbor row also selects it directly.
 
@@ -218,16 +220,16 @@ Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackL
 
 ## Sub-page routes
 
-| Route | Figma | Status |
-|---|---|---|
-| `/settings/language` | 015_4 | live — `LanguageSettingsScreen` |
-| `/settings/withdraw` | 262:3527 | live — `WithdrawReasonScreen` (fullscreen) |
-| `/settings/notifications` | 292:2765 | live — `NotificationsScreen` |
-| `/settings/holidays` | — | live — `HolidaysScreen` |
-| `/settings/qna` | 015_5 | live — `QnaScreen` (static support email + copy-to-clipboard) |
-| `/settings/terms` | 015_16 | live — `TermsScreen` (제1~15조 + 부칙; ko 원문 + en 번역, 앱 locale 따름) |
-| `/settings/privacy` | 015_17 | live — `PrivacyScreen` (제1~17조 + 부칙; ko 원문 + en 번역, 앱 locale 따름) |
-| `/settings/notices` | 015_4 | stub |
+| Route                     | Figma    | Status                                                                      |
+| ------------------------- | -------- | --------------------------------------------------------------------------- |
+| `/settings/language`      | 015_4    | live — `LanguageSettingsScreen`                                             |
+| `/settings/withdraw`      | 262:3527 | live — `WithdrawReasonScreen` (fullscreen)                                  |
+| `/settings/notifications` | 292:2765 | live — `NotificationsScreen`                                                |
+| `/settings/holidays`      | —        | live — `HolidaysScreen`                                                     |
+| `/settings/qna`           | 015_5    | live — `QnaScreen` (static support email + copy-to-clipboard)               |
+| `/settings/terms`         | 015_16   | live — `TermsScreen` (제1~15조 + 부칙; ko 원문 + en 번역, 앱 locale 따름)   |
+| `/settings/privacy`       | 015_17   | live — `PrivacyScreen` (제1~17조 + 부칙; ko 원문 + en 번역, 앱 locale 따름) |
+| `/settings/notices`       | 015_4    | stub                                                                        |
 
 같은 본문(`components/legal/TermsArticle`, `PrivacyArticle`)을 공개 라우트 `/legal/terms`, `/legal/privacy`(`(legal)` 그룹, 세션 불필요, `?lang=en|ko` 고정 가능)가 재사용한다 — App Store Privacy Policy URL 과 OAuth 동의 화면 링크용. `/settings/qna` 의 이메일 카드(`components/legal/SupportContactCard`)도 공개 `/legal/support`(App Store Support URL)와 공유한다.
 

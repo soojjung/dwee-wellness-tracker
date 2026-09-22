@@ -107,3 +107,10 @@ Last run: 2026-09-21 — 50/50 passed
 
 - Weekday facts verified with `python3` (`datetime.date(...).strftime('%A')`) before writing expectations: 2026-09-01 = Tue, 2026-02-01 = Sun (28-day Feb), 2026-08-01 = Sat.
 - Row #43/#46 cover the bug this changeset fixes: the grid used to always pad to 42 cells (6 weeks); now it returns only the weeks the month actually spans (28/35/42).
+
+## `atLocalHour`
+
+| #   | 설명 (`it` title)                                        | 입력                  | 기대 결과                       | 결과 |
+| --- | -------------------------------------------------------- | --------------------- | ------------------------------- | ---- |
+| 51  | returns the local wall-clock instant on that calendar day | `'2026-06-15'`, `9`   | 2026-06-15 09:00 local          | ✅   |
+| 52  | keeps hour 0 on the same day (no UTC shift)              | `'2026-01-01'`, `0`   | 1일 00:00                        | ✅   |

@@ -5,12 +5,19 @@ import { MyPageBackLink } from './MyPageBackLink';
 import { useSettingsStore } from '@/store/settingsStore';
 import { SettingCard, SettingDetailRow, SettingToggleRow } from './SettingRows';
 import { ChevronIcon, LeadDaysWheel } from './LeadDaysWheel';
+import {
+  canDeliverLocalNotifications,
+  ensureNotificationPermission,
+} from '@/lib/notifications/localNotifications';
 
 export function NotificationsScreen() {
   const t = useT();
   const settings = useSettingsStore((s) => s.settings);
   const update = useSettingsStore((s) => s.update);
   const [timingOpen, setTimingOpen] = useState(false);
+  // iOS answered "don't allow" for this app — the toggles would be a lie.
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const nativeDelivery = canDeliverLocalNotifications();
 
   const master = settings.notificationsEnabled;
   const periodDue = settings.notifPeriodDueEnabled;
@@ -22,9 +29,14 @@ export function NotificationsScreen() {
   // master OFF disables all subs. When individual subs are toggled off and the
   // aggregate becomes false, we also flip master to false — screen collapses
   // back to state #1.
-  const handleMasterToggle = () => {
+  const handleMasterToggle = async () => {
     const next = !master;
     if (next) {
+      if (nativeDelivery) {
+        const granted = await ensureNotificationPermission();
+        setPermissionDenied(!granted);
+        if (!granted) return;
+      }
       update({
         notificationsEnabled: true,
         notifPeriodDueEnabled: true,
@@ -75,9 +87,19 @@ export function NotificationsScreen() {
             <SettingToggleRow
               title={t.myPage.notifications.master}
               enabled={master}
-              onToggle={handleMasterToggle}
+              onToggle={() => void handleMasterToggle()}
             />
           </SettingCard>
+          {permissionDenied ? (
+            <p className="-mt-2 px-1 text-xs leading-[1.5] text-brand-gray600" role="status">
+              {t.myPage.notifications.permissionDenied}
+            </p>
+          ) : null}
+          {!nativeDelivery ? (
+            <p className="-mt-2 px-1 text-xs leading-[1.5] text-brand-gray600">
+              {t.myPage.notifications.webOnlyHint}
+            </p>
+          ) : null}
 
           {master ? (
             <>

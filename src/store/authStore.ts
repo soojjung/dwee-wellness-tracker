@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { NATIVE_AUTH_REDIRECT, toWebCallbackPath } from '@/lib/auth/nativeCallback';
+import { cancelAllLocalNotifications } from '@/lib/notifications/localNotifications';
 import { supabase, isSupabaseConfigured } from '@/data/adapters/supabase/client';
 import { getRepoMode, setRepoMode, resetAllUserData, type RepoMode } from '@/data';
 import {
@@ -244,6 +245,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     await supabase.auth.signOut();
     set({ session: null, user: null });
     await resetAllUserData();
+    await cancelAllLocalNotifications().catch(() => undefined);
     await applyRepoMode('local');
   },
 
@@ -260,6 +262,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     await supabase.auth.signOut().catch(() => undefined);
     set({ session: null, user: null });
     await resetAllUserData();
+    await cancelAllLocalNotifications().catch(() => undefined);
     await applyRepoMode('local');
     return { ok: true };
   },

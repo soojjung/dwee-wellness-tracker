@@ -1215,6 +1215,28 @@ export const en = {
         title: 'Fertile window',
         subtitle: 'Your fertile window has started / has ended',
       },
+      push: {
+        periodDue: {
+          title: 'Period coming up',
+          bodyPrefix: 'Your next period is expected in ',
+          bodySuffix: ' days. Take it easy this week.',
+        },
+        periodDueToday: {
+          title: 'Period expected today',
+          body: 'Your next period is expected around today. Log it when it starts.',
+        },
+        periodDelay: {
+          title: 'Period not logged yet',
+          body: 'Your expected date has passed. Has it started? Log it when you can.',
+        },
+        fertile: {
+          title: 'Fertile window',
+          body: 'Your fertile window is estimated to start today.',
+        },
+      },
+      permissionDenied:
+        'Notifications are turned off for dwee in your device settings. Turn them on there to get reminders.',
+      webOnlyHint: 'Reminders are delivered in the dwee app only.',
     },
     settings: {
       title: 'Preferences',

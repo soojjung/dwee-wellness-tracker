@@ -61,7 +61,7 @@
   - 웹(PWA)은 기존 `window.location.origin` 경로 유지 — 플랫폼 분기는 `Capacitor.isNativePlatform()`.
   - 로그아웃 후 `/login` 복귀, 익명→로그인 마이그레이션이 네이티브에서도 도는지 확인.
 - **STEP 3 — 카메라·앨범**: `CameraSheet` 촬영을 네이티브에서는 `Camera.getPhoto({ source: Camera })` 로 분기(웹은 지금 `getUserMedia` 유지). 권한 거부 시 안내 카피(이미 `camera.permissionDenied` 존재) 확인.
-- **STEP 4 — 로컬 알림**: `@capacitor/local-notifications` 추가. 예측 결과(`predictNextPeriod`)와 설정(예정 D-N일, 지연, 가임기)으로 알림 시각을 계산하는 순수 함수를 `domain/notification/` 에 두고(Vitest), 기록·설정이 바뀔 때마다 예약을 전부 취소 후 재예약. 권한 요청은 마스터 토글을 켤 때 1회. 웹(PWA)에서는 토글을 두되 "앱에서만 알림이 와요" 안내. 카피는 en 원본·ko 번역.
+- **STEP 4 — 로컬 알림** ✅ 코드 2026-09-22 (A안 채택): `@capacitor/local-notifications` 추가. 순수 스케줄러 `domain/notification/schedule.ts`(Vitest 9) — 예정 D-N일(설정 휠), 지연 = 예정일 +2일, 가임기 = 추정 시작일, 모두 09:00, 지난 날짜·기록 없음(예측 불가)이면 예약 없음. `hooks/useNotificationSync`(AppShell)가 기록·설정 변경마다 전부 취소 후 재예약, 로그아웃·탈퇴 시 취소. 권한은 마스터 토글 ON 때 1회 요청(거부 시 토글 안 켜지고 안내). 웹은 "앱에서만 알림" 안내. 실기기 발송 검증은 Phase 4. 원안: `@capacitor/local-notifications` 추가. 예측 결과(`predictNextPeriod`)와 설정(예정 D-N일, 지연, 가임기)으로 알림 시각을 계산하는 순수 함수를 `domain/notification/` 에 두고(Vitest), 기록·설정이 바뀔 때마다 예약을 전부 취소 후 재예약. 권한 요청은 마스터 토글을 켤 때 1회. 웹(PWA)에서는 토글을 두되 "앱에서만 알림이 와요" 안내. 카피는 en 원본·ko 번역.
 - **STEP 5 — 앱 껍데기 정리**: `@capacitor/status-bar`(밝은 배경 → 어두운 아이콘), `@capacitor/splash-screen`, `NEXT_PUBLIC_SITE_URL` 프로덕션 값, `package.json` 버전 1.0.0, 개발용 `DevBridge` 가 프로덕션 번들에서 비활성인지 확인(현재 `NODE_ENV` 가드 있음), 키보드가 올라올 때 시트·입력창 동작 점검.
 
 ## 3. 네이티브 프로젝트 (Phase 2)

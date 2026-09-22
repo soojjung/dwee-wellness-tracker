@@ -192,7 +192,8 @@ Solo project. End-to-end ownership of:
 - Shipped: cycle record/predict/insights, condition log, diary (events, holidays, stickers), cycle report, magazine + body-type diagnose, home customization, onboarding, MyPage (language, notifications UI, legal, account edit/delete).
 - Auth: login gate on cold start, age/terms consent gate before any sign-in path (STEP 1.5), anonymous + Apple/Google OAuth (system browser + `dwee://auth/callback` return on Capacitor, STEP 2), anonymous→account migration, 6-store rehydrate on mode switch.
 - Storage: IndexedDB schema v10 (local), Supabase migrations through 0015 (remote), three Edge Functions (`body-type-analyze`, `sticker-cutout`, `delete-account`).
-- Not wired yet: notification delivery (settings only), background sync, multi-device conflict resolution.
+- Notifications: local reminders (period due / delay / fertile window) scheduled on device via `@capacitor/local-notifications` from the pure `domain/notification` planner; web build shows settings only.
+- Not wired yet: background sync, multi-device conflict resolution.
 - Next: iOS release prep (native OAuth, public legal pages, local notifications) — see [`docs/product/release-plan-v1.md`](./docs/product/release-plan-v1.md).
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript strict · Zustand · IndexedDB (`idb-keyval`) · Supabase (Postgres + Auth + Edge Functions) · Tailwind · react-hook-form · Vitest · Playwright · Capacitor 6 (iOS).
@@ -206,7 +207,7 @@ pnpm dev                        # http://localhost:3000
 pnpm test                       # lint → typecheck → unit (e2e is separate: pnpm test:e2e)
 ```
 
-Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Hand-drawn flow diagrams (Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — login, body-type diagnose, diary sticker capture. Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
+Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Hand-drawn flow diagrams (Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — login, body-type diagnose, diary sticker capture, local notifications ([`docs/flows/notifications.md`](./docs/flows/notifications.md)). Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
 
 ---
 
