@@ -12,6 +12,7 @@
     "format:check": "prettier --check .",
     "cap:sync": "next build && cap sync",
     "cap:ios": "next build && cap sync ios && cap open ios",
+    "ios:setup": "node scripts/setup-ios.mjs",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "test:unit": "vitest run",
