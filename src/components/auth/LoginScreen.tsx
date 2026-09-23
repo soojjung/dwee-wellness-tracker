@@ -119,9 +119,11 @@ export function LoginScreen() {
     <main className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden bg-auth-bg">
       <LoginHero />
 
-      <div className="flex flex-col gap-3 px-5 pb-[84px]">
+      <div className="flex flex-col gap-3 px-5 pb-[68px] pt-4">
         {consentRequired ? (
-          <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
+          <div className="mb-1">
+            <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
+          </div>
         ) : null}
         <Button
           size="lg"
