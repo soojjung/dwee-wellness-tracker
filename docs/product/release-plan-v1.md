@@ -105,7 +105,7 @@
 
 ## 5. QA (Phase 4)
 
-- **TestFlight 내부 테스트** → 외부 테스트(가족·지인 5~10명).
+- **TestFlight 내부 테스트** → 외부 테스트(가족·지인 5~10명). 라운드별 체크 표와 Archive/업로드 절차는 [testflight-checklist.md](./testflight-checklist.md).
 - 기기 체크리스트: 노치/다이내믹 아일랜드 기기와 홈버튼 기기 각 1대 이상, iPad 1대(세로·가로, 셸 가운데 정렬). 확인 항목:
   - 첫 진입 `/login` 게이트, 익명 시작, Apple/Google 로그인, 로그아웃, 탈퇴
   - 오프라인 첫 실행(익명 세션 발급 실패 시 안내)
