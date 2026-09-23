@@ -564,6 +564,10 @@ export const PRIVACY_EN: PrivacyDocument = {
           kind: 'text',
           text: 'dwee provides the Service to Users 14 years of age or older and, in principle, does not collect or process personal information from children under 14 years of age. If dwee confirms that a child under 14 years of age has registered as a member, dwee will, in accordance with the Personal Information Protection Act (Korea), destroy that child’s personal information and delete the related account without delay.',
         },
+        {
+          kind: 'text',
+          text: 'If you are a parent or legal guardian who becomes aware that a child under 14 has registered, or if you registered while under 14, please contact the Data Protection Officer at the email address in Article 14 (sojjung3@gmail.com). Once dwee verifies the report, it will delete the account and the associated personal information without delay and let you know the outcome.',
+        },
       ],
     },
     {
