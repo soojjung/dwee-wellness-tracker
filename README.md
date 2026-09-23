@@ -216,7 +216,7 @@ pnpm ios:setup                  # scripts/setup-ios.mjs — Info.plist, en/ko st
 pnpm cap:ios                    # build:release (source maps uploaded + stripped) → cap sync → open Xcode
 ```
 
-`setup-ios.mjs` is idempotent: it adds camera/photo usage descriptions (en in Info.plist, ko via `InfoPlist.strings`), registers the `dwee://` URL scheme for the OAuth return, sets the deployment target to iOS 15, copies `public/app-icon-1024.png` into the icon set and turns the launch screen into a plain `#F5F3F4` view. Still manual in Xcode: Signing team and the **Sign in with Apple** capability.
+`setup-ios.mjs` is idempotent (and `cap:sync` / `cap:ios` run it after every sync): it writes `version` / `iosBuild` from package.json into the Xcode project, adds camera/photo usage descriptions (en in Info.plist, ko via `InfoPlist.strings`), registers the `dwee://` URL scheme for the OAuth return, sets the deployment target to iOS 15, copies `public/app-icon-1024.png` into the icon set and turns the launch screen into a plain `#F5F3F4` view. Still manual in Xcode: Signing team and the **Sign in with Apple** capability.
 
 Architecture deep-dive: [`docs/architecture/data-layer.md`](./docs/architecture/data-layer.md). Hand-drawn flow diagrams (Excalidraw + PNG): [`docs/diagrams/`](./docs/diagrams) — login, body-type diagnose, diary sticker capture, local notifications ([`docs/flows/notifications.md`](./docs/flows/notifications.md)). Edge Function setup: [`supabase/README.md`](./supabase/README.md#edge-functions).
 

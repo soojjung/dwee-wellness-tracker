@@ -10,7 +10,8 @@
  *  - Info.plist: usage descriptions (en fallback), `dwee://` URL scheme,
  *    en/ko localizations, portrait-only on iPhone, export-compliance flag
  *  - en.lproj / ko.lproj InfoPlist.strings registered in the Xcode target
- *  - deployment target 15.0 (pbxproj + Podfile), MARKETING_VERSION from package.json
+ *  - deployment target 15.0 (pbxproj + Podfile), MARKETING_VERSION / CURRENT_PROJECT_VERSION
+ *    from package.json `version` / `iosBuild`
  *  - 1024 app icon from public/, plain #F5F3F4 launch screen
  *  - DEVELOPMENT_TEAM + App.entitlements (Sign in with Apple) registered in the target
  *
@@ -182,8 +183,13 @@ puts(changed ? 'registered' : 'already registered')
     /IPHONEOS_DEPLOYMENT_TARGET = [\d.]+;/g,
     `IPHONEOS_DEPLOYMENT_TARGET = ${DEPLOYMENT_TARGET};`,
   );
-  const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  const { version, iosBuild } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   pbx = pbx.replace(/MARKETING_VERSION = [\d.]+;/g, `MARKETING_VERSION = ${version};`);
+  // Build number lives in package.json ("iosBuild") so it survives an ios/
+  // regeneration and is bumped in git; App Store Connect rejects a reused one.
+  if (Number.isInteger(iosBuild)) {
+    pbx = pbx.replace(/CURRENT_PROJECT_VERSION = \d+;/g, `CURRENT_PROJECT_VERSION = ${iosBuild};`);
+  }
   // Team + entitlements go into the App target's Debug/Release build settings.
   // `INFOPLIST_FILE = App/Info.plist;` appears exactly there, so anchor on it.
   if (!pbx.includes('DEVELOPMENT_TEAM =')) {
@@ -200,7 +206,9 @@ puts(changed ? 'registered' : 'already registered')
   }
   if (pbx !== before) {
     writeFileSync(pbxprojPath, pbx);
-    log(`pbxproj: deployment target ${DEPLOYMENT_TARGET}, MARKETING_VERSION ${version}`);
+    log(
+      `pbxproj: deployment target ${DEPLOYMENT_TARGET}, MARKETING_VERSION ${version}, build ${iosBuild ?? '(unchanged)'}`,
+    );
   }
 
   const podfile = readFileSync(podfilePath, 'utf8');

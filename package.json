@@ -1,6 +1,7 @@
 {
   "name": "dwee",
   "version": "1.0.0",
+  "iosBuild": 2,
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,8 +11,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "cap:sync": "pnpm build:release && cap sync",
-    "cap:ios": "pnpm build:release && cap sync ios && cap open ios",
+    "cap:sync": "pnpm build:release && cap sync && pnpm ios:setup",
+    "cap:ios": "pnpm build:release && cap sync ios && pnpm ios:setup && cap open ios",
     "ios:setup": "node scripts/setup-ios.mjs",
     "sentry:sourcemaps": "node scripts/sentry-sourcemaps.mjs",
     "build:release": "next build && pnpm sentry:sourcemaps",

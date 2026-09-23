@@ -17,7 +17,7 @@
 | 서버측 AI | 체형 진단(OpenAI Vision), 누끼(remove.bg) — 사진 미저장, 동의 모달 있음 | App Privacy 라벨에 "사진 → 제3자 처리" 명시 필요 |
 | 메타데이터 | `docs/product/app-store-metadata.{ko,en}.md` 작성 완료 | 스크린샷만 미정 |
 | Apple 로그인 secret | client_secret JWT 2027-01-14 만료 (`scripts/gen-apple-secret.mjs`) | 출시 전 문제없음, 캘린더에 회전 일정 등록 |
-| 버전 | `package.json` 0.1.0 | 1.0.0 / build 1 로 정리 |
+| 버전 | `package.json` 0.1.0 | 1.0.0 / build 1 로 정리 → ✅ `version` 1.0.0, 빌드 번호는 `package.json` `iosBuild`(라운드마다 +1) 를 `ios:setup` 이 `CURRENT_PROJECT_VERSION` 에 반영 |
 
 ## 1. Phase 0 — 결정 (2026-09-15 확정)
 

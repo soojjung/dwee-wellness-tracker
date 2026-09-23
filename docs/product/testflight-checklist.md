@@ -8,8 +8,8 @@
 
 한 번 익히면 라운드마다 5분. Xcode 에서:
 
-1. 터미널 `pnpm cap:ios` — 웹 빌드(소스맵 업로드·제거) → `cap sync` → Xcode 열림. `.env.local` 에 `SENTRY_AUTH_TOKEN` 이 있어야 앱 번들 소스맵이 올라간다.
-2. `ios:setup` 이 `MARKETING_VERSION` 을 package.json 버전(1.0.0)으로 맞춘다. **빌드 번호**(`CURRENT_PROJECT_VERSION`)는 TestFlight 에 올릴 때마다 1씩 올려야 한다 — Xcode → App 타깃 → General → Build. 라운드 1 = 1, 라운드 2 = 2 ….
+1. **빌드 번호 올리기** — `package.json` 의 `"iosBuild"` 를 +1 하고 커밋한다 (App Store Connect 는 같은 버전의 빌드 번호 재사용을 거부). 버전(`version`, 1.0.0)과 빌드 번호는 이 파일이 원본이고 Xcode 는 `ios:setup` 이 써 준 값을 보여줄 뿐이다 — Xcode 에서 직접 바꾸지 말 것(`ios/` 는 gitignore 라 흔적이 남지 않는다). 라운드 1 = 1, 라운드 2 = 2 ….
+2. 터미널 `pnpm cap:ios` — 웹 빌드(소스맵 업로드·제거) → `cap sync` → `ios:setup`(버전·빌드 번호·서명 반영) → Xcode 열림. `.env.local` 에 `SENTRY_AUTH_TOKEN` 이 있어야 앱 번들 소스맵이 올라간다. Xcode → App 타깃 → General 에서 Version 1.0.0 / Build 값이 package.json 과 같은지 한 번 본다.
 3. 상단 기기 선택을 **Any iOS Device (arm64)** 로.
 4. Product → **Archive** (2~5분). 첫 Archive 는 배포 인증서를 자동 생성하므로 Apple ID 로그인 상태여야 한다.
 5. Organizer 창 → **Distribute App** → **App Store Connect** → Upload → 기본값 그대로(Manage version and build number 체크 해제 — 우리가 직접 관리) → Upload.
