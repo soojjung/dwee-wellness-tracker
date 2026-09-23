@@ -121,7 +121,15 @@ export function LoginScreen() {
 
       <div className="flex flex-col gap-3 px-5 pb-[84px]">
         {consentRequired ? (
-          <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
+          <div className="flex flex-col gap-1.5">
+            <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
+            {!consentChecked ? (
+              // Indented past the 18px box + gap so it lines up with the label text.
+              <p className="pl-8 text-xs leading-[1.5] text-auth-linkMuted" role="status">
+                {t.auth.consent.hint}
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <Button
           size="lg"
@@ -154,11 +162,6 @@ export function LoginScreen() {
         >
           {guestPending ? t.auth.signingIn : t.auth.continueWithoutSignIn}
         </button>
-        {consentRequired && !consentChecked ? (
-          <p className="-mt-1 text-center text-xs text-auth-linkMuted" role="status">
-            {t.auth.consent.hint}
-          </p>
-        ) : null}
       </div>
 
       <Toast message={notice} />
