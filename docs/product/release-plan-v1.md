@@ -17,7 +17,7 @@
 | 서버측 AI | 체형 진단(OpenAI Vision), 누끼(remove.bg) — 사진 미저장, 동의 모달 있음 | App Privacy 라벨에 "사진 → 제3자 처리" 명시 필요 |
 | 메타데이터 | `docs/product/app-store-metadata.{ko,en}.md` 작성 완료 | 스크린샷만 미정 |
 | Apple 로그인 secret | client_secret JWT 2027-01-14 만료 (`scripts/gen-apple-secret.mjs`) | 출시 전 문제없음, 캘린더에 회전 일정 등록 |
-| 버전 | `package.json` 0.1.0 | 1.0.0 / build 1 로 정리 |
+| 버전 | `package.json` 0.1.0 | 1.0.0 / build 1 로 정리 → ✅ `version` 1.0.0, 빌드 번호는 `package.json` `iosBuild`(라운드마다 +1) 를 `ios:setup` 이 `CURRENT_PROJECT_VERSION` 에 반영 |
 
 ## 1. Phase 0 — 결정 (2026-09-15 확정)
 
@@ -105,7 +105,7 @@
 
 ## 5. QA (Phase 4)
 
-- **TestFlight 내부 테스트** → 외부 테스트(가족·지인 5~10명).
+- **TestFlight 내부 테스트** → 외부 테스트(가족·지인 5~10명). 라운드별 체크 표와 Archive/업로드 절차는 [testflight-checklist.md](./testflight-checklist.md).
 - 기기 체크리스트: 노치/다이내믹 아일랜드 기기와 홈버튼 기기 각 1대 이상, iPad 1대(세로·가로, 셸 가운데 정렬). 확인 항목:
   - 첫 진입 `/login` 게이트, 익명 시작, Apple/Google 로그인, 로그아웃, 탈퇴
   - 오프라인 첫 실행(익명 세션 발급 실패 시 안내)
