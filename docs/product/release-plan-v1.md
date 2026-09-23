@@ -50,8 +50,8 @@
 미국이 주 시장이라 COPPA 를 피하기 어렵고, 한국도 만 14세 미만은 법정대리인 동의가 필요하다. **결정: 1.0 은 A 로 출시. 10~13세 허용은 B 방식으로 1.x 에서 법률 검토 후 재검토.**
 
 **현재 구현의 범위와 빈 곳 (2026-09-23 점검)** — 게이트는 자기 신고 한 단계다: `ConsentCheck`(만 14세 이상 + 약관 동의) 체크 전엔 Apple/Google/게스트 버튼 비활성, 체크 후 `settings.ageConfirmedAt` 에 시각 기록(기기 로컬 전용, Supabase 컬럼 없음 → 재설치·로그아웃 시 다시 묻는다). 생년월일·계정 나이 확인·보호자 동의는 없다. COPPA 는 "13세 미만인 걸 실제로 알면서" 수집하는 걸 금지하므로 게이트 + 미만 차단이면 의무가 성립하지 않고, 생년월일을 굳이 받지 않는 것도 그 이유(받으면 "알게" 된다). 다만 약관 제3조⑤·방침 제10조가 약속한 "확인되면 계정 삭제·정보 파기"를 이행할 수단이 아직 없어 두 가지를 후속으로 둔다:
-1. **신고·삭제 창구** (Phase 3, 법적 문서) — 방침 제10조에 "만 14세 미만 아동의 가입을 알게 된 보호자·본인은 `/legal/support` 의 지원 이메일로 알려주시면 확인 후 지체 없이 삭제합니다" 한 줄 추가(ko 원문 + en 번역). 운영 절차: 이메일 수신 → 계정 식별 → `delete-account` 와 같은 경로로 삭제.
-2. **동의 기록의 서버 보관** (Phase 3, DB — 선택) — `profiles.age_confirmed_at` 컬럼을 추가하고 로컬 `ageConfirmedAt` 을 로그인 시 올려 두면 분쟁 시 "언제 14세 이상이라고 동의했는지"를 보여줄 수 있다. 필수는 아니며 마이그레이션 1건 규모. 도입하면 재설치 후 다시 묻지 않게 할 수도 있다.
+1. **신고·삭제 창구** ✅ 2026-09-23 (방침 제10조 두 번째 문단, ko+en; 시행일자는 그대로 두고 문구 보완으로 처리) — 방침 제10조에 "만 14세 미만 아동의 가입을 알게 된 보호자·본인은 `/legal/support` 의 지원 이메일로 알려주시면 확인 후 지체 없이 삭제합니다" 한 줄 추가(ko 원문 + en 번역). 운영 절차: 이메일 수신 → 계정 식별 → `delete-account` 와 같은 경로로 삭제.
+2. **동의 기록의 서버 보관** (사용자 결정 2026-09-23: **1.x 로 미룸**) — `profiles.age_confirmed_at` 컬럼을 추가하고 로컬 `ageConfirmedAt` 을 로그인 시 올려 두면 분쟁 시 "언제 14세 이상이라고 동의했는지"를 보여줄 수 있다. 필수는 아니며 마이그레이션 1건 규모. 도입하면 재설치 후 다시 묻지 않게 할 수도 있다.
 3. 게이트 안내 카피 — 지금은 "계속하려면 위 항목에 체크해 주세요" 뿐이라 14세 미만은 왜 못 들어오는지 알 수 없다. 심사 지적 가능성은 낮지만 `consent.hint` 에 연령 요건을 한 줄 덧붙이는 건 STEP 5 에서 검토. → STEP 5 에서 반영했다가 2026-09-23 사용자 결정으로 **제거**(로그인 화면에 안내 문구 없음, 체크박스 문장만). `consent.hint` 키 삭제.
 
 ## 2. 코드 준비 (Phase 1)
@@ -88,7 +88,7 @@
 
 - **Supabase Auth** ✅: Site URL `https://dwee-neon.vercel.app`, Redirect URLs 3개(`dwee://auth/callback`, 프로덕션 `/auth/callback`, localhost). 익명 로그인 ON, Apple·Google Enabled. 익명 가입 captcha 는 1.0 미적용 — 출시 후 익명 사용자 수가 튀면 도입(Phase 6).
 - **Apple Developer** ✅: App ID `com.innerglow.dwee` 신규 등록(primary, Sign in with Apple, Push 없음, server-to-server endpoint 비움). Services ID `com.dwee.app.web` 의 Primary App ID 를 새 App ID 로 변경, Domains/Return URL(Supabase 콜백)은 그대로. 옛 App ID `com.dwee.app` 은 미사용 상태로 방치. Supabase Apple provider Client ID = `com.dwee.app.web` 일치 확인, secret 은 2027-01-14 만료.
-- **Google Cloud** ✅ (프로젝트 이관): 기존 `dwee Web` 클라이언트가 다른 앱 프로젝트(`bbumate-en`)에 있어 동의 화면을 공유할 수 없었음 → `dwee-502413` 프로젝트에 동의 화면(외부, 프로덕션 게시, 브랜딩 링크 3종, 승인 도메인 `dwee-neon.vercel.app`·`ownupkjkmuyyqmktltej.supabase.co` — `vercel.app`/`supabase.co` 는 public suffix 라 불가)과 새 웹 클라이언트를 만들고 Supabase Google provider 의 Client ID/Secret 교체. 비민감 범위만 요청하므로 앱 인증 불필요, 브랜딩 검증(로고)은 출시 후. `bbumate-en` 의 옛 클라이언트는 확인 후 삭제 가능.
+- **Google Cloud** ✅ (프로젝트 이관): 기존 `dwee Web` 클라이언트가 다른 앱 프로젝트(`bbumate-en`)에 있어 동의 화면을 공유할 수 없었음 → `dwee-502413` 프로젝트에 동의 화면(외부, 프로덕션 게시, 브랜딩 링크 3종, 승인 도메인 `dwee-neon.vercel.app`·`ownupkjkmuyyqmktltej.supabase.co` — `vercel.app`/`supabase.co` 는 public suffix 라 불가)과 새 웹 클라이언트를 만들고 Supabase Google provider 의 Client ID/Secret 교체. 비민감 범위만 요청하므로 앱 인증 불필요, 브랜딩 검증(로고)은 출시 후. `bbumate-en` 의 옛 `dwee Web` 클라이언트(`245585874472-…`)는 새 클라이언트로 웹 로그인 확인 후 **삭제 완료(2026-09-23)**.
 - **Edge Functions** ✅: 3개 배포 확인. `body-type-analyze` 를 CLI 로 재배포(스타일 가이드 프롬프트 반영). Secrets `OPENAI_API_KEY`·`REMOVE_BG_API_KEY` 존재.
 - **DB** ✅: `supabase db diff --linked` 로 원격 스키마가 0001~0015 를 모두 포함함을 확인(CLI 이력은 비어 있지만 적용됨). 원격에만 있는 잔재 테이블 `home_overlays`(PR #1~#2 시절, 코드 미참조) — 출시 후 drop 마이그레이션으로 정리.
 - **Vercel** ✅: 도메인은 `dwee-neon.vercel.app` 유지. `SITE_URL`(3환경)·`NEXT_PUBLIC_SUPABASE_URL`·`ANON_KEY`(Production+Preview) 존재, 프로덕션 OG 이미지 URL 로 `SITE_URL` 값 확인. `/legal/privacy`·`/legal/terms`·`/legal/support` 200.
@@ -100,7 +100,7 @@
 - **Google Cloud**: OAuth 동의 화면을 "프로덕션"으로 게시(앱 이름·로고·개인정보처리방침 URL 필요 → STEP 1 산출물), iOS 클라이언트 ID 는 브라우저 방식이면 기존 웹 클라이언트로 충분.
 - **Edge Functions**: `body-type-analyze`(갱신된 프롬프트 재배포 필요), `sticker-cutout`, `delete-account` 배포 상태와 시크릿(OPENAI_API_KEY, remove.bg 키, service role) 확인. 일일 한도(10회 / 누끼 한도)가 심사 시 막히지 않도록 리뷰 계정은 한도 여유 확인.
 - **DB**: 마이그레이션 0001~0015 가 프로덕션에 모두 적용됐는지 대시보드에서 확인(CLI 이력은 비어 있음). §1.2 후속 2(`profiles.age_confirmed_at`) 도입 여부를 여기서 결정.
-- **법적 문서**: §1.2 후속 1 — 개인정보처리방침 제10조에 만 14세 미만 신고·삭제 창구(지원 이메일) 문장 추가, ko 원문 + en 번역 동기.
+- **법적 문서** ✅: §1.2 후속 1 — 개인정보처리방침 제10조에 만 14세 미만 신고·삭제 창구(제14조 보호책임자 이메일) 문장 추가, ko 원문 + en 번역 동기.
 - **Vercel**: 프로덕션 도메인 확정(현재 `dwee-neon.vercel.app`), 환경변수 3종(`SITE_URL` 은 확정 도메인으로 — 루트 레이아웃 `metadataBase`, 빌드 시점에 굳음), OG 이미지 URL.
 
 ## 5. QA (Phase 4)
