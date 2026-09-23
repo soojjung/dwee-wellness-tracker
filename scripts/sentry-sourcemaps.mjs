@@ -36,23 +36,30 @@ if (!process.env.SENTRY_AUTH_TOKEN) {
     '[sentry-sourcemaps] SENTRY_AUTH_TOKEN not set — skipping upload, stripping maps only.',
   );
 } else {
-  const cli = join(root, 'node_modules', '.bin', 'sentry-cli');
-  const common = ['--org', ORG, '--project', PROJECT];
-  execFileSync(cli, ['releases', 'new', release, ...common], { stdio: 'inherit' });
-  execFileSync(cli, ['sourcemaps', 'inject', join(outDir, '_next', 'static'), ...common], {
-    stdio: 'inherit',
-  });
-  execFileSync(
-    cli,
-    ['sourcemaps', 'upload', '--release', release, join(outDir, '_next', 'static'), ...common],
-    { stdio: 'inherit' },
-  );
-  execFileSync(cli, ['releases', 'finalize', release, ...common], { stdio: 'inherit' });
-  console.log(`[sentry-sourcemaps] uploaded for ${release}`);
+  // A Sentry outage or a bad token must not block a deploy: the app works
+  // without source maps, only the stack traces get uglier until the next build.
+  try {
+    upload();
+    console.log(`[sentry-sourcemaps] uploaded for ${release}`);
+  } catch (err) {
+    console.warn(
+      `[sentry-sourcemaps] upload failed — continuing without source maps.\n${String(err.message ?? err)}`,
+    );
+  }
 }
 
 const removed = stripMaps(join(outDir, '_next', 'static'));
 console.log(`[sentry-sourcemaps] removed ${removed} .map files from out/`);
+
+function upload() {
+  const cli = join(root, 'node_modules', '.bin', 'sentry-cli');
+  const common = ['--org', ORG, '--project', PROJECT];
+  const run = (args) => execFileSync(cli, [...args, ...common], { stdio: 'inherit' });
+  run(['releases', 'new', release]);
+  run(['sourcemaps', 'inject', join(outDir, '_next', 'static')]);
+  run(['sourcemaps', 'upload', '--release', release, join(outDir, '_next', 'static')]);
+  run(['releases', 'finalize', release]);
+}
 
 function stripMaps(dir) {
   let n = 0;
