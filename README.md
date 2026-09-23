@@ -213,7 +213,7 @@ pnpm test                       # lint → typecheck → unit (e2e is separate: 
 ```bash
 npx cap add ios                 # generate the Xcode project (once)
 pnpm ios:setup                  # scripts/setup-ios.mjs — Info.plist, en/ko strings, icon, launch screen
-pnpm cap:ios                    # next build → cap sync → open Xcode
+pnpm cap:ios                    # build:release (source maps uploaded + stripped) → cap sync → open Xcode
 ```
 
 `setup-ios.mjs` is idempotent: it adds camera/photo usage descriptions (en in Info.plist, ko via `InfoPlist.strings`), registers the `dwee://` URL scheme for the OAuth return, sets the deployment target to iOS 15, copies `public/app-icon-1024.png` into the icon set and turns the launch screen into a plain `#F5F3F4` view. Still manual in Xcode: Signing team and the **Sign in with Apple** capability.

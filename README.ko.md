@@ -209,8 +209,8 @@ pnpm test:e2e:update    # baseline PNG 갱신 (의도된 UI 변경 후)
 ```bash
 npx cap add ios   # Xcode 프로젝트 생성 (최초 1회)
 pnpm ios:setup    # scripts/setup-ios.mjs — Info.plist·en/ko 문구·아이콘·런치 스크린
-pnpm cap:sync     # next build && cap sync
-pnpm cap:ios      # next build → cap sync → Xcode 열기
+pnpm cap:sync     # build:release(소스맵 업로드·제거) && cap sync
+pnpm cap:ios      # build:release → cap sync → Xcode 열기
 ```
 
 `setup-ios.mjs` 는 여러 번 실행해도 안전합니다(idempotent). 하는 일: 카메라·사진 보관함 권한 문구(en 은 Info.plist, ko 는 `InfoPlist.strings`), OAuth 복귀용 `dwee://` URL 스킴 등록, iPhone 세로 고정(iPad 는 전 방향), 배포 타깃 iOS 15, `public/app-icon-1024.png` 를 아이콘 세트에 복사, 런치 스크린을 `#F5F3F4` 단색으로 교체. `cap sync` 는 이 중 아무것도 자동으로 해 주지 않으므로 프로젝트를 새로 만들면 반드시 한 번 실행하세요. Xcode 에서 직접 해야 하는 것: Signing team, **Sign in with Apple** capability.
