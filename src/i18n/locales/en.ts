@@ -1329,11 +1329,6 @@ export const en = {
       koreanLabel: '한국어',
       englishLabel: 'English',
     },
-    version: {
-      prefix: 'Version ',
-      separator: ' | ',
-      upToDate: 'Up to date',
-    },
     account: {
       closeAriaLabel: 'Close',
       saveAriaLabel: 'Save',

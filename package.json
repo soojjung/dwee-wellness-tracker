@@ -27,6 +27,7 @@
     "@capacitor/camera": "^6.1.3",
     "@capacitor/keyboard": "^6",
     "@capacitor/local-notifications": "^6",
+    "@capacitor/share": "^6",
     "@capacitor/status-bar": "^6",
     "@sentry/capacitor": "4.3.0",
     "@sentry/react": "10.69.0",

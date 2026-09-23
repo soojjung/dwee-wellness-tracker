@@ -38,9 +38,10 @@ export function PhotoPreviewView({
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-brand-gray50 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
-      <div className="flex items-center px-4 pt-3">
+      <div className="flex items-center px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <button
           type="button"
+          data-swipe-back
           onClick={onBack}
           aria-label={p.backToArticle}
           className="grid size-10 place-items-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"

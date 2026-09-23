@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { DevBridge } from '@/dev/DevBridge';
 import { NativeChrome } from '@/components/app/NativeChrome';
+import { SwipeBackGesture } from '@/components/app/SwipeBackGesture';
 import { Monitoring } from '@/components/app/Monitoring';
 
 // en-US is the primary market (see .claude memory: feedback_localization).
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Monitoring />
         <DevBridge />
         <NativeChrome />
+        <SwipeBackGesture />
         {children}
       </body>
     </html>

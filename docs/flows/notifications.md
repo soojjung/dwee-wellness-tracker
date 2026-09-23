@@ -80,7 +80,7 @@ dwee 의 알림 3종은 전부 사용자 본인의 기록으로 계산되는 날
 
 - **예약은 앱이 실행될 때만 갱신됩니다.** 앱을 오래 안 열면 마지막으로 계산된 예약이 그대로 울립니다. 생리를 기록하지 않은 채 예정일이 지나면 지연 알림이 한 번 울리고, 그 뒤는 앱을 열어 기록해야 다음 주기가 예약됩니다. (백그라운드 재계산은 로드맵 밖)
 - 예약 시각은 기기 로컬 09:00 입니다. 시간대를 옮기면 OS 가 새 로컬 09:00 으로 해석합니다.
-- 설정값(`notificationsEnabled`, `notif*`)은 `UserSettings` 에 저장되지만 Supabase `profiles` 에는 컬럼이 없어 **기기 로컬 전용**입니다. 다른 기기에서 로그인하면 기본값(OFF)부터 시작합니다.
+- 설정값(`notificationsEnabled`, `notif*`, lead days)은 `UserSettings` 에 저장되고, 로그인 사용자는 Supabase `profiles`(`notif_period_due_enabled` 등, migration `0016_profiles_notification_prefs.sql`)로 동기화됩니다 — 다른 기기에서 로그인해도 같은 값을 봅니다. 알림 자체(발송)는 기기별 로컬 알림이라 새 기기에서는 그 기기가 다시 앱을 열어야 예약이 생성됩니다.
 - 실기기 발송 검증은 아직 안 됐습니다 — 출시 계획 Phase 4 (TestFlight) 에서 확인.
 
 ---

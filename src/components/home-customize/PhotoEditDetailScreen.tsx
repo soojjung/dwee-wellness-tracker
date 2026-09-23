@@ -222,7 +222,7 @@ export function PhotoEditDetailScreen({ initialSlot }: PhotoEditDetailScreenProp
   return (
     <div className="flex min-h-dvh flex-col bg-brand-white">
       <div className="mx-auto flex w-full flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between bg-brand-white px-4">
+        <header className="sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center pt-[env(safe-area-inset-top,0px)] justify-between bg-brand-white px-4">
           <button
             type="button"
             onClick={handleCancel}

@@ -185,9 +185,10 @@ function GuideSection({
 
 function TopBar({ backHref, backAria }: { backHref: string; backAria: string }) {
   return (
-    <div className="flex items-center px-4 pt-3">
+    <div className="flex items-center px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
       <Link
         href={backHref}
+        data-swipe-back
         aria-label={backAria}
         className="grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
       >

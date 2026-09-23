@@ -14,6 +14,7 @@ export function MyPageBackLink({ ariaLabel }: MyPageBackLinkProps) {
   return (
     <Link
       href="/settings"
+      data-swipe-back
       onClick={handleClick}
       aria-label={ariaLabel}
       // Same 40px circle + BackIcon as FoodArticleScreen / magazine headers.

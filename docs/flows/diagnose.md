@@ -117,7 +117,7 @@ stateDiagram-v2
 
 상단은 `DiagnoseResultTopBar` 가 `fixed` 로 고정되어 왼쪽 뒤로가기 + 오른쪽 "다른 사진으로 다시하기"를 스크롤과 무관하게 항상 노출합니다(재시도 동작이 화면 하단에서 이 바로 이동). 히어로 위에선 반투명 원 + 밝은 아이콘, 카드 상단이 바 아래로 들어오는 시점(`stuck`)부터는 `bg-brand-gray50` + 어두운 아이콘으로 전환합니다. stuck 판정은 `ReportView` 가 카드 최상단 1px 센티널에 `IntersectionObserver` 를 걸어 하며, `rootMargin` 을 바 높이(`TOP_BAR_HEIGHT = 64`)로 맞춰 전환 시점을 정렬하고 `onStuckChange` 콜백으로 부모(`DiagnoseResultScreen`)에 알립니다. 탭 pill 은 상단에 고정하지 않고 본문과 함께 스크롤됩니다 — 고정하면 읽는 영역이 줄어 답답하다는 피드백으로 sticky 를 제거했습니다 (2026-09-14).
 
-화면 하단은 `ShareTestBar` 가 고정 바로 깔립니다 (`bg-brand-gray900` + `text-brand-pink100`). `navigator.share` 가 있으면 네이티브 공유 시트를, 없으면 링크를 클립보드에 복사하고 토스트를 띄웁니다(`QnaScreen` 의 기존 복사 폴백과 동일 패턴). 공유 시트를 사용자가 취소한 경우는 복사하지 않고 조용히 종료합니다.
+화면 하단은 `ShareTestBar` 가 고정 바로 깔립니다 (`bg-brand-gray900` + `text-brand-pink100`). 앱(Capacitor 네이티브)에서는 `@capacitor/share` 의 `Share.share()` 로 iOS 공유 시트를 바로 띄웁니다 — WKWebView 에는 Web Share API 가 없기 때문입니다(실기기 QA 2026-09-24). 웹은 기존 경로 그대로 `navigator.share` 가 있으면 그걸, 없으면 링크를 클립보드에 복사하고 토스트를 띄웁니다(`QnaScreen` 의 기존 복사 폴백과 동일 패턴). 두 경로 모두 공유 시트를 사용자가 취소한 경우는 복사하지 않고 조용히 종료합니다.
 
 ---
 

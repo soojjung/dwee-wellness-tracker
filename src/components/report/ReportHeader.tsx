@@ -14,7 +14,7 @@ export function ReportHeader({ year, onAddClick, currentView, onViewChange }: Re
   const t = useT();
   // 하단 12px: 스크롤로 본문이 헤더 밑을 지날 때 텍스트가 헤더에 바짝 붙지 않게 (Figma).
   return (
-    <div className="sticky top-0 z-10 flex flex-col bg-brand-gray200/95 pb-3 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 flex flex-col bg-brand-gray200/95 pb-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-sm">
       <div className="flex items-center px-4 py-2.5">
         <h1 className="text-2xl font-semibold leading-normal text-brand-gray900">
           {t.report.title}

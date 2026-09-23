@@ -46,6 +46,7 @@ export function EventDetailScreen({
         <header className="flex items-center justify-between px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
           <button
             type="button"
+            data-swipe-back
             onClick={onBack}
             aria-label={d.back}
             className="grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"

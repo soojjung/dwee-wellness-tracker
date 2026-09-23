@@ -96,9 +96,10 @@ function TopBar({ backAria, slug }: TopBarProps) {
   return (
     // 본문이 뒤로 흐르는 동안 상단에 계속 떠 있는다. 아이콘을 둘 다 진한 색으로
     // 두는 것은 어두운 히어로와 흰 본문 어느 쪽 위에서도 읽히게 하려는 것.
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-20 mx-auto flex w-full max-w-md items-center justify-between px-4 pt-3">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-20 mx-auto flex w-full max-w-md items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
       <Link
         href="/magazine"
+        data-swipe-back
         aria-label={backAria}
         className="pointer-events-auto grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray50/60"
       >

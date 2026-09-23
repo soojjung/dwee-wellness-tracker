@@ -61,7 +61,7 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
         {showFullEmpty ? (
           <CycleReportEmpty onLogClick={() => setEntryOpen(true)} />
         ) : (
-          <div className="flex flex-col gap-4 px-4 pt-4">
+          <div className="flex flex-col gap-4 px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-4">
             <CycleReportCard periods={periods} months={months} />
             <RecentCyclesCard periods={periods} />
           </div>

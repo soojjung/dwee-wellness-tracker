@@ -190,7 +190,7 @@ Matches Figma 292:2765. One master toggle expands into three per-topic sub-toggl
 
 `notifPeriodDueLeadDays` (0–14, persisted to `UserSettings`) controls a 3-row wheel picker for lead time when period-due is enabled. The wheel appears inline under the period-due row; it's built on the shared `WheelColumn` (`src/components/ui/WheelColumn.tsx` — the same scroll-snap column the diary's year/month picker uses), so drag/flick scrolling settles a value in the center, and tapping a neighbor row also selects it directly.
 
-Master-toggle semantics: turning ON enables all three subs; turning OFF disables all subs and collapses the sub-toggle section. When the last enabled sub is individually turned off, master auto-clears. Persisted to IndexedDB via `settingsStore.update()` — no push infrastructure yet; Supabase profiles table has no columns for these fields (uses `DEFAULT_USER_SETTINGS` fallback on load).
+Master-toggle semantics: turning ON enables all three subs; turning OFF disables all subs and collapses the sub-toggle section. When the last enabled sub is individually turned off, master auto-clears. Persisted via `settingsStore.update()` — IndexedDB for anonymous/local users; for signed-in users, `SupabaseSettingsAdapter` maps the three sub-toggles and lead days to `profiles.notif_period_due_enabled` / `notif_period_delay_enabled` / `notif_fertile_enabled` / `notif_period_due_lead_days` (migration `0016_profiles_notification_prefs.sql`). Before this migration, a signed-in device's sub-toggle taps never persisted remotely and silently reverted to off — caught in real-device QA 2026-09-24. `rowToSettings()` falls back to `DEFAULT_USER_SETTINGS` for rows from before the migration was applied to a given database.
 
 ---
 

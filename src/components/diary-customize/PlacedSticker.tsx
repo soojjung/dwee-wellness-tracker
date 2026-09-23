@@ -1,6 +1,7 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, type MutableRefObject } from 'react';
 import { useT } from '@/i18n/useT';
+import { applyPinch, pinchGeometry } from '@/domain/diary/stickerPinch';
 import { cn } from '@/lib/cn';
 import { stickerImageFit } from '@/components/diary/stickerImageFit';
 import {
@@ -21,6 +22,8 @@ interface PlacedStickerProps {
   onSelect: () => void;
   onChange: (patch: Partial<DiaryStickerPlacement>) => void;
   onDelete: () => void;
+  /** 레이어가 두 손가락 핀치를 잡고 있는 동안 true — 한 손가락 드래그는 물러난다. */
+  pinchActive: MutableRefObject<boolean>;
 }
 
 interface DragState {
@@ -46,6 +49,7 @@ export function PlacedSticker({
   onSelect,
   onChange,
   onDelete,
+  pinchActive,
 }: PlacedStickerProps) {
   const t = useT();
   const scaleFactor = containerWidth / PLACEMENT_NOMINAL_WIDTH;
@@ -105,22 +109,23 @@ export function PlacedSticker({
   function handlePointerMove(e: React.PointerEvent) {
     const state = dragRef.current;
     if (!state || state.pointerId !== e.pointerId) return;
+    // 두 번째 손가락이 내려오면 핀치가 이 스티커를 넘겨받는다. 드래그 상태를 버려야
+    // 핀치가 끝난 뒤 남은 손가락이 처음 잡은 지점 기준으로 스티커를 튕기지 않는다.
+    if (pinchActive.current) {
+      dragRef.current = null;
+      return;
+    }
     if (state.kind === 'move') {
       const dx = (e.clientX - state.startClientX) / scaleFactor;
       const dy = (e.clientY - state.startClientY) / scaleFactor;
       onChange({ x: state.startX + dx, y: state.startY + dy });
     } else {
-      const startVecX = state.startClientX - state.centerClientX;
-      const startVecY = state.startClientY - state.centerClientY;
-      const nextVecX = e.clientX - state.centerClientX;
-      const nextVecY = e.clientY - state.centerClientY;
-      const startDist = Math.hypot(startVecX, startVecY) || 1;
-      const nextDist = Math.hypot(nextVecX, nextVecY) || 1;
-      const scale = Math.min(3, Math.max(0.3, state.startScale * (nextDist / startDist)));
-      const startAngle = Math.atan2(startVecY, startVecX);
-      const nextAngle = Math.atan2(nextVecY, nextVecX);
-      const rotation = state.startRotation + ((nextAngle - startAngle) * 180) / Math.PI;
-      onChange({ scale, rotation });
+      const center = { x: state.centerClientX, y: state.centerClientY };
+      const start = pinchGeometry(center, { x: state.startClientX, y: state.startClientY });
+      const now = pinchGeometry(center, { x: e.clientX, y: e.clientY });
+      onChange(
+        applyPinch({ ...start, scale: state.startScale, rotation: state.startRotation }, now),
+      );
     }
   }
 

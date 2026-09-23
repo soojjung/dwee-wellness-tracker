@@ -294,7 +294,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
             drags the calendar past its resting position. Extra pb keeps the
             6th calendar row clear of the fixed BottomTabNav on short mobile
             viewports (Safari with URL bar visible). */}
-        <div className="px-4 pb-24 pt-4">
+        <div className="px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-4">
           <div
             ref={swipeContainerRef}
             // `select-none` prevents mouse-drag text selection from

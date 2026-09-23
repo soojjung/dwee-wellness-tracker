@@ -14,8 +14,7 @@ const BODY_TYPE_RESULT_HREF = '/magazine/personal-body-type/diagnose/result';
  * otherwise shows a CTA row (→ magazine article intro) so a user who hasn't
  * taken the test can still discover and start it from MyPage.
  * 결과는 Repository 를 거쳐 보관된다 — 로그인 상태면 Supabase 라 다른 기기에서도
- * 같은 결과가 보인다. 지워지는 건 결과 화면에서 [다른 사진으로 다시하기] 를
- * 누를 때뿐이다.
+ * 같은 결과가 보인다. [다시하기] 는 지우지 않고, 새 진단을 마쳤을 때 덮어쓴다.
  */
 export function MyTestsCard() {
   const t = useT();

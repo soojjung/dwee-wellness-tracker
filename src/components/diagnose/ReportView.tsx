@@ -109,8 +109,8 @@ function Hero({
           className="absolute -top-[72px] right-0 h-[700px] w-auto max-w-none"
         />
       </div>
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[168px] bg-gradient-to-b from-brand-gray900 via-brand-gray900/80 to-transparent" />
-      <div className="relative z-10 flex flex-col gap-2 px-4 pt-[138px]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[calc(168px+env(safe-area-inset-top,0px))] bg-gradient-to-b from-brand-gray900 via-brand-gray900/80 to-transparent" />
+      <div className="relative z-10 flex flex-col gap-2 px-4 pt-[calc(138px+env(safe-area-inset-top,0px))]">
         <h1 className="text-2xl font-semibold leading-normal text-brand-gray50">
           {typeName} {typeSuffix}
         </h1>

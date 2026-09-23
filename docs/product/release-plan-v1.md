@@ -90,7 +90,7 @@
 - **Apple Developer** ✅: App ID `com.innerglow.dwee` 신규 등록(primary, Sign in with Apple, Push 없음, server-to-server endpoint 비움). Services ID `com.dwee.app.web` 의 Primary App ID 를 새 App ID 로 변경, Domains/Return URL(Supabase 콜백)은 그대로. 옛 App ID `com.dwee.app` 은 미사용 상태로 방치. Supabase Apple provider Client ID = `com.dwee.app.web` 일치 확인, secret 은 2027-01-14 만료.
 - **Google Cloud** ✅ (프로젝트 이관): 기존 `dwee Web` 클라이언트가 다른 앱 프로젝트(`bbumate-en`)에 있어 동의 화면을 공유할 수 없었음 → `dwee-502413` 프로젝트에 동의 화면(외부, 프로덕션 게시, 브랜딩 링크 3종, 승인 도메인 `dwee-neon.vercel.app`·`ownupkjkmuyyqmktltej.supabase.co` — `vercel.app`/`supabase.co` 는 public suffix 라 불가)과 새 웹 클라이언트를 만들고 Supabase Google provider 의 Client ID/Secret 교체. 비민감 범위만 요청하므로 앱 인증 불필요, 브랜딩 검증(로고)은 출시 후. `bbumate-en` 의 옛 `dwee Web` 클라이언트(`245585874472-…`)는 새 클라이언트로 웹 로그인 확인 후 **삭제 완료(2026-09-23)**.
 - **Edge Functions** ✅: 3개 배포 확인. `body-type-analyze` 를 CLI 로 재배포(스타일 가이드 프롬프트 반영). Secrets `OPENAI_API_KEY`·`REMOVE_BG_API_KEY` 존재.
-- **DB** ✅: `supabase db diff --linked` 로 원격 스키마가 0001~0015 를 모두 포함함을 확인(CLI 이력은 비어 있지만 적용됨). 원격에만 있는 잔재 테이블 `home_overlays`(PR #1~#2 시절, 코드 미참조) — 출시 후 drop 마이그레이션으로 정리.
+- **DB** ✅: `supabase db diff --linked` 로 원격 스키마가 0001~0016 를 모두 포함함을 확인(CLI 이력은 비어 있지만 적용됨. 0016 은 실기기 QA 라운드 1 에서 SQL Editor 로 직접 적용, 2026-09-24). 원격에만 있는 잔재 테이블 `home_overlays`(PR #1~#2 시절, 코드 미참조) — 출시 후 drop 마이그레이션으로 정리.
 - **Vercel** ✅ (Sentry 후속 남음 — Build Command `pnpm build:release`, env `NEXT_PUBLIC_SENTRY_DSN`·`SENTRY_AUTH_TOKEN`): 도메인은 `dwee-neon.vercel.app` 유지. `SITE_URL`(3환경)·`NEXT_PUBLIC_SUPABASE_URL`·`ANON_KEY`(Production+Preview) 존재, 프로덕션 OG 이미지 URL 로 `SITE_URL` 값 확인. `/legal/privacy`·`/legal/terms`·`/legal/support` 200.
 
 원안:
@@ -114,6 +114,7 @@
   - 상태바·안전영역·당겨서 새로고침 배경색, 다크모드 강제 해제 여부
   - 언어 전환(en 기본, ko)
 - 자동 검증: `pnpm test` + `pnpm test:e2e` 는 그대로 유지. 네이티브 전용 흐름(OAuth 복귀·카메라)은 수동 체크리스트로 기록.
+- **라운드 1** (2026-09-24, iPhone 13, 첫 실기기 실행): 안전영역 여백(노치·홈 인디케이터에 가려지던 약 30개 화면 헤더/푸터를 `env(safe-area-inset-*)` 계산으로 수정), iOS 식 엣지 스와이프 뒤로가기(`SwipeBackGesture` + `data-swipe-back`), 스티커 핀치(두 손가락)로 크기·회전(`domain/diary/stickerPinch.ts`, 한 손가락 핸들과 공유), 알림 세부 토글이 로그인 상태에서 저장되지 않던 문제(`profiles` 컬럼 부재 → migration 0016), 체형 진단 공유가 앱 안에서 반응 없던 문제(`@capacitor/share` 도입, 링크는 `NEXT_PUBLIC_SITE_URL` 기준).
 
 ## 6. App Store Connect 제출 (Phase 5)
 

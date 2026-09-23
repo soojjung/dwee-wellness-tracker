@@ -1316,11 +1316,6 @@ export const ko: Dictionary = {
       koreanLabel: '한국어',
       englishLabel: 'English',
     },
-    version: {
-      prefix: '앱 버전 ',
-      separator: ' | ',
-      upToDate: '최신버전',
-    },
     account: {
       closeAriaLabel: '닫기',
       saveAriaLabel: '완료',

@@ -136,16 +136,18 @@ export function HomeScreen() {
     if (changes.length === 0) await updateSettings({ onboardingCompleted: true });
   }
 
+  // 로딩·오류 문구는 화면 한가운데. PageContainer 만 쓰면 상태바 바로 아래
+  // 왼쪽 위에 붙어서 잘못 그려진 것처럼 보였다.
   if (!authHydrated || !settingsHydrated || (periodsLoading && !periodsHydrated)) {
     return (
-      <PageContainer>
+      <PageContainer className="min-h-dvh items-center justify-center">
         <p className="text-sm text-neutral-500">{t.home.loadingLabel}</p>
       </PageContainer>
     );
   }
   if (periodsError) {
     return (
-      <PageContainer>
+      <PageContainer className="min-h-dvh items-center justify-center">
         <p className="text-sm text-neutral-500">{t.home.errorLabel}</p>
       </PageContainer>
     );
@@ -158,7 +160,7 @@ export function HomeScreen() {
     periodsHydrated && isEmpty && !settings.onboardingCompleted && !introPromptDismissed;
 
   return (
-    <PageContainer className="gap-0 pb-24">
+    <PageContainer className="gap-0 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <HomeHero />
 
       <div className="flex flex-col gap-5 pt-8">
