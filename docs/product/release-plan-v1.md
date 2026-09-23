@@ -84,6 +84,17 @@
 
 ## 4. 백엔드·콘솔 설정 (Phase 3)
 
+✅ 콘솔 작업 2026-09-23 완료 (아래 항목별 결과). 남은 코드 항목: 법적 문서(방침 제10조 신고 창구), `profiles.age_confirmed_at`(선택).
+
+- **Supabase Auth** ✅: Site URL `https://dwee-neon.vercel.app`, Redirect URLs 3개(`dwee://auth/callback`, 프로덕션 `/auth/callback`, localhost). 익명 로그인 ON, Apple·Google Enabled. 익명 가입 captcha 는 1.0 미적용 — 출시 후 익명 사용자 수가 튀면 도입(Phase 6).
+- **Apple Developer** ✅: App ID `com.innerglow.dwee` 신규 등록(primary, Sign in with Apple, Push 없음, server-to-server endpoint 비움). Services ID `com.dwee.app.web` 의 Primary App ID 를 새 App ID 로 변경, Domains/Return URL(Supabase 콜백)은 그대로. 옛 App ID `com.dwee.app` 은 미사용 상태로 방치. Supabase Apple provider Client ID = `com.dwee.app.web` 일치 확인, secret 은 2027-01-14 만료.
+- **Google Cloud** ✅ (프로젝트 이관): 기존 `dwee Web` 클라이언트가 다른 앱 프로젝트(`bbumate-en`)에 있어 동의 화면을 공유할 수 없었음 → `dwee-502413` 프로젝트에 동의 화면(외부, 프로덕션 게시, 브랜딩 링크 3종, 승인 도메인 `dwee-neon.vercel.app`·`ownupkjkmuyyqmktltej.supabase.co` — `vercel.app`/`supabase.co` 는 public suffix 라 불가)과 새 웹 클라이언트를 만들고 Supabase Google provider 의 Client ID/Secret 교체. 비민감 범위만 요청하므로 앱 인증 불필요, 브랜딩 검증(로고)은 출시 후. `bbumate-en` 의 옛 클라이언트는 확인 후 삭제 가능.
+- **Edge Functions** ✅: 3개 배포 확인. `body-type-analyze` 를 CLI 로 재배포(스타일 가이드 프롬프트 반영). Secrets `OPENAI_API_KEY`·`REMOVE_BG_API_KEY` 존재.
+- **DB** ✅: `supabase db diff --linked` 로 원격 스키마가 0001~0015 를 모두 포함함을 확인(CLI 이력은 비어 있지만 적용됨). 원격에만 있는 잔재 테이블 `home_overlays`(PR #1~#2 시절, 코드 미참조) — 출시 후 drop 마이그레이션으로 정리.
+- **Vercel** ✅: 도메인은 `dwee-neon.vercel.app` 유지. `SITE_URL`(3환경)·`NEXT_PUBLIC_SUPABASE_URL`·`ANON_KEY`(Production+Preview) 존재, 프로덕션 OG 이미지 URL 로 `SITE_URL` 값 확인. `/legal/privacy`·`/legal/terms`·`/legal/support` 200.
+
+원안:
+
 - **Supabase Auth**: Site URL 은 Vercel 프로덕션, Redirect URLs 에 `dwee://auth/callback` 과 `https://<프로덕션>/auth/callback` 추가. 익명 로그인 활성 유지.
 - **Apple Developer**: App ID 에 Sign in with Apple 켜기, Services ID 의 Return URL 에 Supabase 콜백 확인, 2027-01-14 전 client_secret 회전 일정 등록.
 - **Google Cloud**: OAuth 동의 화면을 "프로덕션"으로 게시(앱 이름·로고·개인정보처리방침 URL 필요 → STEP 1 산출물), iOS 클라이언트 ID 는 브라우저 방식이면 기존 웹 클라이언트로 충분.
@@ -116,6 +127,10 @@
 
 ## 7. 출시 후 (Phase 6)
 
+- 익명 가입 captcha(Supabase 권고) — Auth 사용량에서 익명 사용자 급증 시 도입.
+- Google OAuth 브랜딩 검증(로고 표시) — Search Console 도메인 소유 확인 필요.
+- `home_overlays` 잔재 테이블 drop 마이그레이션.
+- Apple client_secret 2027-01-14 전 재발급(`scripts/gen-apple-secret.mjs`).
 - 심사 피드백 대응 → 승인 → 단계적 출시(7일 phased release 권장).
 - 모니터링: Supabase 로그(Edge Function 오류·한도), 크래시 리포팅(채택 시).
 - 1.0.1 후보: Android, 공휴일 표 2031년 이후 확장.
