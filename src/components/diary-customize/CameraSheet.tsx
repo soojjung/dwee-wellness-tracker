@@ -6,6 +6,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { cn } from '@/lib/cn';
 import { grabFrame } from '@/lib/image/videoFrame';
+import { setDarkStatusBar, setLightStatusBar } from '@/lib/native/statusBar';
 import { AlbumIcon } from '@/components/ui/icons/AlbumIcon';
 import { CameraFlipIcon } from '@/components/ui/icons/CameraFlipIcon';
 import { CloseIcon24 } from '@/components/ui/icons/CloseIcon24';
@@ -59,6 +60,12 @@ export function CameraSheet({ onClose, onOpenAlbum, onCapture }: CameraSheetProp
 
   useBodyScrollLock();
   useEscToClose(onClose);
+
+  // Dark viewfinder → light status-bar glyphs while open; the rest of the app is light.
+  useEffect(() => {
+    void setDarkStatusBar();
+    return () => void setLightStatusBar();
+  }, []);
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());

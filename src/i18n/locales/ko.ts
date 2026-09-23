@@ -24,7 +24,7 @@ export const ko: Dictionary = {
       privacy: '개인정보처리방침',
       suffix: '에 동의합니다',
       ariaLabel: '만 14세 이상 확인 및 약관 동의',
-      hint: '계속하려면 위 항목에 체크해 주세요',
+      hint: '위 항목에 체크해 주세요. dwee는 만 14세 이상만 이용할 수 있어요.',
     },
   },
   nav: {
