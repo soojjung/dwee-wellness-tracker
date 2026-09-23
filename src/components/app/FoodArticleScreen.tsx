@@ -36,6 +36,7 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <Link
           href="/"
+          data-swipe-back
           onClick={handleBackClick}
           aria-label={t.home.foodArticle.backAriaLabel}
           // DiaryCustomizeScreen 의 반투명 버튼과 같은 값 — 본문이 비쳐 보이도록

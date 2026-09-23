@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import { useT } from '@/i18n/useT';
 import { Toast } from '@/components/ui/Toast';
 import type { PrimaryBodyType } from '@/types';
@@ -11,6 +13,15 @@ import type { PrimaryBodyType } from '@/types';
  */
 const sharePath = (type: PrimaryBodyType) => `/magazine/personal-body-type/share/${type}`;
 const TOAST_MS = 2000;
+
+/**
+ * 링크는 항상 웹사이트 주소로 만든다. 네이티브 셸 안에서는 `window.location.origin`
+ * 이 `capacitor://localhost` 라 받는 사람이 열 수 없고, iOS 공유 시트도 그 주소를
+ * 거부해서 버튼이 아무 반응도 없는 것처럼 보였다.
+ */
+function shareOrigin(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+}
 
 interface ShareTestBarProps {
   type: PrimaryBodyType;
@@ -60,7 +71,16 @@ export function ShareTestBar({ type }: ShareTestBarProps) {
   }
 
   async function handleShare() {
-    const url = `${window.location.origin}${sharePath(type)}`;
+    const url = `${shareOrigin()}${sharePath(type)}`;
+    if (Capacitor.isNativePlatform()) {
+      // WKWebView 에는 Web Share API 가 없어서 네이티브 공유 시트를 직접 띄운다.
+      try {
+        await Share.share({ title: r.shareTitle, text: r.shareMessage, url });
+      } catch {
+        // 시트를 닫은 것도 여기로 온다 — 아래 navigator.share 와 같은 이유로 조용히 끝낸다.
+      }
+      return;
+    }
     if (navigator.share) {
       try {
         await navigator.share({ title: r.shareTitle, text: r.shareMessage, url });

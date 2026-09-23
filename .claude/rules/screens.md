@@ -83,6 +83,13 @@ paths:
 
 - iOS 노치·홈 인디케이터 여백은 `src/app/globals.css`의 `.pt-safe`/`.pb-safe` 유틸리티(`env(safe-area-inset-*)`)로 전역 정의돼 있다. 화면마다 같은 `env()` 계산을 다시 적지 말고 이 클래스를 쓸 것.
 - 기본 여백(예: 8px)까지 함께 필요하면 `pt-safe` 옆에 별도 padding 클래스를 붙이지 않는다 — 같은 CSS property 를 두 클래스가 다투면 나중에 생성된 쪽이 이겨 하나가 무시된다. `pt-[calc(0.5rem+env(safe-area-inset-top,0px))]` 처럼 한 클래스로 합쳐 쓸 것.
+- **실기기 QA 라운드 1 (2026-09-24)**: 약 30개 화면의 고정/스티키 헤더·하단 바가 실기기(iPhone 13)에서 노치·홈 인디케이터에 가려지는 문제를 고쳤다. 대부분 `.pt-safe`/`.pb-safe` 로는 부족한 케이스라(기본 padding·고정 height 와 함께 계산해야 함) 인라인 `pt-[env(safe-area-inset-top,0px)]`/`pb-[calc(...+env(safe-area-inset-bottom,0px))]` 클래스를 화면별로 직접 붙였다 — 유틸리티 클래스를 없앤 것은 아니고, 계산이 필요한 자리에서 위 두 번째 규칙(별도 클래스 병합)을 그대로 따른 것.
+
+## 13) 엣지 스와이프 뒤로가기 (`SwipeBackGesture`)
+
+- `src/components/app/SwipeBackGesture.tsx` 가 루트 레이아웃(`app/layout.tsx`)에 한 번만 마운트되어 화면 왼쪽 가장자리(28px)에서 시작하는 스와이프를 전역으로 감지한다. 제스처는 화면을 직접 이동시키지 않고, 그 순간 DOM 에 있는 **마지막(가장 위) `[data-swipe-back]` 엘리먼트를 찾아 클릭**한다 — 화면마다 "뒤로가기"의 의미가 링크 이동 / `history.back()` / 변경사항 확인 다이얼로그로 다르기 때문.
+- 새 풀스크린/서브 화면의 뒤로가기 버튼에는 `data-swipe-back` 속성을 붙일 것. 겹쳐 뜨는 시트(예: `EventDetailScreen` 위의 `EventFormSheet`)처럼 여러 개가 동시에 DOM 에 있을 수 있는 경우, DOM 순서상 나중에 렌더되는 쪽(=위에 보이는 화면)의 버튼에 붙여야 스와이프가 올바른 레이어를 닫는다.
+- `role="dialog"`/`role="alertdialog"` 가 열려 있으면 제스처가 비활성화된다(모달 뒤 화면이 실수로 스와이프되는 것 방지) — 모달 규칙(`.claude/rules/modals.md`)을 따르는 오버레이는 자동으로 이 예외에 걸린다.
 
 ## 12) 풀스크린 화면의 상태바·주소창 뒤 배경 (`data-page-bg`)
 

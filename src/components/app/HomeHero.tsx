@@ -32,7 +32,7 @@ export function HomeHero() {
   return (
     <>
       <div className="-mx-4">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
           <img
             src="/brand/wordmark-dwee.svg"
             alt={t.app.name}

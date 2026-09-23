@@ -152,6 +152,7 @@ export function WithdrawReasonScreen() {
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center px-4 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
         <button
           type="button"
+          data-swipe-back
           onClick={() => router.back()}
           aria-label={t.myPage.withdraw.backAriaLabel}
           // Figma 262:3532 — 40px 원형 배경. 본문이 비쳐 보이도록 Gray/400 50% + blur.

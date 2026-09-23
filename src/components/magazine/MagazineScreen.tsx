@@ -26,7 +26,7 @@ export function MagazineScreen() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6 pb-24">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <FeaturedSection articles={featured} locale={locale} />
       {rest.length > 0 ? (
         <BasicList articles={rest} locale={locale} title={t.magazine.moreStoriesTitle} />
@@ -94,7 +94,7 @@ function FeaturedSection({ articles, locale }: FeaturedSectionProps) {
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-brand-gray50"
       />
 
-      <header className="relative flex items-center justify-between px-4 pb-4 pt-3">
+      <header className="relative flex items-center justify-between px-4 pb-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <h1 className="text-2xl font-semibold leading-normal text-brand-gray50">
           {t.magazine.listTitle}
         </h1>

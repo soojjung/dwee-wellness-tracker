@@ -162,7 +162,7 @@ See [`.claude/`](./.claude/) for implementation details.
 
 Solo project. End-to-end ownership of:
 
-- **Data layer** — Repository interfaces, IndexedDB + Supabase adapters behind a runtime `RepoMode` switch, versioned IndexedDB schema (v10), Supabase migrations 0001–0015.
+- **Data layer** — Repository interfaces, IndexedDB + Supabase adapters behind a runtime `RepoMode` switch, versioned IndexedDB schema (v10), Supabase migrations 0001–0016.
 - **Auth & sync** — anonymous sessions, Apple/Google OAuth, first-login local→remote migration, sign-out reset, two-screen account deletion backed by a `delete-account` Edge Function.
 - **Cycle domain & insights** — pure `domain/cycle/*` (prediction, phase, status classification, chart scale) and rule-based `lib/insight/*`; single source of truth for the countable-cycle range.
 - **Home** — phase-aware hero, week strip, insight cards, keyword/activity/food suggestions; non-destructive photo customization with draft mode and per-slot transforms.
@@ -191,7 +191,7 @@ Solo project. End-to-end ownership of:
 
 - Shipped: cycle record/predict/insights, condition log, diary (events, holidays, stickers), cycle report, magazine + body-type diagnose, home customization, onboarding, MyPage (language, notifications UI, legal, account edit/delete).
 - Auth: login gate on cold start, age/terms consent gate before any sign-in path (STEP 1.5), anonymous + Apple/Google OAuth (system browser + `dwee://auth/callback` return on Capacitor, STEP 2), anonymous→account migration, 6-store rehydrate on mode switch.
-- Storage: IndexedDB schema v10 (local), Supabase migrations through 0015 (remote), three Edge Functions (`body-type-analyze`, `sticker-cutout`, `delete-account`).
+- Storage: IndexedDB schema v10 (local), Supabase migrations through 0016 (remote), three Edge Functions (`body-type-analyze`, `sticker-cutout`, `delete-account`).
 - Crash reporting: Sentry via `@sentry/capacitor` + `@sentry/react` (errors only, PII scrubbed on-device in `lib/monitoring/sentry.ts`); source maps uploaded by `pnpm build:release`, never shipped.
 - Notifications: local reminders (period due / delay / fertile window) scheduled on device via `@capacitor/local-notifications` from the pure `domain/notification` planner; web build shows settings only.
 - Not wired yet: background sync, multi-device conflict resolution.
@@ -203,7 +203,7 @@ Solo project. End-to-end ownership of:
 
 ```bash
 pnpm install
-cp .env.example .env.local      # Supabase URL + anon key + SITE_URL for OG metadata (+ optional Sentry DSN)
+cp .env.example .env.local      # Supabase URL + anon key + SITE_URL for OG metadata & share links (+ optional Sentry DSN)
 pnpm dev                        # http://localhost:3000
 pnpm test                       # lint → typecheck → unit (e2e is separate: pnpm test:e2e)
 ```

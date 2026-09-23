@@ -50,9 +50,10 @@ interface HeaderProps {
 
 function Header({ backAria }: HeaderProps) {
   return (
-    <header className="relative flex items-center justify-between px-4 pt-3 pb-2">
+    <header className="relative flex items-center justify-between px-4 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
       <Link
         href="/magazine"
+        data-swipe-back
         aria-label={backAria}
         className="grid size-10 place-items-center rounded-full bg-brand-gray400/50 text-brand-gray900 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400"
       >

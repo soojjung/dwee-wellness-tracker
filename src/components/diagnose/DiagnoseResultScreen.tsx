@@ -14,7 +14,6 @@ export function DiagnoseResultScreen() {
   const report = useBodyTypeReportStore((s) => s.report);
   const hydrated = useBodyTypeReportStore((s) => s.hydrated);
   const hydrateReport = useBodyTypeReportStore((s) => s.hydrate);
-  const clearReport = useBodyTypeReportStore((s) => s.clear);
   const [stuck, setStuck] = useState(false);
   const handleStuckChange = useCallback((next: boolean) => setStuck(next), []);
 
@@ -27,10 +26,10 @@ export function DiagnoseResultScreen() {
     if (hydrated && !report) router.replace(DIAGNOSE_HREF);
   }, [hydrated, report, router]);
 
-  // 결과를 비우면 위 효과가 진단 화면으로 되돌린다. 여기서 push 까지 하면
-  // 같은 경로로 두 번 이동해 히스토리에 죽은 결과 화면이 남는다.
+  // 기존 결과는 지우지 않는다. 진단을 마치면 새 결과가 덮어쓰고, 도중에 나오면
+  // 이전 결과가 그대로 남아 마이페이지에서 다시 열 수 있다 (실기기 QA 2026-09-24).
   function tryAgain() {
-    void clearReport();
+    router.push(DIAGNOSE_HREF);
   }
 
   if (!hydrated || !report) return null;

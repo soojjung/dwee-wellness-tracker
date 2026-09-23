@@ -61,7 +61,8 @@ src/data/
         ├── client.ts
         ├── SupabasePeriodAdapter.ts
         ├── SupabaseConditionAdapter.ts
-        ├── SupabaseSettingsAdapter.ts  ← profiles.holiday_countries text[] null 매핑 (migration 0014).
+        ├── SupabaseSettingsAdapter.ts  ← profiles.holiday_countries text[] null 매핑 (migration 0014),
+        │                                 알림 세부 토글 3개 + lead days 매핑 (migration 0016).
         ├── SupabaseMediaAdapter.ts  ← home_photos(slot별) + home_decor_settings 테이블 사용.
         │                               photo_count / text_position / text_order /
         │                               main_text / sub_text 모두 구현 완료.

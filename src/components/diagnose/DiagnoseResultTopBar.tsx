@@ -32,9 +32,10 @@ export function DiagnoseResultTopBar({
     : 'bg-brand-gray400/50 text-brand-gray50 backdrop-blur-[2px]';
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-30 mx-auto flex h-16 w-full max-w-md items-center justify-between px-4 pt-3">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-30 mx-auto flex h-[calc(4rem+env(safe-area-inset-top,0px))] w-full max-w-md items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
       <Link
         href={articleHref}
+        data-swipe-back
         aria-label={t.magazine.diagnose.backToArticle}
         className={`pointer-events-auto grid size-10 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400 ${button}`}
       >

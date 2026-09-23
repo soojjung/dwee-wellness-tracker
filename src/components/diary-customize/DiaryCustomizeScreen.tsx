@@ -278,18 +278,16 @@ export function DiaryCustomizeScreen() {
   const overlayActive = cameraMode !== 'idle' || importPickedFile !== null || showDiscardDialog;
 
   // 보관함 바깥 탭 (Figma 피드백 2026-09-16): 시트를 없애지 않고 한 단계씩 내린다.
-  //   medium/full → peek, peek → 꾸미기 종료(= 뒤로가기, dirty 면 확인 팝업).
-  // 캔버스의 스티커를 잡거나(드래그·삭제) 상단 버튼을 누르는 터치는 제외하고,
-  // peek 에서 스티커가 선택돼 있으면 그 탭은 선택 해제로만 쓴다.
+  //   medium/full → peek. peek 에서는 아무 일도 하지 않는다 — 선택 해제는
+  //   PlacedStickerLayer 가 따로 처리한다.
+  // 원래는 peek 에서 한 번 더 탭하면 꾸미기 종료(뒤로가기)였는데, 실기기 QA
+  // (2026-09-23) 에서 캘린더를 스치기만 해도 "변경사항을 버릴까요?" 가 떠서
+  // 종료는 상단 뒤로가기 버튼으로만 한다.
+  // 캔버스의 스티커를 잡거나(드래그·삭제) 상단 버튼을 누르는 터치는 제외한다.
   function handleSheetOutsideTap(e: PointerEvent) {
     const target = e.target instanceof Element ? e.target : null;
     if (target?.closest('[data-placed-sticker="true"], [data-sheet-dismiss-ignore]')) return;
-    if (sheetSnap !== 'peek') {
-      setSheetSnap('peek');
-      return;
-    }
-    if (selectedId) return;
-    handleBack();
+    if (sheetSnap !== 'peek') setSheetSnap('peek');
   }
 
   return (
@@ -303,6 +301,7 @@ export function DiaryCustomizeScreen() {
       >
         <button
           type="button"
+          data-swipe-back
           onClick={handleBack}
           aria-label={t.report.diary.customize.back}
           // Figma 256:21706 — Gray/400 at 50% behind a 2px backdrop blur.

@@ -154,7 +154,9 @@ flowchart LR
 ```bash
 cp .env.example .env.local
 # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY 채우기
-# SITE_URL — OG 메타데이터 base URL (배포 시 실제 도메인으로 교체, 빌드 시점에 서버 컴포넌트만 읽음)
+# SITE_URL — OG 메타데이터 base URL (배포 시 실제 도메인으로 교체). 빌드 시점에 서버 컴포넌트가
+# 읽고, 같은 값이 NEXT_PUBLIC_SITE_URL 로도 주입되어 클라이언트 공유 링크(체형 진단 공유 등)가
+# capacitor://localhost 대신 이 주소를 쓴다.
 # NEXT_PUBLIC_SENTRY_DSN — 비우면 오류 리포팅 꺼짐. SENTRY_AUTH_TOKEN 은 소스맵 업로드(pnpm build:release)에만
 ```
 
@@ -387,6 +389,9 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 **매거진**
 - [x] 인프라 — `/magazine` 목록, `ArticleScreen`, 글 데이터 모듈(`src/data/magazine/articles.ts`), 아티클 4편, 북마크(`/magazine/bookmarks`)
 - [x] 퍼스널 체형 진단 — `/magazine/personal-body-type/diagnose` 플로우(동의 → 사진 선택·미리보기 → 분석 → 결과). Edge Function `body-type-analyze`(OpenAI Vision, 사진 미저장, 일 10회, 1회 재시도). 결과 화면은 체형 탭(LLM 리딩) + 스타일 가이드 탭(유형별 정적 콘텐츠). 결과는 `BodyTypeReportRepository` 로 보관(migration 0013), 체형별 공유 링크는 `AuthGuard` 예외
+
+**실기기 QA**
+- [x] 실기기 QA 라운드 1 (2026-09-24, iPhone 13) — 안전영역 여백(노치·홈 인디케이터에 가려지던 약 30개 화면 헤더/푸터), iOS 식 엣지 스와이프 뒤로가기(`SwipeBackGesture` + `data-swipe-back`), 스티커 두 손가락 핀치로 크기·회전(`domain/diary/stickerPinch.ts`), 로그인 상태에서 저장되지 않던 알림 세부 설정(migration 0016), 앱 안에서 반응 없던 체형 진단 공유(`@capacitor/share` 네이티브 공유 시트, 링크는 `NEXT_PUBLIC_SITE_URL` 기준)
 
 ### 다음
 
