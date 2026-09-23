@@ -113,6 +113,8 @@ export const en = {
         swapAriaLabel: 'Swap main and sub text',
       },
       submit: 'Done editing',
+      submitting: 'Saving…',
+      saveFailed: "Couldn't save your photos. Check your connection and try again.",
       confirmPicksHint: 'Tap Done editing to lock in your photos first.',
       discardDialog: {
         title: 'Discard your changes?',

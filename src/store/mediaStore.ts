@@ -12,6 +12,7 @@ import {
   type TextOrder,
   type TextPosition,
 } from '@/domain/home/decor';
+import { downscaleImage } from '@/lib/image/downscale';
 
 type PhotoUrls = (string | null)[];
 type PhotoTransforms = (PhotoTransform | null)[];
@@ -62,7 +63,8 @@ interface MediaState {
 
   beginPhotoDraft: () => void;
   discardPhotoDraft: () => void;
-  commitPhotoDraft: () => Promise<void>;
+  /** Resolves false when a write failed (the draft stays active so the user can retry). */
+  commitPhotoDraft: () => Promise<boolean>;
   draftSetPhotoCount: (count: PhotoCount) => void;
   draftSetPhoto: (slot: PhotoSlot, blob: Blob) => void;
   draftClearPhoto: (slot: PhotoSlot) => void;
@@ -374,7 +376,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
 
   async commitPhotoDraft() {
     const state = get();
-    if (!state.draftActive) return;
+    if (!state.draftActive) return true;
     try {
       // 1) photoCount — write if it changed.
       if (state.draftPhotoCount !== null && state.draftPhotoCount !== state.photoCount) {
@@ -388,7 +390,7 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       for (const slot of PHOTO_SLOTS) {
         const blob = state.draftPendingBlobs[slot];
         if (blob) {
-          await mediaRepo.setHomePhoto(slot, blob);
+          await mediaRepo.setHomePhoto(slot, await downscaleImage(blob));
           await mediaRepo.clearPhotoTransform(slot);
         } else if (state.draftClearedPhotos[slot]) {
           await mediaRepo.clearHomePhoto(slot);
@@ -445,8 +447,10 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
         draftOwnedUrls: [],
         draftPicksConfirmed: false,
       });
+      return true;
     } catch (e) {
       set({ error: errorMessage(e) });
+      return false;
     }
   },
 
