@@ -14,12 +14,16 @@ export function DevBridge() {
         seedForPhase;
     });
     void import('@/dev/seedPhotos').then(({ seedPhotos }) => {
-      (window as unknown as { __dweeSeedPhotos?: typeof seedPhotos }).__dweeSeedPhotos =
-        seedPhotos;
+      (window as unknown as { __dweeSeedPhotos?: typeof seedPhotos }).__dweeSeedPhotos = seedPhotos;
+    });
+    // `__dweeSentryTest()` sends one handled exception — for checking the
+    // Sentry pipeline end to end with NEXT_PUBLIC_SENTRY_DEBUG=1.
+    void import('@/lib/monitoring/sentry').then(({ captureException }) => {
+      (window as unknown as { __dweeSentryTest?: () => string }).__dweeSentryTest = () =>
+        captureException(new Error('dwee sentry test event'));
     });
     void import('@/dev/ensureAnon').then(({ ensureAnon }) => {
-      (window as unknown as { __dweeEnsureAnon?: typeof ensureAnon }).__dweeEnsureAnon =
-        ensureAnon;
+      (window as unknown as { __dweeEnsureAnon?: typeof ensureAnon }).__dweeEnsureAnon = ensureAnon;
     });
   }, []);
   return null;

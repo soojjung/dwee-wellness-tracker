@@ -12,8 +12,10 @@
  *  - en.lproj / ko.lproj InfoPlist.strings registered in the Xcode target
  *  - deployment target 15.0 (pbxproj + Podfile), MARKETING_VERSION from package.json
  *  - 1024 app icon from public/, plain #F5F3F4 launch screen
+ *  - DEVELOPMENT_TEAM + App.entitlements (Sign in with Apple) registered in the target
  *
- * Still manual in Xcode: Signing team, "Sign in with Apple" capability.
+ * Nothing is left to do in Xcode for a debug build; App Store signing still
+ * needs the distribution certificate the first time.
  */
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -31,6 +33,8 @@ const iconSrc = join(root, 'public', 'app-icon-1024.png');
 const iconDst = join(appDir, 'Assets.xcassets', 'AppIcon.appiconset', 'AppIcon-512@2x.png');
 
 const DEPLOYMENT_TARGET = '15.0';
+// Apple Developer team (not a secret) — lets a fresh `cap add ios` sign without opening Xcode.
+const DEVELOPMENT_TEAM = '6KCGZ5594F';
 const URL_SCHEME = 'dwee';
 const LAUNCH_BG = { red: 0.9608, green: 0.9529, blue: 0.9569 }; // #F5F3F4
 
@@ -180,6 +184,20 @@ puts(changed ? 'registered' : 'already registered')
   );
   const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   pbx = pbx.replace(/MARKETING_VERSION = [\d.]+;/g, `MARKETING_VERSION = ${version};`);
+  // Team + entitlements go into the App target's Debug/Release build settings.
+  // `INFOPLIST_FILE = App/Info.plist;` appears exactly there, so anchor on it.
+  if (!pbx.includes('DEVELOPMENT_TEAM =')) {
+    pbx = pbx.replace(
+      /(\t+)INFOPLIST_FILE = App\/Info\.plist;/g,
+      `$1DEVELOPMENT_TEAM = ${DEVELOPMENT_TEAM};\n$1INFOPLIST_FILE = App/Info.plist;`,
+    );
+  }
+  if (!pbx.includes('CODE_SIGN_ENTITLEMENTS =')) {
+    pbx = pbx.replace(
+      /(\t+)INFOPLIST_FILE = App\/Info\.plist;/g,
+      `$1CODE_SIGN_ENTITLEMENTS = App/App.entitlements;\n$1INFOPLIST_FILE = App/Info.plist;`,
+    );
+  }
   if (pbx !== before) {
     writeFileSync(pbxprojPath, pbx);
     log(`pbxproj: deployment target ${DEPLOYMENT_TARGET}, MARKETING_VERSION ${version}`);
@@ -194,6 +212,51 @@ puts(changed ? 'registered' : 'already registered')
     writeFileSync(podfilePath, patched);
     log(
       `Podfile: platform :ios, '${DEPLOYMENT_TARGET}' (run \`pnpm cap:sync\` to re-run pod install)`,
+    );
+  }
+}
+
+// ------------------------------------------------------------- entitlements
+{
+  const file = join(appDir, 'App.entitlements');
+  const body = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>com.apple.developer.applesignin</key>
+\t<array>
+\t\t<string>Default</string>
+\t</array>
+</dict>
+</plist>
+`;
+  if (!existsSync(file)) {
+    writeFileSync(file, body);
+    log('App.entitlements: Sign in with Apple');
+  }
+  // Xcode only needs the build setting, but listing the file in the App group
+  // keeps it visible in the navigator like a hand-added capability would.
+  const ruby = `
+require 'xcodeproj'
+project = Xcodeproj::Project.open(ARGV[0])
+app_group = project.main_group['App']
+if app_group.files.none? { |f| f.path == 'App.entitlements' }
+  app_group.new_file('App.entitlements')
+  project.save
+  puts 'registered'
+else
+  puts 'already registered'
+end
+`;
+  try {
+    const out = execFileSync('ruby', ['-e', ruby, join(iosApp, 'App.xcodeproj')], {
+      encoding: 'utf8',
+    }).trim();
+    log(`App.entitlements in Xcode project: ${out}`);
+  } catch (err) {
+    console.warn(
+      '[setup-ios] could not register App.entitlements in the project:',
+      String(err.message),
     );
   }
 }

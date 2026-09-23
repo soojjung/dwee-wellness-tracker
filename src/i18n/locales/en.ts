@@ -26,6 +26,11 @@ export const en = {
       ariaLabel: 'Confirm you are 14 or older and agree to the terms',
     },
   },
+  crash: {
+    title: 'Something went wrong',
+    body: 'We’ve been notified — no personal data was sent. Reloading usually fixes it.',
+    reload: 'Reload',
+  },
   nav: {
     home: 'Home',
     log: 'Diary',

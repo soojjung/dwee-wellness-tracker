@@ -58,7 +58,7 @@
 
 - **STEP 1 — 공개 법적 페이지** ✅ 2026-09-22: `(legal)` 라우트 그룹(AuthGuard 밖)에 `/legal/privacy`, `/legal/terms` 추가 — `PUBLIC_PREFIXES` 등록 대신 그룹 자체가 가드 밖. 영문판 `terms-en.ts`·`privacy-en.ts`(한국어 원문 우선 명시) 추가, 앱 locale 을 따르되 `?lang=en|ko` 로 고정 가능. 마이페이지 화면과 본문 컴포넌트(`components/legal/*Article`) 공유. App Store Privacy Policy URL = `https://dwee-neon.vercel.app/legal/privacy/?lang=en`, Support URL = `https://dwee-neon.vercel.app/legal/support/?lang=en` (`/legal/support`, Q&A 카드 공유). 같은 날 개인정보처리방침의 체형 분석 처리자를 Anthropic → OpenAI 로 정정(실제 Edge Function 기준).
 - **STEP 1.5 — 연령 확인** ✅ 2026-09-22 (A안, 만 14세): 로그인 화면에 `ConsentCheck`(14세 이상 + 약관·개인정보처리방침 동의, 공개 `/legal/*` 링크). 체크 전 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt` 에 저장 — 로컬 전용(Supabase 컬럼 없음), 로그아웃 시 초기화되어 다시 묻는다. App Store 연령 등급은 별도로 설문(12+ 예상).
-- **STEP 1.7 — Sentry**: `@sentry/nextjs`(웹·번들 오류) + `@sentry/capacitor`(네이티브 크래시) 설정. 개인정보(이메일·기록 내용)는 이벤트에서 제외(`beforeSend` 스크럽), 소스맵 업로드는 CI 없이 로컬 빌드 시 `sentry-cli` 로. 개인정보처리방침 en/ko 에 "오류 로그(기기 모델·OS·앱 버전·오류 내용) 수집, 보관 90일" 추가.
+- **STEP 1.7 — Sentry** ✅ 코드 2026-09-23: **`@sentry/capacitor` 4.3.0 + `@sentry/react` 10.69.0** 한 쌍을 웹·네이티브 공통으로 사용 — `@sentry/nextjs` 는 Capacitor 의 sibling SDK 가 아니고, 정적 export 라 서버 런타임 기능이 없어 채택하지 않음. 4.4.0 부터 CocoaPods 지원이 빠져(SPM 전용) podspec 이 남은 4.3.0 에 **정확히 고정**(`"@sentry/capacitor": "4.3.0"`); SPM 전환은 Capacitor 7 업그레이드 때(Phase 6). 구성: `lib/monitoring/sentry.ts`(errors only, `tracesSampleRate: 0`, `sendDefaultPii: false`, `beforeSend = scrubEvent` — user 제거·URL 쿼리/해시 제거(OAuth 토큰)·이메일/토큰 마스킹·console 브레드크럼 제거, Vitest 10), 루트 `Monitoring` 컴포넌트, `app/global-error.tsx`(`crash.*` 사전), 프로덕션에서만 전송(`NEXT_PUBLIC_SENTRY_DEBUG=1` 로 dev 테스트, `DevBridge.__dweeSentryTest()`), release `dwee@<package.json version>`(next.config `env` 주입). 소스맵: `productionBrowserSourceMaps` + `pnpm sentry:sourcemaps`(`scripts/sentry-sourcemaps.mjs` — inject/upload 후 `.map` 삭제, 토큰 없으면 삭제만) → `pnpm build:release`. 방침 en/ko 제3·4·7·8조에 오류 로그 항목·90일·Sentry 위탁/국외이전 추가, 시행일자 2026-09-23. **남은 것**: Vercel 빌드 커맨드를 `pnpm build:release` 로 바꾸고 `SENTRY_AUTH_TOKEN`·`NEXT_PUBLIC_SENTRY_DSN` 환경변수 추가(Phase 3 잔여), 네이티브 dSYM 업로드(Phase 6). 원안: `@sentry/nextjs`(웹·번들 오류) + `@sentry/capacitor`(네이티브 크래시) 설정. 개인정보(이메일·기록 내용)는 이벤트에서 제외(`beforeSend` 스크럽), 소스맵 업로드는 CI 없이 로컬 빌드 시 `sentry-cli` 로. 개인정보처리방침 en/ko 에 "오류 로그(기기 모델·OS·앱 버전·오류 내용) 수집, 보관 90일" 추가.
 - **STEP 2 — 네이티브 인증 흐름** ✅ 코드 2026-09-22 (콘솔·Xcode 항목은 Phase 2·3에서): `@capacitor/app`·`@capacitor/browser` 추가. 네이티브에서는 `signInWithOAuth({ redirectTo: 'dwee://auth/callback', skipBrowserRedirect: true })` → `Browser.open()` → `appUrlOpen` 수신 시 URL 의 query/hash 를 그대로 `/auth/callback/` 로 넘겨(`lib/auth/nativeCallback.ts`, Vitest 9) 웹과 같은 `AuthCallbackScreen`·`completeOAuthCallback` 이 마무리. 시트를 그냥 닫으면 `browserFinished` 로 로딩 해제. Apple 도 우선 같은 브라우저 방식(네이티브 Sign in with Apple 플러그인은 실기기 검증 가능해질 때 전환 검토). `capacitor.config.ts` appId 를 `com.innerglow.dwee` 로 교체. **남은 것**: ~~Info.plist `CFBundleURLTypes` 에 `dwee` 스킴(Phase 2)~~ ✅ `setup-ios.mjs`, Supabase Redirect URLs 에 `dwee://auth/callback`(Phase 3), 실기기 왕복 검증(Phase 4).
   - 원안: `@capacitor/app`, `@capacitor/browser` 추가.
   - 네이티브에서는 `signInWithOAuth({ skipBrowserRedirect: true, redirectTo: 'dwee://auth/callback' })` → `Browser.open()` 으로 시스템 브라우저에서 진행 → `App.addListener('appUrlOpen')` 으로 돌아온 URL 에서 세션 복원(`exchangeCodeForSession` 또는 해시 토큰 처리).
@@ -71,7 +71,7 @@
 
 ## 3. 네이티브 프로젝트 (Phase 2)
 
-✅ 스크립트 2026-09-22: `npx cap add ios` → `pnpm ios:setup`(`scripts/setup-ios.mjs`, idempotent) → `pnpm cap:sync` 로 재생성 가능. 스크립트가 처리하는 것 — Info.plist 카메라·사진 보관함 문구(en) + `en/ko.lproj/InfoPlist.strings` 를 Xcode 타깃에 등록(xcodeproj gem), `CFBundleURLTypes` 에 `dwee` 스킴, `CFBundleLocalizations`(en, ko), `ITSAppUsesNonExemptEncryption=false`, iPhone 세로 고정(iPad 는 전 방향 유지), 배포 타깃 15.0(pbxproj + Podfile), `MARKETING_VERSION` 은 package.json 버전, 1024 아이콘 복사, LaunchScreen 을 `#F5F3F4` 단색 뷰로 교체. 시뮬레이터 `xcodebuild` 성공 확인. `NSPhotoLibraryAddUsageDescription` 은 앱이 사진을 저장하지 않으므로 제외. **남은 것(Xcode 수동)**: Signing team, Sign in with Apple capability. `@capacitor/status-bar`·`splash-screen` 은 STEP 5 에서.
+✅ 스크립트 2026-09-22: `npx cap add ios` → `pnpm ios:setup`(`scripts/setup-ios.mjs`, idempotent) → `pnpm cap:sync` 로 재생성 가능. 스크립트가 처리하는 것 — Info.plist 카메라·사진 보관함 문구(en) + `en/ko.lproj/InfoPlist.strings` 를 Xcode 타깃에 등록(xcodeproj gem), `CFBundleURLTypes` 에 `dwee` 스킴, `CFBundleLocalizations`(en, ko), `ITSAppUsesNonExemptEncryption=false`, iPhone 세로 고정(iPad 는 전 방향 유지), 배포 타깃 15.0(pbxproj + Podfile), `MARKETING_VERSION` 은 package.json 버전, 1024 아이콘 복사, LaunchScreen 을 `#F5F3F4` 단색 뷰로 교체. 시뮬레이터 `xcodebuild` 성공 확인. `NSPhotoLibraryAddUsageDescription` 은 앱이 사진을 저장하지 않으므로 제외. ~~**남은 것(Xcode 수동)**: Signing team, Sign in with Apple capability.~~ ✅ 2026-09-23 Xcode 에서 완료 + `setup-ios.mjs` 가 `DEVELOPMENT_TEAM`·`App.entitlements`(Sign in with Apple) 도 주입하도록 확장 — 재생성 시 Xcode 수동 작업 없음. `@capacitor/status-bar`·`splash-screen` 은 STEP 5 에서.
 
 - 원안: `pnpm add @capacitor/app @capacitor/browser @capacitor/status-bar @capacitor/splash-screen` → `npx cap add ios` → `pnpm cap:sync`.
 - `capacitor.config.ts`: `appId` 확정값, `ios.contentInset`, `server.iosScheme`(필요 시) 정리.
@@ -91,7 +91,7 @@
 - **Google Cloud** ✅ (프로젝트 이관): 기존 `dwee Web` 클라이언트가 다른 앱 프로젝트(`bbumate-en`)에 있어 동의 화면을 공유할 수 없었음 → `dwee-502413` 프로젝트에 동의 화면(외부, 프로덕션 게시, 브랜딩 링크 3종, 승인 도메인 `dwee-neon.vercel.app`·`ownupkjkmuyyqmktltej.supabase.co` — `vercel.app`/`supabase.co` 는 public suffix 라 불가)과 새 웹 클라이언트를 만들고 Supabase Google provider 의 Client ID/Secret 교체. 비민감 범위만 요청하므로 앱 인증 불필요, 브랜딩 검증(로고)은 출시 후. `bbumate-en` 의 옛 `dwee Web` 클라이언트(`245585874472-…`)는 새 클라이언트로 웹 로그인 확인 후 **삭제 완료(2026-09-23)**.
 - **Edge Functions** ✅: 3개 배포 확인. `body-type-analyze` 를 CLI 로 재배포(스타일 가이드 프롬프트 반영). Secrets `OPENAI_API_KEY`·`REMOVE_BG_API_KEY` 존재.
 - **DB** ✅: `supabase db diff --linked` 로 원격 스키마가 0001~0015 를 모두 포함함을 확인(CLI 이력은 비어 있지만 적용됨). 원격에만 있는 잔재 테이블 `home_overlays`(PR #1~#2 시절, 코드 미참조) — 출시 후 drop 마이그레이션으로 정리.
-- **Vercel** ✅: 도메인은 `dwee-neon.vercel.app` 유지. `SITE_URL`(3환경)·`NEXT_PUBLIC_SUPABASE_URL`·`ANON_KEY`(Production+Preview) 존재, 프로덕션 OG 이미지 URL 로 `SITE_URL` 값 확인. `/legal/privacy`·`/legal/terms`·`/legal/support` 200.
+- **Vercel** ✅ (Sentry 후속 남음 — Build Command `pnpm build:release`, env `NEXT_PUBLIC_SENTRY_DSN`·`SENTRY_AUTH_TOKEN`): 도메인은 `dwee-neon.vercel.app` 유지. `SITE_URL`(3환경)·`NEXT_PUBLIC_SUPABASE_URL`·`ANON_KEY`(Production+Preview) 존재, 프로덕션 OG 이미지 URL 로 `SITE_URL` 값 확인. `/legal/privacy`·`/legal/terms`·`/legal/support` 200.
 
 원안:
 
@@ -130,6 +130,7 @@
 - 익명 가입 captcha(Supabase 권고) — Auth 사용량에서 익명 사용자 급증 시 도입.
 - Google OAuth 브랜딩 검증(로고 표시) — Search Console 도메인 소유 확인 필요.
 - `home_overlays` 잔재 테이블 drop 마이그레이션.
+- Sentry: `@sentry/capacitor` SPM 전환(Capacitor 7 과 함께), iOS dSYM 업로드 빌드 페이즈, 이벤트 양 보고 `ignoreErrors` 조정.
 - Apple client_secret 2027-01-14 전 재발급(`scripts/gen-apple-secret.mjs`).
 - 심사 피드백 대응 → 승인 → 단계적 출시(7일 phased release 권장).
 - 모니터링: Supabase 로그(Edge Function 오류·한도), 크래시 리포팅(채택 시).

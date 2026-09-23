@@ -192,6 +192,7 @@ Solo project. End-to-end ownership of:
 - Shipped: cycle record/predict/insights, condition log, diary (events, holidays, stickers), cycle report, magazine + body-type diagnose, home customization, onboarding, MyPage (language, notifications UI, legal, account edit/delete).
 - Auth: login gate on cold start, age/terms consent gate before any sign-in path (STEP 1.5), anonymous + Apple/Google OAuth (system browser + `dwee://auth/callback` return on Capacitor, STEP 2), anonymous→account migration, 6-store rehydrate on mode switch.
 - Storage: IndexedDB schema v10 (local), Supabase migrations through 0015 (remote), three Edge Functions (`body-type-analyze`, `sticker-cutout`, `delete-account`).
+- Crash reporting: Sentry via `@sentry/capacitor` + `@sentry/react` (errors only, PII scrubbed on-device in `lib/monitoring/sentry.ts`); source maps uploaded by `pnpm build:release`, never shipped.
 - Notifications: local reminders (period due / delay / fertile window) scheduled on device via `@capacitor/local-notifications` from the pure `domain/notification` planner; web build shows settings only.
 - Not wired yet: background sync, multi-device conflict resolution.
 - iOS release prep (Phase 1–2) done: public legal pages, consent gate, native OAuth return, local notifications, in-app camera, status bar / keyboard shell, regenerable Xcode project (`pnpm ios:setup`), version 1.0.0. Next: console setup + TestFlight — see [`docs/product/release-plan-v1.md`](./docs/product/release-plan-v1.md).
@@ -202,7 +203,7 @@ Solo project. End-to-end ownership of:
 
 ```bash
 pnpm install
-cp .env.example .env.local      # Supabase URL + anon key + SITE_URL for OG metadata
+cp .env.example .env.local      # Supabase URL + anon key + SITE_URL for OG metadata (+ optional Sentry DSN)
 pnpm dev                        # http://localhost:3000
 pnpm test                       # lint → typecheck → unit (e2e is separate: pnpm test:e2e)
 ```
