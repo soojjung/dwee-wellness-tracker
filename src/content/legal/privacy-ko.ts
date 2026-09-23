@@ -25,7 +25,7 @@ export interface PrivacyDocument {
 
 export const PRIVACY_KO: PrivacyDocument = {
   title: 'dwee 개인정보 처리방침',
-  effectiveDate: '시행일자: 2026년 08월 26일',
+  effectiveDate: '시행일자: 2026년 09월 23일',
   intro:
     'dwee(이하 ‘서비스’)는 이용자의 개인정보를 중요하게 생각하며, 「개인정보 보호법」 등 관련 법령을 준수합니다. 본 개인정보 처리방침은 dwee 서비스 이용 과정에서 개인정보의 처리 목적, 처리 항목, 수집방법, 보유 및 이용 기간, 파기 방법, 제3자 제공 및 개인정보 처리 위탁, 국외 이전, 이용자의 권리 및 개인정보 보호를 위해 dwee가 취하는 조치 등에 관한 사항을 안내합니다.',
   sections: [
@@ -236,7 +236,25 @@ export const PRIVACY_KO: PrivacyDocument = {
           kind: 'text',
           text: '서비스 이용 과정에서 IP 주소, 접속 기록, 서비스 이용 기록, 기기 정보, 운영체제 및 앱 버전 정보, 오류 및 장애 관련 정보 등이 생성·수집될 수 있습니다. 외부 분석도구, 광고 SDK 또는 기타 제3자 서비스를 이용하는 경우 해당 서비스가 수집하는 정보, 수집 목적 및 보유기간 등을 확인하여 필요한 내용을 본 개인정보 처리방침에 반영합니다.',
         },
-        { kind: 'subhead', text: '8. 개인정보 수집방법' },
+        { kind: 'subhead', text: '8. 오류 로그' },
+        {
+          kind: 'kv',
+          rows: [
+            { label: '구분', value: '오류 로그' },
+            {
+              label: '처리 항목',
+              value:
+                '기기 모델, OS 버전, 앱 버전, 오류 메시지 및 스택 트레이스, 오류가 발생한 화면',
+            },
+            { label: '처리 목적', value: '오류 수정 및 서비스 안정성 확보' },
+            { label: '보유 및 이용 기간', value: '수집일로부터 90일 후 자동 삭제' },
+          ],
+        },
+        {
+          kind: 'text',
+          text: '오류 로그는 앱이 예기치 않게 종료되거나 오류가 발생했을 때 자동으로 생성·수집되며, 이메일 주소, 다이어리·컨디션·생리 기록, 사진 등 이용자가 직접 입력한 개인정보는 포함되지 않습니다. 해당 정보는 전송 전 기기에서 제거됩니다.',
+        },
+        { kind: 'subhead', text: '9. 개인정보 수집방법' },
         { kind: 'text', text: 'dwee는 다음과 같은 방법으로 개인정보를 수집합니다.' },
         {
           kind: 'bullets',
@@ -297,7 +315,12 @@ export const PRIVACY_KO: PrivacyDocument = {
           kind: 'text',
           text: '문의 처리 완료 후 1년 이내 보관하며, 보유기간이 종료되면 지체 없이 파기합니다.',
         },
-        { kind: 'subhead', text: '8. 관계 법령에 따른 보존' },
+        { kind: 'subhead', text: '8. 오류 로그' },
+        {
+          kind: 'text',
+          text: '수집일로부터 90일 후 자동으로 삭제합니다.',
+        },
+        { kind: 'subhead', text: '9. 관계 법령에 따른 보존' },
         {
           kind: 'text',
           text: '관계 법령에 따라 개인정보를 일정 기간 보존해야 하는 경우에는 해당 법령에서 정한 기간 동안 보관합니다. 법령에 따라 보존하는 개인정보는 해당 보존 목적 외의 용도로 이용하지 않습니다.',
@@ -399,6 +422,18 @@ export const PRIVACY_KO: PrivacyDocument = {
           ],
         },
         {
+          kind: 'kv',
+          rows: [
+            { label: '수탁자', value: 'Functional Software, Inc. (Sentry)' },
+            { label: '위탁 업무', value: '오류 로그 수집 및 분석' },
+            {
+              label: '처리하는 개인정보',
+              value: '오류 로그(기기 모델·OS 버전·앱 버전·오류 내용·발생 화면)',
+            },
+            { label: '처리 국가', value: '미국' },
+          ],
+        },
+        {
           kind: 'text',
           text: '위 수탁자들은 국외에서 개인정보를 처리하므로 세부 국외 이전 내역은 제8조에 안내합니다.',
         },
@@ -456,6 +491,24 @@ export const PRIVACY_KO: PrivacyDocument = {
             { label: '이전 목적', value: '사진 배경 제거 처리' },
             { label: '보유 및 이용 기간', value: '배경 제거 처리 완료 후 즉시 삭제' },
             { label: '이전 방법', value: '서버 간 HTTPS(TLS) 암호화 통신으로 전송' },
+          ],
+        },
+        { kind: 'subhead', text: '4. Sentry (오류 로그 수집·분석)' },
+        {
+          kind: 'kv',
+          rows: [
+            {
+              label: '이전받는 자',
+              value: 'Functional Software, Inc. (Sentry, 연락처: privacy@sentry.io)',
+            },
+            { label: '이전 국가', value: '미국' },
+            {
+              label: '이전 항목',
+              value: '오류 로그(기기 모델·OS 버전·앱 버전·오류 내용·발생 화면)',
+            },
+            { label: '이전 목적', value: '오류 분석 및 서비스 안정화' },
+            { label: '보유 및 이용 기간', value: '수집일로부터 90일' },
+            { label: '이전 방법', value: '오류 발생 시 네트워크를 통해 자동 전송' },
           ],
         },
         {
@@ -614,8 +667,8 @@ export const PRIVACY_KO: PrivacyDocument = {
   changeLog: [
     {
       kind: 'bullets',
-      items: ['공고일자: 2026년 08월 26일', '시행일자: 2026년 08월 26일'],
+      items: ['공고일자: 2026년 09월 23일', '시행일자: 2026년 09월 23일'],
     },
   ],
-  appendix: '부칙\n본 개인정보 처리방침은 2026년 08월 26일부터 시행합니다.',
+  appendix: '부칙\n본 개인정보 처리방침은 2026년 09월 23일부터 시행합니다.',
 };

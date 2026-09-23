@@ -7,7 +7,7 @@ import type { PrivacyDocument } from './privacy-ko';
 
 export const PRIVACY_EN: PrivacyDocument = {
   title: 'dwee Privacy Policy',
-  effectiveDate: 'Effective date: August 26, 2026',
+  effectiveDate: 'Effective date: September 23, 2026',
   intro:
     'This English version is provided for convenience. The Korean original governs in case of any discrepancy. ' +
     'dwee (the "Service") values Users’ personal information and complies with the Personal Information Protection Act (Korea) and other applicable laws. This Privacy Policy explains how dwee processes personal information in the course of providing the Service, including the purposes of processing, the items processed, collection methods, retention and use periods, destruction methods, third-party provision and outsourcing of processing, overseas transfer, Users’ rights, and the measures dwee takes to protect personal information.',
@@ -267,7 +267,31 @@ export const PRIVACY_EN: PrivacyDocument = {
           kind: 'text',
           text: 'While Users use the Service, information such as IP address, access logs, Service usage records, device information, operating system and app version information, and error/failure-related information may be generated and collected. Where dwee uses an external analytics tool, advertising SDK, or other third-party service, dwee will review the information that service collects, its purpose, and its retention period, and reflect the necessary details in this Privacy Policy.',
         },
-        { kind: 'subhead', text: '8. Methods of collecting personal information' },
+        { kind: 'subhead', text: '8. Error logs' },
+        {
+          kind: 'kv',
+          rows: [
+            { label: 'Category', value: 'Error logs' },
+            {
+              label: 'Items processed',
+              value:
+                'Device model, OS version, app version, the error message and stack trace, and the screen where the error occurred',
+            },
+            {
+              label: 'Purpose of processing',
+              value: 'Fixing defects and maintaining Service stability',
+            },
+            {
+              label: 'Retention and use period',
+              value: 'Deleted automatically 90 days after collection',
+            },
+          ],
+        },
+        {
+          kind: 'text',
+          text: 'Error logs are generated and collected automatically when the app crashes unexpectedly or encounters an error, and do not include personal information Users enter directly — such as email address, diary/condition/period records, or photos. That information is removed on the device before the log is sent.',
+        },
+        { kind: 'subhead', text: '9. Methods of collecting personal information' },
         { kind: 'text', text: 'dwee collects personal information through the following methods.' },
         {
           kind: 'bullets',
@@ -328,7 +352,12 @@ export const PRIVACY_EN: PrivacyDocument = {
           kind: 'text',
           text: 'Retained for up to 1 year after the inquiry is resolved, and destroyed without delay once the retention period ends.',
         },
-        { kind: 'subhead', text: '8. Retention under applicable law' },
+        { kind: 'subhead', text: '8. Error logs' },
+        {
+          kind: 'text',
+          text: 'Deleted automatically 90 days after collection.',
+        },
+        { kind: 'subhead', text: '9. Retention under applicable law' },
         {
           kind: 'text',
           text: 'Where applicable law requires personal information to be retained for a set period, dwee retains it for the period specified by that law. Personal information retained under applicable law is not used for any purpose other than that retention purpose.',
@@ -439,6 +468,19 @@ export const PRIVACY_EN: PrivacyDocument = {
           ],
         },
         {
+          kind: 'kv',
+          rows: [
+            { label: 'Processor', value: 'Functional Software, Inc. (Sentry)' },
+            { label: 'Outsourced task', value: 'Collection and analysis of error logs' },
+            {
+              label: 'Personal information processed',
+              value:
+                'Error logs (device model, OS version, app version, error content, screen where it occurred)',
+            },
+            { label: 'Country of processing', value: 'United States' },
+          ],
+        },
+        {
           kind: 'text',
           text: 'Because the processors above process personal information outside Korea, the detailed overseas-transfer information is provided in Article 8.',
         },
@@ -516,6 +558,34 @@ export const PRIVACY_EN: PrivacyDocument = {
             {
               label: 'Method of transfer',
               value: 'Server-to-server transmission over encrypted HTTPS (TLS) communication',
+            },
+          ],
+        },
+        { kind: 'subhead', text: '4. Sentry (error log collection and analysis)' },
+        {
+          kind: 'kv',
+          rows: [
+            {
+              label: 'Recipient',
+              value: 'Functional Software, Inc. (Sentry, contact: privacy@sentry.io)',
+            },
+            { label: 'Destination country', value: 'United States' },
+            {
+              label: 'Items transferred',
+              value:
+                'Error logs (device model, OS version, app version, error content, screen where it occurred)',
+            },
+            {
+              label: 'Purpose of transfer',
+              value: 'Error analysis and Service stabilization',
+            },
+            {
+              label: 'Retention and use period',
+              value: '90 days from collection',
+            },
+            {
+              label: 'Method of transfer',
+              value: 'Automatically transmitted over the network when an error occurs',
             },
           ],
         },
@@ -680,8 +750,8 @@ export const PRIVACY_EN: PrivacyDocument = {
   changeLog: [
     {
       kind: 'bullets',
-      items: ['Announced: August 26, 2026', 'Effective: August 26, 2026'],
+      items: ['Announced: September 23, 2026', 'Effective: September 23, 2026'],
     },
   ],
-  appendix: 'Addendum\nThis Privacy Policy takes effect on August 26, 2026.',
+  appendix: 'Addendum\nThis Privacy Policy takes effect on September 23, 2026.',
 };

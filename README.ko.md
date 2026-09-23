@@ -155,6 +155,7 @@ flowchart LR
 cp .env.example .env.local
 # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY 채우기
 # SITE_URL — OG 메타데이터 base URL (배포 시 실제 도메인으로 교체, 빌드 시점에 서버 컴포넌트만 읽음)
+# NEXT_PUBLIC_SENTRY_DSN — 비우면 오류 리포팅 꺼짐. SENTRY_AUTH_TOKEN 은 소스맵 업로드(pnpm build:release)에만
 ```
 
 `.env.local` 이 비어 있어도 dev/build 는 통과합니다(placeholder fallback). 단 익명 로그인은 실패하며 `auth.error.missingConfig` 토스트가 뜹니다.
@@ -363,6 +364,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] 로컬 알림 (STEP 4, 2026-09-22) — `domain/notification/schedule.ts`(순수, Vitest 9)가 기록·설정으로 예정 D-N일·지연(예정일+2)·가임기 시작 알림을 09:00 로 계획, `hooks/useNotificationSync` 가 `@capacitor/local-notifications` 로 취소 후 재예약. 권한은 마스터 토글 ON 때 요청, 웹은 "앱에서만 알림" 안내. 실기기 발송 검증은 Phase 4
 - [x] 네이티브 카메라 (STEP 3, 2026-09-23) — B안: 앱 안에서도 `CameraSheet` 의 `getUserMedia` 커스텀 카메라 유지(모드 pill 이 뷰파인더 위에 있어야 해서 OS 카메라 미채택). 권한 거부 카피만 네이티브용(`camera.permissionDeniedNative`, 설정 앱 안내)으로 분기
 - [x] 앱 껍데기 (STEP 5, 2026-09-23) — `@capacitor/status-bar`(루트 `NativeChrome` 이 어두운 글리프, 카메라 시트만 밝은 글리프), `@capacitor/keyboard` `resize: native`, `capacitor.config.ts` `backgroundColor #F5F3F4`(splash-screen 플러그인 없이 단색 LaunchScreen 이 스플래시), 버전 1.0.0, `DevBridge` 프로덕션 비활성 확인, 로그인 힌트에 만 14세 안내
+- [x] 오류 리포팅 (STEP 1.7, 2026-09-23) — Sentry `@sentry/capacitor` 4.3.0(CocoaPods 마지막 버전, SPM 전환은 Capacitor 7 때) + `@sentry/react`. 오류만 수집, `beforeSend` 에서 user·URL 쿼리/해시·이메일·토큰·console 브레드크럼 제거(`lib/monitoring/sentry.ts`, Vitest 10). `global-error.tsx` 크래시 화면, release `dwee@<version>`, `pnpm build:release` 가 소스맵 업로드 후 삭제. 방침 제3·4·7·8조 오류 로그 항목 추가(시행일 2026-09-23)
 
 **다이어리**
 - [x] Diary & Event 도메인 — `/log` 를 Diary/Report 토글로 전환, EventCategory(내장 4종 + 사용자 추가) + EventLog(제목/메모/기간/카테고리/생리마크), 생리마크 ↔ PeriodLog 자동 연동. migrations 0006–0007

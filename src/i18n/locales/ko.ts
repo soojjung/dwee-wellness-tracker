@@ -26,6 +26,11 @@ export const ko: Dictionary = {
       ariaLabel: '만 14세 이상 확인 및 약관 동의',
     },
   },
+  crash: {
+    title: '문제가 발생했어요',
+    body: '자동으로 접수됐어요 — 개인정보는 전송되지 않아요. 새로고침하면 대부분 해결돼요.',
+    reload: '새로고침',
+  },
   nav: {
     home: '홈',
     log: '다이어리',
