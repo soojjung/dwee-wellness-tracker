@@ -121,15 +121,7 @@ export function LoginScreen() {
 
       <div className="flex flex-col gap-3 px-5 pb-[84px]">
         {consentRequired ? (
-          <div className="flex flex-col gap-1.5">
-            <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
-            {!consentChecked ? (
-              // Indented past the 18px box + gap so it lines up with the label text.
-              <p className="pl-8 text-xs leading-[1.5] text-auth-linkMuted" role="status">
-                {t.auth.consent.hint}
-              </p>
-            ) : null}
-          </div>
+          <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
         ) : null}
         <Button
           size="lg"

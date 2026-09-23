@@ -24,7 +24,6 @@ export const en = {
       privacy: 'Privacy Policy',
       suffix: '.',
       ariaLabel: 'Confirm you are 14 or older and agree to the terms',
-      hint: 'Check the box above — dwee is for ages 14 and up.',
     },
   },
   nav: {
