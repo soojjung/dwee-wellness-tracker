@@ -6,6 +6,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { NATIVE_AUTH_REDIRECT, toWebCallbackPath } from '@/lib/auth/nativeCallback';
 import { cancelAllLocalNotifications } from '@/lib/notifications/localNotifications';
+import { captureException } from '@/lib/monitoring/sentry';
 import { supabase, isSupabaseConfigured } from '@/data/adapters/supabase/client';
 import { getRepoMode, setRepoMode, resetAllUserData, type RepoMode } from '@/data';
 import {
@@ -77,6 +78,20 @@ function registerNativeAuthReturn(): void {
   // login screen would sit on "Connecting..." forever.
   void Browser.addListener('browserFinished', () => {
     if (!callbackArrived) useAuthStore.setState({ loading: false });
+  });
+}
+
+// The login screen only shows a generic "try again" line, so without this a
+// failed sign-in leaves no trace of what Supabase actually answered (rate
+// limit, disabled provider, outage). Status/code tags carry no user data.
+function reportAuthFailure(step: 'anonymous' | 'oauth', e: unknown): void {
+  const err = e as { status?: unknown; code?: unknown } | null;
+  captureException(e, {
+    tags: {
+      auth_step: step,
+      auth_status: typeof err?.status === 'number' ? String(err.status) : 'none',
+      auth_code: typeof err?.code === 'string' ? err.code : 'none',
+    },
   });
 }
 
@@ -165,6 +180,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       set({ session: data.session, user: data.user, loading: false });
       await applyRepoMode(repoModeForUser(data.user));
     } catch (e) {
+      reportAuthFailure('anonymous', e);
       set({ error: classifyError(e), loading: false });
       throw e;
     }
@@ -199,7 +215,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       if (error) throw error;
       // Browser is navigating to the provider — no further code runs here
       // until the redirect back to /auth/callback.
-    } catch {
+    } catch (e) {
+      reportAuthFailure('oauth', e);
       set({ error: 'oauthFailed', loading: false });
     }
   },
