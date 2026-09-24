@@ -1,6 +1,7 @@
 import { get, set, del } from 'idb-keyval';
 import type { MediaRepository } from '../../repositories/MediaRepository';
 import {
+  PHOTO_SLOTS,
   TEXT_ORDERS,
   TEXT_POSITIONS,
   isPhotoTransform,
@@ -21,6 +22,20 @@ function isTextOrder(v: unknown): v is TextOrder {
 }
 
 export const indexedDBMediaAdapter: MediaRepository = {
+  async getHomeDecor() {
+    const a = indexedDBMediaAdapter;
+    const [photoCount, photos, transforms, textPosition, mainText, subText, textOrder] =
+      await Promise.all([
+        a.getPhotoCount(),
+        Promise.all(PHOTO_SLOTS.map((s) => a.getHomePhoto(s))),
+        Promise.all(PHOTO_SLOTS.map((s) => a.getPhotoTransform(s))),
+        a.getTextPosition(),
+        a.getMainText(),
+        a.getSubText(),
+        a.getTextOrder(),
+      ]);
+    return { photoCount, photos, transforms, textPosition, mainText, subText, textOrder };
+  },
   async getPhotoCount() {
     const v = await get<number>(STORAGE_KEYS.mediaPhotoCount);
     if (v === 1 || v === 2 || v === 4) return v;

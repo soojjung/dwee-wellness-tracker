@@ -203,20 +203,12 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
     set({ loading: true, error: null });
     try {
       await ensureMigrations();
-      const [count, blobs, transforms, textPosition, mainText, subText, textOrder] =
-        await Promise.all([
-          mediaRepo.getPhotoCount(),
-          Promise.all(PHOTO_SLOTS.map((s) => mediaRepo.getHomePhoto(s))),
-          Promise.all(PHOTO_SLOTS.map((s) => mediaRepo.getPhotoTransform(s))),
-          mediaRepo.getTextPosition(),
-          mediaRepo.getMainText(),
-          mediaRepo.getSubText(),
-          mediaRepo.getTextOrder(),
-        ]);
+      const { photoCount, photos, transforms, textPosition, mainText, subText, textOrder } =
+        await mediaRepo.getHomeDecor();
       revokeAll(get().photoUrls);
-      const urls: PhotoUrls = blobs.map((b) => (b ? URL.createObjectURL(b) : null));
+      const urls: PhotoUrls = photos.map((b) => (b ? URL.createObjectURL(b) : null));
       set({
-        photoCount: count ?? null,
+        photoCount,
         photoUrls: urls,
         photoTransforms: transforms,
         textPosition,

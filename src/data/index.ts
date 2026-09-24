@@ -1,4 +1,5 @@
 import { del, get, keys, set } from 'idb-keyval';
+import { clearRemoteBlobCache } from './adapters/supabase/blobCache';
 import { DEFAULT_STICKERS, defaultStickerUrl } from '@/domain/diary/defaultStickers';
 import { indexedDBSettingsAdapter } from './adapters/indexeddb/IndexedDBSettingsAdapter';
 import { indexedDBPeriodAdapter } from './adapters/indexeddb/IndexedDBPeriodAdapter';
@@ -174,6 +175,7 @@ export const bodyTypeReportRepo: BodyTypeReportRepository = {
 };
 
 export const mediaRepo: MediaRepository = {
+  getHomeDecor: () => pickMedia().getHomeDecor(),
   getPhotoCount: () => pickMedia().getPhotoCount(),
   setPhotoCount: (count) => pickMedia().setPhotoCount(count),
   getHomePhoto: (slot) => pickMedia().getHomePhoto(slot),
@@ -323,6 +325,7 @@ async function clearSeedFlags(): Promise<void> {
 
 export async function resetAllUserData(): Promise<void> {
   await Promise.all([
+    clearRemoteBlobCache(),
     del(STORAGE_KEYS.settings),
     del(STORAGE_KEYS.periods),
     del(STORAGE_KEYS.conditions),

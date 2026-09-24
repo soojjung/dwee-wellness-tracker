@@ -1,6 +1,7 @@
 // Blob 은 Storage bucket('media'), 메타데이터(경로/슬롯/텍스트)는 DB.
 import type { MediaRepository } from '@/data/repositories/MediaRepository';
 import {
+  MAX_PHOTO_SLOTS,
   TEXT_ORDERS,
   TEXT_POSITIONS,
   isPhotoTransform,
@@ -11,17 +12,32 @@ import {
   type TextPosition,
 } from '@/domain/home/decor';
 import { supabase, requireUserId } from './client';
+import { downloadWithCache, forgetCachedBlob, writeCachedBlob } from './blobCache';
 
 const BUCKET = 'media';
 
+// A new path per upload (not `${slot}.jpg` overwritten in place) so the
+// on-device blob cache can trust that a path's content never changes.
 function photoPath(userId: string, slot: PhotoSlot, ext: string): string {
-  return `${userId}/home_photos/${slot}.${ext}`;
+  return `${userId}/home_photos/${slot}-${Date.now().toString(36)}.${ext}`;
 }
 
-async function downloadBlob(path: string): Promise<Blob | null> {
-  const { data, error } = await supabase.storage.from(BUCKET).download(path);
-  if (error) return null;
-  return data;
+function downloadBlob(path: string): Promise<Blob | null> {
+  return downloadWithCache(path, async () => {
+    const { data, error } = await supabase.storage.from(BUCKET).download(path);
+    if (error) return null;
+    return data;
+  });
+}
+
+async function fetchPhotoPath(userId: string, slot: PhotoSlot): Promise<string | null> {
+  const { data: row } = await supabase
+    .from('home_photos')
+    .select('storage_path')
+    .eq('user_id', userId)
+    .eq('slot', slot)
+    .maybeSingle();
+  return (row as PhotoRow | null)?.storage_path ?? null;
 }
 
 async function uploadBlob(path: string, blob: Blob): Promise<void> {
@@ -85,20 +101,47 @@ export const supabaseMediaAdapter: MediaRepository = {
     await upsertSettings(userId, { photo_count: count });
   },
 
+  async getHomeDecor() {
+    const userId = await requireUserId();
+    const [settings, photoRows] = await Promise.all([
+      fetchSettings(userId),
+      supabase.from('home_photos').select('slot, storage_path, transform').eq('user_id', userId),
+    ]);
+    if (photoRows.error) throw photoRows.error;
+
+    const photos: (Blob | null)[] = Array<Blob | null>(MAX_PHOTO_SLOTS).fill(null);
+    const transforms: (PhotoTransform | null)[] = Array<PhotoTransform | null>(
+      MAX_PHOTO_SLOTS,
+    ).fill(null);
+    await Promise.all(
+      (photoRows.data as PhotoRow[]).map(async (row) => {
+        if (!Number.isInteger(row.slot) || row.slot < 0 || row.slot >= MAX_PHOTO_SLOTS) return;
+        transforms[row.slot] = isPhotoTransform(row.transform) ? row.transform : null;
+        photos[row.slot] = await downloadBlob(row.storage_path);
+      }),
+    );
+
+    const count = settings?.photo_count;
+    return {
+      photoCount: count === 1 || count === 2 || count === 4 ? count : null,
+      photos,
+      transforms,
+      textPosition: isTextPosition(settings?.text_position) ? settings.text_position : null,
+      mainText: settings?.main_text ?? '',
+      subText: settings?.sub_text ?? '',
+      textOrder: isTextOrder(settings?.text_order) ? settings.text_order : null,
+    };
+  },
+
   async getHomePhoto(slot: PhotoSlot) {
     const userId = await requireUserId();
-    const { data: row } = await supabase
-      .from('home_photos')
-      .select('storage_path')
-      .eq('user_id', userId)
-      .eq('slot', slot)
-      .maybeSingle();
-    if (!row) return null;
-    return downloadBlob((row as PhotoRow).storage_path);
+    const path = await fetchPhotoPath(userId, slot);
+    return path ? downloadBlob(path) : null;
   },
 
   async setHomePhoto(slot: PhotoSlot, blob: Blob) {
     const userId = await requireUserId();
+    const previousPath = await fetchPhotoPath(userId, slot);
     const ext = blob.type === 'image/png' ? 'png' : 'jpg';
     const path = photoPath(userId, slot, ext);
     await uploadBlob(path, blob);
@@ -109,17 +152,24 @@ export const supabaseMediaAdapter: MediaRepository = {
         { onConflict: 'user_id,slot' },
       );
     if (error) throw error;
+    await writeCachedBlob(path, blob);
+    if (previousPath && previousPath !== path) {
+      // Best effort: an orphaned object only costs storage, not correctness.
+      await supabase.storage
+        .from(BUCKET)
+        .remove([previousPath])
+        .catch(() => undefined);
+      await forgetCachedBlob(previousPath);
+    }
   },
 
   async clearHomePhoto(slot: PhotoSlot) {
     const userId = await requireUserId();
-    const { data: row } = await supabase
-      .from('home_photos')
-      .select('storage_path')
-      .eq('user_id', userId)
-      .eq('slot', slot)
-      .maybeSingle();
-    if (row) await supabase.storage.from(BUCKET).remove([(row as PhotoRow).storage_path]);
+    const path = await fetchPhotoPath(userId, slot);
+    if (path) {
+      await supabase.storage.from(BUCKET).remove([path]);
+      await forgetCachedBlob(path);
+    }
     await supabase.from('home_photos').delete().eq('user_id', userId).eq('slot', slot);
   },
 

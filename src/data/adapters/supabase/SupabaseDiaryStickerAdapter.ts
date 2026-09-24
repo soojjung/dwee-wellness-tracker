@@ -4,6 +4,7 @@ import type {
   NewDiaryStickerInput,
 } from '@/data/repositories/DiaryStickerRepository';
 import { supabase, requireUserId } from './client';
+import { downloadWithCache, forgetCachedBlob, writeCachedBlob } from './blobCache';
 
 const BUCKET = 'media';
 
@@ -37,10 +38,14 @@ async function uploadBlob(path: string, blob: Blob): Promise<void> {
   if (error) throw error;
 }
 
-async function downloadBlob(path: string): Promise<Blob | null> {
-  const { data, error } = await supabase.storage.from(BUCKET).download(path);
-  if (error) return null;
-  return data;
+// Sticker paths embed the sticker's UUID, so their content never changes and
+// the on-device cache can serve them without revalidating.
+function downloadBlob(path: string): Promise<Blob | null> {
+  return downloadWithCache(path, async () => {
+    const { data, error } = await supabase.storage.from(BUCKET).download(path);
+    if (error) return null;
+    return data;
+  });
 }
 
 export const supabaseDiaryStickerAdapter: DiaryStickerRepository = {
@@ -65,6 +70,7 @@ export const supabaseDiaryStickerAdapter: DiaryStickerRepository = {
     const ext = input.blob.type === 'image/jpeg' ? 'jpg' : 'png';
     const path = stickerPath(userId, id, ext);
     await uploadBlob(path, input.blob);
+    await writeCachedBlob(path, input.blob);
     const insert = {
       id,
       user_id: userId,
@@ -90,7 +96,9 @@ export const supabaseDiaryStickerAdapter: DiaryStickerRepository = {
       .eq('id', id)
       .maybeSingle();
     if (row) {
-      await supabase.storage.from(BUCKET).remove([(row as { storage_path: string }).storage_path]);
+      const path = (row as { storage_path: string }).storage_path;
+      await supabase.storage.from(BUCKET).remove([path]);
+      await forgetCachedBlob(path);
     }
     await supabase.from('diary_stickers').delete().eq('id', id);
   },

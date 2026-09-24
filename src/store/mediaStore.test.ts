@@ -8,6 +8,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // IndexedDB adapter would run at module load and crash under Node.
 vi.mock('@/data', () => ({
   mediaRepo: {
+    getHomeDecor: vi.fn(async () => ({
+      photoCount: null,
+      photos: Array(7).fill(null),
+      transforms: Array(7).fill(null),
+      textPosition: null,
+      mainText: '',
+      subText: '',
+      textOrder: null,
+    })),
     getPhotoCount: vi.fn(async () => null),
     setPhotoCount: vi.fn(async () => {}),
     getHomePhoto: vi.fn(async () => null),
@@ -400,6 +409,48 @@ describe('draftConfirmPicks', () => {
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(false);
     useMediaStore.getState().draftConfirmPicks();
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(true);
+  });
+});
+
+// ========================================================================
+// hydrate
+// ========================================================================
+
+describe('hydrate', () => {
+  it('loads everything through one getHomeDecor call and builds object URLs', async () => {
+    const blob = stubBlob();
+    const photos = Array<Blob | null>(MAX_PHOTO_SLOTS).fill(null);
+    photos[0] = blob;
+    vi.mocked(mediaRepo.getHomeDecor).mockResolvedValueOnce({
+      photoCount: 1,
+      photos,
+      transforms: Array<PhotoTransform | null>(MAX_PHOTO_SLOTS).fill(null),
+      textPosition: null,
+      mainText: 'hi',
+      subText: '',
+      textOrder: null,
+    });
+
+    await useMediaStore.getState().hydrate();
+
+    const state = useMediaStore.getState();
+    expect(mediaRepo.getHomeDecor).toHaveBeenCalledTimes(1);
+    expect(mediaRepo.getHomePhoto).not.toHaveBeenCalled();
+    expect(state.hydrated).toBe(true);
+    expect(state.photoCount).toBe(1);
+    expect(state.photoUrls[0]).toMatch(/^blob:mock:/);
+    expect(state.photoUrls[1]).toBeNull();
+    expect(state.mainText).toBe('hi');
+  });
+
+  it('records the error and stays unhydrated when loading fails', async () => {
+    vi.mocked(mediaRepo.getHomeDecor).mockRejectedValueOnce(new Error('offline'));
+    useMediaStore.setState({ hydrated: false });
+
+    await useMediaStore.getState().hydrate();
+
+    expect(useMediaStore.getState().hydrated).toBe(false);
+    expect(useMediaStore.getState().error).toBe('offline');
   });
 });
 
