@@ -1,16 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { splashRemainingMs } from '@/lib/splashClock';
 
 /**
- * False until `minMs` have passed since the document started loading.
- * `performance.now()` already counts from that moment, so a later client-side
- * navigation is past the mark and never waits.
+ * False until the splash has been on screen for `minMs` in this document
+ * (see `lib/splashClock`). A later client-side navigation is already past the
+ * mark and never waits.
  */
 export function useBootDelay(minMs: number): boolean {
   const [elapsed, setElapsed] = useState(false);
 
   useEffect(() => {
-    const remaining = minMs - performance.now();
+    const remaining = splashRemainingMs(minMs, performance.now());
     if (remaining <= 0) {
       setElapsed(true);
       return;

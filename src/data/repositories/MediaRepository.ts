@@ -6,7 +6,21 @@ import type {
   TextPosition,
 } from '@/domain/home/decor';
 
+/** Everything the home hero needs, loaded in one call (indexed by PhotoSlot). */
+export interface HomeDecorSnapshot {
+  photoCount: PhotoCount | null;
+  photos: (Blob | null)[];
+  transforms: (PhotoTransform | null)[];
+  textPosition: TextPosition | null;
+  mainText: string;
+  subText: string;
+  textOrder: TextOrder | null;
+}
+
 export interface MediaRepository {
+  /** Batched read for hydrate — one round trip per table instead of one per field/slot. */
+  getHomeDecor(): Promise<HomeDecorSnapshot>;
+
   getPhotoCount(): Promise<PhotoCount | null>;
   setPhotoCount(count: PhotoCount): Promise<void>;
   getHomePhoto(slot: PhotoSlot): Promise<Blob | null>;

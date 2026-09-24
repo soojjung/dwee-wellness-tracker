@@ -8,6 +8,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // IndexedDB adapter would run at module load and crash under Node.
 vi.mock('@/data', () => ({
   mediaRepo: {
+    getHomeDecor: vi.fn(async () => ({
+      photoCount: null,
+      photos: Array(7).fill(null),
+      transforms: Array(7).fill(null),
+      textPosition: null,
+      mainText: '',
+      subText: '',
+      textOrder: null,
+    })),
     getPhotoCount: vi.fn(async () => null),
     setPhotoCount: vi.fn(async () => {}),
     getHomePhoto: vi.fn(async () => null),
@@ -107,7 +116,15 @@ beforeEach(() => {
 // ========================================================================
 describe('beginPhotoDraft', () => {
   it('activates the draft and snapshots committed state', () => {
-    const urls: (string | null)[] = ['committed-url-a', 'committed-url-b', null, null, null, null, null];
+    const urls: (string | null)[] = [
+      'committed-url-a',
+      'committed-url-b',
+      null,
+      null,
+      null,
+      null,
+      null,
+    ];
     seedCommitted({ photoCount: 2, photoUrls: urls });
     useMediaStore.getState().beginPhotoDraft();
 
@@ -339,9 +356,7 @@ describe('draftClearPhoto', () => {
 
 describe('draftSetPhotoTransform', () => {
   it('is a no-op when no draft is active', () => {
-    useMediaStore
-      .getState()
-      .draftSetPhotoTransform(0 as PhotoSlot, DEFAULT_PHOTO_TRANSFORM);
+    useMediaStore.getState().draftSetPhotoTransform(0 as PhotoSlot, DEFAULT_PHOTO_TRANSFORM);
     expect(useMediaStore.getState().draftPhotoTransforms[0]).toBeNull();
   });
 
@@ -371,13 +386,11 @@ describe('draftClearPhotoTransform', () => {
       photoUrls: ['committed-url', null, null, null, null, null, null],
     });
     useMediaStore.getState().beginPhotoDraft();
-    useMediaStore
-      .getState()
-      .draftSetPhotoTransform(0 as PhotoSlot, {
-        scale: 2,
-        offsetXNorm: 0,
-        offsetYNorm: 0,
-      });
+    useMediaStore.getState().draftSetPhotoTransform(0 as PhotoSlot, {
+      scale: 2,
+      offsetXNorm: 0,
+      offsetYNorm: 0,
+    });
     useMediaStore.getState().draftClearPhotoTransform(0 as PhotoSlot);
     expect(useMediaStore.getState().draftPhotoTransforms[0]).toBeNull();
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(true);
@@ -396,6 +409,48 @@ describe('draftConfirmPicks', () => {
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(false);
     useMediaStore.getState().draftConfirmPicks();
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(true);
+  });
+});
+
+// ========================================================================
+// hydrate
+// ========================================================================
+
+describe('hydrate', () => {
+  it('loads everything through one getHomeDecor call and builds object URLs', async () => {
+    const blob = stubBlob();
+    const photos = Array<Blob | null>(MAX_PHOTO_SLOTS).fill(null);
+    photos[0] = blob;
+    vi.mocked(mediaRepo.getHomeDecor).mockResolvedValueOnce({
+      photoCount: 1,
+      photos,
+      transforms: Array<PhotoTransform | null>(MAX_PHOTO_SLOTS).fill(null),
+      textPosition: null,
+      mainText: 'hi',
+      subText: '',
+      textOrder: null,
+    });
+
+    await useMediaStore.getState().hydrate();
+
+    const state = useMediaStore.getState();
+    expect(mediaRepo.getHomeDecor).toHaveBeenCalledTimes(1);
+    expect(mediaRepo.getHomePhoto).not.toHaveBeenCalled();
+    expect(state.hydrated).toBe(true);
+    expect(state.photoCount).toBe(1);
+    expect(state.photoUrls[0]).toMatch(/^blob:mock:/);
+    expect(state.photoUrls[1]).toBeNull();
+    expect(state.mainText).toBe('hi');
+  });
+
+  it('records the error and stays unhydrated when loading fails', async () => {
+    vi.mocked(mediaRepo.getHomeDecor).mockRejectedValueOnce(new Error('offline'));
+    useMediaStore.setState({ hydrated: false });
+
+    await useMediaStore.getState().hydrate();
+
+    expect(useMediaStore.getState().hydrated).toBe(false);
+    expect(useMediaStore.getState().error).toBe('offline');
   });
 });
 
@@ -432,6 +487,24 @@ describe('commitPhotoDraft', () => {
 
     expect(mediaRepo.setHomePhoto).toHaveBeenCalledWith(0, blob);
     expect(mediaRepo.clearPhotoTransform).toHaveBeenCalledWith(0);
+  });
+
+  it('resolves true on success and leaves the draft closed', async () => {
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftSetPhoto(0 as PhotoSlot, stubBlob());
+
+    await expect(useMediaStore.getState().commitPhotoDraft()).resolves.toBe(true);
+    expect(useMediaStore.getState().draftActive).toBe(false);
+  });
+
+  it('resolves false and keeps the draft active when an upload fails', async () => {
+    vi.mocked(mediaRepo.setHomePhoto).mockRejectedValueOnce(new Error('offline'));
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftSetPhoto(0 as PhotoSlot, stubBlob());
+
+    await expect(useMediaStore.getState().commitPhotoDraft()).resolves.toBe(false);
+    expect(useMediaStore.getState().draftActive).toBe(true);
+    expect(useMediaStore.getState().error).toBe('offline');
   });
 
   it('persists a cleared slot via clearHomePhoto', async () => {
@@ -543,9 +616,7 @@ describe('isPhotoDraftDirty', () => {
   });
 
   it('returns true when photoCount differs', () => {
-    expect(
-      isPhotoDraftDirty(baseState({ draftPhotoCount: 4, photoCount: 1 })),
-    ).toBe(true);
+    expect(isPhotoDraftDirty(baseState({ draftPhotoCount: 4, photoCount: 1 }))).toBe(true);
   });
 
   it('returns true when any slot has a pending blob', () => {
@@ -564,17 +635,13 @@ describe('isPhotoDraftDirty', () => {
     const tx: PhotoTransform = { scale: 1.5, offsetXNorm: 0, offsetYNorm: 0 };
     const draftTransforms = nullArray<PhotoTransform | null>(null);
     draftTransforms[2] = tx;
-    expect(
-      isPhotoDraftDirty(baseState({ draftPhotoTransforms: draftTransforms })),
-    ).toBe(true);
+    expect(isPhotoDraftDirty(baseState({ draftPhotoTransforms: draftTransforms }))).toBe(true);
   });
 
   it('treats identity vs null as equal (no false dirty on epsilon drift)', () => {
     const draftTransforms = nullArray<PhotoTransform | null>(null);
     draftTransforms[0] = { ...DEFAULT_PHOTO_TRANSFORM }; // effectively same as null
-    expect(
-      isPhotoDraftDirty(baseState({ draftPhotoTransforms: draftTransforms })),
-    ).toBe(false);
+    expect(isPhotoDraftDirty(baseState({ draftPhotoTransforms: draftTransforms }))).toBe(false);
   });
 });
 
@@ -611,13 +678,11 @@ describe('draft flow — cross-cutting scenarios', () => {
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(true);
 
     // transform edit → unchanged
-    useMediaStore
-      .getState()
-      .draftSetPhotoTransform(0 as PhotoSlot, {
-        scale: 2,
-        offsetXNorm: 0,
-        offsetYNorm: 0,
-      });
+    useMediaStore.getState().draftSetPhotoTransform(0 as PhotoSlot, {
+      scale: 2,
+      offsetXNorm: 0,
+      offsetYNorm: 0,
+    });
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(true);
 
     // clear → false

@@ -113,6 +113,8 @@ export const ko: Dictionary = {
         swapAriaLabel: '메인과 서브 문구 순서 변경',
       },
       submit: '편집 완료',
+      submitting: '저장 중…',
+      saveFailed: '사진을 저장하지 못했어요. 네트워크 연결을 확인하고 다시 시도해 주세요.',
       confirmPicksHint: '먼저 [편집 완료]로 사진을 확정해주세요.',
       discardDialog: {
         title: '변경사항을 버릴까요?',

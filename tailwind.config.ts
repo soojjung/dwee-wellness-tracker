@@ -107,6 +107,10 @@ const config: Config = {
           '80%': { transform: 'translate(-50%, 0)', opacity: '1' },
           '100%': { transform: 'translate(-50%, -4px)', opacity: '0' },
         },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
       },
       animation: {
         sheetSlideUp: 'sheetSlideUp 320ms cubic-bezier(0.16, 1, 0.3, 1)',
@@ -115,6 +119,7 @@ const config: Config = {
         stickerScan: 'stickerScan 1.4s ease-in-out infinite alternate',
         diaryNudge: 'diaryNudge 900ms ease-in-out',
         diaryTodayBubble: 'diaryTodayBubble 1600ms ease-in-out forwards',
+        fadeIn: 'fadeIn 240ms ease-out both',
       },
     },
   },

@@ -5,10 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { useMediaStore } from '@/store/mediaStore';
-import {
-  useMediaCustomizeView,
-  useIsPhotoDraftDirty,
-} from '@/store/useMediaCustomizeView';
+import { useMediaCustomizeView, useIsPhotoDraftDirty } from '@/store/useMediaCustomizeView';
 // import { usePeriodStore } from '@/store/periodStore';
 import { useSettingsStore } from '@/store/settingsStore';
 // import { currentPhase } from '@/domain/cycle/phase';
@@ -21,6 +18,9 @@ import { PhotoPreviewGrid } from './PhotoPreviewGrid';
 // import { TextSettingsSection } from './TextSettingsSection';
 import { HomeCustomizeFooter } from './HomeCustomizeFooter';
 import { DiscardDraftDialog } from './DiscardDraftDialog';
+import { Toast } from '@/components/ui/Toast';
+
+const TOAST_MS = 3200;
 
 export function HomeCustomizeScreen() {
   const t = useT();
@@ -40,6 +40,14 @@ export function HomeCustomizeScreen() {
   const picksConfirmed = view.picksConfirmed;
   const isDirty = useIsPhotoDraftDirty();
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), TOAST_MS);
+    return () => clearTimeout(id);
+  }, [toast]);
   // const textPosition = useMediaStore((s) => s.textPosition);
   // const mainText = useMediaStore((s) => s.mainText);
   // const subText = useMediaStore((s) => s.subText);
@@ -126,14 +134,21 @@ export function HomeCustomizeScreen() {
   const submitEnabled = allFilled && picksConfirmed;
 
   async function handleSubmit() {
-    if (!submitEnabled) return;
-    await commitPhotoDraft();
+    if (!submitEnabled || saving) return;
+    setSaving(true);
+    const ok = await commitPhotoDraft();
     // if (localMain !== mainText) await setMainText(localMain);
     // if (localSub !== subText) await setSubText(localSub);
-    router.push('/');
+    if (ok) {
+      router.push('/');
+      return;
+    }
+    setSaving(false);
+    setToast(t.home.customize.saveFailed);
   }
 
   function handleBack() {
+    if (saving) return;
     if (isDirty) {
       setShowDiscardDialog(true);
       return;
@@ -188,10 +203,13 @@ export function HomeCustomizeScreen() {
         </main>
         <HomeCustomizeFooter
           enabled={submitEnabled}
+          saving={saving}
           onSubmit={handleSubmit}
           hint={allFilled && !picksConfirmed ? t.home.customize.confirmPicksHint : undefined}
         />
       </div>
+
+      <Toast message={toast} />
 
       {showDiscardDialog ? (
         <DiscardDraftDialog
@@ -205,8 +223,19 @@ export function HomeCustomizeScreen() {
 
 function CropIcon() {
   return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 1v11a1 1 0 001 1h11M1 4h11a1 1 0 011 1v11" />
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      className="h-4 w-4"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 1v11a1 1 0 001 1h11M1 4h11a1 1 0 011 1v11"
+      />
     </svg>
   );
 }

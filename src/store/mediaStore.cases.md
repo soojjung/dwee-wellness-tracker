@@ -77,6 +77,8 @@ that layer regresses.
 | 24 | is a no-op when no draft is active | | no repo calls |
 | 25 | writes the new photoCount only when it changed | equal / then differing | first commit no setPhotoCount, second calls setPhotoCount(4) |
 | 26 | persists a pending blob via setHomePhoto and resets its transform | pick slot 0 | setHomePhoto(0, blob) + clearPhotoTransform(0) called |
+| 26a | resolves true on success and leaves the draft closed | pick slot 0 → commit | `true`, `draftActive=false` |
+| 26b | resolves false and keeps the draft active when an upload fails | setHomePhoto rejects `offline` | `false`, `draftActive=true`, `error='offline'` (화면이 실패 토스트 표시 후 재시도 가능) |
 | 27 | persists a cleared slot via clearHomePhoto | committed then cleared | clearHomePhoto + clearPhotoTransform called |
 | 28 | sets a newly-introduced transform on an already-committed slot | committed url + new tx | setPhotoTransform(0, tx) |
 | 29 | clears a transform when the draft drops it | committed non-null tx → draft null | clearPhotoTransform called, setPhotoTransform not called |
