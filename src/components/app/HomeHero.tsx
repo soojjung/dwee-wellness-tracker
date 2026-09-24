@@ -51,20 +51,24 @@ export function HomeHero() {
       </div>
 
       <div className="relative -mx-4 aspect-square w-[calc(100%+2rem)] overflow-hidden bg-brand-gray300">
-        {isCustom ? (
-          <PhotoLayout count={photoCount} urls={activePhotos} transforms={activeTransforms} />
+        {/* Until the saved photos load, show only the gray box: painting the
+            default hero first made it visibly swap to the user's photos. */}
+        {!hydrated ? null : isCustom ? (
+          <div className="h-full w-full animate-fadeIn">
+            <PhotoLayout count={photoCount} urls={activePhotos} transforms={activeTransforms} />
+          </div>
         ) : (
           <img
             src="/home/default-hero.jpg"
             alt=""
             aria-hidden
-            className="h-full w-full object-cover"
+            className="h-full w-full animate-fadeIn object-cover"
           />
         )}
 
         <HomeHeroText />
 
-        {!isCustom && !hasUserText ? (
+        {hydrated && !isCustom && !hasUserText ? (
           <div
             className="pointer-events-none absolute right-4 top-4 z-10 flex flex-col items-end gap-1.5"
             aria-hidden
