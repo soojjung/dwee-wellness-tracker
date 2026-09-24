@@ -122,11 +122,13 @@ function ActivityToneCard({
       <div className="flex flex-col gap-1.5">
         <p
           className={cn(
-            'flex items-center gap-1 whitespace-nowrap text-[15px] font-semibold leading-snug',
+            'break-keep text-[15px] font-semibold leading-snug',
             dark ? 'text-brand-white' : 'text-brand-gray900',
           )}
         >
-          <span>{title}</span>
+          {/* 카드 폭이 고정이라 긴 제목은 줄바꿈. NBSP 로 이모지가 마지막 단어와 같은 줄에 붙게 한다. */}
+          {title}
+          {' '}
           <span aria-hidden>{emoji}</span>
         </p>
         <p
