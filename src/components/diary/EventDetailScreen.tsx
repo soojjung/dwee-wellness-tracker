@@ -1,5 +1,6 @@
 'use client';
 import { useT } from '@/i18n/useT';
+import { useCategoryName } from '@/hooks/useCategoryName';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { formatFullDate } from '@/lib/date';
@@ -29,6 +30,7 @@ export function EventDetailScreen({
   onEdit,
 }: EventDetailScreenProps) {
   const t = useT();
+  const categoryName = useCategoryName();
   const d = t.report.diary.eventDetail;
   useBodyScrollLock();
   useEscToClose(onBack);
@@ -81,7 +83,7 @@ export function EventDetailScreen({
           <div className="flex flex-col gap-4 pt-2">
             <DetailRow label={d.typeLabel}>
               {category ? (
-                <CategoryChip name={category.name} colorId={category.colorId} size="md" />
+                <CategoryChip name={categoryName(category)} colorId={category.colorId} size="md" />
               ) : null}
             </DetailRow>
             <DetailRow label={d.periodToggle}>
