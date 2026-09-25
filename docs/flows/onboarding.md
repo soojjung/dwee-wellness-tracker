@@ -60,7 +60,7 @@ stateDiagram-v2
 
 ## 로그인 화면 동의 체크 (연령 확인)
 
-`LoginScreen` 은 `settings.ageConfirmedAt` 이 `null` 이면 버튼 위에 `ConsentCheck`("만 14세 이상이며 이용약관과 개인정보처리방침에 동의합니다", 두 문서는 공개 `/legal/terms`·`/legal/privacy` 링크)를 띄우고, 체크 전에는 Apple/Google/게스트 버튼을 모두 비활성 + 하단 안내 문구를 보여 준다. 어느 버튼이든 누르는 순간 `settingsStore.confirmAge()` 가 타임스탬프를 먼저 저장한 뒤(OAuth 는 리다이렉트 전에) 로그인을 진행하므로, 같은 설치에서는 다시 묻지 않는다. 기준 연령은 출시 계획 §1.2 의 A안(만 14세).
+`LoginScreen` 은 버튼 위에 `ConsentCheck`("만 14세 이상이며 이용약관과 개인정보처리방침에 동의합니다", 두 문서는 공개 `/legal/terms`·`/legal/privacy` 링크)를 **항상** 띄우고, 체크 전에는 Apple/Google/게스트 버튼을 모두 비활성으로 둔다. 어느 버튼이든 누르는 순간 `settingsStore.confirmAge()` 가 타임스탬프를 먼저 저장한 뒤(OAuth 는 리다이렉트 전에) 로그인을 진행한다. 이 기기에 이미 동의 기록(`settings.ageConfirmedAt`)이 있으면 체크된 채로 시작한다 — 사용자가 체크를 풀면 버튼은 다시 비활성(저장된 기록은 그대로). 예전엔 동의 기록이 있으면 행을 숨겼는데, 로그인 취소 후 돌아오거나 게스트가 마이페이지에서 들어올 때 체크박스가 "어떨 땐 있고 어떨 땐 없는" 것처럼 보여 바꿨다(2026-09-26 TestFlight R3-10). 기록은 로그아웃(`resetAllUserData`)·재설치 때만 지워진다. 기준 연령은 출시 계획 §1.2 의 A안(만 14세).
 
 ## 네이티브(Capacitor) OAuth 복귀
 

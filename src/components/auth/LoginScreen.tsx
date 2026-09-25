@@ -19,8 +19,10 @@ export function LoginScreen() {
   const [confirmToast, setConfirmToast] = useState<string | null>(null);
   const [pending, setPending] = useState<OAuthProvider | null>(null);
   const [guestPending, setGuestPending] = useState(false);
-  // Consent is asked once per install (settings.ageConfirmedAt); until it is
-  // ticked every sign-in path stays disabled.
+  // The consent row is always shown and every sign-in path stays disabled
+  // until it is ticked. If this device already agreed (settings.ageConfirmedAt)
+  // it starts ticked — hiding it instead read as "the checkbox sometimes
+  // disappears" (TestFlight R3-10).
   const [consentChecked, setConsentChecked] = useState(false);
   const authHydrate = useAuthStore((s) => s.hydrate);
   const authHydrated = useAuthStore((s) => s.hydrated);
@@ -34,13 +36,14 @@ export function LoginScreen() {
   const settingsFailed = useSettingsStore((s) => s.error !== null);
   const ageConfirmedAt = useSettingsStore((s) => s.settings.ageConfirmedAt);
   const confirmAge = useSettingsStore((s) => s.confirmAge);
-  const consentRequired = settingsHydrated && ageConfirmedAt === null;
-  const canProceed = !consentRequired || consentChecked;
-  // Once the consent row has been shown, keep it mounted for this visit.
-  // confirmAge() flips consentRequired to false mid sign-in, and unmounting
-  // the row would hand its height to the FitStage hero, resizing the stickers.
-  const [showConsent, setShowConsent] = useState(false);
-  if (consentRequired && !showConsent) setShowConsent(true);
+  const canProceed = consentChecked;
+  // Pre-tick once when the stored agreement is known; after that the box is
+  // the user's to untick.
+  const [prefilled, setPrefilled] = useState(false);
+  if (!prefilled && settingsHydrated) {
+    setPrefilled(true);
+    if (ageConfirmedAt !== null) setConsentChecked(true);
+  }
 
   // (auth) 그룹은 AppShell 밖이라 여기서 직접 hydrate — 이미 살아있는 세션이면
   // 아래 useEffect 가 곧바로 `/` 로 보내줌.
@@ -125,11 +128,9 @@ export function LoginScreen() {
       <LoginHero />
 
       <div className="flex flex-col gap-3 px-5 pb-[68px] pt-4">
-        {showConsent ? (
-          <div className="mb-1">
-            <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
-          </div>
-        ) : null}
+        <div className="mb-1">
+          <ConsentCheck checked={consentChecked} onChange={setConsentChecked} />
+        </div>
         <Button
           size="lg"
           fullWidth
