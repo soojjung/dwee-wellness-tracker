@@ -1,10 +1,14 @@
 'use client';
 import Link from 'next/link';
+import { useHistoryBackClick } from '@/hooks/useHistoryBackClick';
 import { useT } from '@/i18n/useT';
 import { BackIcon, RetryIcon } from '@/components/ui/icons';
 
 interface DiagnoseResultTopBarProps {
-  articleHref: string;
+  backHref: string;
+  /** 바로 앞 화면으로 돌아가도 되는 진입(마이페이지)이면 true — 기록이 있으면 back() 으로
+   * 보던 위치까지 복원한다. 진단 직후엔 앞 기록이 진단 단계라 href 로 간다. */
+  historyBack?: boolean;
   onRetry: () => void;
   /** 카드가 바 아래까지 올라온 상태. 어두운 히어로 대신 밝은 카드 위에 놓여 아이콘 색만 바뀐다. */
   stuck?: boolean;
@@ -18,11 +22,13 @@ interface DiagnoseResultTopBarProps {
  * 원 + blur 는 어두운 히어로와 밝은 카드 어느 쪽 위에서도 아이콘이 읽히게 한다.
  */
 export function DiagnoseResultTopBar({
-  articleHref,
+  backHref,
+  historyBack = false,
   onRetry,
   stuck = false,
 }: DiagnoseResultTopBarProps) {
   const t = useT();
+  const handleHistoryBack = useHistoryBackClick();
   const r = t.magazine.diagnose.result;
 
   // 원은 늘 반투명 회색 + blur (FoodArticleScreen 과 같은 값). 아이콘만 히어로
@@ -34,7 +40,8 @@ export function DiagnoseResultTopBar({
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-30 mx-auto flex h-[calc(4rem+env(safe-area-inset-top,0px))] w-full max-w-md items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
       <Link
-        href={articleHref}
+        href={backHref}
+        onClick={historyBack ? handleHistoryBack : undefined}
         data-swipe-back
         aria-label={t.magazine.diagnose.backToArticle}
         className={`pointer-events-auto grid size-10 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400 ${button}`}

@@ -4,9 +4,9 @@ import { useT } from '@/i18n/useT';
 import { useBodyTypeReportStore } from '@/store/bodyTypeReportStore';
 import { MyPageCard } from './MyPageCard';
 import { MyPageRow } from './MyPageRow';
+import { BODY_TYPE_RESULT_FROM_MY_PAGE_HREF } from '@/components/diagnose/resultLinks';
 
 const BODY_TYPE_INTRO_HREF = '/magazine/personal-body-type';
-const BODY_TYPE_RESULT_HREF = '/magazine/personal-body-type/diagnose/result';
 
 /**
  * `나의 테스트` card. Renders one row per test the user can take.
@@ -34,7 +34,7 @@ export function MyTestsCard() {
     <MyPageCard title={t.myPage.tests.title}>
       <div className="flex flex-col">
         <MyPageRow
-          href={hasReport ? BODY_TYPE_RESULT_HREF : BODY_TYPE_INTRO_HREF}
+          href={hasReport ? BODY_TYPE_RESULT_FROM_MY_PAGE_HREF : BODY_TYPE_INTRO_HREF}
           label={
             hasReport ? t.myPage.tests.bodyTypeResult : t.myPage.tests.bodyTypeCta
           }
