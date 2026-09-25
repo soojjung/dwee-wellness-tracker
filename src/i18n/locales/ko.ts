@@ -775,6 +775,7 @@ export const ko: Dictionary = {
         addSticker: '스티커 추가',
         chooseAlbum: '앨범 선택',
         takePhoto: '사진 찍기',
+        addStickerCancel: '취소',
         cameraComingSoon: '(준비 중)',
         placement: '배치된 스티커',
         deletePlacement: '스티커 제거',

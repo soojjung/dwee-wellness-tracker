@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { ActionSheet, ActionSheetButtonStyle } from '@capacitor/action-sheet';
 
 interface StickerAddMenuProps {
   /** Only rendered in browse mode — an empty 40px spacer otherwise, so the
@@ -9,18 +11,22 @@ interface StickerAddMenuProps {
   backAriaLabel: string;
   chooseAlbumLabel: string;
   takePhotoLabel: string;
+  cancelLabel: string;
   onPickAlbum: () => void;
   onOpenCamera: () => void;
 }
 
 /** Sticker library header's "+" menu (spec 3 — hidden in edit mode):
- * choose from album or open the camera. */
+ * choose from album or open the camera. In the app it is the iOS system
+ * action sheet, like every other photo prompt; the dropdown below is the web
+ * fallback. "Take photo" still opens the in-app camera for the cutout mode. */
 export function StickerAddMenu({
   visible,
   ariaLabel,
   backAriaLabel,
   chooseAlbumLabel,
   takePhotoLabel,
+  cancelLabel,
   onPickAlbum,
   onOpenCamera,
 }: StickerAddMenuProps) {
@@ -32,11 +38,27 @@ export function StickerAddMenu({
 
   if (!visible) return <span aria-hidden className="size-10 justify-self-end" />;
 
+  async function handleAddClick() {
+    if (!Capacitor.isNativePlatform()) {
+      setMenuOpen((v) => !v);
+      return;
+    }
+    const { index } = await ActionSheet.showActions({
+      options: [
+        { title: chooseAlbumLabel },
+        { title: takePhotoLabel },
+        { title: cancelLabel, style: ActionSheetButtonStyle.Cancel },
+      ],
+    });
+    if (index === 0) onPickAlbum();
+    else if (index === 1) onOpenCamera();
+  }
+
   return (
     <div className="relative justify-self-end">
       <button
         type="button"
-        onClick={() => setMenuOpen((v) => !v)}
+        onClick={() => void handleAddClick()}
         aria-label={ariaLabel}
         aria-expanded={menuOpen}
         className="flex size-10 items-center justify-center rounded-full bg-brand-gray300 text-brand-gray900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"

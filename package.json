@@ -23,6 +23,7 @@
     "test": "pnpm lint && pnpm typecheck && pnpm test:unit"
   },
   "dependencies": {
+    "@capacitor/action-sheet": "^6",
     "@capacitor/app": "^6.0.3",
     "@capacitor/browser": "^6.0.6",
     "@capacitor/camera": "^6.1.3",
