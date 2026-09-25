@@ -3,10 +3,7 @@ import { useT } from '@/i18n/useT';
 import { MyPageCard } from './MyPageCard';
 import { MyPageRow } from './MyPageRow';
 
-/**
- * `고객 지원` card. Q&A / terms / privacy have real screens; 공지사항 still
- * renders `SubPagePlaceholder` until its design lands.
- */
+/** `고객 지원` card — notices, Q&A, terms, privacy. */
 export function SupportCard() {
   const t = useT();
   return (

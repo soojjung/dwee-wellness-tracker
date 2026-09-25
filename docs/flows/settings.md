@@ -210,7 +210,7 @@ Two toggle rows (South Korea / United States), built on shared `SettingCard` / `
 
 ## Sub-page shared shell
 
-All `/settings/*` sub-pages share `bg-brand-gray200`. Legal/support sub-pages (`terms`, `privacy`, `qna`, and the `notices` stub via `SubPagePlaceholder`) additionally wrap their body in a white card (`rounded-2xl bg-brand-white px-5 py-6 shadow-...`) — previously only `qna` had this treatment, the others sat on `bg-brand-gray50` with a bare-background body.
+All `/settings/*` sub-pages share `bg-brand-gray200`. Legal/support sub-pages (`terms`, `privacy`, `qna`) additionally wrap their body in a white card (`rounded-2xl bg-brand-white px-5 py-6 shadow-...`) — previously only `qna` had this treatment, the others sat on `bg-brand-gray50` with a bare-background body.
 
 Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackLink.tsx`) instead of a raw `<Link href="/settings">` + inline `BackIcon`. Its click handler is the shared `useHistoryBackClick()` hook (`src/hooks/useHistoryBackClick.ts`, also used by `FoodArticleScreen`'s back button — see `docs/flows/home.md`): it calls `router.back()` when the immediately-preceding history entry is itself an in-app page — checked via the Navigation API's `currentEntry.index > 0` where supported, falling back to `window.history.length > 1` on older WebViews — so `MyPageScreen`'s scroll position survives the round trip, and falls back to the link's `href="/settings"` only when there's no in-app history (a direct deep link). `history.length` alone isn't enough: a tab that arrived from an external site also has `length > 1`, and calling `back()` there would leave the app entirely. Its icon button uses `bg-brand-gray300`, one shade darker than the page background, so it stays visible against `bg-brand-gray200`.
 
@@ -229,7 +229,8 @@ Every sub-page header uses `MyPageBackLink` (`src/components/my-page/MyPageBackL
 | `/settings/qna`           | 015_5    | live — `QnaScreen` (static support email + copy-to-clipboard)               |
 | `/settings/terms`         | 015_16   | live — `TermsScreen` (제1~15조 + 부칙; ko 원문 + en 번역, 앱 locale 따름)   |
 | `/settings/privacy`       | 015_17   | live — `PrivacyScreen` (제1~17조 + 부칙; ko 원문 + en 번역, 앱 locale 따름) |
-| `/settings/notices`       | 015_4    | stub                                                                        |
+| `/settings/notices`       | 015_4    | `NoticesScreen` — Figma 257:1961. One white card per app version (title + date + chevron), newest first; header shows only the back button (title is sr-only). Data: `src/content/notices/{en,ko}.ts` (en source, ko translation), written per `version` bump by the `release-notes-writer` agent (`/notice`, or `/commit` STEP 5.5). |
+| `/settings/notices/[slug]` | —      | `NoticeDetailScreen` — Figma 260:32916. White page: title + date above a divider, then the bullets. `slug` = version with dots → dashes (`1-0-0`), statically exported via `generateStaticParams`. Back → `/settings/notices`. |
 
 같은 본문(`components/legal/TermsArticle`, `PrivacyArticle`)을 공개 라우트 `/legal/terms`, `/legal/privacy`(`(legal)` 그룹, 세션 불필요, `?lang=en|ko` 고정 가능)가 재사용한다 — App Store Privacy Policy URL 과 OAuth 동의 화면 링크용. `/settings/qna` 의 이메일 카드(`components/legal/SupportContactCard`)도 공개 `/legal/support`(App Store Support URL)와 공유한다.
 

@@ -1268,6 +1268,9 @@ export const ko: Dictionary = {
       terms: '이용약관',
       privacy: '개인정보처리방침',
     },
+    notices: {
+      empty: '아직 공지사항이 없어요',
+    },
     qna: {
       backAriaLabel: '뒤로',
       cardTitle: '이메일 문의하기',
@@ -1329,7 +1332,6 @@ export const ko: Dictionary = {
       nicknamePlaceholder: '닉네임을 입력해주세요',
       saveFailedToast: '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
     },
-    comingSoon: '준비 중이에요',
   },
   settings: {
     language: '언어',

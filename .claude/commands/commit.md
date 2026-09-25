@@ -161,6 +161,17 @@ git diff --name-only origin/main...HEAD -- 'src/domain/**/*.ts' 'src/lib/**/*.ts
    - curator 가 "no docs update needed" 로 회신 → 그대로 STEP 6 진행.
    - 사용자에게 "문서 N개 점검·갱신했어요: <파일 목록>" 1줄로 보고 (README 포함, 변경 없으면 "README 포함 문서는 최신 상태").
 
+## STEP 5.5 — 버전 공지 (release-notes-writer)
+
+`package.json` 의 `version`(마케팅 버전)이 이번 변경에서 바뀌었으면 앱 공지(마이페이지 → 공지사항)를 쓴다. `iosBuild` 만 바뀐 경우(TestFlight 빌드)는 해당 없음.
+
+```bash
+git diff origin/main -- package.json | grep '^[-+]  "version"'
+```
+
+1. 새 버전이 `src/content/notices/en.ts` 에 이미 있으면 skip.
+2. 없으면 `/notice` 절차(`.claude/commands/notice.md`)대로 `release-notes-writer` 호출 → en/ko 초안을 사용자에게 보여주고 **확인받은 뒤** STEP 6 으로. 사용자가 "나중에" 라고 하면 skip 하고 결과 보고에 "공지 미작성" 을 남긴다.
+
 ## STEP 6 — 커밋 메시지 작성
 
 1. `git diff HEAD` 로 변경 요약 확인.

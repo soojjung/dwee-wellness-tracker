@@ -1,8 +1,5 @@
-'use client';
-import { useT } from '@/i18n/useT';
-import { SubPagePlaceholder } from '@/components/my-page/SubPagePlaceholder';
+import { NoticesScreen } from '@/components/my-page/NoticesScreen';
 
 export default function NoticesPage() {
-  const t = useT();
-  return <SubPagePlaceholder title={t.myPage.support.notices} />;
+  return <NoticesScreen />;
 }

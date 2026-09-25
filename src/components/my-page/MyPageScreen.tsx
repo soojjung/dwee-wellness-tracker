@@ -10,8 +10,7 @@ import { AccountManagementCard } from './AccountManagementCard';
 
 /**
  * MyPage (previously `/settings`). Layout mirrors Figma 015_1 (signed-out)
- * and 015_2 (signed-in). 공지사항 is the only sub-route still on
- * `SubPagePlaceholder`.
+ * and 015_2 (signed-in).
  */
 export function MyPageScreen() {
   const t = useT();

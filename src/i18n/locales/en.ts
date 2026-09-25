@@ -1281,6 +1281,9 @@ export const en = {
       terms: 'Terms of service',
       privacy: 'Privacy policy',
     },
+    notices: {
+      empty: 'No notices yet',
+    },
     qna: {
       backAriaLabel: 'Back',
       cardTitle: 'Email us',
@@ -1342,7 +1345,6 @@ export const en = {
       nicknamePlaceholder: 'Enter your nickname',
       saveFailedToast: 'Couldn’t save. Please try again.',
     },
-    comingSoon: 'Coming soon',
   },
   settings: {
     language: 'Language',
