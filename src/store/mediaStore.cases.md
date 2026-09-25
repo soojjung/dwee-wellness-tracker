@@ -14,6 +14,9 @@ that layer regresses.
 | 1 | activates the draft and snapshots committed state | committed count=2, empty urls | draftActive=true, count=2, picksConfirmed=true, arrays copied |
 | 2 | defaults draft photoCount to 1 when nothing is committed | committed count=null | draftPhotoCount=1 |
 | 3 | is idempotent — a second call while active is a no-op | active draft with 1 pick | draft urls / owned URLs unchanged, no revocations |
+| 43 | clears the count on re-entry when its photos were all removed | committed 1장, clear slot 0, second call | count=null, picksConfirmed=false, cleared flag kept (dirty) |
+| 44 | clears the count on re-entry when the set is only partly filled | 4장 with 2 picks, second call | count=null, picked blobs kept, no revocations |
+| 45 | keeps the count on re-entry when every slot of it is filled | 1장 picked + confirmed, second call | count=1, picksConfirmed=true |
 
 ## discardPhotoDraft
 
