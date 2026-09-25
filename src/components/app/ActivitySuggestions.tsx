@@ -105,11 +105,10 @@ function ActivityToneCard({
         ? 'bg-brand-pink100 text-brand-white'
         : 'bg-brand-gray800 text-brand-white';
   return (
+    // 위 정렬: 설명 길이가 달라도 제목이 뱃지 바로 아래 같은 높이에 온다(카드 높이는
+    // 가장 긴 카드에 맞춰 늘고, 남는 공간은 아래로 간다).
     <div
-      className={cn(
-        'flex w-[170px] shrink-0 flex-col justify-between gap-4 rounded-2xl px-3.5 py-4',
-        bg,
-      )}
+      className={cn('flex w-[170px] shrink-0 flex-col gap-4 rounded-2xl px-3.5 py-4', bg)}
     >
       <span
         className={cn(
