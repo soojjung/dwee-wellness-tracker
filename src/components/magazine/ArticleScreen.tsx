@@ -74,10 +74,11 @@ export function ArticleScreen({ slug }: ArticleScreenProps) {
       </article>
 
       {cta ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
+        // 버튼 색을 바깥 바에 칠해야 홈 인디케이터 영역(safe-area)까지 버튼으로 채워진다.
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md bg-brand-gray900 pb-[env(safe-area-inset-bottom,0px)]">
           <Link
             href={cta.href}
-            className={cn(BOTTOM_CTA_CLASS, 'bg-brand-gray900 text-brand-pink100')}
+            className={cn(BOTTOM_CTA_CLASS, 'text-brand-pink100')}
           >
             {cta.label}
           </Link>
