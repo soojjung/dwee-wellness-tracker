@@ -169,7 +169,7 @@ Solo project. End-to-end ownership of:
 - **Diary** — event categories + event logs with period-mark linkage, optional condition check-in, KR/US public holidays, sticker customization (album/camera → cutout via `sticker-cutout` Edge Function → drag/resize/rotate placement).
 - **Cycle report** — status badge, six-month chart, recent-cycles list with out-of-range rows flagged rather than hidden.
 - **Magazine & body-type diagnose** — article reader with bookmarks; consent → native/web photo intake → OpenAI Vision via Edge Function → persisted report with a static per-type share route.
-- **Onboarding & MyPage** — splash → intro slides → login gate → first-period sheet; settings (language, notifications, holidays), legal pages, account edit.
+- **Onboarding & MyPage** — splash → intro slides → login gate → first-period sheet; settings (language, notifications, holidays), legal pages, account edit, release notices (one per app version in `src/content/notices/`, drafted by the `release-notes-writer` agent when `version` changes).
 - **Type-safe i18n** — `Dictionary = typeof en`, en/ko dictionaries, `useT()` everywhere.
 - **Testing** — Vitest (32 spec files, each paired with a human-readable `*.cases.md`), Playwright visual matrix, hand-drawn Excalidraw flow diagrams in `docs/diagrams/`.
 - **`.claude/` engineering harness** — `/commit` gate, six sub-agents, six rule files.
