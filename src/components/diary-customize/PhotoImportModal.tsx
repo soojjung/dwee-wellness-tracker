@@ -130,7 +130,9 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
           </button>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 pb-6 pt-5">
+        {/* 하단 142px 는 TestFlight R3-7 디자인 요청 — 홈 인디케이터 영역(최대 34px)보다
+            넉넉해서 safe-area 를 따로 더하지 않는다. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 pb-[142px] pt-5">
           <div className="h-[343px] w-full shrink-0 overflow-hidden rounded-2xl bg-brand-gray200">
             {previewUrl ? (
               <img src={previewUrl} alt="" className="h-full w-full object-cover" />
