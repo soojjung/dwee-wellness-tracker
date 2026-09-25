@@ -1173,6 +1173,7 @@ export const ko: Dictionary = {
   },
   myPage: {
     title: '마이페이지',
+    backAriaLabel: '뒤로',
     authCard: {
       loggedOutCta: '로그인/회원가입',
       loggedInAriaLabel: '내 계정 정보 열기',

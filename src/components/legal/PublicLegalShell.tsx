@@ -1,9 +1,11 @@
 'use client';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { cn } from '@/lib/cn';
+import { hasInAppHistory } from '@/hooks/useHistoryBackClick';
+import { MyPageBackLink } from '@/components/my-page/MyPageBackLink';
 import { useLegalLocale } from './useLegalLocale';
 import type { Locale } from '@/types';
 
@@ -15,31 +17,43 @@ interface PublicLegalShellProps {
 /**
  * Shell for `/legal/*` — reachable without a session (App Store privacy URL,
  * OAuth consent screen, reviewers). Same card look as the in-app legal
- * screens, but a wordmark + language toggle instead of the MyPage back link.
+ * screens plus a language toggle. Opened from inside the app (login consent
+ * row) it shows the in-app back button; landed on directly from outside, the
+ * wordmark takes its place since there is nothing in the app to go back to.
  */
 export function PublicLegalShell({ title, children }: PublicLegalShellProps) {
   const hydrated = useSettingsStore((s) => s.hydrated);
   const hydrate = useSettingsStore((s) => s.hydrate);
   const { locale, t } = useLegalLocale();
   const pathname = usePathname();
+  // Read after mount: history isn't known during the static prerender.
+  const [canGoBack, setCanGoBack] = useState(false);
 
   useEffect(() => {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
+
+  useEffect(() => {
+    setCanGoBack(hasInAppHistory());
+  }, []);
 
   return (
     <div className="flex min-h-dvh flex-col bg-brand-gray200">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center pt-[env(safe-area-inset-top,0px)] justify-between bg-brand-gray200 px-4">
           <div className="flex items-center gap-3">
-            <img
-              src="/brand/wordmark-dwee.svg"
-              alt={t.app.name}
-              width={70}
-              height={20}
-              className="select-none"
-              draggable={false}
-            />
+            {canGoBack ? (
+              <MyPageBackLink ariaLabel={t.myPage.backAriaLabel} href="/login" />
+            ) : (
+              <img
+                src="/brand/wordmark-dwee.svg"
+                alt={t.app.name}
+                width={70}
+                height={20}
+                className="select-none"
+                draggable={false}
+              />
+            )}
             <h1 className="text-lg font-semibold leading-6 text-brand-gray900">{title}</h1>
           </div>
           <nav aria-label={t.settings.language} className="flex gap-1 text-xs">
@@ -81,6 +95,9 @@ function LangLink({
   return (
     <Link
       href={{ pathname: href, query: { lang } }}
+      // replace: toggling language must not add history, or Back would just
+      // flip the language instead of leaving the page.
+      replace
       aria-current={active ? 'true' : undefined}
       className={cn(
         'rounded-full px-2.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray400',

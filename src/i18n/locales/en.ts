@@ -1184,6 +1184,7 @@ export const en = {
   },
   myPage: {
     title: 'My page',
+    backAriaLabel: 'Back',
     authCard: {
       loggedOutCta: 'Sign in / Sign up',
       loggedInAriaLabel: 'Open account details',
