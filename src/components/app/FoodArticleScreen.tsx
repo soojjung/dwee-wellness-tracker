@@ -78,9 +78,11 @@ export function FoodArticleScreen({ id }: FoodArticleScreenProps) {
             const { lead, bullets } = splitBody(section.body);
             return (
               <section key={section.heading} className="flex flex-col gap-3">
-                {/* 번호는 화면에서 매긴다 — 시안 원문은 붙은 곳과 안 붙은 곳이 섞여 있었다. */}
-                <h2 className="text-lg font-semibold leading-[1.4]">
-                  {i + 1}. {section.heading}
+                {/* 번호는 화면에서 매긴다 — 시안 원문은 붙은 곳과 안 붙은 곳이 섞여 있었다.
+                    번호를 따로 두어 두 줄로 넘어가도 둘째 줄이 번호 뒤에서 시작한다. */}
+                <h2 className="flex gap-[0.3em] text-lg font-semibold leading-[1.4]">
+                  <span className="shrink-0">{i + 1}.</span>
+                  <span>{section.heading}</span>
                 </h2>
                 {lead ? (
                   <p className="text-[15px] leading-[1.7] text-brand-gray800">{lead}</p>

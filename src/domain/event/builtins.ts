@@ -35,3 +35,26 @@ export function defaultCategoryId(categories: readonly CategoryLike[]): string |
   const builtin = seed ? categories.find((c) => c.isBuiltIn && c.order === seed.order) : undefined;
   return builtin?.id ?? categories[0]?.id ?? null;
 }
+
+interface NamedCategoryLike extends CategoryLike {
+  name: string;
+}
+
+/**
+ * Name to show for a category in the current locale. Built-ins are stored
+ * with the name of whatever locale was active when they were seeded, so a
+ * user who switches language later would keep seeing the old one. While a
+ * built-in still carries a seeded name (in any locale) it follows the
+ * current locale; once the user renames it, their name wins.
+ */
+export function localizedCategoryName(
+  category: NamedCategoryLike,
+  builtinNames: Record<BuiltinCategoryKey, string>,
+  seededNames: readonly Record<BuiltinCategoryKey, string>[],
+): string {
+  if (!category.isBuiltIn) return category.name;
+  const seed = BUILTIN_CATEGORY_SEEDS.find((s) => s.order === category.order);
+  if (!seed) return category.name;
+  const unrenamed = seededNames.some((names) => names[seed.key] === category.name);
+  return unrenamed ? builtinNames[seed.key] : category.name;
+}

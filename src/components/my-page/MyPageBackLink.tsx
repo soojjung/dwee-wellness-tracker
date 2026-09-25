@@ -5,15 +5,17 @@ import { BackIcon } from '@/components/ui/icons';
 
 interface MyPageBackLinkProps {
   ariaLabel: string;
+  /** 돌아갈 기록이 없을 때의 목적지. */
+  href?: string;
 }
 
 /** 마이페이지 하위 화면의 뒤로가기 버튼. 동작은 `useHistoryBackClick` 참고. */
-export function MyPageBackLink({ ariaLabel }: MyPageBackLinkProps) {
+export function MyPageBackLink({ ariaLabel, href = '/settings' }: MyPageBackLinkProps) {
   const handleClick = useHistoryBackClick();
 
   return (
     <Link
-      href="/settings"
+      href={href}
       data-swipe-back
       onClick={handleClick}
       aria-label={ariaLabel}

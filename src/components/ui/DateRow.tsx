@@ -10,7 +10,7 @@ export interface DateRowProps {
 }
 
 /** Shared date row: label + short-formatted date + rotating chevron.
- * Used by EventFormSheet and LogEntryDialog's date pickers. */
+ * Used by EventFormSheet's date pickers. */
 export function DateRow({ label, value, locale, expanded, onToggle }: DateRowProps) {
   const formatted = formatDateShort(value, locale);
   return (

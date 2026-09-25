@@ -234,7 +234,7 @@ src/
 │   │   ├── page.tsx              홈
 │   │   ├── log/                  다이어리(기본) + 주기리포트 — segmented toggle 전환 (캘린더 포함)
 │   │   ├── magazine/             매거진 글 목록
-│   │   └── settings/             마이페이지 + 서브 라우트 (language/notifications/holidays/qna/terms/privacy — 실장; notices — stub)
+│   │   └── settings/             마이페이지 + 서브 라우트 (language/notifications/holidays/notices/qna/terms/privacy)
 │   └── (fullscreen)/             몰입형 편집 화면 (풀스크린, 탭바 없음)
 │       ├── home/customize/       홈 커스터마이즈 + 사진 편집
 │       ├── log/customize/        다이어리 스티커 라이브러리 + 배치 편집
@@ -273,7 +273,8 @@ src/
 │
 ├── content/                      정적 콘텐츠 원문
 │   ├── legal/                    이용약관 · 개인정보처리방침 원문 (`*-ko`가 원본/기준, `*-en`은 참고용 번역)
-│   └── foods/                    홈 음식 상세 아티클 (`articles-en`/`articles-ko`, en 원문 · ko 번역, `home.foods` 사전 id 와 1:1 대응)
+│   ├── foods/                    홈 음식 상세 아티클 (`articles-en`/`articles-ko`, en 원문 · ko 번역, `home.foods` 사전 id 와 1:1 대응)
+│   └── notices/                  버전별 공지사항 (`en`/`ko`, en 원문 · ko 번역, `release-notes-writer` 에이전트가 버전마다 작성)
 │
 ├── domain/
 │   ├── cycle/                    순수 함수: aggregate, predictor, phase, status, cellState, periodEdit, cycleGap, fertile window
@@ -386,12 +387,15 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 - [x] Figma 015 기반 MyPage — 인증 카드, 주기 요약, 환경설정(알림·언어·공휴일)·고객지원 카드, 로그아웃 확인 다이얼로그, 법적 문서(약관·개인정보처리방침), Q&A, 알림 설정(마스터 + 3항목 + 시기 휠), `MyPageBackLink` + 스크롤 복원
 - [x] 공개 법적 문서 페이지 — `/legal/terms`, `/legal/privacy` (`(legal)` 라우트 그룹, 세션 불필요, `?lang=en|ko` 고정 가능). App Store Privacy Policy URL·OAuth 동의 화면 링크용, `/settings/terms`·`/settings/privacy`와 본문 컴포넌트 공유
 
+- [x] 공지사항 — 리스트(`/settings/notices`)·상세(`/settings/notices/[slug]`), 버전별 공지를 앱에 포함(`src/content/notices/`). 앱 `version` 을 올리면 `/commit` 이 `release-notes-writer` 에이전트로 공지 초안을 만들고 확인 후 커밋, 수동은 `/notice` (2026-09-26)
+
 **매거진**
 - [x] 인프라 — `/magazine` 목록, `ArticleScreen`, 글 데이터 모듈(`src/data/magazine/articles.ts`), 아티클 4편, 북마크(`/magazine/bookmarks`)
 - [x] 퍼스널 체형 진단 — `/magazine/personal-body-type/diagnose` 플로우(동의 → 사진 선택·미리보기 → 분석 → 결과). Edge Function `body-type-analyze`(OpenAI Vision, 사진 미저장, 일 10회, 1회 재시도). 결과 화면은 체형 탭(LLM 리딩) + 스타일 가이드 탭(유형별 정적 콘텐츠). 결과는 `BodyTypeReportRepository` 로 보관(migration 0013), 체형별 공유 링크는 `AuthGuard` 예외
 
 **실기기 QA**
 - [x] 실기기 QA 라운드 1 (2026-09-24, iPhone 13) — 안전영역 여백(노치·홈 인디케이터에 가려지던 약 30개 화면 헤더/푸터), iOS 식 엣지 스와이프 뒤로가기(`SwipeBackGesture` + `data-swipe-back`), 스티커 두 손가락 핀치로 크기·회전(`domain/diary/stickerPinch.ts`), 로그인 상태에서 저장되지 않던 알림 세부 설정(migration 0016), 앱 안에서 반응 없던 체형 진단 공유(`@capacitor/share` 네이티브 공유 시트, 링크는 `NEXT_PUBLIC_SITE_URL` 기준)
+- [x] TestFlight 라운드 3 (2026-09-26, 빌드 3 → 4) — 피드백 15건: 공개 약관 뒤로가기, 홈 꾸미기 장수 초기화, 하단 버튼 safe-area, 스티커 시트 접힘·iOS 액션 시트, 주기 리포트에서 생리 기록 수정(홈과 같은 시트, 12개월 + 이전 달 더 보기), 동의 체크박스 항상 표시, 기본 카테고리 현재 언어로 표시, 상단 토스트 위치, 공지사항 등. 기록: `docs/product/ops-log.md`
 
 ### 다음
 

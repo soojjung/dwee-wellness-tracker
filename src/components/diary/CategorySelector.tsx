@@ -1,6 +1,7 @@
 'use client';
 import type { EventCategory } from '@/types';
 import { useT } from '@/i18n/useT';
+import { useCategoryName } from '@/hooks/useCategoryName';
 import { CheckIcon, ChevronDownIcon } from '@/components/ui/icons';
 import { CategoryChip } from './CategoryChip';
 
@@ -36,6 +37,7 @@ export function CategorySelector({
   onAddCategory,
 }: CategorySelectorProps) {
   const t = useT();
+  const categoryName = useCategoryName();
   const c = t.report.diary.categorySheet;
   const selected = categories.find((cat) => cat.id === selectedId) ?? null;
 
@@ -54,7 +56,7 @@ export function CategorySelector({
           }
         >
           {selected ? (
-            <CategoryChip name={selected.name} colorId={selected.colorId} size="md" />
+            <CategoryChip name={categoryName(selected)} colorId={selected.colorId} size="md" />
           ) : null}
           {/* 012_2 shows ▲ while collapsed and 012_6 shows ▼ once open. */}
           <ChevronDownIcon
@@ -84,13 +86,13 @@ export function CategorySelector({
                     >
                       {isSelected ? <CheckIcon className="size-3.5" /> : null}
                     </span>
-                    <CategoryChip name={cat.name} colorId={cat.colorId} size="md" />
+                    <CategoryChip name={categoryName(cat)} colorId={cat.colorId} size="md" />
                   </button>
                   {onEditCategory ? (
                     <button
                       type="button"
                       onClick={() => onEditCategory(cat)}
-                      aria-label={`${c.editEntry}: ${cat.name}`}
+                      aria-label={`${c.editEntry}: ${categoryName(cat)}`}
                       className="min-h-12 shrink-0 px-2 text-sm text-brand-gray500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
                     >
                       {c.editEntry}

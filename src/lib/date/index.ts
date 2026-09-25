@@ -76,11 +76,11 @@ export const formatCompactDate = (
   return format(date, omitYear ? 'MMM d' : 'MMM d, yy');
 };
 
-/** 일정·컨디션 폼의 날짜 행 — ko "2026.06.15", en "June 2026 15". */
+/** 일정·컨디션 폼의 날짜 행 — ko "2026.06.15", en "Jun 15, 2026" (미국식 월 일, 연). */
 export const formatDateShort = (d: ISODate | Date, locale: Locale): string => {
   const date = typeof d === 'string' ? fromISO(d) : d;
   if (locale === 'ko') return format(date, 'yyyy.MM.dd');
-  return `${formatMonthLabel(date, 'en')} ${date.getDate()}`;
+  return format(date, 'MMM d, yyyy');
 };
 
 export * from './calendarGrid';

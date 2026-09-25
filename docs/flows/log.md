@@ -29,7 +29,7 @@ stateDiagram-v2
 
 Report 탭이 활성화되면 `<CycleReportScreen />` 을 렌더합니다. 구성 요소:
 
-1. **ReportHeader** — 화면 제목 + 우상단 새 기록 버튼 (LogEntryDialog 트리거). 이 시트는 일정 시트(`EventFormSheet`)와 같은 껍데기(위 120px 남기는 높이, ○X / 제목 / ○✓ 헤더, ✓가 저장)이고 컨디션 칸은 `EventConditionSection` 을 공유한다 (Figma 904:6959, 2026-09-22).
+1. **ReportHeader** — 화면 제목 + 우상단 생리 아이콘 버튼. 홈의 생리 아이콘과 같은 `PeriodSelectSheet` 를 열어 새 기록 추가와 지난 기록의 날짜 수정·삭제를 한 곳에서 한다(빈 상태의 기록 버튼도 동일). 저장은 두 화면이 공유하는 `useApplyPeriodChanges`(삭제 → 수정 → 추가 순). 예전의 새 기록 전용 `LogEntryDialog`(시작/종료 + 컨디션·메모)는 2026-09-26 TestFlight R3-6 에서 제거.
 2. **StatusBadge** — `classifyCycleStatus()` 결과를 7단계 코드(`stable` / `regular` / `slightlyIrregular` / `irregular` / `shortPeriod` / `longPeriod` / `insufficient`)로 표시. 탭하면 StatusTooltip이 열림.
 3. **CycleChart** — 최근 주기 길이 시계열 차트.
 4. **RecentCyclesCard** — 최근 생리 기록 목록 (날짜 + 기간).
@@ -46,14 +46,15 @@ flowchart TD
     Empty["CycleReportEmpty\n(기록 없음 안내)"]
     Report["ReportHeader\n+ StatusBadge\n+ CycleChart\n+ RecentCyclesCard"]
     Tooltip["StatusTooltip\n(StatusBadge 탭)"]
-    Dialog["LogEntryDialog\n(기록 버튼 탭)"]
+    Dialog["PeriodSelectSheet\n(생리 아이콘 탭 · 홈과 공통)"]
 
     Mount --> HasPeriods
     HasPeriods -- no --> Empty
     HasPeriods -- yes --> Report
     Report -->|"배지 탭"| Tooltip
-    Report -->|"+ 버튼"| Dialog
-    Dialog -->|"onSaved / onClose"| Report
+    Report -->|"생리 아이콘"| Dialog
+    Empty -->|"기록 버튼"| Dialog
+    Dialog -->|"onSubmit / onCancel"| Report
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
@@ -190,7 +191,7 @@ flowchart TD
 - **다이어리에서 스티커 탭 → 꾸미기**: `DiaryStickerViewLayer` 가 다이어리 탭에서도 스티커를 탭 가능하게 만든다(이벤트 바보다 위 레이어라, 겹친 곳은 스티커가 이벤트를 가로챈다). 탭하면 `diaryFocusStore.setFocusPlacementId(id)` 로 1회용 값을 저장하고 `/log/customize` 로 이동 — 꾸미기 화면이 마운트되며 그 스티커를 바로 선택 상태로 열고 라이브러리 시트를 `peek` 로 내려 가리지 않게 한다.
 - 데이터: `DiarySticker` (id, storageRef, ratio 1:1|4:3, source photo|sticker, createdAt).
 - 저장소: IndexedDB `dwee:diary:stickers` + blob per id. Supabase `diary_stickers` 테이블 + `media` bucket 경로 `{user_id}/diary_stickers/{id}.{ext}` (RLS anon lockout).
-- 10.3a 포함: 스티커 보관함 그리드 + `+` 팝오버 (앨범 선택 / 사진 찍기) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장.
+- 10.3a 포함: 스티커 보관함 그리드 + `+` 메뉴 (앨범 선택 / 사진 찍기) + 앨범 임포트 후 미리보기 + 1:1/4:3 crop → 저장. `+` 메뉴는 앱에서는 iOS 시스템 액션 시트(`@capacitor/action-sheet`, 2026-09-26 TestFlight R3-5 — 다른 사진 선택 화면과 통일), 웹에서는 기존 팝오버. "사진 찍기"는 어느 쪽이든 인앱 `CameraSheet`(사진/스티커 누끼 모드)로 간다.
 - 10.3b 포함: 캘린더 위에 스티커 배치 (drag/select/resize/rotate/delete). 라이브러리 썸네일 탭 → 화면 중앙 근처에 draft placement 생성. 커스터마이즈 화면은 draft 상태를 유지하며 완료 시 diff → repo 반영, 뒤로 시 `DiscardDialog` → 폐기.
 - **크기·회전 제스처(2026-09-24, 실기기 QA)**: 한 손가락 핸들 드래그(`PlacedSticker`)와 두 손가락 핀치(`PlacedStickerLayer`)가 순수 함수 `src/domain/diary/stickerPinch.ts`(`pinchGeometry`/`applyPinch`)를 공유한다. 핀치는 스티커 위가 아니라 캘린더 영역 안이면 어디서 두 손가락이 닿아도 시작되고(스티커가 작아 두 손가락을 다 올리기 어려움), 선택된 스티커의 배율·회전을 갱신한다. 둘째 손가락이 내려오면 진행 중이던 한 손가락 드래그는 버려진다(`pinchActive` ref로 `PlacedSticker`에 알림) — 안 그러면 핀치가 끝난 뒤 남은 손가락이 원래 잡은 지점 기준으로 스티커가 튕긴다.
 - 10.3c 포함, 이후 비율 선택을 촬영 뒤로 옮기며 갱신: `CameraSheet` — MediaDevices 라이브 프리뷰가 화면 전체(full-bleed)이고 조작부(닫기·앨범·셔터·전환·모드 pill)가 그 위에 뜬다. **비율(1:1/4:3) 토글은 없다** — 남은 토글은 모드(사진/스티커)뿐. 이유: 비율은 사진을 "그대로" 쓸 때만 의미가 있으므로 촬영 전에 묻지 않는다. 셔터는 뷰파인더에 보이는 영역 그대로(비디오 `object-cover`의 보이는 가운데 영역)를 JPEG 로 담아 부모(`DiaryCustomizeScreen`)에 넘긴다(`PhotoImportModal` 을 거치지 않음) — `photo` 모드는 새 `CapturedPhotoRatioStep`(013_5/6 비율 선택)으로, `sticker` 모드는 바로 `StickerScanScreen` 으로 진입한다. `DraggableBottomSheet` — 스티커 라이브러리를 감싸는 3-snap(`peek`/`medium`/`full`) 바텀시트. 시트 전체 표면이 드래그 대상(핸들만이 아님) — `full` 미만에서는 위로 스와이프가 항상 시트를 확장하고, `full` 에서는 안쪽 리스트가 스크롤을 먼저 가져가다 맨 위에서 더 당기면 시트가 접힘. `open`/`onDismiss` props 로 캘린더(시트 바깥) 탭을 부모에 알림(`onDismiss`가 해당 `PointerEvent`를 그대로 전달, 스티커 위 탭 등은 부모가 타겟을 보고 걸러낸다). `DiaryCustomizeScreen`의 `handleSheetOutsideTap`은 즉시 닫지 않고 스냅을 한 단계씩 낮춘다 — 시트가 `medium`/`full`이면 먼저 `peek`으로 내리고, 이미 `peek`이고 선택된 스티커도 없을 때만 화면을 나간다(화면 자체 오버레이가 떠 있는 동안엔 `onDismiss` 를 꺼서 오작동 방지).
@@ -273,9 +274,9 @@ flowchart TD
   - ON: `periodStore.add({ startDate, endDate })` → 반환된 PeriodLog.id 를 `event.linkedPeriodId` 로 저장.
   - OFF: 저장된 `linkedPeriodId` 로 `periodStore.remove()` → event.linkedPeriodId 제거, `hasPeriodMark=false`.
   - Supabase `event_logs.linked_period_id` 컬럼 (`supabase/migrations/0007_event_period_link.sql`, `on delete set null`) 이 캘린더에서 직접 삭제된 경우도 커버.
-- **생리 토글 — add 모드**: 로컬 state(`periodOn`)만 토글하고, 저장(✓) 시 `EventFormInput.periodMark` 로 전달 → `DiaryScreen.handleAddEvent` 가 `addEvent()` 성공 후 `linkPeriodMark(log.id)` 호출. 시작 날짜가 오늘 이후면 토글이 disabled (미래 생리 기록 방지, `LogEntryDialog` 의 `startDate ≤ today` 제약과 동일한 취지).
+- **생리 토글 — add 모드**: 로컬 state(`periodOn`)만 토글하고, 저장(✓) 시 `EventFormInput.periodMark` 로 전달 → `DiaryScreen.handleAddEvent` 가 `addEvent()` 성공 후 `linkPeriodMark(log.id)` 호출. 시작 날짜가 오늘 이후면 토글이 disabled (미래 생리 기록 방지).
 - **컨디션 섹션**: 두 모드 모두 선택 사항. add 모드는 빈 값에서 시작, edit 모드는 `conditionByDate[event.startDate]` 로 초기화. 저장 시 하나라도 선택돼 있으면 `EventFormInput.condition` 에 담겨 `DiaryScreen` 이 `conditionStore.upsert({ date: startDate, ...condition })` 호출.
-- `conditionStore.upsert` 는 리포지토리가 **레코드 전체를 교체(REPLACE)** 하는 것을 보완하기 위해, 호출 전 그 날짜의 기존 `byDate` 엔트리와 필드별로 merge 합니다(`memo` 등 이번 폼이 건드리지 않은 값 보존). `LogEntryDialog` 를 포함한 모든 `upsert` 호출자가 이 merge 를 공유합니다.
+- `conditionStore.upsert` 는 리포지토리가 **레코드 전체를 교체(REPLACE)** 하는 것을 보완하기 위해, 호출 전 그 날짜의 기존 `byDate` 엔트리와 필드별로 merge 합니다(`memo` 등 이번 폼이 건드리지 않은 값 보존). 모든 `upsert` 호출자가 이 merge 를 공유합니다.
 - `src/components/report/CycleReportScreen.tsx` — 최상위 화면 컴포넌트
 - `src/components/report/ReportHeader.tsx` — 헤더 + 새 기록 버튼
 - `src/components/report/StatusBadge.tsx` — 상태 코드 → 뱃지 UI

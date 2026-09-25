@@ -172,6 +172,49 @@ describe('beginPhotoDraft', () => {
     // No spurious revocations from the second call.
     expect(revokedUrls).toEqual([]);
   });
+
+  it('clears the count on re-entry when its photos were all removed', () => {
+    seedCommitted({ photoCount: 1, photoUrls: ['committed-url-a', ...Array(6).fill(null)] });
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftClearPhoto(0 as PhotoSlot);
+
+    useMediaStore.getState().beginPhotoDraft();
+
+    const s = useMediaStore.getState();
+    expect(s.draftActive).toBe(true);
+    expect(s.draftPhotoCount).toBeNull();
+    expect(s.draftPicksConfirmed).toBe(false);
+    // Still a pending removal, so Back keeps asking before discarding.
+    expect(s.draftClearedPhotos[0]).toBe(true);
+  });
+
+  it('clears the count on re-entry when the set is only partly filled', () => {
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftSetPhotoCount(4);
+    useMediaStore.getState().draftSetPhoto(0 as PhotoSlot, stubBlob());
+    useMediaStore.getState().draftSetPhoto(1 as PhotoSlot, stubBlob());
+
+    useMediaStore.getState().beginPhotoDraft();
+
+    const s = useMediaStore.getState();
+    expect(s.draftPhotoCount).toBeNull();
+    // Picked photos stay in the draft; only the selection resets.
+    expect(s.draftPendingBlobs[0]).not.toBeNull();
+    expect(revokedUrls).toEqual([]);
+  });
+
+  it('keeps the count on re-entry when every slot of it is filled', () => {
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftSetPhotoCount(1);
+    useMediaStore.getState().draftSetPhoto(0 as PhotoSlot, stubBlob());
+    useMediaStore.getState().draftConfirmPicks();
+
+    useMediaStore.getState().beginPhotoDraft();
+
+    const s = useMediaStore.getState();
+    expect(s.draftPhotoCount).toBe(1);
+    expect(s.draftPicksConfirmed).toBe(true);
+  });
 });
 
 // ========================================================================

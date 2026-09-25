@@ -120,6 +120,7 @@ export function StickerLibrarySheet({
           backAriaLabel={c.back}
           chooseAlbumLabel={c.chooseAlbum}
           takePhotoLabel={c.takePhoto}
+          cancelLabel={c.addStickerCancel}
           onPickAlbum={() => void albumPicker.open()}
           onOpenCamera={onOpenCamera}
         />

@@ -11,6 +11,7 @@ import { currentPhase } from '@/domain/cycle/phase';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { PeriodSelectSheet } from './PeriodSelectSheet';
+import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
 import type { PeriodChange } from '@/domain/cycle/periodEdit';
 import { generateInsights } from '@/lib/insight/generator';
 import { todayISO, daysBetween, addDaysISO } from '@/lib/date';
@@ -40,13 +41,11 @@ export function HomeScreen() {
   const periodsLoading = usePeriodStore((s) => s.loading);
   const periodsError = usePeriodStore((s) => s.error);
   const hydratePeriods = usePeriodStore((s) => s.hydrate);
-  const addPeriod = usePeriodStore((s) => s.add);
-  const updatePeriod = usePeriodStore((s) => s.update);
-  const removePeriod = usePeriodStore((s) => s.remove);
 
   const settings = useSettingsStore((s) => s.settings);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const updateSettings = useSettingsStore((s) => s.update);
+  const applyPeriodChanges = useApplyPeriodChanges();
 
   const authHydrated = useAuthStore((s) => s.hydrated);
 
@@ -109,22 +108,7 @@ export function HomeScreen() {
     : null;
 
   async function handlePeriodChanges(changes: PeriodChange[]) {
-    for (const c of changes) {
-      if (c.kind === 'remove') await removePeriod(c.id);
-    }
-    for (const c of changes) {
-      if (c.kind === 'update') {
-        await updatePeriod(c.id, { startDate: c.startDate, endDate: c.endDate });
-      }
-    }
-    for (const c of changes) {
-      if (c.kind === 'add') {
-        await addPeriod({ startDate: c.startDate, endDate: c.endDate });
-      }
-    }
-    if (changes.length > 0 && !settings.onboardingCompleted) {
-      await updateSettings({ onboardingCompleted: true });
-    }
+    await applyPeriodChanges(changes);
     setPeriodDialogOpen(false);
   }
 

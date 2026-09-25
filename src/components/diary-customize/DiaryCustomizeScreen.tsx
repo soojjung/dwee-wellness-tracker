@@ -40,6 +40,9 @@ import { CapturedPhotoRatioStep } from './CapturedPhotoRatioStep';
 import { ratioForImage, trimTransparentMargins } from '@/lib/image/stickerCrop';
 
 const WEEK_STARTS_ON = 0;
+// Collapsed sheet shows only the drag handle (14px) + title row (16px padding
+// around a 40px row) — no sticker grid peeking through.
+const STICKER_SHEET_HEADER_PX = 86;
 
 export function DiaryCustomizeScreen() {
   const t = useT();
@@ -375,6 +378,7 @@ export function DiaryCustomizeScreen() {
         snap={sheetSnap}
         onSnapChange={setSheetSnap}
         snapHeightsDvh={{ peek: 85, medium: 45, full: 10 }}
+        peekVisiblePx={STICKER_SHEET_HEADER_PX}
         open
         // While one of this screen's own overlays is up, a tap inside it lands
         // "outside" the sheet, so outside-tap handling is switched off there.

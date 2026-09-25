@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shiftMonth, monthBoundsISO, monthKey } from './month';
+import { shiftMonth, monthBoundsISO, monthKey, monthsBackToCover } from './month';
 
 describe('shiftMonth', () => {
   it('rolls forward from December into January of the next year', () => {
@@ -97,5 +97,27 @@ describe('monthKey', () => {
 
   it('reflects monthIndex + 1 as the calendar month number', () => {
     expect(monthKey({ year: 2026, monthIndex: 8 })).toBe('2026-09');
+  });
+});
+
+describe('monthsBackToCover', () => {
+  it('returns the minimum when there is no record', () => {
+    expect(monthsBackToCover('2026-09-26', null, 24)).toBe(24);
+  });
+
+  it('keeps the minimum when the earliest record is within it', () => {
+    expect(monthsBackToCover('2026-09-26', '2025-03-10', 24)).toBe(24);
+  });
+
+  it('reaches back to the month of an older record', () => {
+    expect(monthsBackToCover('2026-09-26', '2023-11-30', 24)).toBe(34);
+  });
+
+  it('counts by calendar month, ignoring the day', () => {
+    expect(monthsBackToCover('2026-09-01', '2024-08-31', 24)).toBe(25);
+  });
+
+  it('crosses the year boundary', () => {
+    expect(monthsBackToCover('2027-01-05', '2024-12-20', 24)).toBe(25);
   });
 });

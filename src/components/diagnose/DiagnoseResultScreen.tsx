@@ -1,16 +1,19 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useBodyTypeReportStore } from '@/store/bodyTypeReportStore';
 import { DiagnoseResultTopBar } from './DiagnoseResultTopBar';
+import { FROM_MY_PAGE_PARAM } from './resultLinks';
 import { ReportView } from './ReportView';
 import { ShareTestBar } from './ShareTestBar';
 
 const ARTICLE_HREF = '/magazine/personal-body-type';
 const DIAGNOSE_HREF = '/magazine/personal-body-type/diagnose';
+const MY_PAGE_HREF = '/settings';
 
 export function DiagnoseResultScreen() {
   const router = useRouter();
+  const fromMyPage = useSearchParams().get('from') === FROM_MY_PAGE_PARAM;
   const report = useBodyTypeReportStore((s) => s.report);
   const hydrated = useBodyTypeReportStore((s) => s.hydrated);
   const hydrateReport = useBodyTypeReportStore((s) => s.hydrate);
@@ -36,7 +39,12 @@ export function DiagnoseResultScreen() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-brand-gray50">
-      <DiagnoseResultTopBar articleHref={ARTICLE_HREF} onRetry={tryAgain} stuck={stuck} />
+      <DiagnoseResultTopBar
+        backHref={fromMyPage ? MY_PAGE_HREF : ARTICLE_HREF}
+        historyBack={fromMyPage}
+        onRetry={tryAgain}
+        stuck={stuck}
+      />
       <ReportView report={report} onStuckChange={handleStuckChange} />
       <ShareTestBar type={report.summary.primaryType} />
     </div>

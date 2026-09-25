@@ -18,7 +18,7 @@ import type { MouseEvent } from 'react';
  * Navigation API 의 entries 는 같은 출처의 연속된 기록만 담으므로 index 가 0 보다 크면 앞
  * 기록이 앱 안이라는 뜻이다. 지원하지 않는 브라우저(구형 WebView)만 옛 추정으로 폴백한다.
  */
-function hasInAppHistory(): boolean {
+export function hasInAppHistory(): boolean {
   if (typeof window === 'undefined') return false;
   // lib.dom 에 아직 타입이 없는 환경이 있어 필요한 모양만 좁혀서 읽는다.
   const nav = (window as { navigation?: { currentEntry?: { index: number } | null } }).navigation;

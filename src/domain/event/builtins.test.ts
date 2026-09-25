@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BUILTIN_CATEGORY_SEEDS, defaultCategoryId } from './builtins';
+import { BUILTIN_CATEGORY_SEEDS, defaultCategoryId, localizedCategoryName } from './builtins';
 
 interface CategoryLike {
   id: string;
@@ -40,5 +40,38 @@ describe('defaultCategoryId', () => {
 
   it('returns null for an empty category list', () => {
     expect(defaultCategoryId([])).toBeNull();
+  });
+});
+
+describe('localizedCategoryName', () => {
+  const en = { family: 'Family', friend: 'Friend', work: 'Work', club: 'Club' };
+  const ko = { family: '가족', friend: '친구', work: '회사', club: '모임' };
+  const seeded = [en, ko];
+  const named = (name: string, isBuiltIn: boolean, order: number) => ({
+    id: 'x',
+    name,
+    isBuiltIn,
+    order,
+  });
+
+  it('shows a ko-seeded built-in in en', () => {
+    expect(localizedCategoryName(named('친구', true, 1), en, seeded)).toBe('Friend');
+  });
+
+  it('shows an en-seeded built-in in ko', () => {
+    expect(localizedCategoryName(named('Work', true, 2), ko, seeded)).toBe('회사');
+  });
+
+  it('keeps a renamed built-in as the user named it', () => {
+    expect(localizedCategoryName(named('절친', true, 1), en, seeded)).toBe('절친');
+  });
+
+  it('keeps a custom category name even if it matches a built-in name', () => {
+    expect(localizedCategoryName(named('가족', false, 0), en, seeded)).toBe('가족');
+  });
+
+  it('does not swap in another slot’s name when a built-in was renamed to it', () => {
+    // order 0 (family) renamed to "친구" — not its own seeded name, so it stays.
+    expect(localizedCategoryName(named('친구', true, 0), en, seeded)).toBe('친구');
   });
 });

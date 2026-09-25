@@ -48,6 +48,7 @@ export const en = {
       title: 'Log period',
       closeAria: 'Close',
       saveAria: 'Save',
+      showEarlier: 'Show earlier months',
     },
     cancel: 'Cancel',
     todayLabel: 'Today',
@@ -778,8 +779,9 @@ export const en = {
         done: 'Done',
         stickerLibrary: 'Sticker library',
         addSticker: 'Add sticker',
-        chooseAlbum: 'Choose from album',
+        chooseAlbum: 'Photo Library',
         takePhoto: 'Take photo',
+        addStickerCancel: 'Cancel',
         cameraComingSoon: '(Coming soon)',
         placement: 'Placed sticker',
         deletePlacement: 'Remove sticker',
@@ -1184,6 +1186,7 @@ export const en = {
   },
   myPage: {
     title: 'My page',
+    backAriaLabel: 'Back',
     authCard: {
       loggedOutCta: 'Sign in / Sign up',
       loggedInAriaLabel: 'Open account details',
@@ -1278,6 +1281,9 @@ export const en = {
       terms: 'Terms of service',
       privacy: 'Privacy policy',
     },
+    notices: {
+      empty: 'No notices yet',
+    },
     qna: {
       backAriaLabel: 'Back',
       cardTitle: 'Email us',
@@ -1339,7 +1345,6 @@ export const en = {
       nicknamePlaceholder: 'Enter your nickname',
       saveFailedToast: 'Couldn’t save. Please try again.',
     },
-    comingSoon: 'Coming soon',
   },
   settings: {
     language: 'Language',

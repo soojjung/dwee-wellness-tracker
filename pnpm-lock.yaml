@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@capacitor/action-sheet':
+        specifier: ^6
+        version: 6.0.4(@capacitor/core@6.2.1)
       '@capacitor/app':
         specifier: ^6.0.3
         version: 6.0.3(@capacitor/core@6.2.1)
@@ -129,6 +132,11 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@capacitor/action-sheet@6.0.4':
+    resolution: {integrity: sha512-5/PM5OVVDKJRJSlJRv1oEaNf2x9GlnyIT8eo4uNgm01a6g8+aalTo+/z9F3bQtCYMPxLeTmCBpqjnNCxyxV1ow==}
+    peerDependencies:
+      '@capacitor/core': ^6.0.0
 
   '@capacitor/app@6.0.3':
     resolution: {integrity: sha512-4gFUCbcVz0N/YYN32OBFerocWXslIv3Nc90gDiRsBkJc0plwK6kIUT6PKa5WtW2kfhteUeCVXQbvArH2fH+0Ug==}
@@ -3005,6 +3013,10 @@ packages:
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
+
+  '@capacitor/action-sheet@6.0.4(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
 
   '@capacitor/app@6.0.3(@capacitor/core@6.2.1)':
     dependencies:

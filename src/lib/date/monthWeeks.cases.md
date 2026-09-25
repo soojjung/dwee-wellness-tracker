@@ -16,6 +16,7 @@ Last run: 2026-09-21 — 10/10 passed
 | 8   | builds the key as zero-padded YYYY-MM                             | `(2026,0)` / `(2026,11)` | `'2026-01'` / `'2026-12'`             | ✅   |
 | 9   | renders ko and en month names                                     | `(2026, 5)`  | `labelKo='6월'`, `labelEn='June'`               | ✅   |
 | 10  | lists every in-month date exactly once across all weeks, in order | `(2026, 8)`  | 30개, 첫 `'2026-09-01'`, 끝 `'2026-09-30'`      | ✅   |
+| 11  | carries the year and year-qualified labels                        | `(2025, 8)`  | `year=2025`, `'2025년 9월'`, `'September 2025'` | ✅   |
 
 **Notes**
 

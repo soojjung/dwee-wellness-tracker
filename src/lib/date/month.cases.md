@@ -33,8 +33,19 @@ Last run: 2026-09-21 — 14/14 passed
 | 13  | does not pad a two-digit month                     | `{2026,11}`    | `'2026-12'` | ✅   |
 | 14  | reflects monthIndex + 1 as the calendar month number | `{2026,8}`   | `'2026-09'` | ✅   |
 
+## monthsBackToCover
+
+| #   | 설명 (`it` title)                                   | 입력 (today, earliest, min)          | 기대 결과 | 결과 |
+| --- | ----------------------------------------------------- | ------------------------------------ | --------- | ---- |
+| 15  | returns the minimum when there is no record          | `'2026-09-26', null, 24`             | `24`      | ✅   |
+| 16  | keeps the minimum when the earliest record is within it | `'2026-09-26', '2025-03-10', 24`  | `24`      | ✅   |
+| 17  | reaches back to the month of an older record         | `'2026-09-26', '2023-11-30', 24`     | `34`      | ✅   |
+| 18  | counts by calendar month, ignoring the day           | `'2026-09-01', '2024-08-31', 24`     | `25`      | ✅   |
+| 19  | crosses the year boundary                            | `'2027-01-05', '2024-12-20', 24`     | `25`      | ✅   |
+
 **Notes**
 
 - `shiftMonth` 는 `year*12+monthIndex` 를 정수 산술로 넘기고 나눠 되돌리는 방식 — `new Date(year, monthIndex+delta, 1)` 정규화와 동일한 결과를 내는 것을 `year 1990~2050 × monthIndex 0~11 × delta ∈ {±1,±6,±12,±13,±25,±100,0}` 전수 비교로 검증(별도 스크립트, 0 mismatch). `DiaryScreen` 의 스와이프 커밋과 `InlineDatePicker` 의 이전/다음 달 이동이 이 함수로 교체됨.
 - `monthBoundsISO` 는 `DiaryScreen` 의 컨디션 범위 하이드레이션(`new Date(y,m,1)` / `new Date(y,m+1,0)`)을 대체 — 동일한 ISO 문자열을 반환함을 확인.
+- `monthsBackToCover` 는 `PeriodSelectSheet` 가 보여줄 과거 달 수(기본 12, 더 오래된 기록이 있으면 그 달까지)를 정한다 — TestFlight R3-6 후속. 기본 12 + "이전 달 더 보기" 로 12씩 추가.
 - `monthKey` 는 `PeriodSelectSheet`(월 그리드 키, 현재 달 키)와 `chartPoints.ts`(달별 매칭 키)의 인라인 템플릿 문자열을 대체.

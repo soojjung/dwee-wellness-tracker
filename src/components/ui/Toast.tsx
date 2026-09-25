@@ -19,7 +19,8 @@ export function Toast({ message, variant = 'default', className }: ToastProps) {
         role="status"
         aria-live="polite"
         className={cn(
-          'pointer-events-none fixed inset-x-0 top-4 z-50 mx-auto max-w-md px-4',
+          // 상태바·다이내믹 아일랜드 아래로 — top-4 만 두면 기기에서 시계 위에 겹친다.
+          'pointer-events-none fixed inset-x-0 top-[calc(1rem+env(safe-area-inset-top,0px))] z-50 mx-auto max-w-md px-4',
           className,
         )}
       >

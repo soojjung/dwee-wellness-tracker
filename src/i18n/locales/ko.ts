@@ -48,6 +48,7 @@ export const ko: Dictionary = {
       title: '생리일 선택',
       closeAria: '닫기',
       saveAria: '저장',
+      showEarlier: '이전 달 더 보기',
     },
     cancel: '취소',
     todayLabel: '오늘',
@@ -775,6 +776,7 @@ export const ko: Dictionary = {
         addSticker: '스티커 추가',
         chooseAlbum: '앨범 선택',
         takePhoto: '사진 찍기',
+        addStickerCancel: '취소',
         cameraComingSoon: '(준비 중)',
         placement: '배치된 스티커',
         deletePlacement: '스티커 제거',
@@ -1173,6 +1175,7 @@ export const ko: Dictionary = {
   },
   myPage: {
     title: '마이페이지',
+    backAriaLabel: '뒤로',
     authCard: {
       loggedOutCta: '로그인/회원가입',
       loggedInAriaLabel: '내 계정 정보 열기',
@@ -1265,6 +1268,9 @@ export const ko: Dictionary = {
       terms: '이용약관',
       privacy: '개인정보처리방침',
     },
+    notices: {
+      empty: '아직 공지사항이 없어요',
+    },
     qna: {
       backAriaLabel: '뒤로',
       cardTitle: '이메일 문의하기',
@@ -1326,7 +1332,6 @@ export const ko: Dictionary = {
       nicknamePlaceholder: '닉네임을 입력해주세요',
       saveFailedToast: '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
     },
-    comingSoon: '준비 중이에요',
   },
   settings: {
     language: '언어',

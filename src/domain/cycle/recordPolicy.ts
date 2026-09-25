@@ -72,7 +72,7 @@ export function defaultPeriodEndDate(startDate: string, periodLength: number): s
 }
 
 /**
- * 사용자가 시작일을 변경했을 때 유지할 종료일을 결정한다. LogEntryDialog 처럼
+ * 사용자가 시작일을 변경했을 때 유지할 종료일을 결정한다. 날짜 입력 폼처럼
  * 시작/종료 두 필드를 함께 보여주는 UI에서, 시작일을 밀었을 때 종료일이 자동으로
  * 따라오지 않으면 `종료일 < 시작일` 상태가 화면에 남아 어색해지고 저장 버튼만
  * 조용히 비활성화된다.

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
+import { useCategoryName } from '@/hooks/useCategoryName';
 import { usePeriodStore } from '@/store/periodStore';
 import { useEventStore } from '@/store/eventStore';
 import { useConditionStore } from '@/store/conditionStore';
@@ -43,6 +44,7 @@ type ActiveSheet =
 
 export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const t = useT();
+  const categoryName = useCategoryName();
   const today = todayISO();
 
   const periods = usePeriodStore((s) => s.periods);
@@ -416,7 +418,8 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       {sheet.kind === 'editCategory' && activeCategoryForEdit ? (
         <EventCategoryFormSheet
           mode="edit"
-          initial={activeCategoryForEdit}
+          // 기본 유형은 화면 언어의 이름으로 편집을 시작해야 그대로 저장해도 바뀐 게 없다.
+          initial={{ ...activeCategoryForEdit, name: categoryName(activeCategoryForEdit) }}
           onClose={() => returnToEventSheet(sheet.prev)}
           onSubmit={(input) => handleUpdateCategory(activeCategoryForEdit.id, input)}
           // 마지막 하나는 지울 수 없다 — 0개가 되면 기본 유형 시드가 다시 돈다.

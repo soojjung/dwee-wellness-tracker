@@ -108,7 +108,7 @@ export function IntroView({
         <button
           type="button"
           onClick={openPicker}
-          className={cn(BOTTOM_CTA_CLASS, 'bg-brand-pink50 text-brand-gray900')}
+          className={cn(BOTTOM_CTA_CLASS, 'text-brand-gray900')}
         >
           {p.picker.selectButton}
         </button>
@@ -200,7 +200,8 @@ function TopBar({ backHref, backAria }: { backHref: string; backAria: string }) 
 
 function BottomBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md bg-brand-gray50 pb-[env(safe-area-inset-bottom,0px)]">
+    // 버튼 색을 바깥 바에 칠해야 홈 인디케이터 영역(safe-area)까지 버튼으로 채워진다.
+    <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md bg-brand-pink50 pb-[env(safe-area-inset-bottom,0px)]">
       {children}
     </div>
   );

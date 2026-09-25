@@ -188,16 +188,16 @@ describe('formatDateShort', () => {
     expect(formatDateShort('2026-06-15', 'ko')).toBe('2026.06.15');
   });
 
-  it('renders en date as "Month Year Day" (documented quirk, not "Month Day, Year")', () => {
-    expect(formatDateShort('2026-06-15', 'en')).toBe('June 2026 15');
+  it('renders en date as US "Mon D, YYYY"', () => {
+    expect(formatDateShort('2026-06-15', 'en')).toBe('Jun 15, 2026');
   });
 
   it('renders ko date for the last day of the year (boundary)', () => {
     expect(formatDateShort('2026-12-31', 'ko')).toBe('2026.12.31');
   });
 
-  it('renders en date for the last day of the year (boundary, same quirk)', () => {
-    expect(formatDateShort('2026-12-31', 'en')).toBe('December 2026 31');
+  it('renders en date for the last day of the year (boundary)', () => {
+    expect(formatDateShort('2026-12-31', 'en')).toBe('Dec 31, 2026');
   });
 
   it('produces the same output for an ISO string and its equivalent Date object', () => {

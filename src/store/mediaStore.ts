@@ -6,6 +6,7 @@ import {
   DEFAULT_TEXT_ORDER,
   MAX_PHOTO_SLOTS,
   PHOTO_SLOTS,
+  slotsForCount,
   type PhotoCount,
   type PhotoSlot,
   type PhotoTransform,
@@ -328,9 +329,19 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
   // no-op so the customize flow's edits survive intra-flow navigation
   // (customize ⇄ edit-photos ⇄ detail). A fresh draft only starts once the
   // prior one was explicitly committed or discarded.
+  //
+  // Re-entering customize with an active draft whose chosen count no longer
+  // has a full set (photos removed on edit-photos) clears the count, so no
+  // tile stays highlighted over an empty preview and a disabled "편집 완료".
   beginPhotoDraft() {
     const state = get();
-    if (state.draftActive) return;
+    if (state.draftActive) {
+      const count = state.draftPhotoCount;
+      if (count && !slotsForCount(count).every((s) => !!state.draftPhotoUrls[s])) {
+        set({ draftPhotoCount: null, draftPicksConfirmed: false });
+      }
+      return;
+    }
     // If no photo is committed, the home hero is still showing the default
     // image — treat the draft as fresh so no photo-count tile appears
     // pre-selected on the customize screen.
