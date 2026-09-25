@@ -29,7 +29,7 @@ stateDiagram-v2
 
 Report 탭이 활성화되면 `<CycleReportScreen />` 을 렌더합니다. 구성 요소:
 
-1. **ReportHeader** — 화면 제목 + 우상단 새 기록 버튼 (LogEntryDialog 트리거). 이 시트는 일정 시트(`EventFormSheet`)와 같은 껍데기(위 120px 남기는 높이, ○X / 제목 / ○✓ 헤더, ✓가 저장)이고 컨디션 칸은 `EventConditionSection` 을 공유한다 (Figma 904:6959, 2026-09-22).
+1. **ReportHeader** — 화면 제목 + 우상단 생리 아이콘 버튼. 홈의 생리 아이콘과 같은 `PeriodSelectSheet` 를 열어 새 기록 추가와 지난 기록의 날짜 수정·삭제를 한 곳에서 한다(빈 상태의 기록 버튼도 동일). 저장은 두 화면이 공유하는 `useApplyPeriodChanges`(삭제 → 수정 → 추가 순). 예전의 새 기록 전용 `LogEntryDialog`(시작/종료 + 컨디션·메모)는 2026-09-26 TestFlight R3-6 에서 제거.
 2. **StatusBadge** — `classifyCycleStatus()` 결과를 7단계 코드(`stable` / `regular` / `slightlyIrregular` / `irregular` / `shortPeriod` / `longPeriod` / `insufficient`)로 표시. 탭하면 StatusTooltip이 열림.
 3. **CycleChart** — 최근 주기 길이 시계열 차트.
 4. **RecentCyclesCard** — 최근 생리 기록 목록 (날짜 + 기간).
@@ -46,14 +46,15 @@ flowchart TD
     Empty["CycleReportEmpty\n(기록 없음 안내)"]
     Report["ReportHeader\n+ StatusBadge\n+ CycleChart\n+ RecentCyclesCard"]
     Tooltip["StatusTooltip\n(StatusBadge 탭)"]
-    Dialog["LogEntryDialog\n(기록 버튼 탭)"]
+    Dialog["PeriodSelectSheet\n(생리 아이콘 탭 · 홈과 공통)"]
 
     Mount --> HasPeriods
     HasPeriods -- no --> Empty
     HasPeriods -- yes --> Report
     Report -->|"배지 탭"| Tooltip
-    Report -->|"+ 버튼"| Dialog
-    Dialog -->|"onSaved / onClose"| Report
+    Report -->|"생리 아이콘"| Dialog
+    Empty -->|"기록 버튼"| Dialog
+    Dialog -->|"onSubmit / onCancel"| Report
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
@@ -273,9 +274,9 @@ flowchart TD
   - ON: `periodStore.add({ startDate, endDate })` → 반환된 PeriodLog.id 를 `event.linkedPeriodId` 로 저장.
   - OFF: 저장된 `linkedPeriodId` 로 `periodStore.remove()` → event.linkedPeriodId 제거, `hasPeriodMark=false`.
   - Supabase `event_logs.linked_period_id` 컬럼 (`supabase/migrations/0007_event_period_link.sql`, `on delete set null`) 이 캘린더에서 직접 삭제된 경우도 커버.
-- **생리 토글 — add 모드**: 로컬 state(`periodOn`)만 토글하고, 저장(✓) 시 `EventFormInput.periodMark` 로 전달 → `DiaryScreen.handleAddEvent` 가 `addEvent()` 성공 후 `linkPeriodMark(log.id)` 호출. 시작 날짜가 오늘 이후면 토글이 disabled (미래 생리 기록 방지, `LogEntryDialog` 의 `startDate ≤ today` 제약과 동일한 취지).
+- **생리 토글 — add 모드**: 로컬 state(`periodOn`)만 토글하고, 저장(✓) 시 `EventFormInput.periodMark` 로 전달 → `DiaryScreen.handleAddEvent` 가 `addEvent()` 성공 후 `linkPeriodMark(log.id)` 호출. 시작 날짜가 오늘 이후면 토글이 disabled (미래 생리 기록 방지).
 - **컨디션 섹션**: 두 모드 모두 선택 사항. add 모드는 빈 값에서 시작, edit 모드는 `conditionByDate[event.startDate]` 로 초기화. 저장 시 하나라도 선택돼 있으면 `EventFormInput.condition` 에 담겨 `DiaryScreen` 이 `conditionStore.upsert({ date: startDate, ...condition })` 호출.
-- `conditionStore.upsert` 는 리포지토리가 **레코드 전체를 교체(REPLACE)** 하는 것을 보완하기 위해, 호출 전 그 날짜의 기존 `byDate` 엔트리와 필드별로 merge 합니다(`memo` 등 이번 폼이 건드리지 않은 값 보존). `LogEntryDialog` 를 포함한 모든 `upsert` 호출자가 이 merge 를 공유합니다.
+- `conditionStore.upsert` 는 리포지토리가 **레코드 전체를 교체(REPLACE)** 하는 것을 보완하기 위해, 호출 전 그 날짜의 기존 `byDate` 엔트리와 필드별로 merge 합니다(`memo` 등 이번 폼이 건드리지 않은 값 보존). 모든 `upsert` 호출자가 이 merge 를 공유합니다.
 - `src/components/report/CycleReportScreen.tsx` — 최상위 화면 컴포넌트
 - `src/components/report/ReportHeader.tsx` — 헤더 + 새 기록 버튼
 - `src/components/report/StatusBadge.tsx` — 상태 코드 → 뱃지 UI

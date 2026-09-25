@@ -49,7 +49,7 @@ interface EventConditionSectionProps {
  * Figma 012_2 — optional condition card inside `EventFormSheet`. Rows reuse
  * `ConditionRow` (`variant="outline"`) with dwee's shared `MOOD_VALUES`…
  * `SKIN_VALUES` enums, so a selection here lands in the same
- * `DailyConditionLog` shape the today check-in (`LogEntryDialog`) writes.
+ * `DailyConditionLog` shape the daily condition log uses.
  */
 export function EventConditionSection({
   mood,

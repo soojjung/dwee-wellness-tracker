@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { usePeriodStore } from '@/store/periodStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { todayISO } from '@/lib/date';
-import { LogEntryDialog } from '@/components/log/LogEntryDialog';
+import { PeriodSelectSheet } from '@/components/app/PeriodSelectSheet';
+import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
+import type { PeriodChange } from '@/domain/cycle/periodEdit';
 import type { LogView } from '@/components/diary/LogViewToggle';
 import { ReportHeader } from './ReportHeader';
 import { CycleReportCard } from './CycleReportCard';
@@ -21,9 +22,9 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
   const periods = usePeriodStore((s) => s.periods);
   const hydrated = usePeriodStore((s) => s.hydrated);
   const hydrate = usePeriodStore((s) => s.hydrate);
-  const periodLength = useSettingsStore((s) => s.settings.averagePeriodLength);
   const today = todayISO();
   const [entryOpen, setEntryOpen] = useState(false);
+  const applyPeriodChanges = useApplyPeriodChanges();
 
   useEffect(() => {
     if (!hydrated) hydrate();
@@ -41,6 +42,11 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
   }, [now.getFullYear(), now.getMonth()]);
 
   const showFullEmpty = hydrated && periods.length === 0;
+
+  async function handlePeriodChanges(changes: PeriodChange[]) {
+    await applyPeriodChanges(changes);
+    setEntryOpen(false);
+  }
 
   return (
     <>
@@ -68,11 +74,12 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
         )}
       </div>
       {entryOpen ? (
-        <LogEntryDialog
+        // 홈의 생리 아이콘과 같은 시트 — 지난 기록의 날짜 수정·삭제가 여기서도 된다.
+        <PeriodSelectSheet
           today={today}
-          defaultPeriodLength={periodLength}
-          onClose={() => setEntryOpen(false)}
-          onSaved={() => setEntryOpen(false)}
+          periods={periods}
+          onSubmit={handlePeriodChanges}
+          onCancel={() => setEntryOpen(false)}
         />
       ) : null}
     </>

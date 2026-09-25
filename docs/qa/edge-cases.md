@@ -73,7 +73,7 @@
 - [ ] DiaryScreen (Diary 뷰): 해당 startDate 셀만 menstrual 배경, 나머지는 default
 - [ ] WeekStrip: 동일 (startDate 하루만)
 - [ ] `averagePeriodLength`: 해당 row 제외하고 계산 진행
-- [ ] 다음 주기 시작 기록도 정상 진행 (`PeriodSelectSheet` 또는 `LogEntryDialog` 으로 추가)
+- [ ] 다음 주기 시작 기록도 정상 진행 (`PeriodSelectSheet` 로 추가 — 홈·주기 리포트 공통)
 
 ### 자동 점검됨
 - `cellState.isPeriodDate`: `if (p.endDate) { ... } else if (date === p.startDate) return true` (코드 검증 완료)
@@ -88,7 +88,7 @@
 - [ ] 다시 `한국어` 탭 → 한국어로 교체
 - [ ] 전환 후 새로고침 → 선택 locale 유지 (`settings.locale` IndexedDB/Supabase 영속)
 - [ ] InsightCard 본문 동적 보간(`averageDays` 등) 도 locale 따라 prefix/suffix 교체
-- [ ] `EventConditionSection` / `LogEntryDialog` 의 condition 라벨 (mood/energy/pain/bloating/appetite/skin/sleep/exercise) 도 교체
+- [ ] `EventConditionSection` 의 condition 라벨 (mood/energy/pain/bloating/appetite/skin/sleep/exercise) 도 교체
 
 ### 자동 점검됨
 - 모든 사용자 노출 텍스트가 `useT()` 경유 (그렙: 사용자 노출 한국어 인라인 0건)
@@ -112,7 +112,7 @@
 
 ## 6. 짧은 주기 입력 — 현재 도달 불가 (참고용으로만 보존)
 
-> `evaluateNewStart`(`src/domain/cycle/recordPolicy.ts`)와 이를 소비하던 `ShortCycleConfirmDialog` 는 더 이상 연결돼 있지 않다. `ShortCycleConfirmDialog.tsx` 파일 자체가 삭제됐고, `PeriodSelectSheet`/`LogEntryDialog` 어느 쪽도 `evaluateNewStart` 를 호출하지 않는다. 아래는 순수 함수·테스트로만 남아 있는 예전 설계를 참고용으로 남겨 둔 것이며, 브라우저에서 재현 가능한 시나리오가 아니다.
+> `evaluateNewStart`(`src/domain/cycle/recordPolicy.ts`)와 이를 소비하던 `ShortCycleConfirmDialog` 는 더 이상 연결돼 있지 않다. `ShortCycleConfirmDialog.tsx` 파일 자체가 삭제됐고, `PeriodSelectSheet` 도 `evaluateNewStart` 를 호출하지 않는다. 아래는 순수 함수·테스트로만 남아 있는 예전 설계를 참고용으로 남겨 둔 것이며, 브라우저에서 재현 가능한 시나리오가 아니다.
 
 ### (참고) 원래 설계: 6/10 기록 → 6/16 다시 입력 시
 
