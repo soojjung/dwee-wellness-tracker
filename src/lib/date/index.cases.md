@@ -81,14 +81,14 @@ Last run: 2026-09-21 — 50/50 passed
 | #   | 설명 (`it` title)                                                              | 입력                                              | 기대 결과            | 결과 |
 | --- | --------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------- | ---- |
 | 38  | renders ko date as yyyy.MM.dd                                                     | `'2026-06-15'`, `'ko'`                             | `'2026.06.15'`        | ✅   |
-| 39  | renders en date as "Month Year Day" (documented quirk, not "Month Day, Year")     | `'2026-06-15'`, `'en'`                             | `'June 2026 15'`      | ✅   |
+| 39  | renders en date as US "Mon D, YYYY"                                               | `'2026-06-15'`, `'en'`                             | `'Jun 15, 2026'`      | ✅   |
 | 40  | renders ko date for the last day of the year (boundary)                           | `'2026-12-31'`, `'ko'`                             | `'2026.12.31'`        | ✅   |
-| 41  | renders en date for the last day of the year (boundary, same quirk)               | `'2026-12-31'`, `'en'`                             | `'December 2026 31'`  | ✅   |
+| 41  | renders en date for the last day of the year (boundary)                           | `'2026-12-31'`, `'en'`                             | `'Dec 31, 2026'`      | ✅   |
 | 42  | produces the same output for an ISO string and its equivalent Date object         | `fromISO('2026-06-15')` vs `'2026-06-15'`, `'en'`  | both calls return identical string | ✅   |
 
 **Notes**
 
-- Row #39/#41: `formatDateShort` 의 en 출력은 의도적으로 "Month Year Day" 순서 (`${formatMonthLabel(date, 'en')} ${date.getDate()}`) — "Month Day, Year" 가 아님. 현재 동작을 그대로 테스트함 (고치지 않음, 호출측이 이 형식에 의존할 수 있어 변경은 별도 논의 필요).
+- Row #39/#41: en 출력은 미국식 `MMM d, yyyy`("Jun 15, 2026"). 예전엔 "June 2026 15"(월 연 일)였는데 미국 사용자에게 어색해 2026-09-26 TestFlight R3-14 에서 바꿈. 호출측은 `DateRow`(일정 폼 시작·종료일) 하나.
 
 ## `calendarGrid`
 
