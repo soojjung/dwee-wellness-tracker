@@ -21,6 +21,10 @@ interface DraggableBottomSheetProps {
    * lands for each snap. `peek` = large value (sheet mostly below), `full`
    * = small value (sheet fills most of the viewport). */
   snapHeightsDvh?: Record<SheetSnap, number>;
+  /** Overrides the `peek` snap with an exact visible height (px) above the
+   * home-indicator inset — for a sheet whose collapsed state should show only
+   * its header, whatever the screen height. */
+  peekVisiblePx?: number;
   /** When false the sheet slides fully below the viewport. Defaults to true. */
   open?: boolean;
   /** Fires on a tap outside the sheet. Omit to ignore outside taps (e.g.
@@ -95,15 +99,21 @@ export function DraggableBottomSheet({
   snap,
   onSnapChange,
   snapHeightsDvh = DEFAULT_SNAPS,
+  peekVisiblePx,
   open = true,
   onDismiss,
   children,
   className,
 }: DraggableBottomSheetProps) {
   const [viewportH, setViewportH] = useState<number>(0);
+  const [safeBottomPx, setSafeBottomPx] = useState<number>(0);
+  const safeProbeRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const update = () => setViewportH(window.innerHeight);
+    const update = () => {
+      setViewportH(window.innerHeight);
+      setSafeBottomPx(safeProbeRef.current?.offsetHeight ?? 0);
+    };
     update();
     window.addEventListener('resize', update);
     const mq = window.matchMedia(RESIZE_MEDIA);
@@ -138,8 +148,13 @@ export function DraggableBottomSheet({
   // currently sits. Derived from snap when idle; overridden while
   // dragging so the sheet follows the finger.
   const snapPx = useCallback(
-    (s: SheetSnap) => Math.round((snapHeightsDvh[s] / 100) * viewportH),
-    [snapHeightsDvh, viewportH],
+    (s: SheetSnap) => {
+      if (s === 'peek' && peekVisiblePx !== undefined) {
+        return viewportH - peekVisiblePx - safeBottomPx;
+      }
+      return Math.round((snapHeightsDvh[s] / 100) * viewportH);
+    },
+    [snapHeightsDvh, viewportH, peekVisiblePx, safeBottomPx],
   );
 
   const [dragTopPx, setDragTopPx] = useState<number | null>(null);
@@ -269,6 +284,13 @@ export function DraggableBottomSheet({
         <span aria-hidden className="h-1.5 w-16 rounded-full bg-brand-gray300" />
       </div>
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      {/* env() can't be read from JS directly; this invisible box resolves the
+          home-indicator inset to pixels for the peek offset. */}
+      <div
+        ref={safeProbeRef}
+        aria-hidden
+        className="pointer-events-none invisible absolute h-[env(safe-area-inset-bottom,0px)] w-0"
+      />
     </div>
   );
 }
