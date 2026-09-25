@@ -48,6 +48,7 @@ export const en = {
       title: 'Log period',
       closeAria: 'Close',
       saveAria: 'Save',
+      showEarlier: 'Show earlier months',
     },
     cancel: 'Cancel',
     todayLabel: 'Today',

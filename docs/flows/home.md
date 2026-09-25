@@ -6,7 +6,7 @@
 
 **우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 컴포넌트의 캘린더 아이콘을 탭하면 `PeriodSelectSheet` (바텀 시트 캘린더)가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)과 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합은 완전히 삭제되었습니다 — 두 컴포넌트 파일 모두 저장소에 남아 있지 않습니다.
 
-`PeriodSelectSheet`는 최근 N개월 캘린더 그리드를 보여주며, 날짜 셀을 탭하면 `domain/cycle/periodEdit.ts`의 순수 함수로 드래프트를 조작합니다. 저장 시 `PeriodChange[]` diff를 `HomeScreen.handlePeriodChanges`로 전달해 add / update / remove를 일괄 적용합니다.
+`PeriodSelectSheet`는 최근 12개월(더 오래된 기록이 있으면 그 달까지, `monthsBackToCover`) + 다음 1개월 캘린더 그리드를 보여주며 열릴 때 이번 달로 스크롤됩니다. 목록 맨 위 "이전 달 더 보기"를 누를 때마다 12개월씩 더 붙고, 보던 달이 밀리지 않게 늘어난 높이만큼 `scrollTop` 을 보정합니다(iOS Safari 에 scroll anchoring 이 없음). 올해가 아닌 달 헤더엔 연도가 붙습니다(`2025년 9월` / `September 2025`). 날짜 셀을 탭하면 `domain/cycle/periodEdit.ts`의 순수 함수로 드래프트를 조작합니다. 저장 시 `PeriodChange[]` diff를 공용 훅 `useApplyPeriodChanges`(홈·주기 리포트 공통)로 넘겨 remove → update → add 순으로 일괄 적용합니다.
 
 > 로그인 직후 기록 0건 + `!settings.onboardingCompleted` 상태의 첫 홈 진입에는 같은 컴포넌트가 `variant="intro"`로 다른 배경 위에 뜬다 (헤더 없이 "시작하기" 하나). 결과 분기와 저장 위치는 [`docs/flows/onboarding.md`](./onboarding.md) 참고.
 

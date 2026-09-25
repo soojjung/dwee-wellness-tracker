@@ -58,6 +58,13 @@ describe('buildMonth', () => {
     expect(m.labelEn).toBe('June');
   });
 
+  it('carries the year and year-qualified labels', () => {
+    const m = buildMonth(2025, 8);
+    expect(m.year).toBe(2025);
+    expect(m.labelWithYearKo).toBe('2025년 9월');
+    expect(m.labelWithYearEn).toBe('September 2025');
+  });
+
   it('lists every in-month date exactly once across all weeks, in order', () => {
     const { weeks } = buildMonth(2026, 8); // September, 30 days
     const dates = weeks.flat().filter((d): d is string => d !== null);

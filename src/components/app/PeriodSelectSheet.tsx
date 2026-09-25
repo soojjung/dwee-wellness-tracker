@@ -1,17 +1,17 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { addMonths } from 'date-fns';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { addDaysISO, fromISO, monthKey, type ISODate } from '@/lib/date';
+import { addDaysISO, fromISO, monthKey, monthsBackToCover, type ISODate } from '@/lib/date';
 import { buildMonth, type MonthGrid } from '@/lib/date/monthWeeks';
 import { cn } from '@/lib/cn';
 import { BOTTOM_CTA_CLASS } from '@/components/ui/Button';
 import { CancelIcon } from '@/components/ui/icons/CancelIcon';
 import { CheckIcon } from '@/components/ui/icons/CheckIcon';
-import type { PeriodLog } from '@/types';
+import type { Locale, PeriodLog } from '@/types';
 import {
   EXTEND_GAP_DAYS,
   addRange,
@@ -42,7 +42,10 @@ interface PeriodSelectSheetProps {
   onCancel: () => void;
 }
 
-const DEFAULT_MONTHS_BACK = 6;
+// 처음엔 1년. 더 오래된 기록이 있으면 그 달까지, 그보다 앞은 "이전 달 더 보기"로
+// 한 번에 MORE_MONTHS_STEP 씩 늘린다.
+const DEFAULT_MONTHS_BACK = 12;
+const MORE_MONTHS_STEP = 12;
 const DEFAULT_MONTHS_FORWARD = 1;
 // Matches the 14-day period-length outlier cap in domain/cycle/aggregate.
 // A period that starts today can extend up to this many days ahead.
@@ -69,6 +72,10 @@ export function PeriodSelectSheet({
   const [pendingStart, setPendingStart] = useState<ISODate | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const currentMonthRef = useRef<HTMLDivElement | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [extraMonthsBack, setExtraMonthsBack] = useState(0);
+  // "이전 달 더 보기" 직전의 scrollHeight. 위에 달이 붙어도 보던 자리를 지키는 데 쓴다.
+  const heightBeforeMoreRef = useRef<number | null>(null);
   const newKeyCounter = useRef(0);
 
   function nextNewKey() {
@@ -79,7 +86,12 @@ export function PeriodSelectSheet({
   const months = useMemo(() => {
     const anchor = fromISO(today);
     const list: MonthGrid[] = [];
-    for (let i = monthsBack; i >= 0; i--) {
+    const earliest = periods.reduce<ISODate | null>(
+      (min, p) => (min === null || p.startDate < min ? p.startDate : min),
+      null,
+    );
+    const back = monthsBackToCover(today, earliest, monthsBack) + extraMonthsBack;
+    for (let i = back; i >= 0; i--) {
       const m = addMonths(anchor, -i);
       list.push(buildMonth(m.getFullYear(), m.getMonth()));
     }
@@ -88,7 +100,9 @@ export function PeriodSelectSheet({
       list.push(buildMonth(m.getFullYear(), m.getMonth()));
     }
     return list;
-  }, [today, monthsBack, monthsForward]);
+  }, [today, periods, monthsBack, monthsForward, extraMonthsBack]);
+
+  const currentYear = fromISO(today).getFullYear();
 
   const currentMonthKey = useMemo(() => {
     const anchor = fromISO(today);
@@ -105,6 +119,21 @@ export function PeriodSelectSheet({
   useEffect(() => {
     currentMonthRef.current?.scrollIntoView({ block: 'center' });
   }, []);
+
+  // iOS Safari 는 scroll anchoring 이 없어, 목록 위에 달을 붙이면 화면이 그만큼
+  // 아래로 밀린다. 늘어난 높이만큼 scrollTop 을 올려 보던 달을 제자리에 둔다.
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    const before = heightBeforeMoreRef.current;
+    if (!el || before === null) return;
+    heightBeforeMoreRef.current = null;
+    el.scrollTop += el.scrollHeight - before;
+  }, [months]);
+
+  function handleShowEarlier() {
+    heightBeforeMoreRef.current = scrollerRef.current?.scrollHeight ?? null;
+    setExtraMonthsBack((n) => n + MORE_MONTHS_STEP);
+  }
 
   useBodyScrollLock();
   useEscToClose(handleCancel);
@@ -266,13 +295,24 @@ export function PeriodSelectSheet({
         </div>
 
         <div
+          ref={scrollerRef}
           className="min-h-0 flex-1 overflow-y-auto px-4 pb-10 pt-4"
           style={{
+            // 위에 달을 붙일 때의 위치 보정은 useLayoutEffect 가 직접 한다. 브라우저
+            // 자체 anchoring 까지 겹치면 두 번 밀리므로 끈다.
+            overflowAnchor: 'none',
             maskImage: 'linear-gradient(to bottom, transparent 0, black 40px)',
             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0, black 40px)',
           }}
         >
           <div className="mx-auto flex w-full max-w-[358px] flex-col gap-6">
+            <button
+              type="button"
+              onClick={handleShowEarlier}
+              className="mx-auto mt-6 rounded-full bg-brand-gray200 px-4 py-2 text-sm font-medium text-brand-gray800 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gray900"
+            >
+              {t.home.periodSheet.showEarlier}
+            </button>
             {months.map((m) => {
               const isCurrent = m.key === currentMonthKey;
               return (
@@ -282,7 +322,7 @@ export function PeriodSelectSheet({
                   className="flex flex-col gap-4"
                 >
                   <p className="w-full text-center text-[18px] font-semibold text-brand-gray900">
-                    {locale === 'ko' ? m.labelKo : m.labelEn}
+                    {monthHeading(m, currentYear, locale)}
                   </p>
                   <div className="flex flex-col gap-3">
                     {m.weeks.map((week, wi) => (
@@ -374,4 +414,10 @@ function DayCell({ date, today, maxSelectable, recordedSet, pendingStart, onClic
       </span>
     </button>
   );
+}
+
+// 1년 넘게 거슬러 올라가면 같은 달 이름이 두 번 나오므로, 올해가 아닌 달엔 연도를 붙인다.
+function monthHeading(m: MonthGrid, currentYear: number, locale: Locale): string {
+  if (m.year === currentYear) return locale === 'ko' ? m.labelKo : m.labelEn;
+  return locale === 'ko' ? m.labelWithYearKo : m.labelWithYearEn;
 }

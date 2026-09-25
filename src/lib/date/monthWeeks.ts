@@ -1,10 +1,14 @@
 import { getDay, getDaysInMonth } from 'date-fns';
-import { formatMonthName, toISO, type ISODate } from './index';
+import { formatMonthLabel, formatMonthName, toISO, type ISODate } from './index';
 
 export interface MonthGrid {
   key: string;
+  year: number;
   labelKo: string;
   labelEn: string;
+  /** 연도 포함 — 올해가 아닌 달의 헤더. ko "2025년 9월", en "September 2025". */
+  labelWithYearKo: string;
+  labelWithYearEn: string;
   weeks: Array<Array<ISODate | null>>;
 }
 
@@ -25,8 +29,11 @@ export function buildMonth(year: number, monthIndex: number): MonthGrid {
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
   return {
     key: `${year}-${String(monthIndex + 1).padStart(2, '0')}`,
+    year,
     labelKo: formatMonthName(first, 'ko'),
     labelEn: formatMonthName(first, 'en'),
+    labelWithYearKo: formatMonthLabel(first, 'ko'),
+    labelWithYearEn: formatMonthLabel(first, 'en'),
     weeks,
   };
 }

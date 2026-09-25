@@ -48,6 +48,7 @@ export const ko: Dictionary = {
       title: '생리일 선택',
       closeAria: '닫기',
       saveAria: '저장',
+      showEarlier: '이전 달 더 보기',
     },
     cancel: '취소',
     todayLabel: '오늘',
