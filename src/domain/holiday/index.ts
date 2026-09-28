@@ -1,6 +1,6 @@
 import type { ISODate } from '@/lib/date';
 import type { Locale } from '@/types';
-import type { Holiday, HolidayCountry } from './types';
+import { HOLIDAY_COUNTRIES, type Holiday, type HolidayCountry } from './types';
 import { krHolidaysInYear } from './kr';
 import { usHolidaysInYear } from './us';
 
@@ -52,11 +52,12 @@ export function holidaysByDate(
 /**
  * 설정값 해석. `null` 은 "언어 따라 자동" — 한국어면 KR, 그 외는 US. 사용자가 토글을
  * 건드리면 명시적 배열이 저장되고, 이후 언어를 바꿔도 그 선택은 유지된다.
+ * 결과는 저장 순서와 무관하게 `HOLIDAY_COUNTRIES` 순서로 정렬한다.
  */
 export function resolveHolidayCountries(
   setting: readonly HolidayCountry[] | null | undefined,
   locale: Locale,
 ): HolidayCountry[] {
-  if (setting) return [...setting];
+  if (setting) return HOLIDAY_COUNTRIES.filter((c) => setting.includes(c));
   return locale === 'ko' ? ['KR'] : ['US'];
 }

@@ -1,6 +1,6 @@
 # index — Unit test cases
 
-Last run: 2026-09-14 — 13/13 passed
+Last run: 2026-09-28 — 14/14 passed
 
 | #   | 설명 (`it` title)                                                                       | 입력                                                               | 기대 결과                                             | 결과 |
 | --- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- | ---- |
@@ -17,3 +17,4 @@ Last run: 2026-09-14 — 13/13 passed
 | 11  | resolves an undefined setting the same as null                                          | `resolveHolidayCountries(undefined, 'ko')`                         | `['KR']`                                              | ✅   |
 | 12  | returns an explicit setting as-is regardless of locale                                  | `resolveHolidayCountries(['US'], 'ko')`                            | `['US']`                                              | ✅   |
 | 13  | returns a copy of an explicit setting, not the same array reference                     | `resolveHolidayCountries(setting=['US'], 'ko')`                    | `result !== setting`, `result` equals `setting`       | ✅   |
+| 14  | orders an explicit setting as US then KR regardless of stored order                     | `resolveHolidayCountries(['KR', 'US'], 'ko')`                      | `['US', 'KR']`                                        | ✅   |
