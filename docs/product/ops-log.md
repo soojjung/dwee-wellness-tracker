@@ -34,6 +34,7 @@ TestFlight·출시 이후 **무슨 일이 있었고 무엇을 했는지** 시간
 | R4-6 | 09-28 | 다이어리 달력 · 마이페이지 설정 | 계산된 생리 예정일들을 달력에서 보일 수 있게 마이페이지에서 on/off (iPhone14,5) | 다이어리 달력은 예측값을 계산하지만(`predictedDate`) 셀에 그리지 않았음 | 사용자 결정: 다음 1회분(홈과 동일)의 예상 생리일·예상 가임기를 홈 주간 스트립 색(분홍/라벤더 테두리, `cellChipClasses`)으로 표시. 계산을 `cellState.calendarPredictions`+`computeState` 로 모아 홈·다이어리가 공유. 마이페이지 설정 카드에 "예정일 표시"(en "Calendar predictions") 스위치(기본 on, 계정 동기화 — 사용자 결정) → `showCalendarPredictions`, 꾸미기 달력도 따름 | (이 커밋) | 수정 |
 | R4-7 | 09-28 | 다이어리 달력 · 공휴일 라벨 | 날짜 밑 공휴일 라벨 간격을 조금 줄여 달라 (사용자 요청) | 날짜 숫자와 라벨 사이 `mt-0.5`(2px) | `mt-0.5` 제거 → 라벨이 숫자 바로 아래. 일정 바 위치(`top-[43px]`)는 그대로 | (이 커밋) | 수정 |
 | R4-8 | 09-28 | 마이페이지 · 설정 | 스위치 이름 '예측 표시' → '예정일 표시' (사용자 요청) | ko 라벨이 어디에 무엇을 표시하는지 덜 분명 | ko `myPage.settings.calendarPredictions` 만 변경, en "Calendar predictions" 유지 | (이 커밋) | 수정 |
+| R4-9 | 09-28 | 마이페이지 · 언어 | English·한국어 오른쪽에 국기 아이콘 (사용자 요청) | — | 인라인 SVG `FlagUSIcon`·`FlagKRIcon`(`ui/icons/FlagIcons.tsx`, 3:2, 24×16, 얇은 테두리). 이모지 국기는 기기마다 모양이 달라 쓰지 않음 | (이 커밋) | 수정 |
 
 ### 운영 조치
 
