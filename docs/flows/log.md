@@ -20,7 +20,7 @@ stateDiagram-v2
 
 - `LogPage` 는 `useState<LogView>('diary')` 상태만 보유하고 조건부로 두 화면 중 하나를 렌더 (얇은 래퍼).
 - `LogViewToggle` (`src/components/diary/LogViewToggle.tsx`) — 두 헤더에서 재사용. 흰 정사각형 슬라이더가 좌우 이동.
-- STEP 10.2 완료: `+` 버튼(및 빈 날짜 셀 탭) → `EventFormSheet` add 모드 바로 오픈 (생리 추가/일정 추가 2-메뉴 팝오버는 제거됨 — 시트 안에 생리 토글 + 컨디션 섹션을 포함해 하나의 폼으로 통합), `▼` 연·월 wheel picker, 일정(이벤트) 배지 (EventFormSheet, YearMonthWheelPicker, InlineDatePicker, CategoryChip/Selector, EventCategoryFormSheet). 이벤트 배지 탭 시엔 `EventDetailScreen`(읽기 전용, Figma 012_7)이 먼저 열리고, 그 안의 [편집] 버튼을 눌러야 `EventFormSheet` 편집 모드가 상세 화면 위에 겹쳐 뜬다 — 삭제·생리 토글 즉시 반영은 편집 시트에서만 가능.
+- STEP 10.2 완료: `+` 버튼(및 빈 날짜 셀 탭) → `EventFormSheet` add 모드 바로 오픈 (생리 추가/일정 추가 2-메뉴 팝오버는 제거됨 — 시트 안에 컨디션 섹션을 포함해 하나의 폼으로 통합. 생리 토글은 R4-10 에서 제거), `▼` 연·월 wheel picker, 일정(이벤트) 배지 (EventFormSheet, YearMonthWheelPicker, InlineDatePicker, CategoryChip/Selector, EventCategoryFormSheet). 이벤트 배지 탭 시엔 `EventDetailScreen`(읽기 전용, Figma 012_7)이 먼저 열리고, 그 안의 [편집] 버튼을 눌러야 `EventFormSheet` 편집 모드가 상세 화면 위에 겹쳐 뜬다 — 삭제는 편집 시트에서만 가능.
 - STEP 10.3 완료: edit-star 아이콘 → `/log/customize` 풀스크린 (StickerLibrarySheet, PhotoImportModal, PlacedStickerLayer).
 
 ---
@@ -140,7 +140,7 @@ flowchart TD
 - `src/components/diary/LogViewToggle.tsx` — 재사용 가능한 2-아이콘 segmented toggle
 - `src/components/diary/DiaryMonthGrid.tsx`, `DiaryDayCell.tsx`, `DiaryWeekEventLayer.tsx` — 다이어리용 캘린더 (생리 마커 + 주 단위로 이어지는 이벤트 바, STEP 10.2a). 배치는 `src/domain/event/weekLanes.ts` 의 `layoutWeekSegments()` 가 한 주(7칸) 단위로 계산 — 같은 기간의 이벤트는 여러 날에 걸쳐 하나의 막대로 이어지고, 겹치는 이벤트는 lane 을 나눠 쌓인다(최대 `MAX_BADGES_PER_DAY`개).
 - `src/components/diary/EventDetailScreen.tsx` — 일정 배지 탭 시 먼저 뜨는 읽기 전용 상세 화면(Figma 012_7). [편집] 버튼으로만 `EventFormSheet` 편집 모드를 그 위에 연다.
-- `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · 생리 토글(add/edit 공통) · `EventConditionSection`(선택 컨디션 8항목) · 삭제(edit 전용) 포함. 카테고리 초기값은 `initial?.categoryId` (edit) 없으면 `defaultCategoryId(categories)` (add) — 목록의 첫 항목이 아니라 내장 카테고리 "친구"를 우선 선택. `suspended` prop — 위에 일정 유형 시트가 겹쳐 뜬 동안 마운트는 유지한 채 입력만 막음 (아래 "일정 시트 ↔ 일정 유형 시트" 참고)
+- `src/components/diary/EventFormSheet.tsx` — 일정/기록 등록·편집 공통 폼 시트 (mode = 'add' | 'edit'). `+` 버튼이 바로 여는 시트로, inline date picker · `EventConditionSection`(선택 컨디션 8항목) · 삭제(edit 전용) 포함. 카테고리 초기값은 `initial?.categoryId` (edit) 없으면 `defaultCategoryId(categories)` (add) — 목록의 첫 항목이 아니라 내장 카테고리 "친구"를 우선 선택. `suspended` prop — 위에 일정 유형 시트가 겹쳐 뜬 동안 마운트는 유지한 채 입력만 막음 (아래 "일정 시트 ↔ 일정 유형 시트" 참고)
 - `src/components/diary/EventConditionSection.tsx` — `EventFormSheet` 안의 선택적 컨디션 카드 (기분/에너지/통증/붓기/식욕/피부/수면/운동, `ConditionRow` variant="outline" 재사용)
 - `src/components/diary/InlineDatePicker.tsx` — 시작/종료 날짜 확장 시 나타나는 인라인 미니 캘린더 (STEP 10.2b)
 - `src/components/diary/YearMonthWheelPicker.tsx` — 연·월 선택 wheel picker 바텀시트 (STEP 10.2b, DiaryHeader ▼ + InlineDatePicker 에서 재사용)
@@ -266,15 +266,12 @@ flowchart TD
 - Pure helper: `src/lib/cutout/base64ToBlob.ts` (+ 테스트/케이스 표).
 - Env: `REMOVE_BG_API_KEY` (edge function secret) 필요. Supabase Dashboard → Functions → Secrets 에서 설정.
 
-### 생리 토글 + 컨디션 연동 (STEP 10.2c, 통합 시트 갱신)
+### 컨디션 연동 (STEP 10.2c) · 생리 토글 제거 (R4-10)
 
-`EventFormSheet` 는 add/edit 두 모드 모두에서 생리 토글과 `EventConditionSection`(선택) 을 렌더하지만, 반영 시점이 다릅니다.
+`EventFormSheet` 는 add/edit 두 모드 모두에서 `EventConditionSection`(선택) 을 렌더합니다. **생리 토글은 2026-09-28(TestFlight R4-10) 제거** — 일정 유형(필수)과 생리가 한 시트에서 함께 선택돼 헷갈린다는 피드백으로, 일정과 생리 기록을 분리했습니다. 생리 기록은 홈의 생리 아이콘·주기리포트의 생리 아이콘(`PeriodSelectSheet`)에서만 입력합니다.
 
-- **생리 토글 — edit 모드**: 탭 즉시 `eventStore.linkPeriodMark(id)` / `unlinkPeriodMark(id)` 호출.
-  - ON: `periodStore.add({ startDate, endDate })` → 반환된 PeriodLog.id 를 `event.linkedPeriodId` 로 저장.
-  - OFF: 저장된 `linkedPeriodId` 로 `periodStore.remove()` → event.linkedPeriodId 제거, `hasPeriodMark=false`.
-  - Supabase `event_logs.linked_period_id` 컬럼 (`supabase/migrations/0007_event_period_link.sql`, `on delete set null`) 이 캘린더에서 직접 삭제된 경우도 커버.
-- **생리 토글 — add 모드**: 로컬 state(`periodOn`)만 토글하고, 저장(✓) 시 `EventFormInput.periodMark` 로 전달 → `DiaryScreen.handleAddEvent` 가 `addEvent()` 성공 후 `linkPeriodMark(log.id)` 호출. 시작 날짜가 오늘 이후면 토글이 disabled (미래 생리 기록 방지).
+- 일정 삭제는 일정만 지웁니다. 예전에 토글로 만들어진 생리 기록(`event.linkedPeriodId`)도 남고, 홈·리포트에서 따로 수정·삭제합니다. 일정 상세에서도 "생리 있음/없음" 행을 뺐습니다.
+- `event_logs.has_period_mark` / `linked_period_id` 컬럼과 `EventLog.hasPeriodMark` / `linkedPeriodId` 필드는 기존 데이터 때문에 남겨 두었지만, 앱은 더 이상 쓰지 않습니다 (`eventStore.linkPeriodMark` / `unlinkPeriodMark` 삭제).
 - **컨디션 섹션**: 두 모드 모두 선택 사항. add 모드는 빈 값에서 시작, edit 모드는 `conditionByDate[event.startDate]` 로 초기화. 저장 시 하나라도 선택돼 있으면 `EventFormInput.condition` 에 담겨 `DiaryScreen` 이 `conditionStore.upsert({ date: startDate, ...condition })` 호출.
 - `conditionStore.upsert` 는 리포지토리가 **레코드 전체를 교체(REPLACE)** 하는 것을 보완하기 위해, 호출 전 그 날짜의 기존 `byDate` 엔트리와 필드별로 merge 합니다(`memo` 등 이번 폼이 건드리지 않은 값 보존). 모든 `upsert` 호출자가 이 merge 를 공유합니다.
 - `src/components/report/CycleReportScreen.tsx` — 최상위 화면 컴포넌트
