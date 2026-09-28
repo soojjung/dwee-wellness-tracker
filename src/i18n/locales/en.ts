@@ -675,13 +675,13 @@ export const en = {
     recentExcludedNote:
       'Only cycles with 15–60 days between starts are included in your chart and average.',
     row: {
-      dates: 'Start / End',
+      start: 'Start',
+      end: 'End',
       length: 'Length',
       cycle: 'Cycle',
       ongoing: 'Ongoing',
       notAvailable: '—',
       daysSuffix: 'd',
-      excluded: 'not counted',
     },
     empty: {
       title: 'Not enough cycle data yet',

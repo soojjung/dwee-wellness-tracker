@@ -159,27 +159,25 @@ describe('formatMonthDay', () => {
 });
 
 describe('formatCompactDate', () => {
-  it('renders ko date with year when omitYear is false', () => {
-    expect(formatCompactDate('2026-06-15', 'ko', { omitYear: false })).toBe('26.06.15');
+  it('renders ko date as yy.MM.dd', () => {
+    expect(formatCompactDate('2026-06-15', 'ko')).toBe('26.06.15');
   });
 
-  it('renders ko date without year when omitYear is true', () => {
-    expect(formatCompactDate('2026-06-15', 'ko', { omitYear: true })).toBe('06.15');
+  it('zero-pads ko month and day', () => {
+    expect(formatCompactDate('2027-01-05', 'ko')).toBe('27.01.05');
   });
 
-  it('renders en date with year when omitYear is false', () => {
-    expect(formatCompactDate('2026-06-15', 'en', { omitYear: false })).toBe('Jun 15, 26');
+  it('renders en date as M/d/yy', () => {
+    expect(formatCompactDate('2026-06-15', 'en')).toBe('6/15/26');
   });
 
-  it('renders en date without year when omitYear is true', () => {
-    expect(formatCompactDate('2026-06-15', 'en', { omitYear: true })).toBe('Jun 15');
+  it('does not zero-pad en month and day', () => {
+    expect(formatCompactDate('2026-12-05', 'en')).toBe('12/5/26');
   });
 
   it('produces the same output for an ISO string and its equivalent Date object', () => {
     const iso = '2026-06-15';
-    expect(formatCompactDate(fromISO(iso), 'ko', { omitYear: false })).toBe(
-      formatCompactDate(iso, 'ko', { omitYear: false }),
-    );
+    expect(formatCompactDate(fromISO(iso), 'en')).toBe(formatCompactDate(iso, 'en'));
   });
 });
 

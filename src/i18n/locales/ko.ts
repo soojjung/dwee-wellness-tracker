@@ -670,13 +670,13 @@ export const ko: Dictionary = {
     recentTitle: '최근 주기 기록',
     recentExcludedNote: '시작일 간격이 15~60일을 벗어난 기록은 차트와 평균에 넣지 않아요.',
     row: {
-      dates: '시작 / 종료일',
+      start: '시작',
+      end: '종료',
       length: '기간',
       cycle: '주기',
       ongoing: '진행 중',
       notAvailable: '—',
       daysSuffix: '일',
-      excluded: '통계 제외',
     },
     empty: {
       title: '아직 주기 데이터가 부족해요',
