@@ -251,7 +251,12 @@ export function PeriodSelectSheet({
           closing && 'translate-y-full',
         )}
         // intro 는 시안대로 화면 위 55px 만 남기고 꽉 채운다 — 하단 CTA 가 늘 같은 자리에 있도록.
-        style={isIntro ? { height: 'calc(100dvh - 55px)' } : { maxHeight: '90dvh' }}
+        // default 는 상태바 + 화면 제목 한 줄(56px) + 여백 16px 을 남겨 뒤 화면 제목을 가리지 않는다.
+        style={
+          isIntro
+            ? { height: 'calc(100dvh - 55px)' }
+            : { maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 72px))' }
+        }
         onClick={(e) => e.stopPropagation()}
       >
         {isIntro ? (
