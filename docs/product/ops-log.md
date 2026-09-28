@@ -27,6 +27,7 @@ TestFlight·출시 이후 **무슨 일이 있었고 무엇을 했는지** 시간
 | # | 날짜 | 화면 | 증상 (보고 그대로) | 원인 | 조치 | 커밋 | 상태 |
 |---|---|---|---|---|---|---|---|
 | R4-1 | 09-28 | 마이페이지 · 공휴일 | 언어 설정은 영어가 먼저인데 공휴일은 한국이 먼저. 영어 먼저로 통일 (iPhone14,5, ko-US) | 공휴일 화면이 KR 행을 먼저 그리고, 마이페이지 요약값은 저장된 배열 순서(토글한 순서) 그대로 | 표시 순서를 `HOLIDAY_COUNTRIES = ['US', 'KR']` 한 곳에서 정하고, 화면 행·요약(`resolveHolidayCountries` 정렬)·같은 날 공휴일 라벨 순서가 모두 따름. Vitest 1개 추가 | (이 커밋) | 수정 |
+| R4-2 | 09-28 | 마이페이지 · 나의 생리 주기 카드 (en) | "30.5 days in average 가 더 낫지 않은지..?" (iPhone14,5) | en 이 "Average 30.5 days" — 숫자가 뒤로 밀림 | 숫자 먼저 "30.5 days on average" ("in average" 는 비문이라 on). 사전 `myPage.cycle.averagePrefix` ''·`averageSuffix` ' days on average', i18n 검토. ko "평균 30.5일" 유지 | (이 커밋) | 수정 |
 
 ## 라운드 3 — 빌드 3 피드백 (2026-09-26 ~)
 

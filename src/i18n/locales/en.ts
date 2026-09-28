@@ -1195,8 +1195,8 @@ export const en = {
       title: 'My cycle',
       insufficient:
         'Not enough cycle data yet. We need at least 3 period records to spot your pattern!',
-      averagePrefix: 'Average ',
-      averageSuffix: ' days',
+      averagePrefix: '',
+      averageSuffix: ' days on average',
     },
     tests: {
       title: 'My tests',
