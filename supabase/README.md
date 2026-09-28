@@ -24,7 +24,9 @@ supabase/
                            category_id) 신규 생성. RLS anon lockout.
     0007_event_period_link.sql
                          — event_logs.linked_period_id (→ period_logs,
-                           on delete set null) 컬럼 추가
+                           on delete set null) 컬럼 추가. has_period_mark 와
+                           함께 2026-09-28(R4-10) 부터 앱이 쓰지 않음 — 기존
+                           데이터 때문에 컬럼은 유지 (drop 안 함)
     0008_diary_stickers.sql
                          — diary_stickers (storageRef, ratio, source) +
                            media bucket 경로 규약 신규. RLS anon lockout.
