@@ -11,12 +11,12 @@ import { useDiaryStickerStore } from '@/store/diaryStickerStore';
 import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
 import { useDiaryPlacementStore, selectPlacementsForMonth } from '@/store/diaryPlacementStore';
 import { todayISO, shiftMonth } from '@/lib/date';
-import { predictNextPeriod } from '@/domain/cycle/predictor';
 import { resolveHolidayCountries } from '@/domain/holiday';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe';
 import { useDiaryHydration } from '@/hooks/useDiaryHydration';
+import { useCalendarPredictions } from '@/hooks/useCalendarPredictions';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
@@ -67,8 +67,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const addEvent = useEventStore((s) => s.addEvent);
   const updateEvent = useEventStore((s) => s.updateEvent);
   const removeEvent = useEventStore((s) => s.removeEvent);
-  const linkPeriodMark = useEventStore((s) => s.linkPeriodMark);
-  const unlinkPeriodMark = useEventStore((s) => s.unlinkPeriodMark);
   const addCategory = useEventStore((s) => s.addCategory);
   const updateCategory = useEventStore((s) => s.updateCategory);
 
@@ -136,7 +134,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     () => resolveHolidayCountries(settings.holidayCountries, settings.locale),
     [settings.holidayCountries, settings.locale],
   );
-  const prediction = useMemo(() => predictNextPeriod(periods, settings), [periods, settings]);
+  const predictions = useCalendarPredictions(periods);
 
   // 일정 유형 추가·편집 화면은 일정 시트 "위에" 뜬다. 그동안에도 일정 시트는 마운트해 둬야
   // 한다 — 입력값(제목·메모·날짜·컨디션)이 시트 안의 state 라, 언마운트하면 유형 화면에서
@@ -168,9 +166,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       categoryId: input.categoryId,
     });
     if (!log) return false;
-    if (input.periodMark) {
-      await linkPeriodMark(log.id);
-    }
     if (input.condition) {
       await upsertCondition({ date: input.startDate, ...input.condition });
     }
@@ -335,7 +330,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                       events={events}
                       categories={categories}
                       conditionByDate={conditionByDate}
-                      predictedDate={prediction.predictedDate}
+                      predictions={predictions}
                       todayPulseKey={todayPulseKey}
                       holidayCountries={holidayCountries}
                       onSelect={(date) => setSheet({ kind: 'addEvent', date })}
@@ -390,19 +385,10 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           onClose={() => setSheet({ kind: 'eventDetail', eventId: activeEvent.id })}
           onSubmit={(input) => handleUpdateEvent(activeEvent.id, input)}
           onDelete={async () => {
-            // "일정 및 기록 삭제": the period record this event created via
-            // the 생리 toggle goes with it. The day's condition log stays —
-            // it may hold a memo/fields logged outside this sheet.
-            if (activeEvent.hasPeriodMark) await unlinkPeriodMark(activeEvent.id);
+            // 일정만 지운다. 생리 기록은 홈·주기리포트에서 따로 관리하고(R4-10), 그날의
+            // 컨디션 기록도 이 시트 밖에서 남긴 값일 수 있어 그대로 둔다.
             await removeEvent(activeEvent.id);
             setSheet({ kind: 'none' });
-          }}
-          onTogglePeriodMark={async () => {
-            if (activeEvent.hasPeriodMark) {
-              await unlinkPeriodMark(activeEvent.id);
-            } else {
-              await linkPeriodMark(activeEvent.id);
-            }
           }}
           onEditCategory={openEditCategoryFromEvent}
           onAddCategory={openAddCategoryFromEvent}

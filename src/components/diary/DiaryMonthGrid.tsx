@@ -10,7 +10,7 @@ import type {
   HolidayCountry,
 } from '@/types';
 import type { Dictionary } from '@/i18n';
-import { deriveCellMarkers } from '@/domain/cycle/cellState';
+import { deriveCellMarkers, type CalendarPredictions } from '@/domain/cycle/cellState';
 import { layoutWeekSegments } from '@/domain/event/weekLanes';
 import { holidaysByDate, type Holiday } from '@/domain/holiday';
 import { DiaryDayCell } from './DiaryDayCell';
@@ -25,7 +25,8 @@ interface DiaryMonthGridProps {
   events: EventLog[];
   categories: EventCategory[];
   conditionByDate?: Record<string, DailyConditionLog>;
-  predictedDate?: string | null;
+  /** 다음 예상 생리·가임기. 없거나 null 이면 실제 생리만 표시. */
+  predictions?: CalendarPredictions | null;
   // Bumped by the parent whenever the today cell should replay its
   // pulse-ring + "오늘" bubble animation (log-tab tap, initial mount).
   todayPulseKey?: number;
@@ -46,7 +47,7 @@ export function DiaryMonthGrid({
   events,
   categories,
   conditionByDate,
-  predictedDate,
+  predictions,
   todayPulseKey,
   holidayCountries,
   onSelect,
@@ -106,7 +107,7 @@ export function DiaryMonthGrid({
                 today,
                 periods,
                 conditionByDate: conditionByDate ?? {},
-                predictedDate: predictedDate ?? null,
+                predictions: predictions ?? null,
               })}
               todayPulseKey={cell.date === today ? todayPulseKey : undefined}
               holidayLabel={

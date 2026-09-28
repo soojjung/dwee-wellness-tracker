@@ -86,11 +86,6 @@ export function EventDetailScreen({
                 <CategoryChip name={categoryName(category)} colorId={category.colorId} size="md" />
               ) : null}
             </DetailRow>
-            <DetailRow label={d.periodToggle}>
-              <span className="text-base font-medium leading-normal text-brand-gray900">
-                {event.hasPeriodMark ? d.periodOn : d.periodOff}
-              </span>
-            </DetailRow>
           </div>
 
           {conditionRows.length > 0 ? (

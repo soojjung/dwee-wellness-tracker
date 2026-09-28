@@ -4,16 +4,18 @@ import { MyPageBackLink } from './MyPageBackLink';
 import { cn } from '@/lib/cn';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Locale } from '@/types';
+import { FlagKRIcon, FlagUSIcon } from '@/components/ui/icons';
 
 interface LanguageOption {
   value: Locale;
   labelKey: 'koreanLabel' | 'englishLabel';
+  Flag: typeof FlagUSIcon;
 }
 
 const OPTIONS: readonly LanguageOption[] = [
   // 메인 타겟 시장(미국) 순서 — en 먼저, ko 다음.
-  { value: 'en', labelKey: 'englishLabel' },
-  { value: 'ko', labelKey: 'koreanLabel' },
+  { value: 'en', labelKey: 'englishLabel', Flag: FlagUSIcon },
+  { value: 'ko', labelKey: 'koreanLabel', Flag: FlagKRIcon },
 ];
 
 /**
@@ -57,6 +59,7 @@ export function LanguageSettingsScreen() {
                 >
                   <RadioIndicator selected={selected} />
                   <span className="text-base font-medium">{label}</span>
+                  <opt.Flag className="h-4 w-6 shrink-0 overflow-hidden rounded-[3px] ring-1 ring-brand-gray300" />
                 </button>
               );
             })}

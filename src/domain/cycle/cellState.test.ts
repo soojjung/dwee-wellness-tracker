@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { isPeriodDate, deriveCellMarkers } from './cellState';
+import { isPeriodDate, deriveCellMarkers, calendarPredictions, predictedRange } from './cellState';
+import { predictFertileWindow } from './fertile';
+import type { CalendarPredictions } from './cellState';
 import type { PeriodLog, DailyConditionLog } from '@/types';
 
 function period(id: string, startDate: string, endDate?: string): PeriodLog {
@@ -85,7 +87,7 @@ describe('deriveCellMarkers', () => {
     today: '2026-03-10',
     periods: [] as PeriodLog[],
     conditionByDate: {} as Record<string, DailyConditionLog>,
-    predictedDate: null as string | null,
+    predictions: null as CalendarPredictions | null,
   };
 
   it('marks today with isToday=true when date === today', () => {
@@ -96,22 +98,66 @@ describe('deriveCellMarkers', () => {
     expect(deriveCellMarkers({ ...base, date: '2026-03-11' }).isToday).toBe(false);
   });
 
-  it('sets background=menstrual when the date falls in a period range', () => {
+  it('sets cycle=actualPeriod when the date falls in a period range', () => {
     const markers = deriveCellMarkers({
       ...base,
       periods: [period('a', '2026-03-08', '2026-03-12')],
     });
-    expect(markers.background).toBe('menstrual');
+    expect(markers.cycle).toBe('actualPeriod');
   });
 
-  it('sets background=null when no period covers the date', () => {
-    expect(deriveCellMarkers(base).background).toBeNull();
+  it('sets cycle=null when no period covers the date and predictions is null', () => {
+    expect(deriveCellMarkers(base).cycle).toBeNull();
   });
 
-  it('sets predicted=true only when predictedDate matches the date exactly', () => {
-    expect(deriveCellMarkers({ ...base, predictedDate: '2026-03-10' }).predicted).toBe(true);
-    expect(deriveCellMarkers({ ...base, predictedDate: '2026-03-11' }).predicted).toBe(false);
-    expect(deriveCellMarkers({ ...base, predictedDate: null }).predicted).toBe(false);
+  it('sets cycle=predictedPeriod when the date is within the predicted range (inclusive start/end)', () => {
+    const predictions: CalendarPredictions = {
+      predictedPeriod: { start: '2026-03-10', end: '2026-03-14' },
+      fertile: null,
+    };
+    expect(deriveCellMarkers({ ...base, date: '2026-03-10', predictions }).cycle).toBe(
+      'predictedPeriod',
+    );
+    expect(deriveCellMarkers({ ...base, date: '2026-03-14', predictions }).cycle).toBe(
+      'predictedPeriod',
+    );
+    expect(deriveCellMarkers({ ...base, date: '2026-03-09', predictions }).cycle).toBeNull();
+    expect(deriveCellMarkers({ ...base, date: '2026-03-15', predictions }).cycle).toBeNull();
+  });
+
+  it('sets cycle=predictedFertile when the date is within the fertile range only', () => {
+    const predictions: CalendarPredictions = {
+      predictedPeriod: null,
+      fertile: { start: '2026-02-20', end: '2026-02-26' },
+    };
+    expect(deriveCellMarkers({ ...base, date: '2026-02-22', predictions }).cycle).toBe(
+      'predictedFertile',
+    );
+  });
+
+  it('prioritizes actualPeriod over an overlapping predicted period', () => {
+    const predictions: CalendarPredictions = {
+      predictedPeriod: { start: '2026-03-10', end: '2026-03-14' },
+      fertile: null,
+    };
+    const markers = deriveCellMarkers({
+      ...base,
+      date: '2026-03-11',
+      periods: [period('a', '2026-03-10', '2026-03-12')],
+      predictions,
+    });
+    expect(markers.cycle).toBe('actualPeriod');
+  });
+
+  it('shows only actualPeriod (never predicted markers) when predictions is null', () => {
+    const markers = deriveCellMarkers({
+      ...base,
+      date: '2026-03-10',
+      periods: [period('a', '2026-03-08', '2026-03-12')],
+      predictions: null,
+    });
+    expect(markers.cycle).toBe('actualPeriod');
+    expect(deriveCellMarkers({ ...base, date: '2026-03-20', predictions: null }).cycle).toBeNull();
   });
 
   it('sets hasCondition=true when the date is a key in conditionByDate', () => {
@@ -130,19 +176,38 @@ describe('deriveCellMarkers', () => {
     expect(markers.hasCondition).toBe(false);
   });
 
-  it('combines all four markers independently for a single day', () => {
+  it('combines cycle, hasCondition, and isToday independently for a single day', () => {
     const markers = deriveCellMarkers({
       date: '2026-03-10',
       today: '2026-03-10',
-      periods: [period('a', '2026-03-08', '2026-03-12')],
+      periods: [],
       conditionByDate: { '2026-03-10': condition('2026-03-10') },
-      predictedDate: '2026-03-10',
+      predictions: {
+        predictedPeriod: { start: '2026-03-10', end: '2026-03-14' },
+        fertile: null,
+      },
     });
     expect(markers).toEqual({
-      background: 'menstrual',
-      predicted: true,
+      cycle: 'predictedPeriod',
       hasCondition: true,
       isToday: true,
+    });
+  });
+});
+
+describe('calendarPredictions', () => {
+  it('returns both predictedPeriod and fertile as null when predictedDate is null', () => {
+    expect(calendarPredictions(null, 5, 'medium')).toEqual({
+      predictedPeriod: null,
+      fertile: null,
+    });
+  });
+
+  it('matches predictedRange and predictFertileWindow for a real date and confidence', () => {
+    const result = calendarPredictions('2026-06-10', 5, 'medium');
+    expect(result).toEqual({
+      predictedPeriod: predictedRange('2026-06-10', 5),
+      fertile: predictFertileWindow('2026-06-10', 'medium'),
     });
   });
 });

@@ -17,11 +17,13 @@ interface ProfileRow {
   onboarding_completed: boolean;
   /** null = 언어 따라 자동 (0014 migration). */
   holiday_countries: HolidayCountry[] | null;
+  /** 0017 migration. 옵셔널인 이유는 알림 세부 컬럼과 같다. */
+  show_calendar_predictions?: boolean;
 }
 
 function rowToSettings(row: ProfileRow): UserSettings {
   // `ageConfirmedAt` 는 일부러 기기별(설치별) 값이라 서버에 없다 (UserSettings 참고).
-  // 알림 세부 컬럼은 0016 에서 추가됐다 — 마이그레이션이 아직 안 된 DB 에서는
+  // 알림 세부 컬럼(0016)·달력 예측 표시(0017)는 나중에 추가됐다 — 마이그레이션이 아직 안 된 DB 에서는
   // 빠져서 오므로 기본값으로 메운다.
   return {
     ...DEFAULT_USER_SETTINGS,
@@ -38,6 +40,8 @@ function rowToSettings(row: ProfileRow): UserSettings {
       row.notif_period_due_lead_days ?? DEFAULT_USER_SETTINGS.notifPeriodDueLeadDays,
     onboardingCompleted: row.onboarding_completed,
     holidayCountries: row.holiday_countries ?? null,
+    showCalendarPredictions:
+      row.show_calendar_predictions ?? DEFAULT_USER_SETTINGS.showCalendarPredictions,
   };
 }
 
@@ -60,6 +64,8 @@ function patchToRow(patch: Partial<UserSettings>): Partial<ProfileRow> {
   if (patch.holidayCountries !== undefined) {
     out.holiday_countries = patch.holidayCountries ? [...patch.holidayCountries] : null;
   }
+  if (patch.showCalendarPredictions !== undefined)
+    out.show_calendar_predictions = patch.showCalendarPredictions;
   return out;
 }
 

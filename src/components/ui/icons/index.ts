@@ -20,3 +20,4 @@ export { CheckIcon24 } from './CheckIcon24';
 export { BackIcon24 } from './BackIcon24';
 export { HeaderCancelGlyph } from './HeaderCancelGlyph';
 export { HeaderCheckGlyph } from './HeaderCheckGlyph';
+export { FlagUSIcon, FlagKRIcon } from './FlagIcons';

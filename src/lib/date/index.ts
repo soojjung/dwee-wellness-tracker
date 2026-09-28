@@ -63,17 +63,12 @@ export const formatMonthDay = (d: ISODate | Date, locale: Locale): string => {
 };
 
 /**
- * 최근 주기 목록의 기간 표기 — ko "26.06.15" / "06.15", en "Jun 15, 26" / "Jun 15".
- * 시작일은 연도를 붙이고 종료일은 뺀다.
+ * 최근 주기 표의 시작·종료 칸 — ko "26.06.15", en "6/15/26" (미국식 숫자 표기).
+ * 한 줄에 날짜 두 개가 들어가야 해서 월 이름 대신 숫자로 줄인다.
  */
-export const formatCompactDate = (
-  d: ISODate | Date,
-  locale: Locale,
-  { omitYear }: { omitYear: boolean },
-): string => {
+export const formatCompactDate = (d: ISODate | Date, locale: Locale): string => {
   const date = typeof d === 'string' ? fromISO(d) : d;
-  if (locale === 'ko') return format(date, omitYear ? 'MM.dd' : 'yy.MM.dd');
-  return format(date, omitYear ? 'MMM d' : 'MMM d, yy');
+  return format(date, locale === 'ko' ? 'yy.MM.dd' : 'M/d/yy');
 };
 
 /** 일정·컨디션 폼의 날짜 행 — ko "2026.06.15", en "Jun 15, 2026" (미국식 월 일, 연). */

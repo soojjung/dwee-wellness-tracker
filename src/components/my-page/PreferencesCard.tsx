@@ -4,17 +4,19 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { resolveHolidayCountries } from '@/domain/holiday';
 import { MyPageCard } from './MyPageCard';
 import { MyPageRow } from './MyPageRow';
+import { MyPageToggle } from './MyPageToggle';
 
 /**
- * `설정` card — notification + language rows that both navigate to a
- * dedicated sub-page. Notification detail (per-topic toggles) lives on
- * /settings/notifications.
+ * `설정` card — notification / language / holiday rows navigate to a
+ * dedicated sub-page; the calendar-predictions row is an inline switch.
  */
 export function PreferencesCard() {
   const t = useT();
   const enabled = useSettingsStore((s) => s.settings.notificationsEnabled);
   const locale = useSettingsStore((s) => s.settings.locale);
   const holidaySetting = useSettingsStore((s) => s.settings.holidayCountries);
+  const showPredictions = useSettingsStore((s) => s.settings.showCalendarPredictions);
+  const update = useSettingsStore((s) => s.update);
 
   const languageLabel = locale === 'ko' ? t.settings.languageKo : t.settings.languageEn;
   const notificationsLabel = enabled
@@ -43,6 +45,16 @@ export function PreferencesCard() {
           href="/settings/holidays"
           label={t.myPage.settings.holidays}
           value={holidaysLabel}
+        />
+        <MyPageRow
+          label={t.myPage.settings.calendarPredictions}
+          trailing={
+            <MyPageToggle
+              enabled={showPredictions}
+              onToggle={() => void update({ showCalendarPredictions: !showPredictions })}
+              ariaLabel={t.myPage.settings.calendarPredictions}
+            />
+          }
         />
       </div>
     </MyPageCard>

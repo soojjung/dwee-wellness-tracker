@@ -10,7 +10,6 @@ import {
   type BuiltinCategoryKey,
 } from '@/domain/event/builtins';
 import { planBuiltinDedupe } from '@/domain/event/builtinDedupe';
-import { usePeriodStore } from './periodStore';
 
 export type BuiltinNamer = (key: BuiltinCategoryKey) => string;
 
@@ -40,8 +39,6 @@ interface EventState {
    * 방금 지운 것까지 되살아난다. 지웠으면 true.
    */
   removeCategory: (id: string) => Promise<boolean>;
-  linkPeriodMark: (eventId: string) => Promise<void>;
-  unlinkPeriodMark: (eventId: string) => Promise<void>;
 }
 
 function sortCategories(list: EventCategory[]): EventCategory[] {
@@ -241,43 +238,6 @@ export const useEventStore = create<EventState>()((set, get) => ({
     } catch (e) {
       set({ error: errorMessage(e) });
       return false;
-    }
-  },
-
-  async linkPeriodMark(eventId) {
-    const event = get().events.find((e) => e.id === eventId);
-    if (!event) return;
-    if (event.hasPeriodMark && event.linkedPeriodId) return;
-    try {
-      const periodStore = usePeriodStore.getState();
-      const period = await periodStore.add({
-        startDate: event.startDate,
-        endDate: event.endDate,
-      });
-      if (!period) return;
-      await get().updateEvent(eventId, {
-        hasPeriodMark: true,
-        linkedPeriodId: period.id,
-      });
-    } catch (e) {
-      set({ error: errorMessage(e) });
-    }
-  },
-
-  async unlinkPeriodMark(eventId) {
-    const event = get().events.find((e) => e.id === eventId);
-    if (!event) return;
-    try {
-      if (event.linkedPeriodId) {
-        const periodStore = usePeriodStore.getState();
-        await periodStore.remove(event.linkedPeriodId);
-      }
-      await get().updateEvent(eventId, {
-        hasPeriodMark: false,
-        linkedPeriodId: undefined,
-      });
-    } catch (e) {
-      set({ error: errorMessage(e) });
     }
   },
 }));

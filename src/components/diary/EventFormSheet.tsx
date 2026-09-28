@@ -4,11 +4,9 @@ import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
-import { todayISO } from '@/lib/date';
 import { defaultCategoryId } from '@/domain/event/builtins';
 import type { DailyConditionLog, EventCategory, EventLog } from '@/types';
 import { BinIcon, HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
-import { MyPageToggle } from '@/components/my-page/MyPageToggle';
 import { DateRow } from '@/components/ui/DateRow';
 import { CategorySelector } from './CategorySelector';
 import { DeleteEventDialog } from './DeleteEventDialog';
@@ -23,7 +21,6 @@ export interface EventFormInput {
   startDate: string;
   endDate: string;
   categoryId: string;
-  periodMark: boolean;
   condition?: ConditionSelection;
 }
 
@@ -38,7 +35,6 @@ interface EventFormSheetProps {
   onClose: () => void;
   onSubmit: (input: EventFormInput) => Promise<boolean>;
   onDelete?: () => void | Promise<void>;
-  onTogglePeriodMark?: () => void | Promise<void>;
   onEditCategory?: (category: EventCategory) => void;
   onAddCategory?: () => void;
   /**
@@ -59,7 +55,6 @@ export function EventFormSheet({
   onClose,
   onSubmit,
   onDelete,
-  onTogglePeriodMark,
   onEditCategory,
   onAddCategory,
   suspended = false,
@@ -83,13 +78,6 @@ export function EventFormSheet({
   const [expanded, setExpanded] = useState<ExpandedField>('none');
   const [submitting, setSubmitting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [togglingPeriod, setTogglingPeriod] = useState(false);
-  const hasPeriodMark = initial?.hasPeriodMark ?? false;
-  // add mode only — edit mode's toggle mutates the store immediately via
-  // `onTogglePeriodMark` and reads its state from `hasPeriodMark` instead.
-  const [periodOn, setPeriodOn] = useState(false);
-  const periodMarkOn = mode === 'edit' ? hasPeriodMark : periodOn;
-  const periodMarkFutureBlocked = mode === 'add' && startDate > todayISO();
 
   const [mood, setMood] = useState(initialCondition?.mood ?? null);
   const [energy, setEnergy] = useState(initialCondition?.energy ?? null);
@@ -99,21 +87,6 @@ export function EventFormSheet({
   const [skin, setSkin] = useState(initialCondition?.skin ?? null);
   const [sleep, setSleep] = useState(initialCondition?.sleep ?? null);
   const [exercise, setExercise] = useState(initialCondition?.exercise ?? null);
-
-  async function handleTogglePeriodMark() {
-    if (mode === 'edit') {
-      if (togglingPeriod || !onTogglePeriodMark) return;
-      setTogglingPeriod(true);
-      try {
-        await onTogglePeriodMark();
-      } finally {
-        setTogglingPeriod(false);
-      }
-      return;
-    }
-    if (periodMarkFutureBlocked) return;
-    setPeriodOn((v) => !v);
-  }
 
   function handleDelete() {
     if (submitting || !onDelete) return;
@@ -131,10 +104,7 @@ export function EventFormSheet({
     }
   }
 
-  // A period-marked event may be saved without a title; the badge then
-  // reads as the period label so the calendar cell never shows an empty chip.
-  const trimmedTitle =
-    title.trim() || (periodMarkOn ? t.report.diary.eventDetail.periodToggle : '');
+  const trimmedTitle = title.trim();
   const trimmedMemo = memo.trim();
 
   const conditionChanged =
@@ -187,7 +157,6 @@ export function EventFormSheet({
         startDate,
         endDate,
         categoryId,
-        periodMark: periodMarkOn,
         condition,
       });
       if (ok) onClose();
@@ -314,20 +283,6 @@ export function EventFormSheet({
             onEditCategory={onEditCategory}
             onAddCategory={onAddCategory}
           />
-
-          {mode === 'add' || onTogglePeriodMark ? (
-            <div className="flex items-center justify-between rounded-2xl bg-brand-white px-4 py-3">
-              <span className="text-base text-brand-gray600">
-                {t.report.diary.eventDetail.periodToggle}
-              </span>
-              <MyPageToggle
-                enabled={periodMarkOn}
-                onToggle={handleTogglePeriodMark}
-                ariaLabel={t.report.diary.eventDetail.periodToggle}
-                disabled={togglingPeriod || periodMarkFutureBlocked}
-              />
-            </div>
-          ) : null}
 
           <EventConditionSection
             mood={mood}

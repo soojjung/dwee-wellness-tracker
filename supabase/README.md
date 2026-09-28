@@ -24,7 +24,9 @@ supabase/
                            category_id) 신규 생성. RLS anon lockout.
     0007_event_period_link.sql
                          — event_logs.linked_period_id (→ period_logs,
-                           on delete set null) 컬럼 추가
+                           on delete set null) 컬럼 추가. has_period_mark 와
+                           함께 2026-09-28(R4-10) 부터 앱이 쓰지 않음 — 기존
+                           데이터 때문에 컬럼은 유지 (drop 안 함)
     0008_diary_stickers.sql
                          — diary_stickers (storageRef, ratio, source) +
                            media bucket 경로 규약 신규. RLS anon lockout.
@@ -60,6 +62,9 @@ supabase/
                            추가. 마스터 토글은 기존 notifications_enabled 그대로,
                            세부 토글 3개 + lead days 가 로그인 상태에서는 저장 안
                            되던 문제 수정 (실기기 QA 2026-09-24).
+    0017_profiles_calendar_predictions.sql
+                         — profiles.show_calendar_predictions (boolean,
+                           기본 true) — 다이어리 달력 예측 표시 스위치
   functions/
     body-type-analyze/   — 매거진 퍼스널 체형 진단 Edge Function.
                            사진 base64 입력 → gpt-4o Vision 호출 →
@@ -110,7 +115,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 env 가 비어있으면 `isSupabaseConfigured === false` → `data/index.ts` 가 IndexedDB 로 자동 fallback. dev/CI 환경에서는 그대로 두어도 됨.
 
 ### 2. 마이그레이션 적용
-0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012 → 0013 → 0014 → 0015 → 0016 순서.
+0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012 → 0013 → 0014 → 0015 → 0016 → 0017 순서.
 
 **옵션 A (Supabase CLI):**
 ```bash
@@ -118,7 +123,7 @@ brew install supabase/tap/supabase
 supabase link --project-ref <ref>
 supabase db push
 ```
-**옵션 B (대시보드 SQL Editor):** 각 `migrations/*.sql` 파일을 0001부터 0016까지 순서대로 붙여넣고 RUN. 0016 은 CLI 마이그레이션 이력 없이 이 방식으로 프로덕션에 먼저 적용됐다(실기기 QA 2026-09-24) — `supabase db push` 를 나중에 돌리면 `add column if not exists` 라 안전하게 스킵된다.
+**옵션 B (대시보드 SQL Editor):** 각 `migrations/*.sql` 파일을 0001부터 0017까지 순서대로 붙여넣고 RUN. 0016 은 CLI 마이그레이션 이력 없이 이 방식으로 프로덕션에 먼저 적용됐다(실기기 QA 2026-09-24) — `supabase db push` 를 나중에 돌리면 `add column if not exists` 라 안전하게 스킵된다.
 
 ### 3. Auth provider 활성화 (Supabase 대시보드 → Authentication → Providers)
 클라이언트가 실제로 쓰는 provider는 **Apple / Google OAuth + 익명 세션 세 가지뿐**이다 — Email/password 로그인은 구현돼 있지 않다.

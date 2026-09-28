@@ -10,6 +10,7 @@ import { useConditionStore } from '@/store/conditionStore';
 import { currentPhase } from '@/domain/cycle/phase';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
+import { SplashScreen } from './SplashScreen';
 import { PeriodSelectSheet } from './PeriodSelectSheet';
 import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
 import type { PeriodChange } from '@/domain/cycle/periodEdit';
@@ -120,14 +121,10 @@ export function HomeScreen() {
     if (changes.length === 0) await updateSettings({ onboardingCompleted: true });
   }
 
-  // 로딩·오류 문구는 화면 한가운데. PageContainer 만 쓰면 상태바 바로 아래
-  // 왼쪽 위에 붙어서 잘못 그려진 것처럼 보였다.
+  // 로딩 중엔 앱 스플래시를 그대로 보여 준다 — 인증 게이트의 스플래시에서 끊김 없이 이어진다.
+  // 오류 문구는 화면 한가운데 (PageContainer 만 쓰면 상태바 바로 아래 왼쪽 위에 붙는다).
   if (!authHydrated || !settingsHydrated || (periodsLoading && !periodsHydrated)) {
-    return (
-      <PageContainer className="min-h-dvh items-center justify-center">
-        <p className="text-sm text-neutral-500">{t.home.loadingLabel}</p>
-      </PageContainer>
-    );
+    return <SplashScreen />;
   }
   if (periodsError) {
     return (
@@ -147,7 +144,7 @@ export function HomeScreen() {
     <PageContainer className="gap-0 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <HomeHero />
 
-      <div className="flex flex-col gap-5 pt-8">
+      <div className="flex flex-col gap-4 pt-8">
         <TodayDateHeading date={today} onCalendarClick={() => setPeriodDialogOpen(true)} />
 
         <WeekStrip

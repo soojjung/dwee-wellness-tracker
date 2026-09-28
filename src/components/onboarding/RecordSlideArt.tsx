@@ -60,15 +60,6 @@ export function RecordSlideArt() {
             <ChevronDownIcon className="h-[18px] w-[18px] rotate-180 p-[3px] text-brand-gray900" />
           </Row>
 
-          <Row
-            label={t.report.diary.eventDetail.periodToggle}
-            className="rounded-lg bg-brand-gray50"
-          >
-            <span className="flex h-6 w-[50px] items-center justify-end rounded-full bg-brand-pink100 p-0.5">
-              <span className="h-5 w-[30px] rounded-full bg-brand-gray50" />
-            </span>
-          </Row>
-
           <div className="flex flex-col gap-[18px] rounded-2xl bg-brand-gray50 px-4 py-3.5">
             <p className="text-base text-brand-gray600">{sheet.conditionLabel}</p>
             <div className="flex flex-col gap-5">

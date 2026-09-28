@@ -2,6 +2,7 @@
 import { useT } from '@/i18n/useT';
 import { fromISO } from '@/lib/date';
 import type { CellMarkers } from '@/domain/cycle/cellState';
+import { cellChipClasses } from '@/components/app/weekStripStyles';
 
 interface DiaryDayCellProps {
   date: string;
@@ -26,24 +27,27 @@ export function DiaryDayCell({
 }: DiaryDayCellProps) {
   const t = useT();
   const day = fromISO(date).getDate();
-  const { background, isToday } = markers;
+  const { cycle, isToday } = markers;
 
+  // 예상 생리·가임기는 홈 주간 스트립과 같은 테두리 칩(`cellChipClasses`).
   const numberBg = isToday
     ? 'bg-brand-gray900 text-brand-white'
-    : background === 'menstrual'
+    : cycle === 'actualPeriod'
       ? 'bg-brand-pink50 text-brand-pink800'
-      : inCurrentMonth
-        ? 'text-brand-gray900'
-        : 'text-brand-gray400';
+      : cycle === 'predictedPeriod' || cycle === 'predictedFertile'
+        ? cellChipClasses(cycle)
+        : inCurrentMonth
+          ? 'text-brand-gray900'
+          : 'text-brand-gray400';
 
-  const isMarked = isToday || background === 'menstrual';
+  const isMarked = isToday || cycle !== null;
   const pulsing = isToday && todayPulseKey !== undefined && todayPulseKey > 0;
 
   return (
     // Event bars are drawn by DiaryWeekEventLayer over the whole row so a
     // multi-day event reads as one continuous strip. Vertical rhythm, kept in
-    // sync with that layer's `top`: pt-2 (8) + number 19 + 2 + holiday line 12
-    // = 41 → bars start at 43. The holiday line is reserved on every cell so
+    // sync with that layer's `top`: pt-2 (8) + number 19 + holiday line 12
+    // = 39 → bars start at 43. The holiday line is reserved on every cell so
     // rows stay the same height whether or not the week has a holiday.
     <div
       className="relative flex min-h-[100px] flex-col items-stretch pb-4 pt-2"
@@ -71,7 +75,7 @@ export function DiaryDayCell({
         ) : null}
       </div>
       <span
-        className="mt-0.5 block h-3 truncate px-0.5 text-center text-[9px] font-medium leading-3 text-brand-gray600"
+        className="block h-3 truncate px-0.5 text-center text-[9px] font-medium leading-3 text-brand-gray600"
         title={holidayLabel}
       >
         {holidayLabel}

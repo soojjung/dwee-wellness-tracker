@@ -78,4 +78,8 @@ describe('resolveHolidayCountries', () => {
     expect(resolved).not.toBe(setting);
     expect(resolved).toEqual(setting);
   });
+
+  it('orders an explicit setting as US then KR regardless of stored order', () => {
+    expect(resolveHolidayCountries(['KR', 'US'], 'ko')).toEqual(['US', 'KR']);
+  });
 });

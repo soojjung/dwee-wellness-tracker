@@ -327,7 +327,7 @@ interface CycleStatusResult {
 - 이상치 필터(= "유효 주기" 범위): 주기 `[15, 60]일` — 단일 출처는 `src/domain/cycle/cycleGap.ts`의 `isCountableCycleGap()`. 기간 `[1, 14]일` 필터는 `aggregate.ts`와 동일.
 - `confidence`: 유효 gap 수 기준 — `insufficient` 분기(기록 < 3 또는 gaps.length < 2)에서만 `unknown`. `shortPeriod`/`longPeriod`는 그 분기 이전에 반환되므로 gaps.length 가 0~1개여도 `low` 로 남는다. 2개: `medium`, 3개+: `high`.
 - 표시 문자열은 화면이 `t.report.status[status]` 로 조립. 이 함수는 문자열 반환 금지.
-- `src/domain/cycle/chartPoints.ts`의 `monthlyCyclePoints()`도 같은 `cycleGap.ts` 기준으로 달별 주기 차트 점을 계산한다 (`/log` 주기리포트 차트, `docs/flows/log.md` §"CycleChart / RecentCyclesCard" 참고).
+- `src/domain/cycle/chartPoints.ts`의 `cycleChartPoints()`도 같은 `cycleGap.ts` 기준으로 주기 차트 점을 계산한다 — 창 안에서 시작한 생리마다 점 하나, 가로 위치는 실제 날짜 비율(8월 말 시작 → 8월 칸 오른쪽 끝) (`/log` 주기리포트 차트, `docs/flows/log.md` §"CycleChart / RecentCyclesCard" 참고).
 
 상세 판정 기준: `.claude/rules/cycle-logic.md §8`
 

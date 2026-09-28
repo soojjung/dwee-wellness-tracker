@@ -1,7 +1,8 @@
 'use client';
+import { Fragment } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
-import { resolveHolidayCountries } from '@/domain/holiday';
+import { HOLIDAY_COUNTRIES, resolveHolidayCountries } from '@/domain/holiday';
 import type { HolidayCountry } from '@/types';
 import { MyPageBackLink } from './MyPageBackLink';
 import { SettingCard, SettingDetailRow } from './SettingRows';
@@ -44,19 +45,20 @@ export function HolidaysScreen() {
           </div>
 
           <SettingCard>
-            <SettingDetailRow
-              title={c.kr.title}
-              subtitle={c.kr.subtitle}
-              enabled={enabled.includes('KR')}
-              onToggle={() => toggle('KR')}
-            />
-            <div className="mx-5 h-px bg-brand-gray200" />
-            <SettingDetailRow
-              title={c.us.title}
-              subtitle={c.us.subtitle}
-              enabled={enabled.includes('US')}
-              onToggle={() => toggle('US')}
-            />
+            {HOLIDAY_COUNTRIES.map((country, i) => {
+              const copy = country === 'KR' ? c.kr : c.us;
+              return (
+                <Fragment key={country}>
+                  {i > 0 ? <div className="mx-5 h-px bg-brand-gray200" /> : null}
+                  <SettingDetailRow
+                    title={copy.title}
+                    subtitle={copy.subtitle}
+                    enabled={enabled.includes(country)}
+                    onToggle={() => toggle(country)}
+                  />
+                </Fragment>
+              );
+            })}
           </SettingCard>
 
           {isAuto ? (

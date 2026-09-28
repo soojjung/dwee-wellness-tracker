@@ -39,7 +39,6 @@ export const en = {
     settings: 'My page',
   },
   home: {
-    loadingLabel: 'Loading...',
     errorLabel: 'Something went wrong. Please try again.',
     startPeriodButton: 'Log period start',
     startPeriodStartLabel: 'Start date',
@@ -675,13 +674,13 @@ export const en = {
     recentExcludedNote:
       'Only cycles with 15–60 days between starts are included in your chart and average.',
     row: {
-      dates: 'Start / End',
+      start: 'Start',
+      end: 'End',
       length: 'Length',
       cycle: 'Cycle',
       ongoing: 'Ongoing',
       notAvailable: '—',
       daysSuffix: 'd',
-      excluded: 'not counted',
     },
     empty: {
       title: 'Not enough cycle data yet',
@@ -729,12 +728,9 @@ export const en = {
         back: 'Back',
         edit: 'Edit',
         typeLabel: 'Event type',
-        periodToggle: 'Period',
-        periodOn: 'Yes',
-        periodOff: 'No',
         conditionLabel: 'Condition',
-        delete: 'Delete event & period',
-        deleteConfirm: 'Delete this event and its period record?',
+        delete: 'Delete event',
+        deleteConfirm: 'Delete this event?',
         cancel: 'Cancel',
         confirm: 'Delete',
       },
@@ -1195,8 +1191,8 @@ export const en = {
       title: 'My cycle',
       insufficient:
         'Not enough cycle data yet. We need at least 3 period records to spot your pattern!',
-      averagePrefix: 'Average ',
-      averageSuffix: ' days',
+      averagePrefix: '',
+      averageSuffix: ' days on average',
     },
     tests: {
       title: 'My tests',
@@ -1254,6 +1250,7 @@ export const en = {
       notifications: 'Notifications',
       language: 'Language',
       holidays: 'Public holidays',
+      calendarPredictions: 'Calendar predictions',
     },
     holidays: {
       backAriaLabel: 'Back',

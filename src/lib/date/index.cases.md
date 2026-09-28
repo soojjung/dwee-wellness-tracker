@@ -1,8 +1,8 @@
 # `lib/date` — Unit test cases
 
-대상: `src/lib/date/index.ts` 의 `ISO_DATE_RE` 정규식 + `isValidISODate(s: unknown): s is ISODate` 타입 가드 + `formatFullDate(d, locale)` + `formatMonthName(d, locale)` + `formatMonthDay(d, locale)` + `formatCompactDate(d, locale, { omitYear })` + `formatDateShort(d, locale)` + `calendarGrid(year, monthIndex, weekStartsOn)` (`./calendarGrid`, `index.ts` 에서 재수출).
+대상: `src/lib/date/index.ts` 의 `ISO_DATE_RE` 정규식 + `isValidISODate(s: unknown): s is ISODate` 타입 가드 + `formatFullDate(d, locale)` + `formatMonthName(d, locale)` + `formatMonthDay(d, locale)` + `formatCompactDate(d, locale)` + `formatDateShort(d, locale)` + `calendarGrid(year, monthIndex, weekStartsOn)` (`./calendarGrid`, `index.ts` 에서 재수출).
 
-Last run: 2026-09-21 — 50/50 passed
+Last run: 2026-09-28 — 50/50 passed
 
 ## `ISO_DATE_RE`
 
@@ -70,11 +70,11 @@ Last run: 2026-09-21 — 50/50 passed
 
 | #   | 설명 (`it` title)                                                        | 입력                                                                     | 기대 결과      | 결과 |
 | --- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------- | ---- |
-| 33  | renders ko date with year when omitYear is false                          | `'2026-06-15'`, `'ko'`, `{ omitYear: false }`                              | `'26.06.15'`   | ✅   |
-| 34  | renders ko date without year when omitYear is true                        | `'2026-06-15'`, `'ko'`, `{ omitYear: true }`                               | `'06.15'`      | ✅   |
-| 35  | renders en date with year when omitYear is false                          | `'2026-06-15'`, `'en'`, `{ omitYear: false }`                              | `'Jun 15, 26'` | ✅   |
-| 36  | renders en date without year when omitYear is true                        | `'2026-06-15'`, `'en'`, `{ omitYear: true }`                               | `'Jun 15'`     | ✅   |
-| 37  | produces the same output for an ISO string and its equivalent Date object | `fromISO('2026-06-15')` vs `'2026-06-15'`, `'ko'`, `{ omitYear: false }`   | both calls return identical string | ✅   |
+| 33  | renders ko date as yy.MM.dd                                               | `'2026-06-15'`, `'ko'`                                                     | `'26.06.15'`   | ✅   |
+| 34  | zero-pads ko month and day                                                | `'2027-01-05'`, `'ko'`                                                     | `'27.01.05'`   | ✅   |
+| 35  | renders en date as M/d/yy                                                 | `'2026-06-15'`, `'en'`                                                     | `'6/15/26'`    | ✅   |
+| 36  | does not zero-pad en month and day                                        | `'2026-12-05'`, `'en'`                                                     | `'12/5/26'`    | ✅   |
+| 37  | produces the same output for an ISO string and its equivalent Date object | `fromISO('2026-06-15')` vs `'2026-06-15'`, `'en'`                          | both calls return identical string | ✅   |
 
 ## `formatDateShort`
 
