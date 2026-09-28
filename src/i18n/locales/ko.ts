@@ -1241,7 +1241,7 @@ export const ko: Dictionary = {
       notifications: '알림',
       language: '언어',
       holidays: '공휴일 표시',
-      calendarPredictions: '예측 표시',
+      calendarPredictions: '예정일 표시',
     },
     holidays: {
       backAriaLabel: '뒤로',
