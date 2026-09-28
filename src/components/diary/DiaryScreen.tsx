@@ -11,12 +11,12 @@ import { useDiaryStickerStore } from '@/store/diaryStickerStore';
 import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
 import { useDiaryPlacementStore, selectPlacementsForMonth } from '@/store/diaryPlacementStore';
 import { todayISO, shiftMonth } from '@/lib/date';
-import { predictNextPeriod } from '@/domain/cycle/predictor';
 import { resolveHolidayCountries } from '@/domain/holiday';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe';
 import { useDiaryHydration } from '@/hooks/useDiaryHydration';
+import { useCalendarPredictions } from '@/hooks/useCalendarPredictions';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
@@ -136,7 +136,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     () => resolveHolidayCountries(settings.holidayCountries, settings.locale),
     [settings.holidayCountries, settings.locale],
   );
-  const prediction = useMemo(() => predictNextPeriod(periods, settings), [periods, settings]);
+  const predictions = useCalendarPredictions(periods);
 
   // 일정 유형 추가·편집 화면은 일정 시트 "위에" 뜬다. 그동안에도 일정 시트는 마운트해 둬야
   // 한다 — 입력값(제목·메모·날짜·컨디션)이 시트 안의 state 라, 언마운트하면 유형 화면에서
@@ -335,7 +335,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                       events={events}
                       categories={categories}
                       conditionByDate={conditionByDate}
-                      predictedDate={prediction.predictedDate}
+                      predictions={predictions}
                       todayPulseKey={todayPulseKey}
                       holidayCountries={holidayCountries}
                       onSelect={(date) => setSheet({ kind: 'addEvent', date })}

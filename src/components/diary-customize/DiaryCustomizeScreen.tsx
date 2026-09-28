@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { usePeriodStore } from '@/store/periodStore';
+import { useCalendarPredictions } from '@/hooks/useCalendarPredictions';
 import { useEventStore } from '@/store/eventStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
 import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
@@ -57,6 +58,7 @@ export function DiaryCustomizeScreen() {
   );
 
   const periods = usePeriodStore((s) => s.periods);
+  const predictions = useCalendarPredictions(periods);
   const periodsHydrated = usePeriodStore((s) => s.hydrated);
   const hydratePeriods = usePeriodStore((s) => s.hydrate);
 
@@ -361,6 +363,7 @@ export function DiaryCustomizeScreen() {
               events={events}
               categories={categories}
               holidayCountries={holidayCountries}
+              predictions={predictions}
               onSelect={() => {
                 /* Reserved for future day-focused customize UX */
               }}

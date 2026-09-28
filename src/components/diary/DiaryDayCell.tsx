@@ -2,6 +2,7 @@
 import { useT } from '@/i18n/useT';
 import { fromISO } from '@/lib/date';
 import type { CellMarkers } from '@/domain/cycle/cellState';
+import { cellChipClasses } from '@/components/app/weekStripStyles';
 
 interface DiaryDayCellProps {
   date: string;
@@ -26,17 +27,20 @@ export function DiaryDayCell({
 }: DiaryDayCellProps) {
   const t = useT();
   const day = fromISO(date).getDate();
-  const { background, isToday } = markers;
+  const { cycle, isToday } = markers;
 
+  // 예상 생리·가임기는 홈 주간 스트립과 같은 테두리 칩(`cellChipClasses`).
   const numberBg = isToday
     ? 'bg-brand-gray900 text-brand-white'
-    : background === 'menstrual'
+    : cycle === 'actualPeriod'
       ? 'bg-brand-pink50 text-brand-pink800'
-      : inCurrentMonth
-        ? 'text-brand-gray900'
-        : 'text-brand-gray400';
+      : cycle === 'predictedPeriod' || cycle === 'predictedFertile'
+        ? cellChipClasses(cycle)
+        : inCurrentMonth
+          ? 'text-brand-gray900'
+          : 'text-brand-gray400';
 
-  const isMarked = isToday || background === 'menstrual';
+  const isMarked = isToday || cycle !== null;
   const pulsing = isToday && todayPulseKey !== undefined && todayPulseKey > 0;
 
   return (

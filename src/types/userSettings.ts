@@ -20,6 +20,8 @@ export interface UserSettings {
    * 의 `resolveHolidayCountries` 가 한다.
    */
   holidayCountries: readonly HolidayCountry[] | null;
+  /** 다이어리 달력에 다음 예상 생리일·예상 가임기 표시 (마이페이지 스위치). */
+  showCalendarPredictions: boolean;
   /**
    * ISO datetime of the login-screen consent tap (14+ and terms/privacy).
    * `null` = not yet confirmed on this install. Kept local-only (not a
@@ -40,5 +42,6 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   onboardingCompleted: false,
   locale: 'en',
   holidayCountries: null,
+  showCalendarPredictions: true,
   ageConfirmedAt: null,
 };

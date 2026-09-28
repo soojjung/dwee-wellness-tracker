@@ -9,19 +9,19 @@
 ```mermaid
 flowchart TD
   A["셀 date 입력"] --> B{"periods 내 포함?"}
-  B -- yes --> M["background=menstrual"]
-  B -- no --> N["background=null"]
-  M --> P{"predictedDate === date?"}
-  N --> P
-  P -- yes --> R["predicted=true"]
-  P -- no --> S["predicted=false"]
-  R --> T{"conditionByDate?"}
-  S --> T
-  T -- yes --> U["hasCondition=true · 점 표시"]
-  T -- no --> V["hasCondition=false"]
-  U --> W{"date === today?"}
-  V --> W
-  W -- yes --> X["isToday=true · ring 표시"]
+  B -- yes --> M["cycle=actualPeriod · 분홍 채움"]
+  B -- no --> Q{"predictions 있음? (마이페이지 스위치 on)"}
+  Q -- no --> N["cycle=null"]
+  Q -- yes --> P{"예상 생리 구간 안?"}
+  P -- yes --> R["cycle=predictedPeriod · 분홍 테두리"]
+  P -- no --> F{"예상 가임기 안?"}
+  F -- yes --> G["cycle=predictedFertile · 라벤더 테두리"]
+  F -- no --> N
+  M --> W{"date === today?"}
+  R --> W
+  G --> W
+  N --> W
+  W -- yes --> X["isToday=true · 검은 칩이 우선"]
   W -- no --> Y["isToday=false"]
 ```
 
@@ -97,8 +97,8 @@ flowchart LR
 ## 결정 사항
 
 - **A9** = 주 시작 요일: 일요일 (`WEEK_STARTS_ON = 0`).
-- 셀 상태 우선순위: `menstrual`(배경) > `predicted`(ring) > `hasCondition`(하단 점) > `today`(얇은 ring).
-  - 같은 셀에 여러 상태 중첩 가능 (예: 오늘이면서 생리 기록 + 컨디션).
+- 셀 숫자 칩: 오늘(검은 칩) > 실제 생리(`bg-brand-pink50`) > 예상 생리 > 예상 가임기 > 기본. 예상 두 가지는 홈 주간 스트립과 같은 `cellChipClasses`(분홍/라벤더 테두리) — `deriveCellMarkers` 가 홈과 같은 `computeState` 를 쓴다 (`domain/cycle/cellState.ts`).
+- 예측 표시는 마이페이지 설정 카드의 "예측 표시"(en "Calendar predictions") 스위치(`UserSettings.showCalendarPredictions`, 기본 on, `profiles.show_calendar_predictions` 0017)로 끄고 켠다. 꺼지면 `useCalendarPredictions` 가 null → 실제 생리만 표시. 다이어리 꾸미기 화면의 달력도 같은 값을 따른다 (TestFlight R4-6).
 - 그 달이 걸치는 주만 렌더 (4~6주, 대개 5주). 2026-09-18 까지는 42칸(6주) 고정이었으나, 5주 달에 다음 달 한 주가 통째로 붙어 보여 자연 주 수로 바꿈.
 - 월 이동마다 `hydrateRange`로 해당 월 conditions만 로드 (전체 로드 없음).
-- 예측 날짜는 `predictNextPeriod()` 단일 값 — 다음 한 사이클만 표시.
+- 예측은 `predictNextPeriod()` 단일 값 기준 — 다음 한 사이클(예상 생리 구간 = 평균 기간, 그 앞 가임기)만 표시. 홈과 동일.
