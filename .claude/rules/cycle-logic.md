@@ -66,6 +66,7 @@ paths:
 계산 세부:
 
 - **유효 주기**: `src/domain/cycle/cycleGap.ts`의 `CYCLE_GAP_MIN_DAYS`(15) ~ `CYCLE_GAP_MAX_DAYS`(60) 범위. 이 범위 밖 간격은 모두 제외.
+- **최근 기간 길이 결정** (`latestCompletedPeriodLength`): 바로 앞 기록(진행 중 포함)과 시작일 간격 < 15일인 기록은 스킵 (중복·분할 입력 가능성, 리포트 목록의 "통계 제외"와 같은 기록). 그다음 완료 + 기간 1~14일인 가장 최근 기록. 첫 기록은 이전이 없으므로 항상 포함. > 60일 간격은 실제 주기이므로 유지.
 - `shortPeriod`/`longPeriod` 는 이상치 제외(1~14일)한 뒤에도 최근 완료된 기록이 있어야 판정. 있으면 주기 간격 여부와 무관하게 우선 반환.
 - 반환값은 `{ status, confidence }` — `confidence` 는 `.claude/rules/cycle-logic.md` §2 규칙과 동일하게 `'unknown' | 'low' | 'medium' | 'high'`.
   - `'unknown'` = insufficient 분기(기록 < 3 또는 유효 간격 < 2)에서만

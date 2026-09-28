@@ -1,6 +1,6 @@
 import type { PeriodLog, Confidence } from '@/types';
 import { daysBetween } from '@/lib/date';
-import { isCountableCycleGap } from './cycleGap';
+import { isCountableCycleGap, CYCLE_GAP_MIN_DAYS } from './cycleGap';
 
 export type CycleStatus =
   | 'stable'
@@ -48,14 +48,22 @@ function collectCycleGaps(periods: PeriodLog[]): number[] {
   return gaps;
 }
 
+/**
+ * 최근 완료된 생리의 기간(일). 바로 앞 기록(진행 중 포함)과 시작일 간격이 15일 미만인 기록은
+ * 같은 생리를 나눠 적은 흔적으로 보고 건너뛴다 — 리포트 목록이 "통계 제외"로 흐리게 두는 그 기록.
+ * 60일 초과 간격은 중간 기록이 빠진 실제 생리라 그대로 센다.
+ */
 function latestCompletedPeriodLength(periods: PeriodLog[]): number | null {
-  const completed = periods
-    .filter((p): p is PeriodLog & { endDate: string } => Boolean(p.endDate))
-    .map((p) => ({ p, length: daysBetween(p.startDate, p.endDate) + 1 }))
-    .filter(({ length }) => length >= PERIOD_MIN && length <= PERIOD_MAX);
-  if (completed.length === 0) return null;
-  completed.sort((a, b) => b.p.startDate.localeCompare(a.p.startDate));
-  return completed[0]!.length;
+  const sorted = [...periods].sort((a, b) => b.startDate.localeCompare(a.startDate));
+  for (let i = 0; i < sorted.length; i++) {
+    const p = sorted[i]!;
+    const prev = sorted[i + 1];
+    if (prev && daysBetween(prev.startDate, p.startDate) < CYCLE_GAP_MIN_DAYS) continue;
+    if (!p.endDate) continue;
+    const length = daysBetween(p.startDate, p.endDate) + 1;
+    if (length >= PERIOD_MIN && length <= PERIOD_MAX) return length;
+  }
+  return null;
 }
 
 function avgOrNull(nums: number[]): number | null {

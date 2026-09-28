@@ -2,19 +2,15 @@
 import { useMemo } from 'react';
 import { useT } from '@/i18n/useT';
 import { niceScale, clampOverlayX } from '@/domain/cycle/chartScale';
-import type { MonthlyCyclePoint } from '@/domain/cycle/chartPoints';
+import { monthKey } from '@/lib/date';
+import type { ChartMonth, CycleChartPoint } from '@/domain/cycle/chartPoints';
 
 interface CycleChartProps {
-  /** 달별 주기 점 (`monthlyCyclePoints`). 무엇을 주기로 세는지는 도메인이 정한다. */
-  monthly: readonly MonthlyCyclePoint[];
+  /** 가로축 달 (왼쪽 → 오른쪽). 각 달이 같은 폭의 칸을 차지한다. */
+  months: readonly ChartMonth[];
+  /** 주기 점 (`cycleChartPoints`). 무엇을 주기로 세고 어디에 찍을지는 도메인이 정한다. */
+  points: readonly CycleChartPoint[];
   averageCycleDays: number | null;
-}
-
-interface Point {
-  monthIndex: number;
-  monthLabel: string;
-  cycle: number | null;
-  isCurrent: boolean;
 }
 
 const CHART_HEIGHT = 209;
@@ -25,23 +21,22 @@ const PLOT_BOTTOM_DATA = 154; // last real tick row (min value)
 const PLOT_BOTTOM_ZERO = 176; // "0" baseline label row
 const AXIS_LABEL_LEFT = 9.5;
 
-export function CycleChart({ monthly, averageCycleDays }: CycleChartProps) {
+export function CycleChart({ months, points, averageCycleDays }: CycleChartProps) {
   const t = useT();
 
-  const points: Point[] = useMemo(() => {
-    const nowYear = new Date().getFullYear();
-    const nowMonth = new Date().getMonth();
-    return monthly.map(({ year, monthIndex, cycleDays }) => ({
-      monthIndex,
-      monthLabel: t.report.monthShort[(monthIndex + 1) as 1],
-      cycle: cycleDays,
-      isCurrent: year === nowYear && monthIndex === nowMonth,
-    }));
-  }, [monthly, t]);
+  const now = new Date();
+  const currentKey = monthKey({ year: now.getFullYear(), monthIndex: now.getMonth() });
+  const monthLabels = useMemo(
+    () =>
+      months.map((m) => ({
+        key: monthKey(m),
+        label: t.report.monthShort[(m.monthIndex + 1) as 1],
+      })),
+    [months, t],
+  );
 
-  const withData = points.filter((p): p is Point & { cycle: number } => p.cycle !== null);
-  const dataMin = withData.length ? Math.min(...withData.map((p) => p.cycle)) : 25;
-  const dataMax = withData.length ? Math.max(...withData.map((p) => p.cycle)) : 31;
+  const dataMin = points.length ? Math.min(...points.map((p) => p.cycleDays)) : 25;
+  const dataMax = points.length ? Math.max(...points.map((p) => p.cycleDays)) : 31;
   // Pad the data window by ±2 so a single-point (or narrow) range doesn't
   // collapse to a two-tick scale where the line sits on the plot floor.
   // niceScale still clamps to HARD_MIN/HARD_MAX and picks tick step.
@@ -56,13 +51,11 @@ export function CycleChart({ monthly, averageCycleDays }: CycleChartProps) {
 
   const gridXStart = PLOT_LEFT;
   const gridXEnd = width - PLOT_RIGHT;
-  const colStep = (gridXEnd - gridXStart) / (points.length - 1);
-  const colX = (i: number): number => gridXStart + i * colStep;
+  const xAt = (position: number): number => gridXStart + position * (gridXEnd - gridXStart);
+  // 월 이름은 그 달 칸의 가운데.
+  const monthLabelX = (i: number): number => xAt((i + 0.5) / months.length);
 
-  const coords = points.map((p, i) => ({
-    x: colX(i),
-    y: p.cycle !== null ? yFor(p.cycle) : null,
-  }));
+  const coords = points.map((p) => ({ x: xAt(p.position), y: yFor(p.cycleDays) }));
 
   const linePath = buildSmoothPath(coords);
   const areaPath = buildAreaPath(coords, PLOT_BOTTOM_DATA);
@@ -145,43 +138,30 @@ export function CycleChart({ monthly, averageCycleDays }: CycleChartProps) {
             strokeLinecap="round"
           />
         ) : null}
-        {coords.map((c, i) =>
-          c.y !== null ? (
-            <circle
-              key={i}
-              cx={c.x}
-              cy={c.y}
-              r={3}
-              fill={points[i]!.isCurrent ? '#F158A0' : '#FFFDFE'}
-              stroke="#F158A0"
-              strokeWidth={1.3}
-            />
-          ) : null,
-        )}
+        {coords.map((c, i) => (
+          <circle
+            key={points[i]!.startDate}
+            cx={c.x}
+            cy={c.y}
+            r={3}
+            fill={points[i]!.startDate.startsWith(currentKey) ? '#F158A0' : '#FFFDFE'}
+            stroke="#F158A0"
+            strokeWidth={1.3}
+          />
+        ))}
       </svg>
 
-      {points.map((p, i) => {
-        // Edge-anchor the first / last month labels so they don't
-        // overflow the card. Middle labels center on their tick.
-        const isFirst = i === 0;
-        const isLast = i === points.length - 1;
-        const translate = isFirst
-          ? 'translate-x-0'
-          : isLast
-            ? '-translate-x-full'
-            : '-translate-x-1/2';
-        return (
-          <span
-            key={i}
-            className={`absolute whitespace-nowrap text-[12px] leading-[1.5] ${translate} ${
-              p.isCurrent ? 'font-medium text-brand-gray900' : 'text-brand-gray600'
-            }`}
-            style={{ left: `${colX(i)}px`, top: `${PLOT_BOTTOM_ZERO + 15}px` }}
-          >
-            {p.monthLabel}
-          </span>
-        );
-      })}
+      {monthLabels.map((m, i) => (
+        <span
+          key={m.key}
+          className={`absolute -translate-x-1/2 whitespace-nowrap text-[12px] leading-[1.5] ${
+            m.key === currentKey ? 'font-medium text-brand-gray900' : 'text-brand-gray600'
+          }`}
+          style={{ left: `${monthLabelX(i)}px`, top: `${PLOT_BOTTOM_ZERO + 15}px` }}
+        >
+          {m.label}
+        </span>
+      ))}
 
       {averageCycleDays !== null && avgY !== null ? (
         <div

@@ -89,7 +89,7 @@ flowchart TD
 
 ### CycleChart / RecentCyclesCard — 유효 주기 0개일 때
 
-`CycleReportCard`는 기록 수와 최근 6개월 안에 셀 수 있는 주기가 있는지에 따라 세 상태 중 하나로 차트를 그린다(`monthlyCyclePoints()`, `src/domain/cycle/chartPoints.ts`):
+`CycleReportCard`는 기록 수와 최근 6개월 안에 셀 수 있는 주기가 있는지에 따라 세 상태 중 하나로 차트를 그린다(`cycleChartPoints()`, `src/domain/cycle/chartPoints.ts`):
 
 | 상태            | 조건                                                   | 표시                                                                                   |
 | --------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------- |
@@ -97,7 +97,7 @@ flowchart TD
 | `noCycles`      | 기록은 3회 이상인데 최근 6개월에 셀 수 있는 주기가 0개 | `t.report.chartNoCycles` (빈 격자만 보여 주면 기록이 반영 안 된 것처럼 보이는 걸 방지) |
 | `plot`          | 그릴 점이 하나라도 있음                                | `CycleChart` 렌더                                                                      |
 
-`RecentCyclesCard`는 목록에는 셀 수 없는 주기 값도 그대로 보여주되(기록 자체를 숨기지 않음), 15~60일 범위 밖인 행에는 "· 통계 제외" 꼬리표를 붙이고 카드 하단에 각주(`t.report.recentExcludedNote`)를 한 번만 표시한다 — 차트·평균·상태 판정에서는 빠지는 값이라는 걸 알리기 위함.
+`RecentCyclesCard`는 기록마다 한 줄인 4열 표(시작·종료·기간·주기)로, 셀 수 없는 주기 값도 그대로 보여주되(기록 자체를 숨기지 않음), 15~60일 범위 밖인 주기 숫자는 회색으로 흐리게 하고 카드 하단에 각주(`t.report.recentExcludedNote`)를 한 번만 표시한다 — 차트·평균·상태 판정에서는 빠지는 값이라는 걸 알리기 위함.
 
 ---
 
@@ -289,6 +289,6 @@ flowchart TD
 - `src/domain/cycle/status.test.ts` — 16개 Vitest 케이스
 - `src/domain/cycle/status.cases.md` — 케이스 테이블
 - `src/domain/cycle/chartScale.ts` — `computeChartScale()` 순수 함수 (y-축 min/max/step 계산). `chartScale.test.ts` + `chartScale.cases.md` 쌍 포함.
-- `src/domain/cycle/chartPoints.ts` — `monthlyCyclePoints()` 순수 함수 (달별 주기 점 계산, `CycleReportCard`/`CycleChart` 소비)
+- `src/domain/cycle/chartPoints.ts` — `cycleChartPoints()` 순수 함수 (시작일마다 주기 점 + 날짜 비율 가로 위치, `CycleReportCard`/`CycleChart` 소비)
 - `src/domain/cycle/cycleGap.ts` — `isCountableCycleGap()` + `CYCLE_GAP_MIN_DAYS`/`CYCLE_GAP_MAX_DAYS`(15~60일). 유효 주기 판정의 단일 출처. `cycleGap.test.ts` + `cycleGap.cases.md` 쌍 포함.
 - `docs/domain/cycle.md` — 주기 도메인 전체 로직 (4-phase, recordPolicy, periodEdit, cycleStatus)

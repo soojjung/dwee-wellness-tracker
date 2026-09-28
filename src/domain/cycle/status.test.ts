@@ -203,4 +203,44 @@ describe('classifyCycleStatus', () => {
     expect(result.averageCycleDays).toBeNull();
     expect(result.cycleRangeDays).toBeNull();
   });
+
+  it('skips short-gap record when determining latest period length (TestFlight R4-5)', () => {
+    // R4-5 tester case: records 08-29~09-02, 10-07~10-12 (6d), 10-14~10-14 (1d).
+    // The 10-14 record's start is 7 days after 10-07 → gap < 15 → skip it.
+    // Without 10-14, the latest valid is 10-07~10-12 (6d, not shortPeriod).
+    // Cycle gaps: 39d (08-29 to 10-07, countable) → status not shortPeriod.
+    const result = classifyCycleStatus([
+      log('a', '2026-08-29', '2026-09-02'),
+      log('b', '2026-10-07', '2026-10-12'),
+      log('c', '2026-10-14', '2026-10-14'),
+    ]);
+    expect(result.status).not.toBe('shortPeriod');
+    expect(result.latestPeriodLengthDays).toBe(6); // Skips 10-14 (1d)
+    expect(result.averageCycleDays).toBe(39);
+  });
+
+  it('keeps record with >60d gap when determining latest period length', () => {
+    // Large gap (>60d) is real, not a duplicate. Latest record should be found correctly.
+    // Records: 01-01~01-05, 04-01~04-05 (gap ~91d), 04-10~04-15 (gap 9d, skip).
+    // Latest valid is 04-01~04-05 (5d).
+    const result = classifyCycleStatus([
+      log('a', '2026-01-01', '2026-01-05'),
+      log('b', '2026-04-01', '2026-04-05'),
+      log('c', '2026-04-10', '2026-04-15'),
+    ]);
+    expect(result.latestPeriodLengthDays).toBe(5); // Skips 04-10 (gap 9d from 04-01)
+    // Gaps: 91d (filtered out) = no countable gaps → insufficient
+    expect(result.status).toBe('insufficient');
+  });
+
+  it('measures the split gap from the previous record even when that one is ongoing', () => {
+    // 10-07 has no end yet; 10-14 (1d) is still only 7 days after it → skip, use 08-29 (5d).
+    const result = classifyCycleStatus([
+      log('a', '2026-08-29', '2026-09-02'),
+      log('b', '2026-10-07'),
+      log('c', '2026-10-14', '2026-10-14'),
+    ]);
+    expect(result.latestPeriodLengthDays).toBe(5);
+    expect(result.status).not.toBe('shortPeriod');
+  });
 });

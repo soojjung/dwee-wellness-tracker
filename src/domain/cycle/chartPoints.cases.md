@@ -1,20 +1,20 @@
 # chartPoints — Unit test cases
 
-Last run: 2026-09-21 — 11/11 passed
+Last run: 2026-09-28 — 12/12 passed
+
+창 `APR_TO_SEP_2026` = 2026년 4~9월 6칸. `position` 은 가로축 0~1, 한 달 = 1/6, 그 달 안에서는 `(일 − 0.5) / 그 달 일수`.
 
 | # | 설명 (`it` title) | 입력 | 기대 결과 | 결과 |
 |---|---|---|---|---|
-| 1 | returns null for a month with no period starting in it | `periods=[a:'2026-01-01', b:'2026-03-01']`, `months=[2026-02]` | `[{2026,1,cycleDays:null}]` | ✅ |
-| 2 | returns null when the month holds the very first period on record (no previous) | `periods=[a:'2026-02-05']`, `months=[2026-02]` | `[{2026,1,cycleDays:null}]` | ✅ |
-| 3 | returns null for a 14-day gap (just below the countable minimum) | `periods=[a:'2025-12-18', b:'2026-01-01']`, `months=[2026-01]` | `cycleDays=null` | ✅ |
-| 4 | returns the gap for a 15-day gap (countable minimum boundary) | `periods=[a:'2025-12-17', b:'2026-01-01']`, `months=[2026-01]` | `cycleDays=15` | ✅ |
-| 5 | returns the gap for a 60-day gap (countable maximum boundary) | `periods=[a:'2025-11-02', b:'2026-01-01']`, `months=[2026-01]` | `cycleDays=60` | ✅ |
-| 6 | returns null for a 61-day gap (just above the countable maximum) | `periods=[a:'2025-11-01', b:'2026-01-01']`, `months=[2026-01]` | `cycleDays=null` | ✅ |
-| 7 | uses only the first start recorded in the month when there are multiple | `periods=[prev:'2026-01-01', first:'2026-02-05', second:'2026-02-20']`, `months=[2026-02]` | `cycleDays=35` (not 50) | ✅ |
-| 8 | sorts unsorted input before matching | same fixture as #7, array order shuffled | `cycleDays=35` | ✅ |
-| 9 | matches the month by year, not just month number, across a year boundary | `periods=[2024-12-01, 2025-01-10, 2025-12-20, 2026-01-25]`, `months=[2026-01]` | `cycleDays=36` (not 40) | ✅ |
-| 10 | returns null for every month when periods is empty | `periods=[]`, `months=[2026-01, 2026-02]` | both `cycleDays=null` | ✅ |
-| 11 | regression: real user record is null for every queried month (all gaps out of range) | `periods=['2026-06-23','2026-08-29','2026-09-09','2026-09-14']`, `months=2026년 4~9월` | every `cycleDays=null` | ✅ |
-
-- Row 9: proves month matching uses the full `YYYY-MM` key (year + month), not just the month-of-year number — a bug that ignored the year would report 40 instead of 36.
-- Row 11: September's first start (`09-09`) is the one used for the gap, not the later `09-14` record in the same month (see row 7's rule).
+| 1 | returns no points when periods is empty | `[]` | `[]` | ✅ |
+| 2 | makes no point for the very first period on record (no previous) | `[05-10]` | `[]` | ✅ |
+| 3 | makes a point for the gap ending at a start inside the window | `[07-28, 08-29]` | `{ startDate: 08-29, cycleDays: 32 }` | ✅ |
+| 4 | places a late-month start near the right edge of its month slot | `[07-28, 08-29]` | `position = (4 + 28.5/31)/6`, 8월 칸 오른쪽 끝(4.9/6 ~ 5/6) | ✅ |
+| 5 | places a 1st-of-month start just right of the slot start | `[05-02, 06-01]` | `position = (2 + 0.5/30)/6` | ✅ |
+| 6 | uses the real month length (February 2026 has 28 days) | `[01-31, 02-28]`, 창 `[2026-02]` | `position = 27.5/28` | ✅ |
+| 7 | makes one point per start when a month holds two starts | `[04-10, 05-01, 05-30]` | 점 2개 `05-01:21`, `05-30:29`, 왼→오 순서 | ✅ |
+| 8 | skips a 14-day gap and keeps a 15-day gap (countable minimum) | `[05-17, 05-31]` / `[05-16, 05-31]` | `[]` / `cycleDays 15` | ✅ |
+| 9 | keeps a 60-day gap and skips a 61-day gap (countable maximum) | `[04-02, 06-01]` / `[04-01, 06-01]` | `cycleDays 60` / `[]` | ✅ |
+| 10 | uses a previous period outside the window, but skips starts outside it | `[03-20, 04-18, 10-07]` | `[04-18:29]` 만 (10-07 은 창 밖) | ✅ |
+| 11 | sorts unsorted input and matches months by year across a year boundary | `[2026-01-25, 2025-01-10, 2025-12-20]`, 창 `[2025-12, 2026-01]` | `[2026-01-25:36]`, `position > 0.5` | ✅ |
+| 12 | regression: real user record has no points when every gap is out of range | `[06-23, 08-29, 09-09, 09-14]` (간격 67·11·5) | `[]` | ✅ |
