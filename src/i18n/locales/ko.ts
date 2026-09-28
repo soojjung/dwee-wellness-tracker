@@ -39,7 +39,6 @@ export const ko: Dictionary = {
     settings: '마이페이지',
   },
   home: {
-    loadingLabel: '불러오는 중이에요...',
     errorLabel: '잠시 문제가 있었어요. 다시 시도해 주세요.',
     startPeriodButton: '생리 시작 기록',
     startPeriodStartLabel: '시작일',

@@ -39,7 +39,6 @@ export const en = {
     settings: 'My page',
   },
   home: {
-    loadingLabel: 'Loading...',
     errorLabel: 'Something went wrong. Please try again.',
     startPeriodButton: 'Log period start',
     startPeriodStartLabel: 'Start date',
