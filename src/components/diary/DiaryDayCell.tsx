@@ -46,8 +46,8 @@ export function DiaryDayCell({
   return (
     // Event bars are drawn by DiaryWeekEventLayer over the whole row so a
     // multi-day event reads as one continuous strip. Vertical rhythm, kept in
-    // sync with that layer's `top`: pt-2 (8) + number 19 + 2 + holiday line 12
-    // = 41 → bars start at 43. The holiday line is reserved on every cell so
+    // sync with that layer's `top`: pt-2 (8) + number 19 + holiday line 12
+    // = 39 → bars start at 43. The holiday line is reserved on every cell so
     // rows stay the same height whether or not the week has a holiday.
     <div
       className="relative flex min-h-[100px] flex-col items-stretch pb-4 pt-2"
@@ -75,7 +75,7 @@ export function DiaryDayCell({
         ) : null}
       </div>
       <span
-        className="mt-0.5 block h-3 truncate px-0.5 text-center text-[9px] font-medium leading-3 text-brand-gray600"
+        className="block h-3 truncate px-0.5 text-center text-[9px] font-medium leading-3 text-brand-gray600"
         title={holidayLabel}
       >
         {holidayLabel}
