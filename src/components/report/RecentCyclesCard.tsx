@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { Fragment, useMemo, type ReactNode } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { PeriodLog } from '@/types';
@@ -47,40 +47,93 @@ export function RecentCyclesCard({ periods, maxRows = 6 }: RecentCyclesCardProps
   const days = (n: number | null) => (n !== null ? `${n}${c.daysSuffix}` : c.notAvailable);
 
   return (
-    <section className="rounded-2xl bg-brand-white p-4">
+    <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-4">
       <h2 className="text-lg font-semibold leading-normal text-brand-gray900">
         {t.report.recentTitle}
       </h2>
-      <table className="mt-3 w-full table-fixed text-center">
+      {/* Figma 955:2619 — 헤더 한 줄 + 기록마다 회색 둥근 줄. 줄 양끝 여백은 시안 값 15 로 고정하고,
+          칸 사이(시안 39)는 남는 폭을 똑같이 나눠 갖는다 — 390pt ko 에서 ≈36, 320pt en 처럼 폭이
+          모자라면 최소 10 까지 줄어든다.
+          모든 줄이 같은 열 폭을 써야 해서 table 로 그린다 (subgrid 는 iOS 15 미지원). */}
+      <table className="-my-2 w-full border-separate border-spacing-y-2 text-center">
         <thead>
-          <tr className="text-xs font-medium text-brand-gray600">
-            <th scope="col" className="pb-2 font-medium">{c.start}</th>
-            <th scope="col" className="pb-2 font-medium">{c.end}</th>
-            <th scope="col" className="pb-2 font-medium">{c.length}</th>
-            <th scope="col" className="pb-2 font-medium">{c.cycle}</th>
-          </tr>
+          <CycleRow
+            as="th"
+            className="text-sm font-normal leading-normal text-brand-gray600"
+            cells={[c.start, c.end, c.length, c.cycle]}
+          />
         </thead>
-        <tbody className="text-[15px] font-medium tabular-nums text-brand-gray900">
+        <tbody>
           {rows.map((r) => (
-            <tr key={r.id} className="border-t border-brand-gray200">
-              <td className="py-3">{formatCompactDate(r.startDate, locale)}</td>
-              <td className={'py-3' + (r.endDate ? '' : ' text-brand-gray600')}>
-                {r.endDate ? formatCompactDate(r.endDate, locale) : c.ongoing}
-              </td>
-              <td className="py-3">{days(r.lengthDays)}</td>
-              {/* 목록은 기록 그대로 보여 주되, 차트·평균에서 빠지는 값은 흐리게 두고 아래 각주로 설명한다. */}
-              <td className={'py-3' + (r.cycleExcluded ? ' text-brand-gray500' : '')}>
-                {days(r.cycleDays)}
-              </td>
-            </tr>
+            <CycleRow
+              key={r.id}
+              className="h-10 text-base font-medium tabular-nums text-brand-gray900"
+              cellBg="bg-brand-gray200"
+              cells={[
+                formatCompactDate(r.startDate, locale),
+                r.endDate ? (
+                  formatCompactDate(r.endDate, locale)
+                ) : (
+                  <span className="text-brand-gray600">{c.ongoing}</span>
+                ),
+                days(r.lengthDays),
+                // 목록은 기록 그대로 보여 주되, 차트·평균에서 빠지는 값은 흐리게 두고 아래 각주로 설명한다.
+                <span key="cycle" className={r.cycleExcluded ? 'text-brand-gray500' : undefined}>
+                  {days(r.cycleDays)}
+                </span>,
+              ]}
+            />
           ))}
         </tbody>
       </table>
       {rows.some((r) => r.cycleExcluded) ? (
-        <p className="pt-2 text-xs leading-normal text-brand-gray600">
+        <p className="text-xs leading-normal text-brand-gray600">
           {t.report.recentExcludedNote}
         </p>
       ) : null}
     </section>
+  );
+}
+
+// 내용 칸과 양끝 칸(15px 블록)은 `w-px` 로 내용 폭에 딱 맞추고, 폭 지정이 없는 칸 사이
+// 스페이서가 표의 남는 폭을 똑같이 나눠 갖는다 (안쪽 10px 블록이 최소치).
+
+function CycleRow({
+  cells,
+  className,
+  cellBg = '',
+  as: Cell = 'td',
+}: {
+  cells: readonly ReactNode[];
+  className: string;
+  /** 둥근 줄 배경. tr 에 칠하면 끝 칸의 rounded 가 먹지 않아서 칸마다 칠한다. */
+  cellBg?: string;
+  as?: 'td' | 'th';
+}) {
+  const edge = `w-px p-0 ${cellBg}`;
+  return (
+    <tr className={className}>
+      <td aria-hidden className={`${edge} rounded-l-lg`}>
+        <div className="w-[15px]" />
+      </td>
+      {cells.map((cell, i) => (
+        <Fragment key={i}>
+          {i > 0 ? (
+            <td aria-hidden className={`p-0 ${cellBg}`}>
+              <div className="w-2.5" />
+            </td>
+          ) : null}
+          <Cell
+            scope={Cell === 'th' ? 'col' : undefined}
+            className={`w-px whitespace-nowrap p-0 [font-weight:inherit] ${cellBg}`}
+          >
+            {cell}
+          </Cell>
+        </Fragment>
+      ))}
+      <td aria-hidden className={`${edge} rounded-r-lg`}>
+        <div className="w-[15px]" />
+      </td>
+    </tr>
   );
 }
