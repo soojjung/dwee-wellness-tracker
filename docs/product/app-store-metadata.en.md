@@ -129,3 +129,5 @@ Keep your cycle, mood, symptoms, and everyday moments in one place — and start
 - Privacy Policy URL: `https://dwee-neon.vercel.app/legal/privacy/?lang=en`
 - Support URL: `https://dwee-neon.vercel.app/legal/support/?lang=en`
 - Both are public pages in the `(legal)` route group (no session needed). Re-check after the Vercel deploy.
+- Marketing URL: left blank (no landing page yet; the site root goes straight to login).
+- Copyright: `2026 Innerglow` (entered 2026-10-01; brand name — the operator is an individual, see terms).

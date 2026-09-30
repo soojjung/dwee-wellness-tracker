@@ -131,3 +131,5 @@ dwee는 원활한 앱 이용을 할 수 있도록 필요한 접근 권한을 요
 - Privacy Policy URL: `https://dwee-neon.vercel.app/legal/privacy/?lang=en` (ko: `?lang=ko`)
 - Support URL: `https://dwee-neon.vercel.app/legal/support/?lang=en`
 - 둘 다 `(legal)` 라우트 그룹의 공개 페이지 — 세션 없이 열림. 배포 후 실제 URL 로 재확인.
+- Marketing URL: 비워 둠 (소개 페이지 없음 — 사이트 루트는 바로 로그인).
+- 저작권: `2026 Innerglow` (2026-10-01 입력. 브랜드명 — 운영자는 개인, 약관 참고).
