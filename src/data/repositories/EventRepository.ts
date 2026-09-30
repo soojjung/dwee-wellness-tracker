@@ -6,8 +6,6 @@ export interface NewEventInput {
   title: string;
   memo: string;
   categoryId: string;
-  hasPeriodMark?: boolean;
-  linkedPeriodId?: string;
 }
 
 export interface EventRepository {

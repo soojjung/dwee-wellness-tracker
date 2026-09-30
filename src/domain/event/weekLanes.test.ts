@@ -15,7 +15,6 @@ function makeEvent(
     title: 'Event',
     memo: '',
     categoryId: 'cat-1',
-    hasPeriodMark: false,
     createdAt,
     updatedAt: createdAt,
   };
