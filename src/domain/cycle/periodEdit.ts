@@ -14,6 +14,12 @@ export interface DraftPeriod {
 
 export const EXTEND_GAP_DAYS = 7;
 
+// Matches the 14-day period-length outlier cap in domain/cycle/aggregate.
+// A period that starts today can extend up to this many days ahead. Shared
+// by `PeriodSelectSheet` and `PeriodRangeCalendar` so the two entry points
+// agree on how far into the future a period can be logged.
+export const FUTURE_WINDOW_DAYS = 14;
+
 export function toDrafts(periods: PeriodLog[]): DraftPeriod[] {
   return sortDrafts(
     periods.map((p) => ({

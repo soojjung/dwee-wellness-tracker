@@ -2,14 +2,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePeriodStore } from '@/store/periodStore';
 import { todayISO } from '@/lib/date';
-import { PeriodSelectSheet } from '@/components/app/PeriodSelectSheet';
-import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
-import type { PeriodChange } from '@/domain/cycle/periodEdit';
 import type { LogView } from '@/components/diary/LogViewToggle';
 import { ReportHeader } from './ReportHeader';
 import { CycleReportCard } from './CycleReportCard';
 import { RecentCyclesCard } from './RecentCyclesCard';
 import { CycleReportEmpty } from './CycleReportEmpty';
+import { PeriodRecordSheet } from './PeriodRecordSheet';
 
 const MONTHS_ON_CHART = 6;
 
@@ -24,7 +22,6 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
   const hydrate = usePeriodStore((s) => s.hydrate);
   const today = todayISO();
   const [entryOpen, setEntryOpen] = useState(false);
-  const applyPeriodChanges = useApplyPeriodChanges();
 
   useEffect(() => {
     if (!hydrated) hydrate();
@@ -42,11 +39,6 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
   }, [now.getFullYear(), now.getMonth()]);
 
   const showFullEmpty = hydrated && periods.length === 0;
-
-  async function handlePeriodChanges(changes: PeriodChange[]) {
-    await applyPeriodChanges(changes);
-    setEntryOpen(false);
-  }
 
   return (
     <>
@@ -74,13 +66,9 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
         )}
       </div>
       {entryOpen ? (
-        // 홈의 생리 아이콘과 같은 시트 — 지난 기록의 날짜 수정·삭제가 여기서도 된다.
-        <PeriodSelectSheet
-          today={today}
-          periods={periods}
-          onSubmit={handlePeriodChanges}
-          onCancel={() => setEntryOpen(false)}
-        />
+        // 홈의 생리 아이콘은 여전히 PeriodSelectSheet(수정·삭제 포함)를 연다. 이 아이콘은
+        // 새 생리 구간 추가 + 오늘 컨디션만 다루는 전용 시트로 분리했다 (R5-6).
+        <PeriodRecordSheet today={today} periods={periods} onClose={() => setEntryOpen(false)} />
       ) : null}
     </>
   );

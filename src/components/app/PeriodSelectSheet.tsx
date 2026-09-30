@@ -14,6 +14,7 @@ import { CheckIcon } from '@/components/ui/icons/CheckIcon';
 import type { Locale, PeriodLog } from '@/types';
 import {
   EXTEND_GAP_DAYS,
+  FUTURE_WINDOW_DAYS,
   addRange,
   collectRecordedDates,
   computeChanges,
@@ -47,9 +48,6 @@ interface PeriodSelectSheetProps {
 const DEFAULT_MONTHS_BACK = 12;
 const MORE_MONTHS_STEP = 12;
 const DEFAULT_MONTHS_FORWARD = 1;
-// Matches the 14-day period-length outlier cap in domain/cycle/aggregate.
-// A period that starts today can extend up to this many days ahead.
-const FUTURE_WINDOW_DAYS = 14;
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 // intro 시트가 내려가며 홈이 드러나는 시간. 아래 transition duration 과 맞춘다.
 const INTRO_SLIDE_MS = 300;

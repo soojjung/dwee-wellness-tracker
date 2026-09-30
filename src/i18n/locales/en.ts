@@ -706,7 +706,7 @@ export const en = {
         diary: 'Diary view',
       },
       eventSheet: {
-        title: 'Event & condition',
+        title: 'Event',
         titlePlaceholder: 'Event title',
         memoPlaceholder: 'Note',
         startDate: 'Start date',
@@ -737,6 +737,12 @@ export const en = {
       editSheet: {
         title: 'Edit event',
         save: 'Save',
+      },
+      periodRecordSheet: {
+        title: 'Log period',
+        closeAria: 'Close',
+        saveAria: 'Save',
+        periodDaysLabel: 'Period days',
       },
       yearMonthPicker: {
         title: 'Select date',

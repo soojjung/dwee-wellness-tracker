@@ -53,7 +53,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
 
   const conditionByDate = useConditionStore((s) => s.byDate);
   const hydrateConditionRange = useConditionStore((s) => s.hydrateRange);
-  const upsertCondition = useConditionStore((s) => s.upsert);
 
   const settings = useSettingsStore((s) => s.settings);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
@@ -165,11 +164,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       memo: input.memo,
       categoryId: input.categoryId,
     });
-    if (!log) return false;
-    if (input.condition) {
-      await upsertCondition({ date: input.startDate, ...input.condition });
-    }
-    return true;
+    return !!log;
   }
 
   async function handleUpdateEvent(id: string, input: EventFormInput): Promise<boolean> {
@@ -180,11 +175,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
       memo: input.memo,
       categoryId: input.categoryId,
     });
-    if (!next) return false;
-    if (input.condition) {
-      await upsertCondition({ date: input.startDate, ...input.condition });
-    }
-    return true;
+    return !!next;
   }
 
   async function handleAddCategory(input: CategoryFormInput): Promise<boolean> {
@@ -380,7 +371,6 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           suspended={categorySheetOpen}
           categories={categories}
           initial={activeEvent}
-          initialCondition={conditionByDate[activeEvent.startDate] ?? null}
           defaultDate={activeEvent.startDate}
           onClose={() => setSheet({ kind: 'eventDetail', eventId: activeEvent.id })}
           onSubmit={(input) => handleUpdateEvent(activeEvent.id, input)}

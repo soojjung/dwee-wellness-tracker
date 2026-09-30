@@ -701,7 +701,7 @@ export const ko: Dictionary = {
         diary: '다이어리 보기',
       },
       eventSheet: {
-        title: '일정 및 기록',
+        title: '일정',
         titlePlaceholder: '일정 제목',
         memoPlaceholder: '메모',
         startDate: '시작 날짜',
@@ -732,6 +732,12 @@ export const ko: Dictionary = {
       editSheet: {
         title: '일정 편집',
         save: '완료',
+      },
+      periodRecordSheet: {
+        title: '생리 기록',
+        closeAria: '닫기',
+        saveAria: '저장',
+        periodDaysLabel: '생리일',
       },
       yearMonthPicker: {
         title: '날짜 선택',

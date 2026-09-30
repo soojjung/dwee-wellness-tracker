@@ -13,19 +13,6 @@ import {
 import type { Mood, Energy, Pain, Bloating, Appetite, Skin, Sleep, Exercise } from '@/types';
 import { ConditionRow } from '@/components/log/ConditionRow';
 
-/** Subset of `DailyConditionLog` this sheet can set — only present when
- * at least one field was picked (see `EventFormSheet`). */
-export interface ConditionSelection {
-  mood?: Mood;
-  energy?: Energy;
-  pain?: Pain;
-  bloating?: Bloating;
-  appetite?: Appetite;
-  skin?: Skin;
-  sleep?: Sleep;
-  exercise?: Exercise;
-}
-
 interface EventConditionSectionProps {
   mood: Mood | null;
   energy: Energy | null;
