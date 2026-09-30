@@ -144,7 +144,7 @@ export function HomeScreen() {
     <PageContainer className="gap-0 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <HomeHero />
 
-      <div className="flex flex-col gap-4 pt-8">
+      <div className="flex flex-col gap-4 pt-7">
         <TodayDateHeading date={today} onCalendarClick={() => setPeriodDialogOpen(true)} />
 
         <WeekStrip
