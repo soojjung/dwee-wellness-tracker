@@ -113,7 +113,21 @@ export function PeriodSelectSheet({
 
   const recordedSet = useMemo(() => collectRecordedDates(drafts), [drafts]);
 
-  const changes = useMemo(() => computeChanges(periods, drafts), [periods, drafts]);
+  // 시작일 하나만 누르고 저장하는 경우가 흔하다 (오늘 시작 등). 버리지 않고, 시작일만 입력했을
+  // 때의 기존 정책(평균 생리 기간만큼)으로 기간을 채워 저장한다 — intro 와 default 공통.
+  const finalDrafts = useMemo(
+    () =>
+      pendingStart
+        ? addRange(
+            drafts,
+            pendingStart,
+            defaultPeriodEndDate(pendingStart, averagePeriodLength),
+            'pending',
+          )
+        : drafts,
+    [drafts, pendingStart, averagePeriodLength],
+  );
+  const changes = useMemo(() => computeChanges(periods, finalDrafts), [periods, finalDrafts]);
   const dirty = changes.length > 0;
 
   useEffect(() => {
@@ -195,19 +209,9 @@ export function PeriodSelectSheet({
   async function handleStart() {
     if (submitting) return;
     setSubmitting(true);
-    // 시작일 하나만 누르고 바로 시작하는 경우가 흔하다. 버리지 않고, 시작일만 입력했을
-    // 때의 기존 정책(평균 생리 기간만큼)으로 기간을 채워 저장한다.
-    const finalDrafts = pendingStart
-      ? addRange(
-          drafts,
-          pendingStart,
-          defaultPeriodEndDate(pendingStart, averagePeriodLength),
-          nextNewKey(),
-        )
-      : drafts;
     try {
       await slideOut();
-      await onSubmit(computeChanges(periods, finalDrafts));
+      await onSubmit(changes);
     } finally {
       setSubmitting(false);
     }
