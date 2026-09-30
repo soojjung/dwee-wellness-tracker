@@ -56,6 +56,7 @@ describe('layoutWeekSegments', () => {
         endCol: 2,
         continuesBefore: false,
         continuesAfter: false,
+        outOfMonth: false,
       },
     ]);
   });
@@ -71,6 +72,7 @@ describe('layoutWeekSegments', () => {
         endCol: 4,
         continuesBefore: false,
         continuesAfter: false,
+        outOfMonth: false,
       },
     ]);
   });
@@ -86,6 +88,7 @@ describe('layoutWeekSegments', () => {
         endCol: 2,
         continuesBefore: true,
         continuesAfter: false,
+        outOfMonth: false,
       },
     ]);
   });
@@ -101,11 +104,12 @@ describe('layoutWeekSegments', () => {
         endCol: 6,
         continuesBefore: false,
         continuesAfter: true,
+        outOfMonth: false,
       },
     ]);
   });
 
-  it('omits an event that only touches out-of-month cells', () => {
+  it('draws an event that only touches out-of-month cells as a dimmed bar', () => {
     const rowWithLeadingOutOfMonth: WeekCellLike[] = [
       cell('2026-02-27', false),
       cell('2026-02-28', false),
@@ -116,10 +120,20 @@ describe('layoutWeekSegments', () => {
       cell('2026-03-05'),
     ];
     const e = makeEvent('a', '2026-02-27', '2026-02-28');
-    expect(layoutWeekSegments([e], rowWithLeadingOutOfMonth)).toEqual([]);
+    expect(layoutWeekSegments([e], rowWithLeadingOutOfMonth)).toEqual([
+      {
+        event: e,
+        lane: 0,
+        startCol: 0,
+        endCol: 1,
+        continuesBefore: false,
+        continuesAfter: false,
+        outOfMonth: true,
+      },
+    ]);
   });
 
-  it('clips the visible span to in-month cells when the event bleeds into a leading out-of-month cell', () => {
+  it('splits an event at a leading month boundary into a dimmed and an in-month piece on one lane', () => {
     const rowWithLeadingOutOfMonth: WeekCellLike[] = [
       cell('2026-02-27', false),
       cell('2026-02-28', false),
@@ -135,15 +149,25 @@ describe('layoutWeekSegments', () => {
       {
         event: e,
         lane: 0,
+        startCol: 0,
+        endCol: 1,
+        continuesBefore: false,
+        continuesAfter: true,
+        outOfMonth: true,
+      },
+      {
+        event: e,
+        lane: 0,
         startCol: 2,
         endCol: 3,
         continuesBefore: true,
         continuesAfter: false,
+        outOfMonth: false,
       },
     ]);
   });
 
-  it('clips the visible span to in-month cells when the event bleeds into a trailing out-of-month cell', () => {
+  it('splits an event at a trailing month boundary and keeps continuesAfter past the row', () => {
     const rowWithTrailingOutOfMonth: WeekCellLike[] = [
       cell('2026-03-01'),
       cell('2026-03-02'),
@@ -163,7 +187,37 @@ describe('layoutWeekSegments', () => {
         endCol: 4,
         continuesBefore: false,
         continuesAfter: true,
+        outOfMonth: false,
       },
+      {
+        event: e,
+        lane: 0,
+        startCol: 5,
+        endCol: 6,
+        continuesBefore: true,
+        continuesAfter: true,
+        outOfMonth: true,
+      },
+    ]);
+  });
+
+  it('lets an out-of-month event take a lane so an overlapping in-month event stacks under it', () => {
+    const rowWithLeadingOutOfMonth: WeekCellLike[] = [
+      cell('2026-02-27', false),
+      cell('2026-02-28', false),
+      cell('2026-03-01'),
+      cell('2026-03-02'),
+      cell('2026-03-03'),
+      cell('2026-03-04'),
+      cell('2026-03-05'),
+    ];
+    const a = makeEvent('a', '2026-02-28', '2026-03-01');
+    const b = makeEvent('b', '2026-03-01', '2026-03-01');
+    const result = layoutWeekSegments([a, b], rowWithLeadingOutOfMonth);
+    expect(result.map((s) => ({ id: s.event.id, lane: s.lane, out: s.outOfMonth }))).toEqual([
+      { id: 'a', lane: 0, out: true },
+      { id: 'a', lane: 0, out: false },
+      { id: 'b', lane: 1, out: false },
     ]);
   });
 

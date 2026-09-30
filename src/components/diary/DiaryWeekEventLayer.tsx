@@ -28,7 +28,7 @@ export function DiaryWeekEventLayer({
         const p = paletteFor(cat?.colorId ?? 'gray');
         return (
           <button
-            key={seg.event.id}
+            key={`${seg.event.id}-${seg.startCol}`}
             type="button"
             onClick={(e) => {
               e.stopPropagation();
@@ -42,7 +42,8 @@ export function DiaryWeekEventLayer({
             className={
               'pointer-events-auto block min-w-0 truncate px-1 py-[2px] text-left text-[12px] font-medium leading-none text-brand-gray900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink800 ' +
               (seg.continuesBefore ? '' : 'ml-1 rounded-l ') +
-              (seg.continuesAfter ? '' : 'mr-1 rounded-r')
+              (seg.continuesAfter ? '' : 'mr-1 rounded-r ') +
+              (seg.outOfMonth ? 'opacity-40' : '')
             }
           >
             {seg.event.title}
