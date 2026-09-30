@@ -786,6 +786,7 @@ export const ko: Dictionary = {
           title: '선택한 스티커를\n삭제하시겠어요?',
           cancel: '취소',
           confirm: '삭제',
+          deleting: '삭제 중…',
         },
         discardDialog: {
           title: '변경사항을 버릴까요?',

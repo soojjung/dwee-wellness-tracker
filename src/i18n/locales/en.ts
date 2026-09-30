@@ -791,6 +791,7 @@ export const en = {
           title: 'Delete the selected stickers?',
           cancel: 'Cancel',
           confirm: 'Delete',
+          deleting: 'Deleting…',
         },
         discardDialog: {
           title: 'Discard your changes?',

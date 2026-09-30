@@ -235,10 +235,9 @@ export function DiaryCustomizeScreen() {
     // the sticker rows and their storage blobs are removed via the repo,
     // and any pending draft placement that references a just-deleted
     // sticker is dropped from local state so it can't reference a phantom.
+    // 한 장씩 기다리면 원격 저장소 삭제가 장 수만큼 쌓여 팝업이 멈춘 것처럼 보인다 (R5-4).
     const doomed = new Set(ids);
-    for (const id of ids) {
-      await removeSticker(id);
-    }
+    await Promise.all(ids.map((id) => removeSticker(id)));
     setDraft((prev) => prev.filter((p) => !doomed.has(p.stickerId)));
     if (selectedId && draft.some((p) => p.id === selectedId && doomed.has(p.stickerId))) {
       setSelectedId(null);
