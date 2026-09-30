@@ -153,7 +153,7 @@ Result: **13+** (172 countries/regions) · 12+ in Korea and Vietnam · A12 in Br
 #### 9. Pricing and availability (2026-10-01)
 
 - Countries: **United States · Canada · South Korea**. The policy and terms are written against Korea's PIPA and GDPR etc. haven't been reviewed, so launch starts with these three. Keep mainland China out when expanding (ICP filing required).
-- "Make available in all future App Store countries" should be off (expand by choosing countries explicitly).
+- "Make available in all future App Store countries": off (expand by choosing countries explicitly).
 - Price: Free (no in-app purchases or subscriptions). Tax category: App Store software.
-- Apple Silicon Mac · Vision Pro: recommended off — deep-link sign-in, camera, and portrait lock are untested there.
+- Apple Silicon Mac · Vision Pro: both off — deep-link sign-in, camera, and portrait lock are untested there. Revisit after testing on those devices.
 
