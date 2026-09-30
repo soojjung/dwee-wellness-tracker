@@ -733,6 +733,18 @@ export const ko: Dictionary = {
         title: '일정 편집',
         save: '완료',
       },
+      periodEditSheet: {
+        title: '생리 기간 편집',
+        closeAria: '닫기',
+        saveAria: '저장',
+        startDate: '시작일',
+        endDate: '종료일',
+        delete: '생리 기록 삭제',
+        deleteConfirm: '이 생리 기록을 삭제할까요?',
+        cancel: '취소',
+        confirm: '삭제',
+        editRowAria: '이 생리 기록 편집',
+      },
       periodRecordSheet: {
         title: '생리 기록',
         closeAria: '닫기',

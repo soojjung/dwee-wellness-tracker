@@ -738,6 +738,18 @@ export const en = {
         title: 'Edit event',
         save: 'Save',
       },
+      periodEditSheet: {
+        title: 'Edit period',
+        closeAria: 'Close',
+        saveAria: 'Save',
+        startDate: 'Start date',
+        endDate: 'End date',
+        delete: 'Delete period',
+        deleteConfirm: 'Delete this period record?',
+        cancel: 'Cancel',
+        confirm: 'Delete',
+        editRowAria: 'Edit this period',
+      },
       periodRecordSheet: {
         title: 'Log period',
         closeAria: 'Close',

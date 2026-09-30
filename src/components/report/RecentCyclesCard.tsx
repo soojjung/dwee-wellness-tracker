@@ -9,6 +9,8 @@ import { isCountableCycleGap } from '@/domain/cycle/cycleGap';
 interface RecentCyclesCardProps {
   periods: PeriodLog[];
   maxRows?: number;
+  /** 줄을 누르면 그 기록의 생리 기간 편집 시트를 연다 (R5-7). */
+  onSelectPeriod?: (id: string) => void;
 }
 
 interface Row {
@@ -21,7 +23,7 @@ interface Row {
   cycleExcluded: boolean;
 }
 
-export function RecentCyclesCard({ periods, maxRows = 6 }: RecentCyclesCardProps) {
+export function RecentCyclesCard({ periods, maxRows = 6, onSelectPeriod }: RecentCyclesCardProps) {
   const t = useT();
   const locale = useSettingsStore((s) => s.settings.locale);
 
@@ -69,6 +71,8 @@ export function RecentCyclesCard({ periods, maxRows = 6 }: RecentCyclesCardProps
               key={r.id}
               className="h-10 text-base font-medium tabular-nums text-brand-gray900"
               cellBg="bg-brand-gray200"
+              onActivate={onSelectPeriod ? () => onSelectPeriod(r.id) : undefined}
+              ariaLabel={t.report.diary.periodEditSheet.editRowAria}
               cells={[
                 formatCompactDate(r.startDate, locale),
                 r.endDate ? (
@@ -87,9 +91,7 @@ export function RecentCyclesCard({ periods, maxRows = 6 }: RecentCyclesCardProps
         </tbody>
       </table>
       {rows.some((r) => r.cycleExcluded) ? (
-        <p className="text-xs leading-normal text-brand-gray600">
-          {t.report.recentExcludedNote}
-        </p>
+        <p className="text-xs leading-normal text-brand-gray600">{t.report.recentExcludedNote}</p>
       ) : null}
     </section>
   );
@@ -103,16 +105,35 @@ function CycleRow({
   className,
   cellBg = '',
   as: Cell = 'td',
+  onActivate,
+  ariaLabel,
 }: {
   cells: readonly ReactNode[];
   className: string;
   /** 둥근 줄 배경. tr 에 칠하면 끝 칸의 rounded 가 먹지 않아서 칸마다 칠한다. */
   cellBg?: string;
   as?: 'td' | 'th';
+  onActivate?: () => void;
+  ariaLabel?: string;
 }) {
   const edge = `w-px p-0 ${cellBg}`;
   return (
-    <tr className={className}>
+    <tr
+      className={onActivate ? `${className} cursor-pointer active:opacity-70` : className}
+      onClick={onActivate}
+      tabIndex={onActivate ? 0 : undefined}
+      aria-label={onActivate ? ariaLabel : undefined}
+      onKeyDown={
+        onActivate
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onActivate();
+              }
+            }
+          : undefined
+      }
+    >
       <td aria-hidden className={`${edge} rounded-l-lg`}>
         <div className="w-[15px]" />
       </td>

@@ -1,6 +1,6 @@
 # periodEdit — Unit test cases
 
-Last run: 2026-09-21 — 50/50 passed
+Last run: 2026-09-30 — 54/54 passed
 
 | # | 설명 (`it` title) | 입력 | 기대 결과 | 결과 |
 |---|---|---|---|---|
@@ -54,6 +54,10 @@ Last run: 2026-09-21 — 50/50 passed
 | 48 | collects every day of a multi-day draft inclusive of both endpoints | `drafts=['a':05-01~05-03]` | `{'05-01','05-02','05-03'}` | ✅ |
 | 49 | merges dates from multiple non-overlapping drafts | `drafts=['a':05-01~05-02,'b':06-01~06-02]` | union of both ranges | ✅ |
 | 50 | spans a month boundary correctly | `drafts=['a':01-30~02-02]` | `{'01-30','01-31','02-01','02-02'}` | ✅ |
+| 51 | replaceDraftRange: moves one existing period and reports a single update | `a:05-01~05, b:06-01~05`, b → 06-03~06-08 | `[update b 06-03~06-08]` | ✅ |
+| 52 | replaceDraftRange: swaps reversed bounds | a → 05-09, 05-07 | `a:05-07~05-09` | ✅ |
+| 53 | replaceDraftRange: merges into a neighbour it now overlaps, keeping the earlier record | `a:05-01~05, b:05-10~14`, b → 05-04~05-12 | `[update a 05-01~05-12, remove b]` | ✅ |
+| 54 | replaceDraftRange: reports no change when the range is unchanged | a → same | `[]` | ✅ |
 
 ---
 

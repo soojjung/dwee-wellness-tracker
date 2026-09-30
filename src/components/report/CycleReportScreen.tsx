@@ -6,6 +6,7 @@ import type { LogView } from '@/components/diary/LogViewToggle';
 import { ReportHeader } from './ReportHeader';
 import { CycleReportCard } from './CycleReportCard';
 import { RecentCyclesCard } from './RecentCyclesCard';
+import { PeriodEditSheet } from './PeriodEditSheet';
 import { CycleReportEmpty } from './CycleReportEmpty';
 import { PeriodRecordSheet } from './PeriodRecordSheet';
 
@@ -22,6 +23,7 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
   const hydrate = usePeriodStore((s) => s.hydrate);
   const today = todayISO();
   const [entryOpen, setEntryOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hydrated) hydrate();
@@ -38,6 +40,7 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now.getFullYear(), now.getMonth()]);
 
+  const editingPeriod = editingId ? (periods.find((p) => p.id === editingId) ?? null) : null;
   const showFullEmpty = hydrated && periods.length === 0;
 
   return (
@@ -45,10 +48,7 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
       {/* Match diary: fixed gray200 backdrop under the whole viewport so
           the header + gutter share the same tinted background regardless
           of content height, and content sits above via z-10. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-brand-gray200"
-      />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-brand-gray200" />
       <div className="relative z-10">
         <ReportHeader
           year={now.getFullYear()}
@@ -61,7 +61,7 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
         ) : (
           <div className="flex flex-col gap-4 px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-4">
             <CycleReportCard periods={periods} months={months} />
-            <RecentCyclesCard periods={periods} />
+            <RecentCyclesCard periods={periods} onSelectPeriod={setEditingId} />
           </div>
         )}
       </div>
@@ -69,6 +69,14 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
         // 홈의 생리 아이콘은 여전히 PeriodSelectSheet(수정·삭제 포함)를 연다. 이 아이콘은
         // 새 생리 구간 추가 + 오늘 컨디션만 다루는 전용 시트로 분리했다 (R5-6).
         <PeriodRecordSheet today={today} periods={periods} onClose={() => setEntryOpen(false)} />
+      ) : null}
+      {editingPeriod ? (
+        <PeriodEditSheet
+          today={today}
+          period={editingPeriod}
+          periods={periods}
+          onClose={() => setEditingId(null)}
+        />
       ) : null}
     </>
   );
