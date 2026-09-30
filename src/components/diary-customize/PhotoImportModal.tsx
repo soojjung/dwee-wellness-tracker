@@ -133,9 +133,11 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
         {/* 하단 142px 는 TestFlight R3-7 디자인 요청 — 홈 인디케이터 영역(최대 34px)보다
             넉넉해서 safe-area 를 따로 더하지 않는다. */}
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 pb-[142px] pt-5">
+          {/* contain: 누끼 API 에는 원본 전체가 가므로 미리보기도 자르지 않는다 —
+              다음 스캔 화면(StickerScanScreen)과 보이는 범위가 같아야 한다. */}
           <div className="h-[343px] w-full shrink-0 overflow-hidden rounded-2xl bg-brand-gray200">
             {previewUrl ? (
-              <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+              <img src={previewUrl} alt="" className="h-full w-full object-contain" />
             ) : null}
           </div>
 

@@ -69,7 +69,7 @@ export function RecentCyclesCard({ periods, maxRows = 6, onSelectPeriod }: Recen
           {rows.map((r) => (
             <CycleRow
               key={r.id}
-              className="h-10 text-base font-medium tabular-nums text-brand-gray900"
+              className="h-11 text-base font-medium tabular-nums text-brand-gray900"
               cellBg="bg-brand-gray200"
               onActivate={onSelectPeriod ? () => onSelectPeriod(r.id) : undefined}
               ariaLabel={t.report.diary.periodEditSheet.editRowAria}

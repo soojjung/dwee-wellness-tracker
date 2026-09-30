@@ -10,7 +10,9 @@ export interface WeekCellLike {
  * One continuous bar inside a single calendar row. `startCol`/`endCol` are
  * inclusive column indices into the row's cells. `continuesBefore`/`After`
  * tell the renderer to leave that edge square because the event carries on
- * into a neighbouring row (or an out-of-month cell that isn't drawn).
+ * into a neighbouring row or the other month's piece of the same bar.
+ * `outOfMonth` marks a bar drawn over the neighbouring month's cells, which
+ * the renderer dims like those cells' day numbers.
  */
 export interface WeekSegment {
   event: EventLog;
@@ -19,6 +21,7 @@ export interface WeekSegment {
   endCol: number;
   continuesBefore: boolean;
   continuesAfter: boolean;
+  outOfMonth: boolean;
 }
 
 function compareForLanes(a: EventLog, b: EventLog): number {
@@ -33,8 +36,10 @@ function compareForLanes(a: EventLog, b: EventLog): number {
  * Lay out the events that touch one calendar row (7 cells) as continuous
  * horizontal bars. Each event gets the lowest lane that is free across every
  * column it covers, so a multi-day event stays on one line instead of
- * breaking into per-day chips. Only in-month cells are drawn; events whose
- * visible span is empty or whose lane exceeds `maxLanes` are omitted.
+ * breaking into per-day chips. Neighbouring-month cells are drawn too; an
+ * event crossing the month boundary keeps one lane but is split there so each
+ * piece can be dimmed (or not) on its own. Events whose lane exceeds
+ * `maxLanes` are omitted.
  */
 export function layoutWeekSegments(
   events: readonly EventLog[],
@@ -57,8 +62,7 @@ export function layoutWeekSegments(
     let endCol = -1;
     for (let col = 0; col < cells.length; col += 1) {
       const cell = cells[col]!;
-      const covered =
-        cell.inCurrentMonth && cell.date >= event.startDate && cell.date <= event.endDate;
+      const covered = cell.date >= event.startDate && cell.date <= event.endDate;
       if (!covered) continue;
       if (startCol === -1) startCol = col;
       endCol = col;
@@ -74,14 +78,22 @@ export function layoutWeekSegments(
     const row = (occupied[lane] ??= new Array<boolean>(cells.length).fill(false));
     for (let col = startCol; col <= endCol; col += 1) row[col] = true;
 
-    segments.push({
-      event,
-      lane,
-      startCol,
-      endCol,
-      continuesBefore: event.startDate < cells[startCol]!.date,
-      continuesAfter: event.endDate > cells[endCol]!.date,
-    });
+    let pieceStart = startCol;
+    for (let col = startCol; col <= endCol; col += 1) {
+      const outOfMonth = !cells[col]!.inCurrentMonth;
+      const pieceEnds = col === endCol || !cells[col + 1]!.inCurrentMonth !== outOfMonth;
+      if (!pieceEnds) continue;
+      segments.push({
+        event,
+        lane,
+        startCol: pieceStart,
+        endCol: col,
+        continuesBefore: event.startDate < cells[pieceStart]!.date,
+        continuesAfter: event.endDate > cells[col]!.date,
+        outOfMonth,
+      });
+      pieceStart = col + 1;
+    }
   }
 
   return segments;

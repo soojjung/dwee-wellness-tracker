@@ -7,9 +7,6 @@ import { cn } from '@/lib/cn';
 import { removeStickerBackground } from '@/data/services/stickerCutoutService';
 import type { StickerCutoutError, SupportedImageMediaType } from '@/types';
 
-// Figma 256:17988 (013_3) 의 사진 상자 358×544.
-const MIN_SCAN_FRAME_ASPECT = 358 / 544;
-
 interface StickerScanScreenProps {
   /** Captured photo (JPEG/PNG/WebP) sent to the cutout API. */
   blob: Blob;
@@ -63,13 +60,10 @@ export function StickerScanScreen({
     return () => observer.disconnect();
   }, []);
 
-  // 카메라 촬영본은 뷰파인더(화면) 비율이라 세로로 아주 길다. 그대로 두면 가늘고 긴
-  // 띠로 보이므로, 시안 013_3 의 사진 상자(358×544)보다 좁은 사진은 그 비율의 상자에
-  // 채워서(cover) 보여 준다. 그보다 넓은 사진은 원래 비율 그대로다. 보이는 모양만
-  // 그렇고, 누끼 API 에는 원본 전체가 간다.
+  // 사진은 원래 비율 그대로, 자르지 않는다. 누끼 API 에는 원본 전체가 가므로 여기서
+  // 잘라 보이면 숨은 부분까지 결과에 들어가 보여 준 것과 달라진다(R6-5). 세로로 긴
+  // 카메라 촬영본·스크린샷은 좁고 길게 보이는 것을 감수한다.
   const [naturalAspect, setNaturalAspect] = useState<number | null>(null);
-  const frameAspect =
-    naturalAspect === null ? null : Math.max(naturalAspect, MIN_SCAN_FRAME_ASPECT);
 
   const url = useObjectUrl(blob);
 
@@ -118,11 +112,11 @@ export function StickerScanScreen({
           photo, error card, and progress footer share the same column
           width on desktop viewports. */}
       <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
-        {/* 사진을 영역 바닥에 붙여 아래 문구와의 간격이 pt-6(24px) 로 고정되게
-            한다. 가운데 정렬이면 짧은 사진일수록 문구와 멀어져 떠 보였다. */}
+        {/* 사진 비율과 상관없이 영역 가운데에 둔다(R6-5). 바닥 정렬은 가로 사진만
+            아래로 쏠려 사진마다 위치가 달라 보였다. */}
         <div
           ref={areaRef}
-          className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden"
+          className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden"
         >
           {url ? (
             // Shrink-to-fit wrapper: its box equals the rendered photo, so
@@ -130,11 +124,14 @@ export function StickerScanScreen({
             <div
               className={cn(
                 'relative min-w-0 max-w-full overflow-hidden',
-                frameAspect === null && 'invisible',
+                naturalAspect === null && 'invisible',
               )}
               style={
-                frameAspect !== null && areaHeight !== undefined
-                  ? { aspectRatio: frameAspect, width: `min(100%, ${areaHeight * frameAspect}px)` }
+                naturalAspect !== null && areaHeight !== undefined
+                  ? {
+                      aspectRatio: naturalAspect,
+                      width: `min(100%, ${areaHeight * naturalAspect}px)`,
+                    }
                   : undefined
               }
             >
@@ -147,11 +144,11 @@ export function StickerScanScreen({
                   if (img.naturalHeight > 0) setNaturalAspect(img.naturalWidth / img.naturalHeight);
                 }}
                 className={
-                  frameAspect === null
+                  naturalAspect === null
                     ? 'block h-auto w-auto max-w-full object-contain'
-                    : 'block h-full w-full object-cover'
+                    : 'block h-full w-full'
                 }
-                style={frameAspect === null ? { maxHeight: areaHeight } : undefined}
+                style={naturalAspect === null ? { maxHeight: areaHeight } : undefined}
               />
               {!error ? <ScanSweep /> : null}
             </div>

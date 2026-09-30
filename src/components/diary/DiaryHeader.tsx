@@ -27,7 +27,9 @@ export function DiaryHeader({
   const locale = useSettingsStore((s) => s.settings.locale);
   const monthLabel = formatMonthLabel(new Date(year, monthIndex, 1), locale);
 
-  // 하단 12px: 스크롤로 본문이 헤더 밑을 지날 때 텍스트가 헤더에 바짝 붙지 않게 (Figma).
+  // 하단 12px 가 월 줄과 카드 사이 간격 전부다 (본문은 pt 없음). 스크롤로 본문이 헤더 밑을
+  // 지날 때 텍스트가 헤더에 바짝 붙지 않게 하는 몫도 한다. 꾸미기 화면(DiaryCustomizeScreen)의
+  // 카드 위치와 1px 도 달라선 안 된다.
   return (
     <div className="sticky top-0 z-10 flex flex-col bg-brand-gray200/95 pb-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-sm">
       <div className="flex items-center justify-between px-4 py-2.5">
