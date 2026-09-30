@@ -149,3 +149,11 @@ Result: **13+** (172 countries/regions) · 12+ in Korea and Vietnam · A12 in Br
 | 7 Additional info | Override · Age suitability URL | Not applicable · `https://dwee-neon.vercel.app/legal/terms/?lang=en` (Terms Art. 3 ⑤, 14+) |
 
 - Revisit steps 1 and 6 if features change (community, shared feed, ads, purchases).
+
+#### 9. Pricing and availability (2026-10-01)
+
+- Countries: **United States · Canada · South Korea**. The policy and terms are written against Korea's PIPA and GDPR etc. haven't been reviewed, so launch starts with these three. Keep mainland China out when expanding (ICP filing required).
+- "Make available in all future App Store countries" should be off (expand by choosing countries explicitly).
+- Price: Free (no in-app purchases or subscriptions). Tax category: App Store software.
+- Apple Silicon Mac · Vision Pro: recommended off — deep-link sign-in, camera, and portrait lock are untested there.
+
