@@ -33,10 +33,18 @@ dwee는 사용자의 생리 주기를 4단계로 구분하고 rule-based 로직�
 - **생리학적 근거**: 황체에서 프로게스테론 분비. 하강 시 PMS(부종, 감정 기복, 식욕 변화, 피로) 가능.
 - **경계**: `dayInCycle > ovulationDay + 1 && dayInCycle < averageCycleLength`
 
+### 황체기 (Grace Window) — 생리 예상일 경과 후 기록 없음
+
+- **범위**: 예상 주기 일자(`dayInCycle >= cycle`)부터 최대 14일까지 ('luteal' 유지)
+- **생리학적 근거**: 황체기 길이는 대략 14일. 생리가 늦어도 이 기간 내에 시작할 확률이 높음.
+- **신뢰도**: confidence = 'low' (실제 생리 기록 없음을 반영)
+- **경계**: `dayInCycle >= cycle && dayInCycle < cycle + 14` → 'luteal'
+- **이유**: 생리 기록 없이 'menstrual'로 단정하지 않기 위한 안전장치. 대신 예상 기간 내 'luteal'을 유지하여 UI(음식·활동 제안 등)가 합리적인 내용을 표시하도록 함.
+
 ### Unknown
 
-- **조건**: 데이터 부족 또는 계산 불가능 상태
-- **반환**: `{ phase: 'unknown', confidence: 'unknown' }`
+- **조건**: 데이터 부족 또는 계산 불가능 상태 (dayInCycle >= cycle + 14)
+- **반환**: `{ phase: 'unknown', confidence: 'unknown' | 'low' }`
 
 ## Phase 판정 알고리즘
 
@@ -68,11 +76,15 @@ FUNCTION currentPhase(today, periods, settings) -> PhaseEstimate
       phase = 'ovulation'
     ELSE IF dayInCycle < cycle_length
       phase = 'luteal'
+    ELSE IF dayInCycle < cycle_length + 14  // grace window for late/due period
+      phase = 'luteal'
     ELSE
       phase = 'unknown'
     END IF
 
-  confidence = periods.length >= 3 ? 'medium' : 'low'
+  // Grace window activates when period is due/late but not yet logged
+  confidenceInGraceWindow = (dayInCycle >= cycle_length AND dayInCycle < cycle_length + 14)
+  confidence = confidenceInGraceWindow ? 'low' : (periods.length >= 3 ? 'medium' : 'low')
 
   RETURN { phase, confidence }
 END FUNCTION
@@ -101,9 +113,9 @@ interface PhaseEstimate {
 
 - `phase`: 현재 추정 단계
 - `confidence`:
-  - `'unknown'`: 데이터 0개 또는 계산 불가능 (dayInCycle < 0 또는 >= cycle)
-  - `'low'`: 데이터 1-2개, 또는 dayInCycle < 0 상태
-  - `'medium'`: 데이터 3개 이상
+  - `'unknown'`: 데이터 0개 또는 dayInCycle < 0
+  - `'low'`: 데이터 1-2개, 또는 grace window 내 (dayInCycle >= cycle && dayInCycle < cycle+14)
+  - `'medium'`: 데이터 3개 이상 (grace window 외)
   - `'high'`: 미사용 (현재 phase 로직에서는 'medium'만 사용)
 
 ## 데이터 부족 시 동작
@@ -163,11 +175,21 @@ phase: 'unknown', confidence: 'low'
 
 ### Case 2: dayInCycle >= cycle (예상 주기 초과)
 
+Grace window 적용으로 변경됨 (2026-09-30):
+
 ```
-phase: 'unknown', confidence: ?
-원인: 다음 생리가 예상 시점을 지나도 없음
-조치: 장기 주기 변동 또는 누락된 기록 가능성
+dayInCycle ∈ [cycle, cycle+14):
+  phase: 'luteal', confidence: 'low'
+  원인: 생리 예상일을 지났으나 새 기록 없음
+  의도: 합리적인 UI 제안 제공 (음식·활동 etc.) + 신뢰도 낮음 신호
+
+dayInCycle >= cycle+14:
+  phase: 'unknown', confidence: 'low'
+  원인: 생리가 매우 늦거나 중간 기록 누락
+  조치: 장기 주기 변동 또는 누락된 기록 가능성
 ```
+
+Grace window 상수: `PERIOD_LATE_GRACE_DAYS = 14` (src/domain/cycle/phase.ts:12)
 
 ### Case 3: 극단적 주기 (< 15 또는 > 60일)
 
@@ -343,6 +365,7 @@ interface CycleStatusResult {
 | 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). `PeriodSelectSheet` + `PeriodSelectSheet`가 소비. | `domain/cycle/periodEdit.ts`, `components/app/PeriodSelectSheet.tsx`             | 완료 |
 | 2026-07-28 | `classifyCycleStatus` 신규 — 7단계 주기 상태 판정. 10개 Vitest 케이스. `/log` 화면 주기리포트(CycleReportScreen)에서 소비.                                                          | `domain/cycle/status.ts`, `components/report/StatusBadge.tsx`                    | 완료 |
 | 2026-09-21 | 유효 간격 기준을 `gaps.length < 2`로 변경. 유효 간격 1개일 때도 `insufficient` 반환(변동폭은 2개 이상 필요). MIN_CYCLES_FOR_STATUS = 2 상수 신규.                                   | `domain/cycle/status.ts`, `.claude/rules/cycle-logic.md`, `docs/domain/cycle.md` | 완료 |
+| 2026-09-30 | Phase 판정 시 grace window 도입. dayInCycle >= cycle 상황에서 최대 14일간 'luteal' 유지 (confidence 'low'). 이후 'unknown'으로 전환 (TestFlight R5-5 피드백). 24개 Vitest 케이스 추가. | `domain/cycle/phase.ts`, `.claude/rules/cycle-logic.md`, `docs/domain/cycle.md`   | 완료 |
 
 ## 향후 계획
 
