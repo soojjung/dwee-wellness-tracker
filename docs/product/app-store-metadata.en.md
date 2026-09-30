@@ -7,6 +7,7 @@
 #### 0. Preview screenshots & icon
 
 - Source bundle from the designer (2026-09-22). The 7 previews live in `public/preview/app-preview-{1..7}.jpg`, the favicon in `public/favicon.png`.
+- **en-US set (2026-09-30):** `docs/product/app-store-preview/en/app-preview-{1..7}.jpg` — exported from Figma 955:4152, 955:4098, 955:4165, 955:4172, 955:4179, 955:4221, 955:4257 in that order (1290 × 2796, JPG, no alpha). Kept under `docs/` so it stays out of the iOS app bundle (everything in `public/` ships with the app). Submit these for the en-US locale; the set above is the Korean one. No en iPad set yet.
 - iPhone set: 7 × **1290 × 2796 (6.7″)**. iPad set: `public/preview/ipad/app-preview-ipad-{1..7}.jpg` (**2048 × 2732**, generated 2026-09-22 — iPhone art at full height, sides extended with the original background color). App icon: `public/app-icon-1024.png` (same wordmark/background as the favicon, rendered at 1024, no alpha).
 
 | Target | Required? | Size (px, portrait) | Status |
