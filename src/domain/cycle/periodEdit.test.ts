@@ -8,6 +8,7 @@ import {
   findContainingDraft,
   findExtendableDraft,
   removeDay,
+  replaceDraftRange,
   toDrafts,
   type DraftPeriod,
 } from './periodEdit';
@@ -381,5 +382,40 @@ describe('collectRecordedDates', () => {
     expect(collectRecordedDates(drafts)).toEqual(
       new Set(['2026-01-30', '2026-01-31', '2026-02-01', '2026-02-02']),
     );
+  });
+});
+
+describe('replaceDraftRange', () => {
+  it('moves one existing period and reports a single update', () => {
+    const periods = [log('a', '2026-05-01', '2026-05-05'), log('b', '2026-06-01', '2026-06-05')];
+    const next = replaceDraftRange(toDrafts(periods), 'b', '2026-06-03', '2026-06-08');
+    expect(computeChanges(periods, next)).toEqual([
+      { kind: 'update', id: 'b', startDate: '2026-06-03', endDate: '2026-06-08' },
+    ]);
+  });
+
+  it('swaps reversed bounds', () => {
+    const next = replaceDraftRange(
+      [draft('a', '2026-05-01', '2026-05-05', 'a')],
+      'a',
+      '2026-05-09',
+      '2026-05-07',
+    );
+    expect(next).toEqual([draft('a', '2026-05-07', '2026-05-09', 'a')]);
+  });
+
+  it('merges into a neighbour it now overlaps, keeping the earlier record', () => {
+    const periods = [log('a', '2026-05-01', '2026-05-05'), log('b', '2026-05-10', '2026-05-14')];
+    const next = replaceDraftRange(toDrafts(periods), 'b', '2026-05-04', '2026-05-12');
+    expect(computeChanges(periods, next)).toEqual([
+      { kind: 'update', id: 'a', startDate: '2026-05-01', endDate: '2026-05-12' },
+      { kind: 'remove', id: 'b' },
+    ]);
+  });
+
+  it('reports no change when the range is unchanged', () => {
+    const periods = [log('a', '2026-05-01', '2026-05-05')];
+    const next = replaceDraftRange(toDrafts(periods), 'a', '2026-05-01', '2026-05-05');
+    expect(computeChanges(periods, next)).toEqual([]);
   });
 });

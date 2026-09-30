@@ -14,6 +14,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   /** Omit entirely for dialogs with no busy state (buttons never disable). */
   submitting?: boolean;
+  /** Confirm-button label while `submitting` — shown with a spinner so a slow action doesn't look frozen. */
+  submittingLabel?: string;
   zIndex?: 40 | 50;
   /** Renders the title with `whitespace-pre-line` for dialogs whose copy embeds line breaks. */
   titlePreLine?: boolean;
@@ -33,6 +35,7 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
   submitting,
+  submittingLabel,
   zIndex = 40,
   titlePreLine = false,
 }: ConfirmDialogProps) {
@@ -63,7 +66,7 @@ export function ConfirmDialog({
           </span>
           <p
             id={titleId}
-            className={`${titlePreLine ? 'whitespace-pre-line' : ''}text-center text-sm font-medium leading-[1.5] text-brand-gray900`}
+            className={`${titlePreLine ? 'whitespace-pre-line ' : ''}text-center text-sm font-medium leading-[1.5] text-brand-gray900`}
           >
             {title}
           </p>
@@ -76,7 +79,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className={`bg-brand-gray300 py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900${hasSubmitting ? 'disabled:opacity-60' : ''}`}
+            className={`bg-brand-gray300 py-3.5 text-sm font-medium text-brand-gray900 transition-colors hover:bg-brand-gray400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gray900${hasSubmitting ? ' disabled:opacity-60' : ''}`}
           >
             {cancelLabel}
           </button>
@@ -84,9 +87,19 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={submitting}
-            className={`bg-brand-gray900 py-3.5 text-sm font-medium text-brand-white transition-colors hover:bg-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-white${hasSubmitting ? 'disabled:opacity-60' : ''}`}
+            className={`bg-brand-gray900 py-3.5 text-sm font-medium text-brand-white transition-colors hover:bg-brand-gray800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-white${hasSubmitting ? ' disabled:opacity-60' : ''}`}
           >
-            {confirmLabel}
+            {submitting && submittingLabel ? (
+              <span className="inline-flex items-center justify-center gap-2" role="status">
+                <span
+                  className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-white/40 border-t-brand-white"
+                  aria-hidden
+                />
+                {submittingLabel}
+              </span>
+            ) : (
+              confirmLabel
+            )}
           </button>
         </div>
       </div>

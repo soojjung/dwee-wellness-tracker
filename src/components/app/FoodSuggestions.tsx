@@ -5,9 +5,21 @@ import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import type { CyclePhase } from '@/domain/cycle/types';
 import { FOOD_BOWL_IMAGE, FOOD_LABEL_POSITION, foodVisual } from '@/data/homeImagery';
+import { FOOD_ARTICLE_IDS } from '@/content/foods';
 
 interface FoodSuggestionsProps {
   phase: CyclePhase;
+}
+
+// 상세 아티클이 있는 음식만 검은 칩(링크). 없는 음식은 눌러도 반응이 없으니 누를 수 있어 보이지
+// 않게 흰 캡션 칩으로 둔다 (R5-5 — unknown 단계의 일반 음식).
+const LINK_CHIP =
+  'rounded-full bg-brand-gray900 px-3 py-1.5 text-xs font-medium text-brand-white shadow-md';
+const CAPTION_CHIP =
+  'rounded-full border border-brand-gray300 bg-brand-white/90 px-3 py-1.5 text-xs font-medium text-brand-gray800';
+
+function hasArticle(id: string): boolean {
+  return FOOD_ARTICLE_IDS.includes(id);
 }
 
 // 사진 원본은 1020×871 근처 — 340px 폭에 맞춰 세로를 잡는다.
@@ -54,15 +66,37 @@ function PhotoBowl({ image, items }: { image: string; items: Items }) {
           const pos = FOOD_LABEL_POSITION[item.id];
           if (!pos) return null;
           const visual = foodVisual(item.id);
+          const content = (
+            <>
+              <span>{item.name}</span>
+              <span aria-hidden>{visual.emoji}</span>
+            </>
+          );
+          if (!hasArticle(item.id)) {
+            return (
+              <span
+                key={item.id}
+                className={cn(
+                  'absolute z-10 inline-flex items-center gap-1 whitespace-nowrap',
+                  CAPTION_CHIP,
+                )}
+                style={{ left: pos.left, top: pos.top }}
+              >
+                {content}
+              </span>
+            );
+          }
           return (
             <Link
               key={item.id}
               href={`/foods/${item.id}`}
-              className="absolute z-10 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-brand-gray900 px-3 py-1.5 text-xs font-medium text-brand-white shadow-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200 focus-visible:ring-offset-2"
+              className={cn(
+                'absolute z-10 inline-flex items-center gap-1 whitespace-nowrap transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink200 focus-visible:ring-offset-2',
+                LINK_CHIP,
+              )}
               style={{ left: pos.left, top: pos.top }}
             >
-              <span>{item.name}</span>
-              <span aria-hidden>{visual.emoji}</span>
+              {content}
             </Link>
           );
         })}
@@ -115,7 +149,10 @@ function EmojiBowl({ items }: { items: Items }) {
         return (
           <span
             key={`label-${item.id}`}
-            className="absolute z-20 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-brand-gray900 px-3 py-1.5 text-xs font-medium text-brand-white shadow-md"
+            className={cn(
+              'absolute z-20 inline-flex items-center gap-1 whitespace-nowrap',
+              CAPTION_CHIP,
+            )}
             style={{ top: pos.top, left: pos.left }}
           >
             <span>{item.name}</span>

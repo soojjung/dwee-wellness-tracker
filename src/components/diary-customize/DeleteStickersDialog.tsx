@@ -30,6 +30,7 @@ export function DeleteStickersDialog({
       onCancel={onCancel}
       onConfirm={onConfirm}
       submitting={submitting}
+      submittingLabel={d.deleting}
       zIndex={50}
     />
   );

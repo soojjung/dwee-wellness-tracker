@@ -14,6 +14,7 @@ import { CheckIcon } from '@/components/ui/icons/CheckIcon';
 import type { Locale, PeriodLog } from '@/types';
 import {
   EXTEND_GAP_DAYS,
+  FUTURE_WINDOW_DAYS,
   addRange,
   collectRecordedDates,
   computeChanges,
@@ -47,9 +48,6 @@ interface PeriodSelectSheetProps {
 const DEFAULT_MONTHS_BACK = 12;
 const MORE_MONTHS_STEP = 12;
 const DEFAULT_MONTHS_FORWARD = 1;
-// Matches the 14-day period-length outlier cap in domain/cycle/aggregate.
-// A period that starts today can extend up to this many days ahead.
-const FUTURE_WINDOW_DAYS = 14;
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 // intro 시트가 내려가며 홈이 드러나는 시간. 아래 transition duration 과 맞춘다.
 const INTRO_SLIDE_MS = 300;
@@ -113,7 +111,21 @@ export function PeriodSelectSheet({
 
   const recordedSet = useMemo(() => collectRecordedDates(drafts), [drafts]);
 
-  const changes = useMemo(() => computeChanges(periods, drafts), [periods, drafts]);
+  // 시작일 하나만 누르고 저장하는 경우가 흔하다 (오늘 시작 등). 버리지 않고, 시작일만 입력했을
+  // 때의 기존 정책(평균 생리 기간만큼)으로 기간을 채워 저장한다 — intro 와 default 공통.
+  const finalDrafts = useMemo(
+    () =>
+      pendingStart
+        ? addRange(
+            drafts,
+            pendingStart,
+            defaultPeriodEndDate(pendingStart, averagePeriodLength),
+            'pending',
+          )
+        : drafts,
+    [drafts, pendingStart, averagePeriodLength],
+  );
+  const changes = useMemo(() => computeChanges(periods, finalDrafts), [periods, finalDrafts]);
   const dirty = changes.length > 0;
 
   useEffect(() => {
@@ -195,19 +207,9 @@ export function PeriodSelectSheet({
   async function handleStart() {
     if (submitting) return;
     setSubmitting(true);
-    // 시작일 하나만 누르고 바로 시작하는 경우가 흔하다. 버리지 않고, 시작일만 입력했을
-    // 때의 기존 정책(평균 생리 기간만큼)으로 기간을 채워 저장한다.
-    const finalDrafts = pendingStart
-      ? addRange(
-          drafts,
-          pendingStart,
-          defaultPeriodEndDate(pendingStart, averagePeriodLength),
-          nextNewKey(),
-        )
-      : drafts;
     try {
       await slideOut();
-      await onSubmit(computeChanges(periods, finalDrafts));
+      await onSubmit(changes);
     } finally {
       setSubmitting(false);
     }

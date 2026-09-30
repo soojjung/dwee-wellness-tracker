@@ -97,7 +97,7 @@ flowchart TD
 | `noCycles`      | 기록은 3회 이상인데 최근 6개월에 셀 수 있는 주기가 0개 | `t.report.chartNoCycles` (빈 격자만 보여 주면 기록이 반영 안 된 것처럼 보이는 걸 방지) |
 | `plot`          | 그릴 점이 하나라도 있음                                | `CycleChart` 렌더                                                                      |
 
-`RecentCyclesCard`는 기록마다 한 줄인 4열 표(시작·종료·기간·주기)로, 셀 수 없는 주기 값도 그대로 보여주되(기록 자체를 숨기지 않음), 15~60일 범위 밖인 주기 숫자는 회색으로 흐리게 하고 카드 하단에 각주(`t.report.recentExcludedNote`)를 한 번만 표시한다 — 차트·평균·상태 판정에서는 빠지는 값이라는 걸 알리기 위함.
+`RecentCyclesCard`는 헤더 한 줄 + 기록마다 회색 둥근 줄 하나인 4열 표(시작·종료·기간·주기, Figma 955:2620)로, 셀 수 없는 주기 값도 그대로 보여주되(기록 자체를 숨기지 않음), 15~60일 범위 밖인 주기 숫자는 회색으로 흐리게 하고 카드 하단에 각주(`t.report.recentExcludedNote`)를 한 번만 표시한다 — 차트·평균·상태 판정에서는 빠지는 값이라는 걸 알리기 위함.
 
 ---
 
@@ -270,8 +270,8 @@ flowchart TD
 
 `EventFormSheet` 는 add/edit 두 모드 모두에서 `EventConditionSection`(선택) 을 렌더합니다. **생리 토글은 2026-09-28(TestFlight R4-10) 제거** — 일정 유형(필수)과 생리가 한 시트에서 함께 선택돼 헷갈린다는 피드백으로, 일정과 생리 기록을 분리했습니다. 생리 기록은 홈의 생리 아이콘·주기리포트의 생리 아이콘(`PeriodSelectSheet`)에서만 입력합니다.
 
-- 일정 삭제는 일정만 지웁니다. 예전에 토글로 만들어진 생리 기록(`event.linkedPeriodId`)도 남고, 홈·리포트에서 따로 수정·삭제합니다. 일정 상세에서도 "생리 있음/없음" 행을 뺐습니다.
-- `event_logs.has_period_mark` / `linked_period_id` 컬럼과 `EventLog.hasPeriodMark` / `linkedPeriodId` 필드는 기존 데이터 때문에 남겨 두었지만, 앱은 더 이상 쓰지 않습니다 (`eventStore.linkPeriodMark` / `unlinkPeriodMark` 삭제).
+- 일정 삭제는 일정만 지웁니다. 생리 기록은 홈·리포트에서 따로 수정·삭제합니다. 일정 상세에서도 "생리 있음/없음" 행을 뺐습니다.
+- `event_logs.has_period_mark` / `linked_period_id` 컬럼과 `EventLog` 의 해당 필드는 `0018_drop_event_period_link.sql` 로 삭제했습니다 (2026-09-30, 출시 전이라 데이터 보존 안 함). `eventStore.linkPeriodMark` / `unlinkPeriodMark` 도 R4-10 에서 삭제.
 - **컨디션 섹션**: 두 모드 모두 선택 사항. add 모드는 빈 값에서 시작, edit 모드는 `conditionByDate[event.startDate]` 로 초기화. 저장 시 하나라도 선택돼 있으면 `EventFormInput.condition` 에 담겨 `DiaryScreen` 이 `conditionStore.upsert({ date: startDate, ...condition })` 호출.
 - `conditionStore.upsert` 는 리포지토리가 **레코드 전체를 교체(REPLACE)** 하는 것을 보완하기 위해, 호출 전 그 날짜의 기존 `byDate` 엔트리와 필드별로 merge 합니다(`memo` 등 이번 폼이 건드리지 않은 값 보존). 모든 `upsert` 호출자가 이 merge 를 공유합니다.
 - `src/components/report/CycleReportScreen.tsx` — 최상위 화면 컴포넌트

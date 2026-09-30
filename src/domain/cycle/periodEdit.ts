@@ -14,6 +14,12 @@ export interface DraftPeriod {
 
 export const EXTEND_GAP_DAYS = 7;
 
+// Matches the 14-day period-length outlier cap in domain/cycle/aggregate.
+// A period that starts today can extend up to this many days ahead. Shared
+// by `PeriodSelectSheet` and `PeriodRangeCalendar` so the two entry points
+// agree on how far into the future a period can be logged.
+export const FUTURE_WINDOW_DAYS = 14;
+
 export function toDrafts(periods: PeriodLog[]): DraftPeriod[] {
   return sortDrafts(
     periods.map((p) => ({
@@ -113,6 +119,22 @@ export function addRange(
 ): DraftPeriod[] {
   const [lo, hi] = startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
   return compact([...drafts, { key: newKey, originalId: null, startDate: lo, endDate: hi }]);
+}
+
+/**
+ * 기존 기록 하나의 기간을 바꾼다 (리포트의 생리 기간 편집). 바꾼 기간이 다른 기록과 겹치거나
+ * 맞닿으면 `compact` 규칙대로 합쳐진다 — 결과를 `computeChanges` 에 넘기면 수정·삭제가 나온다.
+ */
+export function replaceDraftRange(
+  drafts: DraftPeriod[],
+  targetKey: string,
+  startDate: ISODate,
+  endDate: ISODate,
+): DraftPeriod[] {
+  const [lo, hi] = startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
+  return compact(
+    drafts.map((p) => (p.key === targetKey ? { ...p, startDate: lo, endDate: hi } : p)),
+  );
 }
 
 export function collectRecordedDates(drafts: DraftPeriod[]): Set<ISODate> {

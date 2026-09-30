@@ -5,13 +5,12 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { defaultCategoryId } from '@/domain/event/builtins';
-import type { DailyConditionLog, EventCategory, EventLog } from '@/types';
+import type { EventCategory, EventLog } from '@/types';
 import { BinIcon, HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
 import { DateRow } from '@/components/ui/DateRow';
 import { CategorySelector } from './CategorySelector';
 import { DeleteEventDialog } from './DeleteEventDialog';
 import { InlineDatePicker } from './InlineDatePicker';
-import { EventConditionSection, type ConditionSelection } from './EventConditionSection';
 
 export type EventFormMode = 'add' | 'edit';
 
@@ -21,16 +20,12 @@ export interface EventFormInput {
   startDate: string;
   endDate: string;
   categoryId: string;
-  condition?: ConditionSelection;
 }
 
 interface EventFormSheetProps {
   mode: EventFormMode;
   categories: EventCategory[];
   initial?: EventLog | null;
-  /** Edit mode only — seeds the condition section from the day's existing
-   * check-in (keyed by `initial.startDate`), if any. */
-  initialCondition?: DailyConditionLog | null;
   defaultDate: string;
   onClose: () => void;
   onSubmit: (input: EventFormInput) => Promise<boolean>;
@@ -50,7 +45,6 @@ export function EventFormSheet({
   mode,
   categories,
   initial,
-  initialCondition,
   defaultDate,
   onClose,
   onSubmit,
@@ -79,15 +73,6 @@ export function EventFormSheet({
   const [submitting, setSubmitting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const [mood, setMood] = useState(initialCondition?.mood ?? null);
-  const [energy, setEnergy] = useState(initialCondition?.energy ?? null);
-  const [pain, setPain] = useState(initialCondition?.pain ?? null);
-  const [bloating, setBloating] = useState(initialCondition?.bloating ?? null);
-  const [appetite, setAppetite] = useState(initialCondition?.appetite ?? null);
-  const [skin, setSkin] = useState(initialCondition?.skin ?? null);
-  const [sleep, setSleep] = useState(initialCondition?.sleep ?? null);
-  const [exercise, setExercise] = useState(initialCondition?.exercise ?? null);
-
   function handleDelete() {
     if (submitting || !onDelete) return;
     setConfirmingDelete(true);
@@ -107,24 +92,13 @@ export function EventFormSheet({
   const trimmedTitle = title.trim();
   const trimmedMemo = memo.trim();
 
-  const conditionChanged =
-    mood !== (initialCondition?.mood ?? null) ||
-    energy !== (initialCondition?.energy ?? null) ||
-    pain !== (initialCondition?.pain ?? null) ||
-    bloating !== (initialCondition?.bloating ?? null) ||
-    appetite !== (initialCondition?.appetite ?? null) ||
-    skin !== (initialCondition?.skin ?? null) ||
-    sleep !== (initialCondition?.sleep ?? null) ||
-    exercise !== (initialCondition?.exercise ?? null);
-
   const isDirty =
     !initial ||
     trimmedTitle !== initial.title ||
     trimmedMemo !== (initial.memo ?? '') ||
     startDate !== initial.startDate ||
     endDate !== initial.endDate ||
-    categoryId !== initial.categoryId ||
-    conditionChanged;
+    categoryId !== initial.categoryId;
 
   const canSave =
     !submitting && trimmedTitle.length > 0 && !!categoryId && endDate >= startDate && isDirty;
@@ -138,26 +112,12 @@ export function EventFormSheet({
     if (!canSave || !categoryId) return;
     setSubmitting(true);
     try {
-      const condition: ConditionSelection | undefined =
-        mood || energy || pain || bloating || appetite || skin || sleep || exercise
-          ? {
-              ...(mood ? { mood } : {}),
-              ...(energy ? { energy } : {}),
-              ...(pain ? { pain } : {}),
-              ...(bloating ? { bloating } : {}),
-              ...(appetite ? { appetite } : {}),
-              ...(skin ? { skin } : {}),
-              ...(sleep ? { sleep } : {}),
-              ...(exercise ? { exercise } : {}),
-            }
-          : undefined;
       const ok = await onSubmit({
         title: trimmedTitle,
         memo: trimmedMemo,
         startDate,
         endDate,
         categoryId,
-        condition,
       });
       if (ok) onClose();
     } finally {
@@ -282,25 +242,6 @@ export function EventFormSheet({
             onToggle={() => setExpanded((v) => (v === 'category' ? 'none' : 'category'))}
             onEditCategory={onEditCategory}
             onAddCategory={onAddCategory}
-          />
-
-          <EventConditionSection
-            mood={mood}
-            energy={energy}
-            pain={pain}
-            bloating={bloating}
-            appetite={appetite}
-            skin={skin}
-            sleep={sleep}
-            exercise={exercise}
-            onChangeMood={setMood}
-            onChangeEnergy={setEnergy}
-            onChangePain={setPain}
-            onChangeBloating={setBloating}
-            onChangeAppetite={setAppetite}
-            onChangeSkin={setSkin}
-            onChangeSleep={setSleep}
-            onChangeExercise={setExercise}
           />
 
           {mode === 'edit' && onDelete ? (

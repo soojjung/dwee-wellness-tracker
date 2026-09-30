@@ -17,8 +17,6 @@ export const indexedDBEventAdapter: EventRepository = {
       title: input.title,
       memo: input.memo,
       categoryId: input.categoryId,
-      hasPeriodMark: input.hasPeriodMark ?? false,
-      ...(input.linkedPeriodId ? { linkedPeriodId: input.linkedPeriodId } : {}),
       createdAt: now,
       updatedAt: now,
     };

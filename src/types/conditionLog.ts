@@ -21,3 +21,14 @@ export interface DailyConditionLog {
   memo?: string;
   createdAt: string;
 }
+
+/** Subset of `DailyConditionLog` a form can set without asserting a full
+ * log — used by `EventConditionSection` and anything that embeds it
+ * (`EventFormSheet`, `PeriodRecordSheet`). Only present keys are meant to be
+ * written; an empty object means "nothing picked". */
+export type ConditionSelection = Partial<
+  Pick<
+    DailyConditionLog,
+    'mood' | 'energy' | 'pain' | 'bloating' | 'appetite' | 'skin' | 'sleep' | 'exercise'
+  >
+>;

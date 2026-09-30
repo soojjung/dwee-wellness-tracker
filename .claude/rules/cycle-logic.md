@@ -25,6 +25,16 @@ paths:
   - MyPage `CycleSummaryCard` → `t.myPage.cycle.insufficient` (`classifyCycleStatus` 가 `status: 'insufficient'` 반환 시)
   - `/log` 주기리포트 차트 → `t.report.chartEmpty` ("Not enough data yet" / "아직 예측하기 어려워요")
 
+## 3.5) Phase 판정 시 Grace Window (기한 유예 기간)
+
+- **상황**: 예상 생리일을 지나도 새로운 생리 시작일이 기록되지 않은 경우 (`dayInCycle >= cycle`).
+- **룰**: 최대 14일까지는 'luteal' 단계를 유지하며, 이후 'unknown'으로 전환. (`PERIOD_LATE_GRACE_DAYS = 14`)
+  - 근거: 일반적인 황체기 길이는 ~14일이며, 이 기간 내에 늦은 생리가 시작될 가능성을 감안.
+  - 신뢰도: grace window 내에서는 confidence = 'low' (생리 기록 없음으로 인한 불확실성 신호).
+- **구현**: `src/domain/cycle/phase.ts` line 38–39.
+- **테스트**: `src/domain/cycle/phase.test.ts` (cases #12–16).
+- **영향**: HomeScreen의 PhaseAdvicePill, ScratchKeywordCard 등 phase 소비처가 자동 반영. UI에서 confidence를 시각적으로 표시할 때 고려 가능.
+
 ## 4) 이상치 정책
 
 - **주기 간격 필터**: 15~60일 범위만 "유효 주기"로 인정. 범위 밖은 `src/domain/cycle/cycleGap.ts`에서 관리.

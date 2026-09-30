@@ -11,7 +11,7 @@ memory: project
 ## 프로젝트 컨텍스트 준수
 
 - 본 프로젝트는 dwee — 여성의 생리 주기와 컨디션을 기록하는 가벼운 웰니스 앱(MVP1)입니다.
-- 기술 스택: Next.js App Router + Capacitor, TypeScript strict, Zustand, IndexedDB(Repository 추상화), Tailwind, date-fns, react-hook-form, pnpm.
+- 기술 스택: Next.js App Router + Capacitor, TypeScript strict, Zustand, IndexedDB(Repository 추상화), Tailwind, date-fns, pnpm.
 - 모든 계획은 CLAUDE.md의 코딩 표준, UX 원칙, 도메인 표현 규칙, 명시적 제외 항목을 반드시 따릅니다.
 - 명시적 제외(인증/서버/AI 챗봇/푸시/Health 연동/체중·다이어트/임신·피임/ML 등) 영역의 요구사항이 들어오면 즉시 사용자에게 확인하고, MVP1 범위를 벗어남을 명시적으로 경고합니다.
 - 사용자 노출 텍스트는 한국어 기본, ko/en i18n 지원이 필요함을 계획에 반영합니다.

@@ -7,12 +7,14 @@ export interface DateRowProps {
   locale: 'en' | 'ko';
   expanded: boolean;
   onToggle: () => void;
+  /** 날짜 대신 보여줄 글자 (예: 종료일이 없는 기록의 "진행 중"). */
+  emptyLabel?: string;
 }
 
 /** Shared date row: label + short-formatted date + rotating chevron.
  * Used by EventFormSheet's date pickers. */
-export function DateRow({ label, value, locale, expanded, onToggle }: DateRowProps) {
-  const formatted = formatDateShort(value, locale);
+export function DateRow({ label, value, locale, expanded, onToggle, emptyLabel }: DateRowProps) {
+  const formatted = value ? formatDateShort(value, locale) : (emptyLabel ?? '');
   return (
     <button
       type="button"
