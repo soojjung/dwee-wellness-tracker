@@ -10,7 +10,7 @@
 
 - Next.js (App Router) + Capacitor / TypeScript strict
 - 상태: Zustand (+ persist) / 저장: IndexedDB (로컬) + Supabase (원격) via Repository 추상화
-- UI: Tailwind CSS / 날짜: date-fns / 폼: react-hook-form
+- UI: Tailwind CSS / 날짜: date-fns
 - 패키지 매니저: pnpm
 
 ## 핵심 가치

@@ -57,7 +57,6 @@ _**D**aily **W**ellness for **E**very**E**ssence._
 | 저장         | IndexedDB (`idb-keyval`, 로컬) + Supabase (원격) via Repository 추상화 |
 | 인증         | Supabase Auth (Apple/Google OAuth + 익명 세션)                         |
 | 스타일       | Tailwind CSS                                                           |
-| 폼           | react-hook-form                                                        |
 | 날짜         | date-fns                                                               |
 | i18n         | 자체 사전 (`src/i18n/locales/{ko,en}.ts`) + `useT()`                   |
 | 패키지매니저 | pnpm 9                                                                 |
