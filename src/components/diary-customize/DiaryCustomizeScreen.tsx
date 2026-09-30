@@ -333,7 +333,7 @@ export function DiaryCustomizeScreen() {
         </button>
       </header>
 
-      {/* 다이어리 화면(DiaryHeader 2행 + `px-4 pt-4` + `py-2` 카드)과 같은 치수.
+      {/* 다이어리 화면(DiaryHeader 56 + 월 줄 32 + pb-3 12, 본문 pt 없음)과 같은 치수.
           여기서 1px 이라도 다르면 꾸미기 진입 순간 월 라벨과 캘린더가 튀어 보인다.
           2행은 토글·+ 버튼(32px)이 높이를 만들므로 h-8 로 고정한다. */}
       <div className="flex h-8 items-center px-4">
@@ -342,7 +342,7 @@ export function DiaryCustomizeScreen() {
         </span>
       </div>
 
-      <div className="flex-1 px-4 pt-4">
+      <div className="flex-1 px-4 pt-3">
         <PlacedStickerLayer
           placements={draft as DiaryStickerPlacement[]}
           stickers={stickers}

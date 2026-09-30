@@ -281,8 +281,10 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
             left/right margin stays visible even while the swipe transform
             drags the calendar past its resting position. Extra pb keeps the
             6th calendar row clear of the fixed BottomTabNav on short mobile
-            viewports (Safari with URL bar visible). */}
-        <div className="px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-4">
+            viewports (Safari with URL bar visible). No top padding: the
+            header's pb-3 alone is the 12px gap to the card, which the
+            customize screen must match. */}
+        <div className="px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
           <div
             ref={swipeContainerRef}
             // `select-none` prevents mouse-drag text selection from
