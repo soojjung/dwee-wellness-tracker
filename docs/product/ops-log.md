@@ -48,7 +48,7 @@ TestFlight·출시 이후 **무슨 일이 있었고 무엇을 했는지** 시간
 
 | 날짜 | 대상 | 내용 |
 |---|---|---|
-| 09-30 | Supabase 프로덕션 | **빌드 6 배포 뒤에** `0018_drop_event_period_link.sql` 적용 — `event_logs.has_period_mark`·`linked_period_id` 삭제(R4-10 후속 정리, 출시 전이라 데이터 보존 안 함). 빌드 5 이하는 일정 저장 시 이 컬럼을 넣어서 먼저 적용하면 구 빌드의 일정 저장이 실패함 |
+| 09-30 | Supabase 프로덕션 | `0018_drop_event_period_link.sql` 적용 완료 (빌드 6 업로드 후) — `event_logs.has_period_mark`·`linked_period_id` 삭제. 빌드 5 이하는 이제 일정 저장 시 실패하므로 테스터는 빌드 6 이상 사용 |
 
 ## 라운드 4 — 빌드 4 피드백 (2026-09-28) · PR #78
 
