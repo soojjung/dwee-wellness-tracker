@@ -6,14 +6,14 @@
 
 - 원본 묶음: `앱스토어_필요한이미지모음.zip` (디자이너 전달, 2026-09-22). 리포에는 미리보기 7장이 `docs/product/app-store-preview/ko/app-preview-{1..7}.jpg` 로, 파비콘이 `public/favicon.png` 로 들어 있음.
 - 미리보기 세트는 모두 `docs/product/app-store-preview/{ko,en}/` 에 둠. `public/` 은 iOS 앱 번들에 같이 들어가서 옮김 (2026-09-30).
-- **en-US 세트 (2026-09-30):** `docs/product/app-store-preview/en/app-preview-{1..7}.jpg` — Figma 955:4152, 955:4098, 955:4165, 955:4172, 955:4179, 955:4221, 955:4257 순서로 내보냄 (1290 × 2796, JPG, 알파 없음). en-US 로케일에 제출. 위 세트는 한국어용. en iPad 세트는 아직 없음.
+- **en-US 세트 (2026-09-30):** `docs/product/app-store-preview/en/app-preview-{1..7}.jpg` — Figma 955:4152, 955:4098, 955:4165, 955:4172, 955:4179, 955:4221, 955:4257 순서로 내보냄 (1290 × 2796, JPG, 알파 없음). en-US 로케일에 제출. 위 세트는 한국어용. en iPad 세트는 `docs/product/app-store-preview/en/ipad/app-preview-ipad-{1..7}.jpg` (2048 × 2732, ko iPad 세트와 같은 방식).
 - iPhone 7장은 **1290 × 2796 (6.7″)**. iPad 7장은 `docs/product/app-store-preview/ko/ipad/app-preview-ipad-{1..7}.jpg` (**2048 × 2732**, 2026-09-22 생성 — iPhone 원본을 세로 꽉 채우고 좌우는 원본 배경색으로 확장). 앱 아이콘은 `public/app-icon-1024.png` (favicon 과 같은 워드마크·배경을 1024 로 렌더, 알파 없음).
 
 | 대상 | 필수 | 규격(px, 세로) | 현황 |
 |---|---|---|---|
 | iPhone 6.9″ / 6.7″ | 둘 중 하나 필수 (다른 iPhone 크기는 자동 축소) | 1320 × 2868 또는 1290 × 2796 | 1290 × 2796 × 7장 있음 |
 | iPhone 6.5″ | 선택 | 1284 × 2778 또는 1242 × 2688 | 없음 (6.7″로 대체됨) |
-| iPad 13″ / 12.9″ | iPad 지원 시 필수 | 2064 × 2752 또는 2048 × 2732 | 2048 × 2732 × 7장 있음 (`app-store-preview/ko/ipad/`) |
+| iPad 13″ / 12.9″ | iPad 지원 시 필수 | 2064 × 2752 또는 2048 × 2732 | 로케일별 2048 × 2732 × 7장 있음 (`app-store-preview/{ko,en}/ipad/`) |
 | 앱 아이콘 | 필수 | 1024 × 1024, 알파 없음, 모서리 미가공 | `public/app-icon-1024.png` 있음 (favicon 아트워크 기반) |
 
 - 장수: 대상당 최대 10장, 최소 1장. 파일은 JPG 또는 PNG, 알파 없음.
