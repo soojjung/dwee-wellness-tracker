@@ -6,10 +6,12 @@ import { usePeriodStore } from '@/store/periodStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
+import { useFlashMessage } from '@/hooks/useFlashMessage';
 import { addDaysISO, type ISODate } from '@/lib/date';
 import { BinIcon, HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
 import { DateRow } from '@/components/ui/DateRow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Toast } from '@/components/ui/Toast';
 import { InlineDatePicker } from '@/components/diary/InlineDatePicker';
 import {
   FUTURE_WINDOW_DAYS,
@@ -21,6 +23,7 @@ import type { PeriodLog } from '@/types';
 
 // 한 번의 생리로 셀 수 있는 최대 기간 (domain/cycle/aggregate 의 14일 이상치 선과 같다).
 const MAX_PERIOD_DAYS = 14;
+const TOAST_MS = 3200;
 
 interface PeriodEditSheetProps {
   today: ISODate;
@@ -42,6 +45,7 @@ export function PeriodEditSheet({ today, period, periods, onClose }: PeriodEditS
   const [expanded, setExpanded] = useState<'none' | 'start' | 'end'>('none');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [toast, flashToast] = useFlashMessage(TOAST_MS);
 
   const maxSelectable = addDaysISO(today, FUTURE_WINDOW_DAYS);
   const endMax = [addDaysISO(start, MAX_PERIOD_DAYS - 1), maxSelectable].sort()[0]!;
@@ -53,11 +57,16 @@ export function PeriodEditSheet({ today, period, periods, onClose }: PeriodEditS
     onClose();
   }
 
-  async function run(action: () => Promise<void>) {
+  // 저장이 실패하면 시트를 닫지 않고 알린다 — 고친 날짜를 그대로 두고 다시 시도할 수 있게 (R7-11).
+  async function run(action: () => Promise<boolean>) {
     setSubmitting(true);
     try {
-      await action();
-      onClose();
+      if (await action()) {
+        onClose();
+        return;
+      }
+      setConfirmingDelete(false);
+      flashToast(c.saveFailed);
     } finally {
       setSubmitting(false);
     }
@@ -66,12 +75,9 @@ export function PeriodEditSheet({ today, period, periods, onClose }: PeriodEditS
   function handleSave() {
     if (!canSave) return;
     void run(async () => {
-      if (end === null) {
-        await updatePeriod(period.id, { startDate: start });
-        return;
-      }
+      if (end === null) return updatePeriod(period.id, { startDate: start });
       const drafts = replaceDraftRange(toDrafts(periods), period.id, start, end);
-      await applyPeriodChanges(computeChanges(periods, drafts));
+      return applyPeriodChanges(computeChanges(periods, drafts));
     });
   }
 
@@ -186,6 +192,8 @@ export function PeriodEditSheet({ today, period, periods, onClose }: PeriodEditS
           />
         </div>
       ) : null}
+
+      <Toast message={toast} className="z-50" />
     </div>
   );
 }

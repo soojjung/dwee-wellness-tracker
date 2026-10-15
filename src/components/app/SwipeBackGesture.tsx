@@ -47,8 +47,19 @@ export function SwipeBackGesture() {
       body.style.willChange = '';
     }
 
+    // A second finger means a pinch, not a swipe (R7-9). Without this a
+    // one-handed pinch that starts near the left edge read as a fast swipe
+    // and fired the back control — once per lifted finger.
+    function cancel() {
+      if (!animating) reset();
+    }
+
     function onStart(e: TouchEvent) {
-      if (animating || e.touches.length !== 1) return;
+      if (animating) return;
+      if (e.touches.length !== 1) {
+        cancel();
+        return;
+      }
       const t = e.touches[0];
       if (!t || t.clientX > EDGE_PX || dialogOpen()) return;
       const c = backControl();
@@ -62,7 +73,11 @@ export function SwipeBackGesture() {
     }
 
     function onMove(e: TouchEvent) {
-      if (!control || e.touches.length !== 1) return;
+      if (!control) return;
+      if (e.touches.length !== 1) {
+        cancel();
+        return;
+      }
       const t = e.touches[0];
       if (!t) return;
       const dx = t.clientX - startX;
@@ -87,8 +102,9 @@ export function SwipeBackGesture() {
       body.style.transform = `translateX(${Math.max(0, dx)}px)`;
     }
 
-    function onEnd() {
-      if (!control || axis !== 'x') {
+    function onEnd(e: TouchEvent) {
+      if (animating) return;
+      if (!control || axis !== 'x' || e.touches.length > 0) {
         reset();
         return;
       }

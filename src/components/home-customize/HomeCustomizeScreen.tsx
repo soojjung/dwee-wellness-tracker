@@ -131,7 +131,9 @@ export function HomeCustomizeScreen() {
   // "편집 완료" only activates when the user has explicitly confirmed the
   // photo picks via "편집 완료" on the edit-photos overview. Any subsequent pick
   // change resets picksConfirmed → forcing another visit.
-  const submitEnabled = allFilled && picksConfirmed;
+  // 사진을 모두 지우고 확정했으면(개수 null + 변경 있음) 기본 이미지로 저장할 수 있다 (R7-6).
+  const resetToDefault = photoCount === null && isDirty;
+  const submitEnabled = picksConfirmed && (allFilled || resetToDefault);
 
   async function handleSubmit() {
     if (!submitEnabled || saving) return;

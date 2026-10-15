@@ -17,8 +17,10 @@
   - `HomeHero` — `/home/default-hero.jpg` 기본 이미지, `!isCustom && !hasUserText` 라 `editHint` 안내 노출
   - `WeekStrip` — 예측 데이터 없이 오늘 날짜 원만 표시
   - `PhaseAdvicePill` / Keywords / Activities / Foods 섹션 → 각각 `EmptyHintCard` placeholder
-- [ ] 계정에 기록이 없고 `onboardingCompleted` 가 false면 첫 홈 진입 시 생리일 기입 바텀시트(`PeriodSelectSheet variant="intro"`)가 한 번 더 뜬다 — 선택 없이 시작해도 완료로 기록되어 다시 묻지 않음
-- [ ] 우상단 캘린더 아이콘 탭 → `PeriodSelectSheet` (바텀 시트 캘린더) 오픈, 날짜 선택 후 저장하면 화면이 즉시 데이터 상태로 전환 (리다이렉트 없음)
+- [ ] 계정에 기록이 없어도 첫 홈 진입 시 생리일 시트는 자동으로 뜨지 않는다 (R7-5 에서 제거) — 빈 상태 홈 그대로 노출
+- [ ] 우상단 캘린더 아이콘 탭 → `PeriodRecordSheet` (한 달 캘린더 바텀 시트) 오픈, 시작·종료일 선택 후 저장하면 화면이 즉시 데이터 상태로 전환 (리다이렉트 없음)
+- [ ] 시작일만 탭하고 저장 → 평균 생리 기간으로 종료일 보정. 선택된 날 재탭 → 그 하루만 해제. 기존 기록 뒤 7일 이내 / 바로 앞날 탭 → 범위 연장
+- [ ] 기존 기록은 점으로만 표시되고 이 시트에서 수정·삭제되지 않음 (수정·삭제는 리포트 최근 주기 행 → `PeriodEditSheet`)
 - [ ] `/log` Diary 뷰: 빈 그리드에 생리 셀 없음. Report 뷰: `CycleReportEmpty` 안내
 
 ---
@@ -73,7 +75,7 @@
 - [ ] DiaryScreen (Diary 뷰): 해당 startDate 셀만 menstrual 배경, 나머지는 default
 - [ ] WeekStrip: 동일 (startDate 하루만)
 - [ ] `averagePeriodLength`: 해당 row 제외하고 계산 진행
-- [ ] 다음 주기 시작 기록도 정상 진행 (`PeriodSelectSheet` 로 추가 — 홈·주기 리포트 공통)
+- [ ] 다음 주기 시작 기록도 정상 진행 (`PeriodRecordSheet` 로 추가 — 홈·주기 리포트 공통)
 
 ### 자동 점검됨
 - `cellState.isPeriodDate`: `if (p.endDate) { ... } else if (date === p.startDate) return true` (코드 검증 완료)
@@ -112,7 +114,7 @@
 
 ## 6. 짧은 주기 입력 — 현재 도달 불가 (참고용으로만 보존)
 
-> `evaluateNewStart`(`src/domain/cycle/recordPolicy.ts`)와 이를 소비하던 `ShortCycleConfirmDialog` 는 더 이상 연결돼 있지 않다. `ShortCycleConfirmDialog.tsx` 파일 자체가 삭제됐고, `PeriodSelectSheet` 도 `evaluateNewStart` 를 호출하지 않는다. 아래는 순수 함수·테스트로만 남아 있는 예전 설계를 참고용으로 남겨 둔 것이며, 브라우저에서 재현 가능한 시나리오가 아니다.
+> `evaluateNewStart`(`src/domain/cycle/recordPolicy.ts`)와 이를 소비하던 `ShortCycleConfirmDialog` 는 더 이상 연결돼 있지 않다. `ShortCycleConfirmDialog.tsx` 파일 자체가 삭제됐고, `PeriodRecordSheet` 도 `evaluateNewStart` 를 호출하지 않는다. 아래는 순수 함수·테스트로만 남아 있는 예전 설계를 참고용으로 남겨 둔 것이며, 브라우저에서 재현 가능한 시나리오가 아니다.
 
 ### (참고) 원래 설계: 6/10 기록 → 6/16 다시 입력 시
 

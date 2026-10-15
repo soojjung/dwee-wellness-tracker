@@ -11,9 +11,7 @@ import { currentPhase } from '@/domain/cycle/phase';
 import { predictNextPeriod } from '@/domain/cycle/predictor';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { SplashScreen } from './SplashScreen';
-import { PeriodSelectSheet } from './PeriodSelectSheet';
-import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
-import type { PeriodChange } from '@/domain/cycle/periodEdit';
+import { PeriodRecordSheet } from '@/components/report/PeriodRecordSheet';
 import { generateInsights } from '@/lib/insight/generator';
 import { todayISO, daysBetween, addDaysISO } from '@/lib/date';
 import { InsightCard } from './InsightCard';
@@ -45,8 +43,6 @@ export function HomeScreen() {
 
   const settings = useSettingsStore((s) => s.settings);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
-  const updateSettings = useSettingsStore((s) => s.update);
-  const applyPeriodChanges = useApplyPeriodChanges();
 
   const authHydrated = useAuthStore((s) => s.hydrated);
 
@@ -59,7 +55,6 @@ export function HomeScreen() {
   // toast can coexist without stepping on it.
   const [confirmToast, setConfirmToast] = useState<string | null>(null);
   const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
-  const [introPromptDismissed, setIntroPromptDismissed] = useState(false);
 
   useEffect(() => {
     if (!authHydrated) return;
@@ -108,19 +103,6 @@ export function HomeScreen() {
     ? daysBetween(today, prediction.predictedDate)
     : null;
 
-  async function handlePeriodChanges(changes: PeriodChange[]) {
-    await applyPeriodChanges(changes);
-    setPeriodDialogOpen(false);
-  }
-
-  // 시작하기(선택 없이도)·바깥 탭 모두 "한 번 물어봤다"로 친다. 계정 설정에 남기므로
-  // 다른 기기에서 같은 계정으로 들어와도 다시 묻지 않는다.
-  async function handleIntroPromptDone(changes: PeriodChange[]) {
-    setIntroPromptDismissed(true);
-    await handlePeriodChanges(changes);
-    if (changes.length === 0) await updateSettings({ onboardingCompleted: true });
-  }
-
   // 로딩 중엔 앱 스플래시를 그대로 보여 준다 — 인증 게이트의 스플래시에서 끊김 없이 이어진다.
   // 오류 문구는 화면 한가운데 (PageContainer 만 쓰면 상태바 바로 아래 왼쪽 위에 붙는다).
   if (!authHydrated || !settingsHydrated || (periodsLoading && !periodsHydrated)) {
@@ -135,11 +117,6 @@ export function HomeScreen() {
   }
 
   const isEmpty = periods.length === 0;
-  // 로그인·게스트 선택 직후의 첫 홈 진입 (정의서 001_5). 값에서 바로 유도하므로, 기존
-  // 계정의 원격 데이터가 들어와 조건이 깨지면 시트도 같이 사라진다.
-  const introPromptOpen =
-    periodsHydrated && isEmpty && !settings.onboardingCompleted && !introPromptDismissed;
-
   return (
     <PageContainer className="gap-0 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <HomeHero />
@@ -213,22 +190,11 @@ export function HomeScreen() {
       <Toast message={toast} />
       <Toast message={confirmToast} variant="topConfirm" />
 
-      {introPromptOpen ? (
-        <PeriodSelectSheet
-          variant="intro"
-          today={today}
-          periods={periods}
-          onSubmit={handleIntroPromptDone}
-          onCancel={() => void handleIntroPromptDone([])}
-        />
-      ) : null}
-
       {periodDialogOpen ? (
-        <PeriodSelectSheet
+        <PeriodRecordSheet
           today={today}
           periods={periods}
-          onSubmit={handlePeriodChanges}
-          onCancel={() => setPeriodDialogOpen(false)}
+          onClose={() => setPeriodDialogOpen(false)}
         />
       ) : null}
     </PageContainer>

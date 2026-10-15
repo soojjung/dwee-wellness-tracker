@@ -31,7 +31,7 @@
 #### 3. Category
 
 - Primary: Lifestyle
-- Secondary: Health & Fitness
+- Secondary: Health & Fitness — entered in App Store Connect 2026-10-01. This category makes the "Regulated medical device" declaration (No) required.
 
 #### 4. Description
 
@@ -129,3 +129,31 @@ Keep your cycle, mood, symptoms, and everyday moments in one place — and start
 - Privacy Policy URL: `https://dwee-neon.vercel.app/legal/privacy/?lang=en`
 - Support URL: `https://dwee-neon.vercel.app/legal/support/?lang=en`
 - Both are public pages in the `(legal)` route group (no session needed). Re-check after the Vercel deploy.
+- Marketing URL: left blank (no landing page yet; the site root goes straight to login).
+- Copyright: `2026 Innerglow` (entered 2026-10-01; brand name — the operator is an individual, see terms).
+
+#### 8. Age rating (questionnaire, 2026-10-01)
+
+Result: **13+** (172 countries/regions) · 12+ in Korea and Vietnam · A12 in Brazil. No override — 16+ would block the 14–15-year-olds the app allows. The 14+ floor is enforced by the in-app login gate.
+
+| Step | Item | Answer |
+|---|---|---|
+| 1 Features | Parental controls · Age assurance | No · No (the 14+ checkbox is self-declared, not verification; the gate goes in the review notes) |
+| 1 Features | Unrestricted web access · User-generated content · Social media · Disable social media under 13 | All No |
+| 2 | (profanity, substances, etc.) | All None |
+| 3 Medical or health | Medical or treatment information | **Infrequent** (magazine health articles, condition tips, body-type reading for reference) |
+| 3 Medical or health | Health or wellness topics | **Yes** |
+| 4 Sexuality or nudity | All three | None |
+| 5 Violence | All four | None |
+| 6 Chance-based activities | Simulated gambling · Contests / Gambling · Loot boxes | None · None / No · No |
+| 7 Additional info | Override · Age suitability URL | Not applicable · `https://dwee-neon.vercel.app/legal/terms/?lang=en` (Terms Art. 3 ⑤, 14+) |
+
+- Revisit steps 1 and 6 if features change (community, shared feed, ads, purchases).
+
+#### 9. Pricing and availability (2026-10-01)
+
+- Countries: **United States · Canada · South Korea**. The policy and terms are written against Korea's PIPA and GDPR etc. haven't been reviewed, so launch starts with these three. Keep mainland China out when expanding (ICP filing required).
+- "Make available in all future App Store countries": off (expand by choosing countries explicitly).
+- Price: Free (no in-app purchases or subscriptions). Tax category: App Store software.
+- Apple Silicon Mac · Vision Pro: both off — deep-link sign-in, camera, and portrait lock are untested there. Revisit after testing on those devices.
+

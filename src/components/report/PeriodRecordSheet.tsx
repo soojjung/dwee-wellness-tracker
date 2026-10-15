@@ -1,24 +1,29 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useConditionStore } from '@/store/conditionStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
+import { useFlashMessage } from '@/hooks/useFlashMessage';
 import { useConditionSelection } from '@/hooks/useConditionSelection';
 import { HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
+import { Toast } from '@/components/ui/Toast';
 import { EventConditionSection } from '@/components/log/EventConditionSection';
-import { addRange, computeChanges, toDrafts } from '@/domain/cycle/periodEdit';
-import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
+import { compact, computeChanges, toDrafts } from '@/domain/cycle/periodEdit';
 import {
-  rangeBounds,
-  tapRangeDate,
-  type PeriodRangeSelection,
+  EMPTY_PERIOD_TAP_STATE,
+  finalizePeriodDrafts,
+  selectedPeriodDates,
+  tapPeriodDate,
+  type PeriodTapState,
 } from '@/domain/cycle/periodRangeSelection';
 import type { ISODate } from '@/lib/date';
 import type { PeriodLog } from '@/types';
 import { PeriodRangeCalendar } from './PeriodRangeCalendar';
+
+const TOAST_MS = 3200;
 
 interface PeriodRecordSheetProps {
   today: ISODate;
@@ -27,10 +32,10 @@ interface PeriodRecordSheetProps {
 }
 
 /**
- * "생리 기록 / Log period" — opened from the cycle report's period-add icon
- * (Figma 947:7835 / 947:7336). Unlike `PeriodSelectSheet`, this only ADDS a
- * new period range and optionally logs TODAY's condition alongside it; it
- * never edits or removes existing records (that stays on Home).
+ * "생리 기록 / Log period" — opened from the period icon on Home and on the
+ * cycle report (Figma 947:7835 / 947:7336). It only ADDS new period ranges and
+ * optionally logs TODAY's condition alongside them; editing or removing an
+ * existing record goes through the report's recent-cycles rows.
  */
 export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheetProps) {
   const t = useT();
@@ -43,8 +48,12 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
   const condition = useConditionSelection(null);
   const seededConditionRef = useRef(false);
 
-  const [selection, setSelection] = useState<PeriodRangeSelection | null>(null);
+  // Only the NEW ranges live here — existing records are merged in at save time.
+  const [selection, setSelection] = useState<PeriodTapState>(EMPTY_PERIOD_TAP_STATE);
+  const selectedDates = useMemo(() => selectedPeriodDates(selection), [selection]);
+  const newKeyCounter = useRef(0);
   const [submitting, setSubmitting] = useState(false);
+  const [toast, flashToast] = useFlashMessage(TOAST_MS);
 
   useEffect(() => {
     hydrateConditionRange(today, today);
@@ -62,7 +71,12 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conditionByDate, today]);
 
-  const canSave = selection !== null && !submitting;
+  const canSave = selectedDates.size > 0 && !submitting;
+
+  function nextNewKey() {
+    newKeyCounter.current += 1;
+    return `new:${newKeyCounter.current}`;
+  }
 
   function handleClose() {
     if (submitting) return;
@@ -70,13 +84,16 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
   }
 
   async function handleSave() {
-    if (!canSave || !selection) return;
+    if (!canSave) return;
     setSubmitting(true);
     try {
-      const { lo, hi } = rangeBounds(selection);
-      const end = hi ?? defaultPeriodEndDate(lo, averagePeriodLength);
-      const changes = computeChanges(periods, addRange(toDrafts(periods), lo, end, 'new'));
-      await applyPeriodChanges(changes);
+      const added = finalizePeriodDrafts(selection, averagePeriodLength);
+      const changes = computeChanges(periods, compact([...toDrafts(periods), ...added]));
+      // 실패하면 시트를 닫지 않는다 — 고른 날짜를 그대로 두고 다시 시도할 수 있게 (R7-11).
+      if (!(await applyPeriodChanges(changes))) {
+        flashToast(t.report.diary.periodRecordSheet.saveFailed);
+        return;
+      }
       const picked = condition.toSelection();
       if (picked) await upsertCondition({ date: today, ...picked });
       onClose();
@@ -137,8 +154,8 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
             <PeriodRangeCalendar
               today={today}
               periods={periods}
-              selection={selection}
-              onTapDate={(date) => setSelection((s) => tapRangeDate(s, date))}
+              selectedDates={selectedDates}
+              onTapDate={(date) => setSelection((s) => tapPeriodDate(s, date, nextNewKey))}
             />
           </div>
 
@@ -162,6 +179,7 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
           />
         </div>
       </div>
+      <Toast message={toast} className="z-50" />
     </div>
   );
 }

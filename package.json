@@ -1,7 +1,7 @@
 {
   "name": "dwee",
   "version": "1.0.0",
-  "iosBuild": 7,
+  "iosBuild": 8,
   "private": true,
   "scripts": {
     "dev": "next dev",

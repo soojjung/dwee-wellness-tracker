@@ -41,12 +41,6 @@ export const en = {
   home: {
     errorLabel: 'Something went wrong. Please try again.',
     startPeriodButton: 'Log period start',
-    periodSheet: {
-      title: 'Log period',
-      closeAria: 'Close',
-      saveAria: 'Save',
-      showEarlier: 'Show earlier months',
-    },
     cancel: 'Cancel',
     todayLabel: 'Today',
     dDayPrefix: '',
@@ -745,12 +739,14 @@ export const en = {
         cancel: 'Cancel',
         confirm: 'Delete',
         editRowAria: 'Edit this period',
+        saveFailed: "Couldn't save your changes. Please check your connection and try again.",
       },
       periodRecordSheet: {
         title: 'Log period',
         closeAria: 'Close',
         saveAria: 'Save',
         periodDaysLabel: 'Period days',
+        saveFailed: "Couldn't save your changes. Check your connection and try again.",
       },
       yearMonthPicker: {
         title: 'Select date',
@@ -1139,7 +1135,6 @@ export const en = {
   onboarding: {
     skip: 'Skip',
     next: 'Next',
-    start: 'Get started',
     slides: {
       record: {
         eyebrow: 'Track your period and daily life',

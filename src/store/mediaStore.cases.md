@@ -1,6 +1,6 @@
 # mediaStore — Draft-flow unit test cases
 
-Last run: 2026-08-13 — 42/42 passed
+Last run: 2026-10-16 — 55/55 passed
 
 Covers the draft mode introduced by the "commit on Customize home submit" refactor plus the
 `picksConfirmed` gate. The store's committed lane (hydrate/setPhoto/etc.) is
@@ -72,6 +72,16 @@ that layer regresses.
 |---|---|---|---|
 | 22 | is a no-op when no draft is active | | picksConfirmed stays false |
 | 23 | flips picksConfirmed on | after a mutation that reset it | picksConfirmed=true |
+
+## draftResetToDefault (R7-6)
+
+| # | `it` title | 입력 | 기대 결과 |
+|---|---|---|---|
+| 23a | is a no-op when no draft is active | | picksConfirmed stays false |
+| 23b | clears only the current count's slots, drops the count and confirms picks | count 2(슬롯 1·2) + 슬롯 0·3 에 다른 개수의 사진 | 슬롯 1·2 만 null·cleared, 0·3 유지, count null, picksConfirmed=true, dirty |
+| 23c | revokes draft-owned URLs it clears | count 1 에 새로 고른 사진 → 리셋 | 그 URL revoke, owned 목록 비움 |
+| 23d | commits as all photos cleared so the hero shows the default image | committed 1장 → 리셋 → commit | clearHomePhoto(0), setPhotoCount 호출 없음, committed URL 전부 null |
+| 23e | opens the next draft as fresh when the committed count is not full | count 2 인데 슬롯 1·2 비어 있음(슬롯 0 만 사진) | draftPhotoCount null, picksConfirmed=false (HomeHero 와 같은 기준) |
 
 ## commitPhotoDraft
 

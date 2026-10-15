@@ -3,6 +3,7 @@ import './globals.css';
 import { DevBridge } from '@/dev/DevBridge';
 import { NativeChrome } from '@/components/app/NativeChrome';
 import { SwipeBackGesture } from '@/components/app/SwipeBackGesture';
+import { StaticPageUrlCleanup } from '@/components/app/StaticPageUrlCleanup';
 import { Monitoring } from '@/components/app/Monitoring';
 
 // en-US is the primary market (see .claude memory: feedback_localization).
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <DevBridge />
         <NativeChrome />
         <SwipeBackGesture />
+        <StaticPageUrlCleanup />
         {children}
       </body>
     </html>

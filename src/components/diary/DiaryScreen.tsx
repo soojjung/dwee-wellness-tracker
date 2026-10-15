@@ -313,7 +313,9 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                     router.push('/log/customize');
                   }}
                 >
-                  <div className="rounded-2xl bg-brand-white/95 py-2 backdrop-blur-sm">
+                  {/* backdrop-blur 를 두지 않는다 — 별도 쌓임 맥락이 생겨 "오늘" 말풍선(z-20)이
+                      카드 밖의 스티커 아래로 깔린다 (R7-10). 카드 뒤는 단색 배경이라 블러 효과도 없다. */}
+                  <div className="rounded-2xl bg-brand-white/95 py-2">
                     <DiaryMonthGrid
                       year={cursor.year}
                       monthIndex={cursor.monthIndex}

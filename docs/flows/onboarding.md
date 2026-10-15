@@ -1,8 +1,8 @@
 # 온보딩 플로우
 
-> 위치: `src/app/(intro)/{layout,onboarding/page}.tsx`, `src/components/onboarding/{OnboardingScreen,OnboardingSlides,PageIndicator,RecordSlideArt,DiarySlideArt,CareSlideArt}.tsx`, `src/components/auth/{AuthGuard,LoginScreen,LoginHero}.tsx`, `src/components/app/{SplashScreen,PeriodSelectSheet,HomeScreen}.tsx`, `src/components/ui/FitStage.tsx`, `src/store/introStore.ts`, `src/data/repositories/IntroRepository.ts`, `src/data/adapters/indexeddb/IndexedDBIntroAdapter.ts`, `src/hooks/useBootDelay.ts`, `src/lib/loginEntrance.ts`
+> 위치: `src/app/(intro)/{layout,onboarding/page}.tsx`, `src/components/onboarding/{OnboardingScreen,OnboardingSlides,PageIndicator,RecordSlideArt,DiarySlideArt,CareSlideArt}.tsx`, `src/components/auth/{AuthGuard,LoginScreen,LoginHero}.tsx`, `src/components/app/{SplashScreen,HomeScreen}.tsx`, `src/components/ui/FitStage.tsx`, `src/store/introStore.ts`, `src/data/repositories/IntroRepository.ts`, `src/data/adapters/indexeddb/IndexedDBIntroAdapter.ts`, `src/hooks/useBootDelay.ts`, `src/lib/loginEntrance.ts`
 
-기기 최초 실행 시: **스플래시(로고) → 온보딩 슬라이드 1·2·3 → 로그인 → (홈 진입 시) 생리일 기입 시트 → 홈**. 이미 소개를 본 기기는 슬라이드를 건너뛰고 곧장 로그인으로 간다.
+기기 최초 실행 시: **스플래시(로고) → 온보딩 슬라이드 1·2·3 → 로그인 → 홈**. 첫 로그인 직후 생리일을 묻는 시트는 없다(R7-5 에서 제거) — 기록은 홈·주기 리포트의 생리 아이콘에서 직접 한다. 이미 소개를 본 기기는 슬라이드를 건너뛰고 곧장 로그인으로 간다.
 
 ## 라우팅 흐름
 
@@ -21,7 +21,6 @@ flowchart TD
     Onboarding["/onboarding\n소개 슬라이드"]
     Login["/login"]
     Home["/  HomeScreen"]
-    IntroSheet["PeriodSelectSheet\nvariant=#quot;intro#quot;"]
 
     Launch --> Guard
     Guard -->|"있음"| Home
@@ -29,12 +28,10 @@ flowchart TD
     IntroSeen -->|"No (기기 최초)"| Onboarding -->|"건너뛰기 / 마지막 다음"| Login
     IntroSeen -->|"Yes"| Login
     Login -->|"로그인 / 게스트로 계속"| Home
-    Home -->|"기록 0건 + onboardingCompleted 아님"| IntroSheet
-    IntroSheet -->|"시작하기 / 바깥 탭 / Esc"| Home
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
-    class Launch,Splash,Onboarding,Login,Home,IntroSheet ui;
+    class Launch,Splash,Onboarding,Login,Home ui;
     class Guard,IntroSeen logic;
 ```
 
@@ -70,25 +67,16 @@ stateDiagram-v2
 
 `LoginHero`의 스티커 5개(헤드폰·말차·토스트·레몬워터 + 기존 workout.png)가 화면 밖에서 날아 들어오는 연출은 **온보딩 직후 첫 진입에만** 재생된다. `src/lib/loginEntrance.ts`가 `appToast`와 같은 패턴의 모듈 스코프 1회성 신호를 들고 있다 — `queueLoginEntrance()`로 예약, `consumeLoginEntrance()`로 소비 즉시 초기화. 로그아웃 후 재진입, 마이페이지 → 로그인, 앱 재실행 등 다른 모든 경로는 신호가 비어 있어 스티커가 제자리(rest)에 바로 보인다. 이미지 디코드가 끝난 뒤에야 함께 출발하도록 `wait → fly` 두 단계를 거친다(`tailwind.config.ts`의 `stickerFlyIn`). `LoginScreen`은 이제 settingsStore 도 hydrate 한다 — 안 하면 재방문한 ko 기기가 en 기본값으로 보이던 버그가 있었다.
 
-## 생리일 기입 시트 (첫 홈 진입)
+## 첫 로그인 후 생리일 질문 없음
 
-`HomeScreen`이 `periodsHydrated && periods.length === 0 && !settings.onboardingCompleted`일 때만 `PeriodSelectSheet`를 `variant="intro"`(Figma 832:5234)로 띄운다. 기존 계정의 원격 기록이 있으면 `periods.length`가 바로 0이 아니게 되어 시트는 자동으로 뜨지 않는다. `default` variant와 달리 헤더 X/✓가 없고 하단 고정 "시작하기" 하나뿐이며(선택 없이도 항상 활성), 홈이 아니라 불투명한 `bg-brand-gray50` 배경 위에 뜬다 — 닫힐 때 시트가 내려가며 배경이 걷혀 홈이 드러난다.
-
-| 사용자 동작 | 결과 |
-|---|---|
-| 아무 날짜도 선택하지 않고 "시작하기" | 기록 없음. `onboardingCompleted: true`만 저장 |
-| 시작일 하나만 탭하고 "시작하기" | `defaultPeriodEndDate(pendingStart, averagePeriodLength)`로 종료일을 자동으로 채워 1건 저장 (기존 정책 재사용) |
-| 범위(시작~종료)를 완성하고 "시작하기" | 선택한 범위 그대로 1건 저장 |
-| 바깥(backdrop) 탭 / Esc | `onSubmit([])`과 동일 취급 — 기록 없음, `onboardingCompleted: true`만 저장 |
-
-네 경우 모두 `settings.onboardingCompleted`가 `true`로 끝난다. 이 값은 **계정 설정**이라 다른 기기에서 같은 계정으로 로그인해도 다시 묻지 않는다.
+예전엔 첫 홈 진입(기록 0건 + `!onboardingCompleted`)에 `PeriodSelectSheet variant="intro"`(Figma 832:5234, 001_5)가 한 번 더 떴지만 2026-10 TestFlight R7-5 에서 시트째 제거됐다. 지금 흐름은 스플래시 → 슬라이드 → `/login` → 홈이며, 생리 기록은 홈의 생리 아이콘(`PeriodRecordSheet`)에서 시작한다 ([`home.md`](./home.md) 참고).
 
 ## 상태 저장 위치
 
 | 상태 | 저장 위치 | 스코프 | 지워지는 시점 |
 |---|---|---|---|
 | `introSeen` | IndexedDB `dwee:device:intro_seen` (`IntroRepository`→`indexedDBIntroAdapter`, **로컬 전용** — Supabase 어댑터 없음, 리포 모드와 무관) | 기기 단위 | 지워지지 않음 — `resetAllUserData()` 대상에서 의도적으로 제외 |
-| `settings.onboardingCompleted` | `SettingsRepository` (IndexedDB 로컬 또는 로그인 시 Supabase) | 계정 단위 | 로그아웃/`resetAllUserData()` 시 로컬 캐시와 함께 초기화되지만, 로그인된 계정 자체의 원격 값은 남아 다른 기기에서도 그대로 적용 |
+| `settings.onboardingCompleted` | `SettingsRepository` (IndexedDB 로컬 또는 로그인 시 Supabase). 첫 진입 locale 감지에 쓰이며, 첫 생리 기록이 저장될 때(`useApplyPeriodChanges`) `true` 가 된다. 더 이상 시트를 띄우는 조건이 아니다 | 계정 단위 | 로그아웃/`resetAllUserData()` 시 로컬 캐시와 함께 초기화되지만, 로그인된 계정 자체의 원격 값은 남아 다른 기기에서도 그대로 적용 |
 | `settings.ageConfirmedAt` | `SettingsRepository` 의 **로컬 필드** — IndexedDB 에만 저장, Supabase `profiles` 컬럼 없음(`SupabaseSettingsAdapter` 가 매핑하지 않음) | 설치(기기) 단위 | 로그아웃/탈퇴의 `resetAllUserData()` 로 지워져 다음 로그인 때 다시 묻는다 — 같은 기기를 다른 사람이 쓸 수 있으므로 의도된 동작 |
 | `loginEntrance` 연출 신호 | 모듈 스코프 in-memory 변수(`src/lib/loginEntrance.ts`) — 저장소 아님 | 현재 탭의 이번 세션 | 새로고침하면 사라짐. `consumeLoginEntrance()` 호출 즉시 1회성으로 소비됨 |
 
@@ -101,7 +89,6 @@ stateDiagram-v2
 | 001_2 슬라이드(다이어리) | 832:5209 |
 | 001_3 슬라이드(케어) | 832:5184 |
 | 001_4 로그인 | 256:16007 |
-| 001_5 생리일 기입 시트 | 832:5234 |
 
 ## 검증 케이스
 
@@ -112,7 +99,5 @@ stateDiagram-v2
 - 세션이 있는 상태로 `/onboarding` 진입 → `/`로 리다이렉트
 - `introRepo.isSeen()` 예외 발생 → `seen=true`로 fail-open, `/login`으로 이동 (스플래시에 갇히지 않음)
 - 온보딩 도입 이전부터 세션을 가진 기기 → 로그아웃 후에도 소개 슬라이드가 뜨지 않음 (`AuthGuard`가 세션 존재 시 자동 `markSeen`)
-- 계정에 기록 0건 + `onboardingCompleted=false` 상태로 첫 홈 진입 → 생리일 기입 시트 노출
-- 이미 원격에 기록이 있는 계정으로 로그인 → 시트 노출 안 됨 (`periods.length`가 0이 아님)
-- 시트에서 날짜 선택 없이 "시작하기" / 바깥 탭 / Esc 어느 경로든 → 기록 없이 `onboardingCompleted: true`만 저장되고 다시 뜨지 않음
-- `pnpm dev` 환경에서 `seedForPhase()`로 시드 후 settings 스토어를 rehydrate — 시드된 홈 스냅샷 위에 intro 시트가 뜨지 않는지 확인 (`src/dev/seedForPhase.ts`)
+- 계정에 기록 0건 + `onboardingCompleted=false` 상태로 첫 홈 진입 → 생리일 시트가 자동으로 뜨지 않고 빈 상태 홈이 보임
+- 홈 생리 아이콘으로 첫 기록을 저장 → `onboardingCompleted: true` 로 바뀜

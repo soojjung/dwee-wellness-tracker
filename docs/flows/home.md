@@ -1,40 +1,41 @@
 # 홈 화면 플로우
 
-> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,ScratchKeywordCard,ActivitySuggestions,FoodSuggestions,FoodArticleScreen,TodayDateHeading,PeriodSelectSheet}.tsx`, `src/components/ui/icons/PeriodAddIcon.tsx`, `src/app/(app)/page.tsx`, `src/app/(fullscreen)/foods/[id]/page.tsx`, `src/content/foods/{index,articles-en,articles-ko}.ts`
+> 위치: `src/components/app/{HomeScreen,HomeHero,WeekStrip,EmptyHintCard,PhaseAdvicePill,ScratchKeywordCard,ActivitySuggestions,FoodSuggestions,FoodArticleScreen,TodayDateHeading}.tsx`, `src/components/report/{PeriodRecordSheet,PeriodRangeCalendar}.tsx`, `src/domain/cycle/periodRangeSelection.ts`, `src/components/ui/icons/PeriodAddIcon.tsx`, `src/app/(app)/page.tsx`, `src/app/(fullscreen)/foods/[id]/page.tsx`, `src/content/foods/{index,articles-en,articles-ko}.ts`
 
 ## 생리 기록 진입점
 
-**우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 컴포넌트의 캘린더 아이콘을 탭하면 `PeriodSelectSheet` (바텀 시트 캘린더)가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)과 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합은 완전히 삭제되었습니다 — 두 컴포넌트 파일 모두 저장소에 남아 있지 않습니다.
+**우상단 캘린더 아이콘**이 유일한 진입점입니다. `TodayDateHeading` 의 캘린더 아이콘을 탭하면 `PeriodRecordSheet`(`components/report/`, 주기 리포트의 생리 아이콘이 여는 시트와 동일)가 열립니다. 기존 우하단 FAB(`AddPeriodFab`)과 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합, 다개월 스크롤 시트 `PeriodSelectSheet`(첫 로그인용 `variant="intro"` 포함)는 모두 삭제되었습니다.
 
-`PeriodSelectSheet`는 최근 12개월(더 오래된 기록이 있으면 그 달까지, `monthsBackToCover`) + 다음 1개월 캘린더 그리드를 보여주며 열릴 때 이번 달로 스크롤됩니다. 목록 맨 위 "이전 달 더 보기"를 누를 때마다 12개월씩 더 붙고, 보던 달이 밀리지 않게 늘어난 높이만큼 `scrollTop` 을 보정합니다(iOS Safari 에 scroll anchoring 이 없음). 올해가 아닌 달 헤더엔 연도가 붙습니다(`2025년 9월` / `September 2025`). 날짜 셀을 탭하면 `domain/cycle/periodEdit.ts`의 순수 함수로 드래프트를 조작합니다. 저장 시 `PeriodChange[]` diff를 공용 훅 `useApplyPeriodChanges`(홈·주기 리포트 공통)로 넘겨 remove → update → add 순으로 일괄 적용합니다.
+`PeriodRecordSheet`는 **새 생리 기간만 추가**합니다. 한 달 캘린더(‹ › 버튼 / 스와이프 / 연·월 휠)를 보여주고, 이미 기록된 날은 점으로만 표시할 뿐 여기서 수정·삭제하지 않습니다(수정·삭제는 주기 리포트 최근 주기 행 → `PeriodEditSheet`). 선택 사항으로 오늘의 컨디션 칩을 함께 기록할 수 있습니다. 날짜 탭 규칙은 순수 함수 `tapPeriodDate`(`domain/cycle/periodRangeSelection.ts`)가 가집니다.
 
-> 로그인 직후 기록 0건 + `!settings.onboardingCompleted` 상태의 첫 홈 진입에는 같은 컴포넌트가 `variant="intro"`로 다른 배경 위에 뜬다 (헤더 없이 "시작하기" 하나). 결과 분기와 저장 위치는 [`docs/flows/onboarding.md`](./onboarding.md) 참고.
+| 탭 | 동작 |
+|---|---|
+| 첫 탭 / 두 번째 탭 | 시작일 / 종료일 (순서 무관) |
+| 선택된 날 다시 탭 | 그 하루만 제거 |
+| 선택 범위 뒤 7일 이내 | 범위를 그 날까지 연장 |
+| 선택 범위 바로 앞날 | 범위를 앞으로 연장 |
+| 시작일만 찍고 저장 | 평균 생리 기간(`averagePeriodLength`)으로 종료일 보정 |
+
+저장 시 `computeChanges` 의 `PeriodChange[]` diff 를 공용 훅 `useApplyPeriodChanges`(홈·주기 리포트 공통)로 넘겨 일괄 적용합니다. 첫 기록이 저장되면 `settings.onboardingCompleted` 도 `true` 가 됩니다. 로그인 직후 생리일을 묻는 시트는 더 이상 없습니다([`onboarding.md`](./onboarding.md)).
 
 ```mermaid
 flowchart TD
     Icon(["캘린더 아이콘\n(TodayDateHeading 우상단)"])
-    Sheet["PeriodSelectSheet\n(바텀 시트 캘린더)"]
-    Tap{"셀 탭 — 날짜 상태?"}
-    Remove["removeDay()\n기존 기간에서 제거"]
-    Extend["extendTo()\n인접 기간 연장"]
-    Range["addRange()\n새 범위 추가"]
-    Save["computeChanges() →\nhandlePeriodChanges()"]
+    Sheet["PeriodRecordSheet\n(한 달 캘린더 + 컨디션 칩)"]
+    Tap["tapPeriodDate()\n시작 · 종료 · 연장 · 하루 제거"]
+    Save["computeChanges() →\nuseApplyPeriodChanges()"]
     Done(["완료"])
 
     Icon --> Sheet
-    Sheet -->|"Cancel"| Done
-    Sheet -->|"날짜 탭"| Tap
-    Tap -->|"기존 기간 내 날짜"| Remove --> Sheet
-    Tap -->|"인접 기간 근처\n(≤ 7일)"| Extend --> Sheet
-    Tap -->|"새 날짜\n(첫 탭)"| Sheet
-    Tap -->|"새 날짜\n(두 번째 탭)"| Range --> Sheet
-    Sheet -->|"Save (dirty)"| Save --> Done
+    Sheet -->|"닫기"| Done
+    Sheet -->|"날짜 탭"| Tap --> Sheet
+    Sheet -->|"저장"| Save --> Done
 
     classDef ui fill:#FDE8EF,stroke:#E5A8BD,color:#5C3A4A;
     classDef logic fill:#E8F0FD,stroke:#A8BDE5,color:#3A4A5C;
     classDef store fill:#F0E8FD,stroke:#BDA8E5,color:#4A3A5C;
     class Icon,Sheet,Done ui;
-    class Tap,Remove,Extend,Range logic;
+    class Tap logic;
     class Save store;
 ```
 
@@ -69,7 +70,7 @@ flowchart TD
 > 이전 `setupMode` (인라인 `SetupPeriodPicker` 캘린더 picker) 는 삭제됨.  
 > 이전 우하단 `AddPeriodFab` 도 삭제됨.  
 > 이전 `PeriodRangeDialog` + `ShortCycleConfirmDialog` 조합도 파일째 삭제됨.  
-> 기록 진입은 `TodayDateHeading` 캘린더 아이콘 → `PeriodSelectSheet` 로 통일.
+> 기록 진입은 `TodayDateHeading` 캘린더 아이콘 → `PeriodRecordSheet` 로 통일.
 
 ## 데이터 흐름 (데이터 상태)
 

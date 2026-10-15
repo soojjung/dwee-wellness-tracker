@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { useDiaryFocusStore } from '@/store/diaryFocusStore';
+import { useTabNavWatchdog } from '@/hooks/useTabNavWatchdog';
 import { NavIcon, type NavIconKey } from './NavIcon';
 
 type TabKey = NavIconKey;
@@ -28,6 +29,7 @@ export function BottomTabNav() {
   const t = useT();
   const pathname = usePathname();
   const pingDiaryToday = useDiaryFocusStore((s) => s.pingToday);
+  const watchTabNav = useTabNavWatchdog(pathname);
 
   // next.config sets trailingSlash: true → normalize before allowlist check.
   const normalized = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
@@ -79,9 +81,15 @@ export function BottomTabNav() {
               <li key={tab.key} className="relative flex-1">
                 <Link
                   href={tab.href}
+                  // 미리 받아 둔 데이터가 앱이 멈춘 사이 끊기면 그 탭이 계속 먹통이 된다(R7-8).
+                  // 탭 화면은 앱 안 파일이라 누를 때 받아도 충분히 빠르다.
+                  prefetch={false}
                   aria-current={active ? 'page' : undefined}
                   aria-label={t.nav[tab.labelKey]}
-                  onClick={tab.key === 'log' ? () => pingDiaryToday() : undefined}
+                  onClick={() => {
+                    if (tab.key === 'log') pingDiaryToday();
+                    if (!active) watchTabNav(tab.href);
+                  }}
                   className={cn(
                     'flex h-[52px] w-full items-center justify-center rounded-[32px] transition-colors duration-300',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',

@@ -116,10 +116,11 @@ beforeEach(() => {
 // ========================================================================
 describe('beginPhotoDraft', () => {
   it('activates the draft and snapshots committed state', () => {
+    // count 2 uses slots 1·2.
     const urls: (string | null)[] = [
+      null,
       'committed-url-a',
       'committed-url-b',
-      null,
       null,
       null,
       null,
@@ -452,6 +453,62 @@ describe('draftConfirmPicks', () => {
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(false);
     useMediaStore.getState().draftConfirmPicks();
     expect(useMediaStore.getState().draftPicksConfirmed).toBe(true);
+  });
+});
+
+describe('draftResetToDefault', () => {
+  it('is a no-op when no draft is active', () => {
+    useMediaStore.getState().draftResetToDefault();
+    expect(useMediaStore.getState().draftPicksConfirmed).toBe(false);
+  });
+
+  it("clears only the current count's slots, drops the count and confirms picks", () => {
+    // count 2 → slots 1·2. Slot 0 (count 1) and slot 3 (count 4) keep their photos.
+    seedCommitted({
+      photoCount: 2,
+      photoUrls: ['one-a', 'two-a', 'two-b', 'four-a', null, null, null],
+    });
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftResetToDefault();
+    const s = useMediaStore.getState();
+    expect(s.draftPhotoUrls.slice(0, 4)).toEqual(['one-a', null, null, 'four-a']);
+    expect(s.draftClearedPhotos.slice(0, 4)).toEqual([false, true, true, false]);
+    expect(s.draftPhotoCount).toBeNull();
+    expect(s.draftPicksConfirmed).toBe(true);
+    expect(isPhotoDraftDirty(s)).toBe(true);
+  });
+
+  it('revokes draft-owned URLs it clears', () => {
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftSetPhotoCount(1);
+    useMediaStore.getState().draftSetPhoto(0 as PhotoSlot, stubBlob());
+    const owned = useMediaStore.getState().draftPhotoUrls[0];
+    useMediaStore.getState().draftResetToDefault();
+    expect(revokedUrls).toContain(owned);
+    expect(useMediaStore.getState().draftOwnedUrls).toEqual([]);
+  });
+
+  it('commits as all photos cleared so the hero shows the default image', async () => {
+    seedCommitted({
+      photoCount: 1,
+      photoUrls: ['committed-a', null, null, null, null, null, null],
+    });
+    useMediaStore.getState().beginPhotoDraft();
+    useMediaStore.getState().draftResetToDefault();
+    await useMediaStore.getState().commitPhotoDraft();
+    expect(mediaRepo.clearHomePhoto).toHaveBeenCalledWith(0);
+    expect(mediaRepo.setPhotoCount).not.toHaveBeenCalled();
+    expect(useMediaStore.getState().photoUrls.every((u) => u === null)).toBe(true);
+  });
+
+  it('opens the next draft as fresh when the committed count is not full', () => {
+    seedCommitted({
+      photoCount: 2,
+      photoUrls: ['one-a', null, null, null, null, null, null],
+    });
+    useMediaStore.getState().beginPhotoDraft();
+    expect(useMediaStore.getState().draftPhotoCount).toBeNull();
+    expect(useMediaStore.getState().draftPicksConfirmed).toBe(false);
   });
 });
 
