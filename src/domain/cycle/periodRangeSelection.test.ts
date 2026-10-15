@@ -1,97 +1,120 @@
 import { describe, it, expect } from 'vitest';
+import type { ISODate } from '@/lib/date';
 import {
-  isInPeriodRange,
-  rangeBounds,
-  tapRangeDate,
-  type PeriodRangeSelection,
+  EMPTY_PERIOD_TAP_STATE,
+  finalizePeriodDrafts,
+  selectedPeriodDates,
+  tapPeriodDate,
+  type PeriodTapState,
 } from './periodRangeSelection';
 
-describe('tapRangeDate', () => {
-  it('sets the start when there is no selection yet', () => {
-    expect(tapRangeDate(null, '2026-06-10')).toEqual({ start: '2026-06-10', end: null });
+function keyGen() {
+  let n = 0;
+  return () => `new:${++n}`;
+}
+
+function tapAll(dates: ISODate[], start: PeriodTapState = EMPTY_PERIOD_TAP_STATE) {
+  const newKey = keyGen();
+  return dates.reduce((s, d) => tapPeriodDate(s, d, newKey), start);
+}
+
+function ranges(state: PeriodTapState) {
+  return state.drafts.map((p) => [p.startDate, p.endDate]);
+}
+
+describe('tapPeriodDate', () => {
+  it('sets a pending start on the first tap', () => {
+    expect(tapAll(['2026-10-11'])).toEqual({ drafts: [], pendingStart: '2026-10-11' });
   });
 
-  it('clears the selection when the lone start is tapped again', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-10', end: null };
-    expect(tapRangeDate(selection, '2026-06-10')).toBeNull();
+  it('clears the pending start when it is tapped again', () => {
+    expect(tapAll(['2026-10-11', '2026-10-11'])).toEqual(EMPTY_PERIOD_TAP_STATE);
   });
 
-  it('sets the end when a later date is tapped after the start', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-10', end: null };
-    expect(tapRangeDate(selection, '2026-06-14')).toEqual({ start: '2026-06-10', end: '2026-06-14' });
+  it('completes a range on the second tap', () => {
+    const s = tapAll(['2026-10-11', '2026-10-12']);
+    expect(ranges(s)).toEqual([['2026-10-11', '2026-10-12']]);
+    expect(s.pendingStart).toBeNull();
   });
 
-  it('sets the end even when the second tap is before the start (order-independent)', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-10', end: null };
-    expect(tapRangeDate(selection, '2026-06-05')).toEqual({ start: '2026-06-10', end: '2026-06-05' });
+  it('completes a range when the second tap is before the start', () => {
+    expect(ranges(tapAll(['2026-10-14', '2026-10-11']))).toEqual([['2026-10-11', '2026-10-14']]);
   });
 
-  it('starts a brand-new range when tapping again after a full range exists', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-10', end: '2026-06-14' };
-    expect(tapRangeDate(selection, '2026-06-20')).toEqual({ start: '2026-06-20', end: null });
+  it('keeps earlier days on a 3rd consecutive tap (11 → 12 → 13)', () => {
+    expect(ranges(tapAll(['2026-10-11', '2026-10-12', '2026-10-13']))).toEqual([
+      ['2026-10-11', '2026-10-13'],
+    ]);
   });
 
-  it('starts a new range even if the tapped date is inside the existing range', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-10', end: '2026-06-14' };
-    expect(tapRangeDate(selection, '2026-06-12')).toEqual({ start: '2026-06-12', end: null });
+  it('removes only the re-tapped end day (11·12, tap 12 → 11)', () => {
+    expect(ranges(tapAll(['2026-10-11', '2026-10-12', '2026-10-12']))).toEqual([
+      ['2026-10-11', '2026-10-11'],
+    ]);
+  });
+
+  it('splits a range when a middle day is re-tapped', () => {
+    expect(ranges(tapAll(['2026-10-11', '2026-10-15', '2026-10-13']))).toEqual([
+      ['2026-10-11', '2026-10-12'],
+      ['2026-10-14', '2026-10-15'],
+    ]);
+  });
+
+  it('drops a one-day range when its only day is re-tapped', () => {
+    expect(tapAll(['2026-10-11', '2026-10-12', '2026-10-12', '2026-10-11'])).toEqual(
+      EMPTY_PERIOD_TAP_STATE,
+    );
+  });
+
+  it('extends a range up to 7 days after its end', () => {
+    expect(ranges(tapAll(['2026-10-11', '2026-10-12', '2026-10-19']))).toEqual([
+      ['2026-10-11', '2026-10-19'],
+    ]);
+  });
+
+  it('starts a new pending start more than 7 days after a range', () => {
+    const s = tapAll(['2026-10-01', '2026-10-02', '2026-10-20']);
+    expect(ranges(s)).toEqual([['2026-10-01', '2026-10-02']]);
+    expect(s.pendingStart).toBe('2026-10-20');
+  });
+
+  it('extends a range backward when the day right before it is tapped', () => {
+    const s = tapAll(['2026-10-12', '2026-10-13', '2026-10-11']);
+    expect(ranges(s)).toEqual([['2026-10-11', '2026-10-13']]);
+    expect(s.pendingStart).toBeNull();
+  });
+
+  it('keeps a tap 2+ days before a range as a pending start', () => {
+    const s = tapAll(['2026-10-12', '2026-10-13', '2026-10-10']);
+    expect(ranges(s)).toEqual([['2026-10-12', '2026-10-13']]);
+    expect(s.pendingStart).toBe('2026-10-10');
   });
 });
 
-describe('rangeBounds', () => {
-  it('returns hi=null for a start-only selection', () => {
-    expect(rangeBounds({ start: '2026-06-10', end: null })).toEqual({
-      lo: '2026-06-10',
-      hi: null,
-    });
+describe('finalizePeriodDrafts', () => {
+  it('returns drafts as-is when there is no pending start', () => {
+    const s = tapAll(['2026-10-11', '2026-10-13']);
+    expect(finalizePeriodDrafts(s, 5)).toEqual(s.drafts);
   });
 
-  it('keeps forward order as-is', () => {
-    expect(rangeBounds({ start: '2026-06-10', end: '2026-06-14' })).toEqual({
-      lo: '2026-06-10',
-      hi: '2026-06-14',
-    });
-  });
-
-  it('flips a reversed tap order into lo/hi', () => {
-    expect(rangeBounds({ start: '2026-06-14', end: '2026-06-10' })).toEqual({
-      lo: '2026-06-10',
-      hi: '2026-06-14',
-    });
-  });
-
-  it('handles a same-day range', () => {
-    expect(rangeBounds({ start: '2026-06-10', end: '2026-06-10' })).toEqual({
-      lo: '2026-06-10',
-      hi: '2026-06-10',
-    });
+  it('fills a lone start with the average period length', () => {
+    const out = finalizePeriodDrafts(tapAll(['2026-10-11']), 5);
+    expect(out.map((p) => [p.startDate, p.endDate])).toEqual([['2026-10-11', '2026-10-15']]);
   });
 });
 
-describe('isInPeriodRange', () => {
-  it('returns false for every date when selection is null', () => {
-    expect(isInPeriodRange(null, '2026-06-10')).toBe(false);
+describe('selectedPeriodDates', () => {
+  it('is empty for the empty state', () => {
+    expect(selectedPeriodDates(EMPTY_PERIOD_TAP_STATE).size).toBe(0);
   });
 
-  it('is true only for the start date when only a start is tapped', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-10', end: null };
-    expect(isInPeriodRange(selection, '2026-06-10')).toBe(true);
-    expect(isInPeriodRange(selection, '2026-06-11')).toBe(false);
-    expect(isInPeriodRange(selection, '2026-06-09')).toBe(false);
-  });
-
-  it('is true for every date within a forward range, inclusive', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-10', end: '2026-06-12' };
-    expect(isInPeriodRange(selection, '2026-06-10')).toBe(true);
-    expect(isInPeriodRange(selection, '2026-06-11')).toBe(true);
-    expect(isInPeriodRange(selection, '2026-06-12')).toBe(true);
-    expect(isInPeriodRange(selection, '2026-06-13')).toBe(false);
-  });
-
-  it('is true for every date within a reversed-tap range, inclusive', () => {
-    const selection: PeriodRangeSelection = { start: '2026-06-14', end: '2026-06-12' };
-    expect(isInPeriodRange(selection, '2026-06-12')).toBe(true);
-    expect(isInPeriodRange(selection, '2026-06-13')).toBe(true);
-    expect(isInPeriodRange(selection, '2026-06-14')).toBe(true);
-    expect(isInPeriodRange(selection, '2026-06-11')).toBe(false);
+  it('includes every day of each range plus the pending start', () => {
+    const s = tapAll(['2026-10-11', '2026-10-13', '2026-10-25']);
+    expect([...selectedPeriodDates(s)].sort()).toEqual([
+      '2026-10-11',
+      '2026-10-12',
+      '2026-10-13',
+      '2026-10-25',
+    ]);
   });
 });

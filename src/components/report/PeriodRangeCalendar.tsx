@@ -14,7 +14,6 @@ import { ChevronDownIcon } from '@/components/ui/icons';
 import { YearMonthWheelPicker } from '@/components/diary/YearMonthWheelPicker';
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe';
 import { FUTURE_WINDOW_DAYS, collectRecordedDates, toDrafts } from '@/domain/cycle/periodEdit';
-import { isInPeriodRange, type PeriodRangeSelection } from '@/domain/cycle/periodRangeSelection';
 import type { PeriodLog } from '@/types';
 
 const WEEK_STARTS_ON = 0;
@@ -23,7 +22,7 @@ const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 interface PeriodRangeCalendarProps {
   today: ISODate;
   periods: PeriodLog[];
-  selection: PeriodRangeSelection | null;
+  selectedDates: ReadonlySet<ISODate>;
   onTapDate: (date: ISODate) => void;
 }
 
@@ -35,7 +34,7 @@ interface PeriodRangeCalendarProps {
 export function PeriodRangeCalendar({
   today,
   periods,
-  selection,
+  selectedDates,
   onTapDate,
 }: PeriodRangeCalendarProps) {
   const t = useT();
@@ -118,7 +117,7 @@ export function PeriodRangeCalendar({
                 today={today}
                 maxSelectable={maxSelectable}
                 recorded={recordedSet.has(cell.date)}
-                selected={isInPeriodRange(selection, cell.date)}
+                selected={selectedDates.has(cell.date)}
                 onTap={onTapDate}
               />
             ))}

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n/useT';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useConditionStore } from '@/store/conditionStore';
@@ -9,12 +9,13 @@ import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
 import { useConditionSelection } from '@/hooks/useConditionSelection';
 import { HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
 import { EventConditionSection } from '@/components/log/EventConditionSection';
-import { addRange, computeChanges, toDrafts } from '@/domain/cycle/periodEdit';
-import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
+import { compact, computeChanges, toDrafts } from '@/domain/cycle/periodEdit';
 import {
-  rangeBounds,
-  tapRangeDate,
-  type PeriodRangeSelection,
+  EMPTY_PERIOD_TAP_STATE,
+  finalizePeriodDrafts,
+  selectedPeriodDates,
+  tapPeriodDate,
+  type PeriodTapState,
 } from '@/domain/cycle/periodRangeSelection';
 import type { ISODate } from '@/lib/date';
 import type { PeriodLog } from '@/types';
@@ -28,8 +29,8 @@ interface PeriodRecordSheetProps {
 
 /**
  * "생리 기록 / Log period" — opened from the cycle report's period-add icon
- * (Figma 947:7835 / 947:7336). Unlike `PeriodSelectSheet`, this only ADDS a
- * new period range and optionally logs TODAY's condition alongside it; it
+ * (Figma 947:7835 / 947:7336). Unlike `PeriodSelectSheet`, this only ADDS new
+ * period ranges and optionally logs TODAY's condition alongside it; it
  * never edits or removes existing records (that stays on Home).
  */
 export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheetProps) {
@@ -43,7 +44,10 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
   const condition = useConditionSelection(null);
   const seededConditionRef = useRef(false);
 
-  const [selection, setSelection] = useState<PeriodRangeSelection | null>(null);
+  // Only the NEW ranges live here — existing records are merged in at save time.
+  const [selection, setSelection] = useState<PeriodTapState>(EMPTY_PERIOD_TAP_STATE);
+  const selectedDates = useMemo(() => selectedPeriodDates(selection), [selection]);
+  const newKeyCounter = useRef(0);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -62,7 +66,12 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conditionByDate, today]);
 
-  const canSave = selection !== null && !submitting;
+  const canSave = selectedDates.size > 0 && !submitting;
+
+  function nextNewKey() {
+    newKeyCounter.current += 1;
+    return `new:${newKeyCounter.current}`;
+  }
 
   function handleClose() {
     if (submitting) return;
@@ -70,12 +79,11 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
   }
 
   async function handleSave() {
-    if (!canSave || !selection) return;
+    if (!canSave) return;
     setSubmitting(true);
     try {
-      const { lo, hi } = rangeBounds(selection);
-      const end = hi ?? defaultPeriodEndDate(lo, averagePeriodLength);
-      const changes = computeChanges(periods, addRange(toDrafts(periods), lo, end, 'new'));
+      const added = finalizePeriodDrafts(selection, averagePeriodLength);
+      const changes = computeChanges(periods, compact([...toDrafts(periods), ...added]));
       await applyPeriodChanges(changes);
       const picked = condition.toSelection();
       if (picked) await upsertCondition({ date: today, ...picked });
@@ -137,8 +145,8 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
             <PeriodRangeCalendar
               today={today}
               periods={periods}
-              selection={selection}
-              onTapDate={(date) => setSelection((s) => tapRangeDate(s, date))}
+              selectedDates={selectedDates}
+              onTapDate={(date) => setSelection((s) => tapPeriodDate(s, date, nextNewKey))}
             />
           </div>
 

@@ -13,20 +13,14 @@ import { CancelIcon } from '@/components/ui/icons/CancelIcon';
 import { CheckIcon } from '@/components/ui/icons/CheckIcon';
 import type { Locale, PeriodLog } from '@/types';
 import {
-  EXTEND_GAP_DAYS,
   FUTURE_WINDOW_DAYS,
-  addRange,
   collectRecordedDates,
   computeChanges,
-  extendTo,
-  findContainingDraft,
-  findExtendableDraft,
-  removeDay,
   toDrafts,
   type DraftPeriod,
   type PeriodChange,
 } from '@/domain/cycle/periodEdit';
-import { defaultPeriodEndDate } from '@/domain/cycle/recordPolicy';
+import { finalizePeriodDrafts, tapPeriodDate } from '@/domain/cycle/periodRangeSelection';
 
 interface PeriodSelectSheetProps {
   today: ISODate;
@@ -111,18 +105,8 @@ export function PeriodSelectSheet({
 
   const recordedSet = useMemo(() => collectRecordedDates(drafts), [drafts]);
 
-  // 시작일 하나만 누르고 저장하는 경우가 흔하다 (오늘 시작 등). 버리지 않고, 시작일만 입력했을
-  // 때의 기존 정책(평균 생리 기간만큼)으로 기간을 채워 저장한다 — intro 와 default 공통.
   const finalDrafts = useMemo(
-    () =>
-      pendingStart
-        ? addRange(
-            drafts,
-            pendingStart,
-            defaultPeriodEndDate(pendingStart, averagePeriodLength),
-            'pending',
-          )
-        : drafts,
+    () => finalizePeriodDrafts({ drafts, pendingStart }, averagePeriodLength),
     [drafts, pendingStart, averagePeriodLength],
   );
   const changes = useMemo(() => computeChanges(periods, finalDrafts), [periods, finalDrafts]);
@@ -153,38 +137,9 @@ export function PeriodSelectSheet({
   function handleCellClick(date: ISODate) {
     if (date > maxSelectable) return;
 
-    const containing = findContainingDraft(drafts, date);
-    if (containing) {
-      setPendingStart(null);
-      setDrafts(removeDay(drafts, containing.key, date, nextNewKey));
-      return;
-    }
-
-    const extendable = findExtendableDraft(drafts, date, EXTEND_GAP_DAYS);
-    if (extendable) {
-      setPendingStart(null);
-      setDrafts(extendTo(drafts, extendable.key, date));
-      return;
-    }
-
-    if (!pendingStart) {
-      setPendingStart(date);
-      return;
-    }
-    if (date === pendingStart) {
-      setPendingStart(null);
-      return;
-    }
-
-    const [lo, hi] = pendingStart < date ? [pendingStart, date] : [date, pendingStart];
-    const nearbyForLo = findExtendableDraft(drafts, lo, EXTEND_GAP_DAYS);
-    if (nearbyForLo) {
-      setPendingStart(null);
-      setDrafts(extendTo(drafts, nearbyForLo.key, hi));
-      return;
-    }
-    setPendingStart(null);
-    setDrafts(addRange(drafts, lo, hi, nextNewKey()));
+    const next = tapPeriodDate({ drafts, pendingStart }, date, nextNewKey);
+    setDrafts(next.drafts);
+    setPendingStart(next.pendingStart);
   }
 
   async function handleSave() {
