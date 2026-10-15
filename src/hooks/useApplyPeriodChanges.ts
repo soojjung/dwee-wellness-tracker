@@ -15,22 +15,24 @@ export function useApplyPeriodChanges() {
   const onboardingCompleted = useSettingsStore((s) => s.settings.onboardingCompleted);
   const updateSettings = useSettingsStore((s) => s.update);
 
-  return async function applyPeriodChanges(changes: PeriodChange[]) {
+  /** false at the first change that fails to save — the caller keeps its sheet open. */
+  return async function applyPeriodChanges(changes: PeriodChange[]): Promise<boolean> {
     for (const c of changes) {
-      if (c.kind === 'remove') await removePeriod(c.id);
+      if (c.kind === 'remove' && !(await removePeriod(c.id))) return false;
     }
     for (const c of changes) {
-      if (c.kind === 'update') {
-        await updatePeriod(c.id, { startDate: c.startDate, endDate: c.endDate });
-      }
+      if (c.kind !== 'update') continue;
+      const ok = await updatePeriod(c.id, { startDate: c.startDate, endDate: c.endDate });
+      if (!ok) return false;
     }
     for (const c of changes) {
-      if (c.kind === 'add') {
-        await addPeriod({ startDate: c.startDate, endDate: c.endDate });
+      if (c.kind === 'add' && !(await addPeriod({ startDate: c.startDate, endDate: c.endDate }))) {
+        return false;
       }
     }
     if (changes.length > 0 && !onboardingCompleted) {
       await updateSettings({ onboardingCompleted: true });
     }
+    return true;
   };
 }

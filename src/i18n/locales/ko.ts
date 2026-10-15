@@ -734,12 +734,14 @@ export const ko: Dictionary = {
         cancel: '취소',
         confirm: '삭제',
         editRowAria: '이 생리 기록 편집',
+        saveFailed: '저장하지 못했어요. 연결을 확인하고 다시 시도해 주세요.',
       },
       periodRecordSheet: {
         title: '생리 기록',
         closeAria: '닫기',
         saveAria: '저장',
         periodDaysLabel: '생리일',
+        saveFailed: '저장하지 못했어요. 연결을 확인하고 다시 시도해 주세요.',
       },
       yearMonthPicker: {
         title: '날짜 선택',

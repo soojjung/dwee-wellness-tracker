@@ -6,8 +6,10 @@ import { useConditionStore } from '@/store/conditionStore';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useEscToClose } from '@/hooks/useEscToClose';
 import { useApplyPeriodChanges } from '@/hooks/useApplyPeriodChanges';
+import { useFlashMessage } from '@/hooks/useFlashMessage';
 import { useConditionSelection } from '@/hooks/useConditionSelection';
 import { HeaderCancelGlyph, HeaderCheckGlyph } from '@/components/ui/icons';
+import { Toast } from '@/components/ui/Toast';
 import { EventConditionSection } from '@/components/log/EventConditionSection';
 import { compact, computeChanges, toDrafts } from '@/domain/cycle/periodEdit';
 import {
@@ -20,6 +22,8 @@ import {
 import type { ISODate } from '@/lib/date';
 import type { PeriodLog } from '@/types';
 import { PeriodRangeCalendar } from './PeriodRangeCalendar';
+
+const TOAST_MS = 3200;
 
 interface PeriodRecordSheetProps {
   today: ISODate;
@@ -49,6 +53,7 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
   const selectedDates = useMemo(() => selectedPeriodDates(selection), [selection]);
   const newKeyCounter = useRef(0);
   const [submitting, setSubmitting] = useState(false);
+  const [toast, flashToast] = useFlashMessage(TOAST_MS);
 
   useEffect(() => {
     hydrateConditionRange(today, today);
@@ -84,7 +89,11 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
     try {
       const added = finalizePeriodDrafts(selection, averagePeriodLength);
       const changes = computeChanges(periods, compact([...toDrafts(periods), ...added]));
-      await applyPeriodChanges(changes);
+      // 실패하면 시트를 닫지 않는다 — 고른 날짜를 그대로 두고 다시 시도할 수 있게 (R7-11).
+      if (!(await applyPeriodChanges(changes))) {
+        flashToast(t.report.diary.periodRecordSheet.saveFailed);
+        return;
+      }
       const picked = condition.toSelection();
       if (picked) await upsertCondition({ date: today, ...picked });
       onClose();
@@ -170,6 +179,7 @@ export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheet
           />
         </div>
       </div>
+      <Toast message={toast} className="z-50" />
     </div>
   );
 }

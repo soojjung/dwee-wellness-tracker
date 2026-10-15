@@ -739,12 +739,14 @@ export const en = {
         cancel: 'Cancel',
         confirm: 'Delete',
         editRowAria: 'Edit this period',
+        saveFailed: "Couldn't save your changes. Please check your connection and try again.",
       },
       periodRecordSheet: {
         title: 'Log period',
         closeAria: 'Close',
         saveAria: 'Save',
         periodDaysLabel: 'Period days',
+        saveFailed: "Couldn't save your changes. Check your connection and try again.",
       },
       yearMonthPicker: {
         title: 'Select date',

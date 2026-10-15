@@ -6,6 +6,14 @@ import type { NewPeriodInput } from '@/data';
 import type { PeriodLog } from '@/types';
 import { reconcileForNewStart } from '@/domain/cycle/recordPolicy';
 import { isValidISODate } from '@/lib/date';
+import { captureException } from '@/lib/monitoring/sentry';
+
+// Mutation failures go back to the caller (the sheet keeps the user's input and
+// shows a toast) instead of into `error`, which is the load failure HomeScreen
+// turns into a full-page error — that would also unmount the open sheet (R7-11).
+function reportMutationFailure(op: 'add' | 'update' | 'remove', e: unknown): void {
+  captureException(e, { tags: { period_op: op } });
+}
 
 function sortByStart(list: PeriodLog[]): PeriodLog[] {
   return [...list].sort((a, b) => a.startDate.localeCompare(b.startDate));
@@ -18,13 +26,16 @@ interface PeriodState {
   error: string | null;
   hydrate: () => Promise<void>;
   rehydrate: () => Promise<void>;
+  /** null when the input is invalid or the write failed. */
   add: (input: NewPeriodInput) => Promise<PeriodLog | null>;
   /** 직전 기록을 삭제하고 새 입력을 추가한다 (typo 수정 시나리오). */
   replace: (oldId: string, input: NewPeriodInput) => Promise<PeriodLog | null>;
   /** 직전 기록의 endDate 를 `throughDate` 까지 연장 ("still bleeding" 시나리오). 기존 endDate 가 더 크면 유지. */
-  extendThrough: (id: string, throughDate: string) => Promise<void>;
-  update: (id: string, patch: Partial<Omit<PeriodLog, 'id' | 'createdAt'>>) => Promise<void>;
-  remove: (id: string) => Promise<void>;
+  extendThrough: (id: string, throughDate: string) => Promise<boolean>;
+  /** false when the patch is invalid or the write failed. */
+  update: (id: string, patch: Partial<Omit<PeriodLog, 'id' | 'createdAt'>>) => Promise<boolean>;
+  /** false when the write failed. */
+  remove: (id: string) => Promise<boolean>;
 }
 
 function maxISO(a: string, b: string): string {
@@ -54,14 +65,8 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
   },
 
   async add(input) {
-    if (!isValidISODate(input.startDate)) {
-      set({ error: `Invalid startDate: ${input.startDate}` });
-      return null;
-    }
-    if (input.endDate !== undefined && !isValidISODate(input.endDate)) {
-      set({ error: `Invalid endDate: ${input.endDate}` });
-      return null;
-    }
+    if (!isValidISODate(input.startDate)) return null;
+    if (input.endDate !== undefined && !isValidISODate(input.endDate)) return null;
     try {
       const { existingMatch, closeUpdates } = reconcileForNewStart(get().periods, input.startDate);
       if (existingMatch) return existingMatch;
@@ -77,43 +82,36 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
       set({ periods: sortByStart([...refreshed, log]) });
       return log;
     } catch (e) {
-      set({ error: errorMessage(e) });
+      reportMutationFailure('add', e);
       return null;
     }
   },
 
   async replace(oldId, input) {
-    await get().remove(oldId);
+    if (!(await get().remove(oldId))) return null;
     return get().add(input);
   },
 
   async extendThrough(id, throughDate) {
-    if (!isValidISODate(throughDate)) {
-      set({ error: `Invalid throughDate: ${throughDate}` });
-      return;
-    }
+    if (!isValidISODate(throughDate)) return false;
     const target = get().periods.find((p) => p.id === id);
-    if (!target) return;
+    if (!target) return false;
     const nextEnd = target.endDate ? maxISO(target.endDate, throughDate) : throughDate;
-    if (nextEnd === target.endDate) return;
-    await get().update(id, { endDate: nextEnd });
+    if (nextEnd === target.endDate) return true;
+    return get().update(id, { endDate: nextEnd });
   },
 
   async update(id, patch) {
-    if (patch.startDate !== undefined && !isValidISODate(patch.startDate)) {
-      set({ error: `Invalid startDate: ${patch.startDate}` });
-      return;
-    }
-    if (patch.endDate !== undefined && !isValidISODate(patch.endDate)) {
-      set({ error: `Invalid endDate: ${patch.endDate}` });
-      return;
-    }
+    if (patch.startDate !== undefined && !isValidISODate(patch.startDate)) return false;
+    if (patch.endDate !== undefined && !isValidISODate(patch.endDate)) return false;
     try {
       const next = await periodRepo.update(id, patch);
-      if (!next) return;
+      if (!next) return false;
       set({ periods: sortByStart(get().periods.map((p) => (p.id === id ? next : p))) });
+      return true;
     } catch (e) {
-      set({ error: errorMessage(e) });
+      reportMutationFailure('update', e);
+      return false;
     }
   },
 
@@ -121,8 +119,10 @@ export const usePeriodStore = create<PeriodState>()((set, get) => ({
     try {
       await periodRepo.remove(id);
       set({ periods: get().periods.filter((p) => p.id !== id) });
+      return true;
     } catch (e) {
-      set({ error: errorMessage(e) });
+      reportMutationFailure('remove', e);
+      return false;
     }
   },
 }));
