@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@sentry/capacitor', () => ({ init: vi.fn() }));
-vi.mock('@sentry/react', () => ({ init: vi.fn(), captureException: vi.fn() }));
+vi.mock('@sentry/react', () => ({
+  init: vi.fn(),
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  flush: vi.fn(),
+}));
 vi.mock('@capacitor/core', () => ({
   Capacitor: { isNativePlatform: () => false, getPlatform: () => 'web' },
 }));

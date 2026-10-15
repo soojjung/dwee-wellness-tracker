@@ -102,3 +102,5 @@ export function initSentry(): void {
 }
 
 export const captureException = SentryReact.captureException;
+export const captureMessage = SentryReact.captureMessage;
+export const flushSentry = SentryReact.flush;
