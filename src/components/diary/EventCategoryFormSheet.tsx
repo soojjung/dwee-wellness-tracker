@@ -92,8 +92,9 @@ export function EventCategoryFormSheet({
         {/* Figma 012_9 header: matches EventFormSheet — circular X (left),
             centered title, circular ✓ (right — pink200 when canSave,
             gray400 when disabled). */}
-        {/* Figma 873:5486 — 일정 시트와 같은 40px ○X / ○✓ (공용 헤더 글리프), 화면명 18px. */}
-        <header className="relative flex items-center justify-between px-4 pb-3 pt-4">
+        {/* Figma 873:5486 — 일정 시트와 같은 40px ○X / ○✓ (공용 헤더 글리프), 화면명 18px.
+            전체 화면이라 상단 safe area 만큼 내린다 (R7-1). */}
+        <header className="relative flex items-center justify-between px-4 pb-3 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
           <button
             type="button"
             onClick={handleClose}
