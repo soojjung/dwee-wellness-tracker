@@ -17,6 +17,7 @@ export function PhotoEditScreen() {
   const hydrated = useMediaStore((s) => s.hydrated);
   const hydrate = useMediaStore((s) => s.hydrate);
   const draftConfirmPicks = useMediaStore((s) => s.draftConfirmPicks);
+  const draftResetToDefault = useMediaStore((s) => s.draftResetToDefault);
   const draftSetPhoto = useMediaStore((s) => s.draftSetPhoto);
   const draftClearPhoto = useMediaStore((s) => s.draftClearPhoto);
   const view = useMediaCustomizeView();
@@ -47,6 +48,9 @@ export function PhotoEditScreen() {
   if (!draftActive || !photoCount) return null;
 
   const allFilled = slots.every((s) => !!photoUrls[s]);
+  // 다 지우고 완료하면 홈은 기본 이미지로 돌아간다 (R7-6).
+  const allEmpty = slots.every((s) => !photoUrls[s]);
+  const canSubmit = allFilled || allEmpty;
 
   // 구분선은 아직 빈 칸이 있을 때만 — 어디를 채워야 하는지 보여주는 용도다.
   // 다 채우고 나면 홈에서 보는 모습과 같아야 하므로 선을 없앤다.
@@ -117,21 +121,22 @@ export function PhotoEditScreen() {
         <footer
           className={cn(
             'px-4 pb-8 pt-5 transition-colors',
-            allFilled ? 'bg-brand-pink50' : 'bg-brand-gray200',
+            canSubmit ? 'bg-brand-pink50' : 'bg-brand-gray200',
           )}
         >
           <button
             type="button"
-            disabled={!allFilled}
+            disabled={!canSubmit}
             onClick={() => {
               // Explicit acknowledgement of the current photo picks. Flips
               // draftPicksConfirmed on so the top-level "편집 완료" activates.
-              draftConfirmPicks();
+              if (allEmpty) draftResetToDefault();
+              else draftConfirmPicks();
               router.push('/home/customize');
             }}
             className={cn(
               'block w-full text-center text-lg font-semibold leading-6 transition-opacity',
-              allFilled
+              canSubmit
                 ? 'text-brand-gray900 hover:opacity-80'
                 : 'cursor-default text-brand-gray500',
             )}

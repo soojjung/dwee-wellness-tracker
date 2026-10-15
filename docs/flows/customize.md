@@ -82,7 +82,7 @@ flowchart TD
     TapEdit --> EditPhotos
     EditPhotos -->|"사진 편집 '편집 완료' 탭 → picksConfirmed=true"| Show
 
-    Show -->|"allFilled && picksConfirmed\n홈 꾸미기 '편집 완료'"| Commit["commitPhotoDraft()"]
+    Show -->|"picksConfirmed && (allFilled 또는 기본 이미지로)\n홈 꾸미기 '편집 완료'"| Commit["commitPhotoDraft()"]
     Show -->|"뒤로 (dirty)"| Dialog["DiscardDraftDialog"]
     Dialog -->|"확인"| Discard["discardPhotoDraft()"]
     Dialog -->|"취소"| Show
@@ -95,7 +95,7 @@ flowchart TD
 
 ### picksConfirmed 게이트
 
-홈 꾸미기의 "편집 완료" 는 `allFilled && picksConfirmed` 조건이 모두 참일 때만 활성화됩니다. `picksConfirmed` 는 PhotoEditScreen(사진 편집 그리드) 의 "편집 완료" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
+홈 꾸미기의 "편집 완료" 는 `picksConfirmed && (allFilled || 기본 이미지로 되돌리기)` 일 때 활성화됩니다. 사진 편집 그리드에서 칸을 전부 비우고 "편집 완료"를 누르면 `draftResetToDefault()` 가 지금 개수의 칸을 지우고 개수를 `null` 로 둔 채 확정하므로, 저장하면 홈이 기본 이미지로 돌아갑니다 (TestFlight R7-6). 다른 개수의 칸에 저장된 사진은 남습니다. `picksConfirmed` 는 PhotoEditScreen(사진 편집 그리드) 의 "편집 완료" 버튼을 눌러야 `true` 로 설정되며, 이후 사진 수 변경·blob 교체·슬롯 지우기 중 하나라도 발생하면 자동 리셋됩니다.
 
 ### beginPhotoDraft 초기 상태
 

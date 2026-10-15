@@ -72,6 +72,8 @@ interface MediaState {
   draftSetPhotoTransform: (slot: PhotoSlot, transform: PhotoTransform) => void;
   draftClearPhotoTransform: (slot: PhotoSlot) => void;
   draftConfirmPicks: () => void;
+  /** Clears the current count's photos so the home hero falls back to the default image on commit. */
+  draftResetToDefault: () => void;
 }
 
 function emptyUrls(): PhotoUrls {
@@ -342,10 +344,12 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
       }
       return;
     }
-    // If no photo is committed, the home hero is still showing the default
-    // image — treat the draft as fresh so no photo-count tile appears
-    // pre-selected on the customize screen.
-    const hasCommittedPhoto = state.photoUrls.some((u) => !!u);
+    // If the committed count isn't fully filled, the home hero is still showing
+    // the default image (same rule as HomeHero) — treat the draft as fresh so
+    // no photo-count tile appears pre-selected over an empty preview.
+    const hasCommittedPhoto =
+      state.photoCount !== null &&
+      slotsForCount(state.photoCount).every((slot) => !!state.photoUrls[slot]);
     // Committed photos were previously confirmed (they wouldn't be in the
     // repo otherwise), so open the draft in a "confirmed" state. Any pick
     // mutation below flips it back off.
@@ -501,5 +505,18 @@ export const useMediaStore = create<MediaState>()((set, get) => ({
   draftConfirmPicks() {
     if (!get().draftActive) return;
     set({ draftPicksConfirmed: true });
+  },
+
+  // Only the current count's slots — each count keeps its own photos, and the
+  // hero shows the default image as soon as the chosen count isn't full (R7-6).
+  draftResetToDefault() {
+    const count = get().draftPhotoCount;
+    if (!get().draftActive) return;
+    for (const slot of count ? slotsForCount(count) : []) {
+      const state = get();
+      if (!state.draftPhotoUrls[slot]) continue;
+      set(replaceDraftSlot(state, slot, () => ({ url: null, blob: null, cleared: true })));
+    }
+    set({ draftPhotoCount: null, draftPicksConfirmed: true });
   },
 }));
