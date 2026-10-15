@@ -66,8 +66,8 @@ export function CycleReportScreen({ currentView, onViewChange }: CycleReportScre
         )}
       </div>
       {entryOpen ? (
-        // 홈의 생리 아이콘은 여전히 PeriodSelectSheet(수정·삭제 포함)를 연다. 이 아이콘은
-        // 새 생리 구간 추가 + 오늘 컨디션만 다루는 전용 시트로 분리했다 (R5-6).
+        // 새 생리 구간 추가 + 오늘 컨디션 (R5-6). 홈 생리 아이콘도 같은 시트를 연다 (R7-5).
+        // 지난 기록 수정·삭제는 최근 주기 기록 줄 → PeriodEditSheet.
         <PeriodRecordSheet today={today} periods={periods} onClose={() => setEntryOpen(false)} />
       ) : null}
       {editingPeriod ? (

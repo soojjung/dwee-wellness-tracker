@@ -262,7 +262,7 @@ aggregate.ts의 이상치 필터 (lines 11, 22)
 
 ## 신규 기록 입력 정책 (evaluateNewStart) — 현재 UI 미연결
 
-> **상태**: `src/domain/cycle/recordPolicy.ts`는 순수 함수와 테스트(`recordPolicy.test.ts`)로만 존재한다. 이 정책을 소비하던 `ShortCycleConfirmDialog`는 삭제됐고, 다른 어떤 화면도 `evaluateNewStart`/`reconcileForNewStart`를 호출하지 않는다. 생리 기록은 현재 `PeriodSelectSheet` + `periodEdit.ts`(아래 §periodEdit.ts) 경로로만 입력된다. 아래 설계는 재도입 시 참고용으로 남겨 둔다.
+> **상태**: `src/domain/cycle/recordPolicy.ts`는 순수 함수와 테스트(`recordPolicy.test.ts`)로만 존재한다. 이 정책을 소비하던 `ShortCycleConfirmDialog`는 삭제됐고, 다른 어떤 화면도 `evaluateNewStart`/`reconcileForNewStart`를 호출하지 않는다. 생리 기록은 현재 `PeriodRecordSheet`(추가) / `PeriodEditSheet`(수정·삭제) + `periodRangeSelection.ts`·`periodEdit.ts`(아래 §periodEdit.ts) 경로로만 입력된다. 아래 설계는 재도입 시 참고용으로 남겨 둔다.
 
 파일: `src/domain/cycle/recordPolicy.ts`
 
@@ -300,7 +300,7 @@ aggregate.ts의 이상치 필터 (lines 11, 22)
 
 파일: `src/domain/cycle/periodEdit.ts` (+ `periodEdit.test.ts`, `periodEdit.cases.md`)
 
-`PeriodSelectSheet`가 내부적으로 유지하는 드래프트 상태를 조작하는 순수 함수 모음. 저장·저장소 호출 없음.
+`PeriodEditSheet`(기존 기록 수정·삭제)가 유지하는 드래프트 상태를 조작하고, `computeChanges` 로 diff 를 만드는 순수 함수 모음. 저장·저장소 호출 없음. 새 기록을 추가하는 `PeriodRecordSheet`도 `computeChanges`·`addRange` 등을 재사용한다.
 
 | 함수                                      | 역할                                                                    |
 | ----------------------------------------- | ----------------------------------------------------------------------- |
@@ -313,7 +313,11 @@ aggregate.ts의 이상치 필터 (lines 11, 22)
 | `compact(drafts)`                         | 인접·중첩 구간 병합 (originalId 최소값 보존)                            |
 | `computeChanges(original, working)`       | 드래프트 vs 원본 diff → `PeriodChange[]` (add / update / remove)        |
 
-`PeriodChange[]`는 `HomeScreen.handlePeriodChanges`가 소비해 remove → update → add 순서로 store 메서드를 호출합니다.
+`PeriodChange[]`는 공용 훅 `useApplyPeriodChanges`가 소비해 remove → update → add 순서로 store 메서드를 호출합니다.
+
+### periodRangeSelection.ts — 기록 시트 탭 규칙
+
+파일: `src/domain/cycle/periodRangeSelection.ts` (+ `.test.ts`, `.cases.md`). `PeriodRecordSheet` 의 달력 탭 상태(`PeriodTapState` = `drafts` + `pendingStart`)를 다루는 순수 함수. `tapPeriodDate(state, date, newKey)`: 선택된 날 재탭 → 그 하루만 제거 / 범위 뒤 7일 이내 → 연장 / 범위 바로 앞날 → 앞으로 연장 / 그 외 첫 탭 = 시작, 두 번째 탭 = 종료. `finalizePeriodDrafts` 는 시작일만 남은 경우 평균 생리 기간으로 종료일을 채우고(`defaultPeriodEndDate`), `selectedPeriodDates` 는 달력 하이라이트용 날짜 집합을 돌려준다. `periodEdit.ts` 를 조합할 뿐 저장소를 모른다.
 
 ## classifyCycleStatus — 주기 상태 판정
 
@@ -362,7 +366,7 @@ interface CycleStatusResult {
 | 2026-06-04 | 초기 문서화                                                                                                                                                                         | phase.ts, aggregate.ts, predictor.ts 로직 검증 및 문서화                         | 완료 |
 | 2026-06-04 | 황체기 phase advice 카피 완충 어조로 조정 ("휴식을 추천해요" → "잠시 쉬어가도 좋아요" / "rest is recommended" → "taking it easy may help")                                          | `home.phaseAdvice.luteal` ko/en                                                  | 완료 |
 | 2026-06-16 | `evaluateNewStart` + `SHORT_CYCLE_THRESHOLD_DAYS` 신규. shortGap 시 ShortCycleConfirmDialog 분기 (extend / replace / saveAnyway). `recordPolicy.ts` 8개 테스트 추가.                | `domain/cycle/recordPolicy.ts`, `periodStore.ts` (replace, extendThrough 메서드) | 완료 |
-| 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). `PeriodSelectSheet` + `PeriodSelectSheet`가 소비. | `domain/cycle/periodEdit.ts`, `components/app/PeriodSelectSheet.tsx`             | 완료 |
+| 2026-07-15 | `periodEdit.ts` 신규 — 바텀 시트 드래프트 편집 순수 함수 (toDrafts / removeDay / extendTo / addRange / compact / computeChanges). 당시 `PeriodSelectSheet`가 소비(2026-10 R7-5 에서 시트 삭제 → `PeriodEditSheet`·`PeriodRecordSheet` 가 소비, `periodRangeSelection.ts` 추가). | `domain/cycle/periodEdit.ts`, `domain/cycle/periodRangeSelection.ts` | 완료 |
 | 2026-07-28 | `classifyCycleStatus` 신규 — 7단계 주기 상태 판정. 10개 Vitest 케이스. `/log` 화면 주기리포트(CycleReportScreen)에서 소비.                                                          | `domain/cycle/status.ts`, `components/report/StatusBadge.tsx`                    | 완료 |
 | 2026-09-21 | 유효 간격 기준을 `gaps.length < 2`로 변경. 유효 간격 1개일 때도 `insufficient` 반환(변동폭은 2개 이상 필요). MIN_CYCLES_FOR_STATUS = 2 상수 신규.                                   | `domain/cycle/status.ts`, `.claude/rules/cycle-logic.md`, `docs/domain/cycle.md` | 완료 |
 | 2026-09-30 | Phase 판정 시 grace window 도입. dayInCycle >= cycle 상황에서 최대 14일간 'luteal' 유지 (confidence 'low'). 이후 'unknown'으로 전환 (TestFlight R5-5 피드백). 24개 Vitest 케이스 추가. | `domain/cycle/phase.ts`, `.claude/rules/cycle-logic.md`, `docs/domain/cycle.md`   | 완료 |

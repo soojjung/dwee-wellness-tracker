@@ -12,8 +12,7 @@ import {
 import { defaultPeriodEndDate } from './recordPolicy';
 
 /**
- * Calendar tap state shared by `PeriodSelectSheet` (Home) and
- * `PeriodRecordSheet` (report). `drafts` are the ranges built so far;
+ * Calendar tap state for `PeriodRecordSheet`. `drafts` are the ranges built so far;
  * `pendingStart` is a lone first tap still waiting for its end.
  */
 export interface PeriodTapState {

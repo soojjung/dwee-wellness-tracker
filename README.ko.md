@@ -276,13 +276,13 @@ src/
 │   └── notices/                  버전별 공지사항 (`en`/`ko`, en 원문 · ko 번역, `release-notes-writer` 에이전트가 버전마다 작성)
 │
 ├── domain/
-│   ├── cycle/                    순수 함수: aggregate, predictor, phase, status, cellState, periodEdit, cycleGap, fertile window
+│   ├── cycle/                    순수 함수: aggregate, predictor, phase, status, cellState, periodEdit, periodRangeSelection, cycleGap, fertile window
 │   ├── event/                    이벤트/카테고리 순수 함수: builtins, builtinDedupe, weekLanes, badges, palette
 │   ├── holiday/                  공휴일 순수 함수: KR 음력 표, US 규칙, 날짜 유틸
 │   ├── diary/                    기본 스티커 메타 정의
 │   └── home/                     decor 타입·상수 (PhotoCount, TextPosition 등)
 ├── lib/
-│   ├── date/                     날짜 유틸 (month, monthWeeks 포함)
+│   ├── date/                     날짜 유틸 (month 포함)
 │   ├── insight/                  rule-based 인사이트 생성 (테스트 없음)
 │   ├── image/                    canvas·이미지 헬퍼 (pickNativePhotos, canvas, videoFrame 등)
 │   ├── loginEntrance.ts          로그인 스티커 fly-in 1회성 신호 (appToast 와 동일 패턴, in-memory)
@@ -360,7 +360,7 @@ return <h1>{t.home.nextPeriodTitle}</h1>;
 **인증·동기화**
 - [x] Supabase 기반 셋업 — auth store, 익명 로그인, 어댑터 wiring (`data/index.ts` 분기), Apple/Google OAuth, 로컬→클라우드 1회 마이그레이션, `AuthGuard` 첫 진입 게이트, 로그아웃 후 `/login` 복귀 + 스토어 rehydrate (2026-09-19: 기기 최초 실행 시 `/login` 앞에 소개 슬라이드가 추가됨 — 아래 항목 참고)
 - [x] 계정 관리 — 회원 탈퇴 (`delete-account` Edge Function, 2단계 확인 + 사유 수집 `withdrawal_feedbacks`, migration 0011), 계정 편집(`/settings/account`)
-- [x] 첫 실행 온보딩 (2026-09-19) — `(intro)` 라우트 그룹, 기기 스코프 `introSeen` 플래그(`IntroRepository`, 로컬 전용, 계정과 무관). 스플래시(최소 2초) → 소개 슬라이드 3장(스와이프 + 건너뛰기) → `/login`. 로그인 화면엔 온보딩 직후 1회만 스티커 fly-in 연출(`loginEntrance` 신호). 계정에 기록이 없고 `onboardingCompleted` 가 false면 첫 홈 진입 시 생리일 기입 바텀시트(`PeriodSelectSheet variant="intro"`)가 한 번 더 뜬다 — 선택 없이 시작해도 계정 설정에 완료로 기록되어 다시 묻지 않음
+- [x] 첫 실행 온보딩 (2026-09-19) — `(intro)` 라우트 그룹, 기기 스코프 `introSeen` 플래그(`IntroRepository`, 로컬 전용, 계정과 무관). 스플래시(최소 2초) → 소개 슬라이드 3장(스와이프 + 건너뛰기) → `/login`. 로그인 화면엔 온보딩 직후 1회만 스티커 fly-in 연출(`loginEntrance` 신호). 첫 로그인 후 생리일 질문 시트는 2026-10 R7-5 에서 제거 — 생리 기록은 홈·주기 리포트의 생리 아이콘(`PeriodRecordSheet`, 새 기록만 추가)에서 하고, 수정·삭제는 리포트 최근 주기 행(`PeriodEditSheet`)에서만 한다
 - [x] 로그인 화면 연령·약관 동의 (STEP 1.5, 2026-09-22) — `ConsentCheck`(만 14세 이상 + 공개 `/legal/terms`·`/legal/privacy` 링크 동의) 체크 전까지 Apple/Google/게스트 버튼 비활성. `settings.ageConfirmedAt`(로컬 전용, Supabase 컬럼 없음)에 기록, 로그아웃 시 초기화되어 다음 사람에게 다시 묻는다
 - [x] 네이티브 OAuth 복귀 (STEP 2, 2026-09-22) — Capacitor 에서는 시스템 브라우저(`@capacitor/browser`)로 진행하고 `dwee://auth/callback` 로 돌아온 URL 을 `appUrlOpen` 이 `/auth/callback/` 로 넘겨 웹과 같은 경로로 마무리(`lib/auth/nativeCallback.ts`). Info.plist `dwee` 스킴 등록은 `pnpm ios:setup`(Phase 2, 2026-09-22), Supabase Redirect URL 은 출시 계획 Phase 3
 - [x] 로컬 알림 (STEP 4, 2026-09-22) — `domain/notification/schedule.ts`(순수, Vitest 9)가 기록·설정으로 예정 D-N일·지연(예정일+2)·가임기 시작 알림을 09:00 로 계획, `hooks/useNotificationSync` 가 `@capacitor/local-notifications` 로 취소 후 재예약. 권한은 마스터 토글 ON 때 요청, 웹은 "앱에서만 알림" 안내. 실기기 발송 검증은 Phase 4

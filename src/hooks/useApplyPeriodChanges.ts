@@ -4,8 +4,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import type { PeriodChange } from '@/domain/cycle/periodEdit';
 
 /**
- * `PeriodSelectSheet` 의 제출 결과를 저장한다. 홈과 주기 리포트가 같은 시트를 쓰므로
- * 반영 순서(삭제 → 수정 → 추가)도 여기 한 곳에 둔다 — 추가가 먼저 가면 지울 기록과
+ * 생리 시트들의 제출 결과(`PeriodChange[]`)를 저장한다. 반영 순서(삭제 → 수정 → 추가)를
+ * 여기 한 곳에 둔다 — 추가가 먼저 가면 지울 기록과
  * 겹쳐 `reconcileForNewStart` 가 엉뚱한 기록을 닫을 수 있다.
  */
 export function useApplyPeriodChanges() {

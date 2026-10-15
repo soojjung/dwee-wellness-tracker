@@ -28,10 +28,10 @@ interface PeriodRecordSheetProps {
 }
 
 /**
- * "생리 기록 / Log period" — opened from the cycle report's period-add icon
- * (Figma 947:7835 / 947:7336). Unlike `PeriodSelectSheet`, this only ADDS new
- * period ranges and optionally logs TODAY's condition alongside it; it
- * never edits or removes existing records (that stays on Home).
+ * "생리 기록 / Log period" — opened from the period icon on Home and on the
+ * cycle report (Figma 947:7835 / 947:7336). It only ADDS new period ranges and
+ * optionally logs TODAY's condition alongside them; editing or removing an
+ * existing record goes through the report's recent-cycles rows.
  */
 export function PeriodRecordSheet({ today, periods, onClose }: PeriodRecordSheetProps) {
   const t = useT();

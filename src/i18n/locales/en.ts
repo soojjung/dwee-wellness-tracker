@@ -41,12 +41,6 @@ export const en = {
   home: {
     errorLabel: 'Something went wrong. Please try again.',
     startPeriodButton: 'Log period start',
-    periodSheet: {
-      title: 'Log period',
-      closeAria: 'Close',
-      saveAria: 'Save',
-      showEarlier: 'Show earlier months',
-    },
     cancel: 'Cancel',
     todayLabel: 'Today',
     dDayPrefix: '',
@@ -1139,7 +1133,6 @@ export const en = {
   onboarding: {
     skip: 'Skip',
     next: 'Next',
-    start: 'Get started',
     slides: {
       record: {
         eyebrow: 'Track your period and daily life',

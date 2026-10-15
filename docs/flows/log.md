@@ -29,7 +29,7 @@ stateDiagram-v2
 
 Report 탭이 활성화되면 `<CycleReportScreen />` 을 렌더합니다. 구성 요소:
 
-1. **ReportHeader** — 화면 제목 + 우상단 생리 아이콘 버튼. 홈의 생리 아이콘과 같은 `PeriodSelectSheet` 를 열어 새 기록 추가와 지난 기록의 날짜 수정·삭제를 한 곳에서 한다(빈 상태의 기록 버튼도 동일). 저장은 두 화면이 공유하는 `useApplyPeriodChanges`(삭제 → 수정 → 추가 순). 예전의 새 기록 전용 `LogEntryDialog`(시작/종료 + 컨디션·메모)는 2026-09-26 TestFlight R3-6 에서 제거.
+1. **ReportHeader** — 화면 제목 + 우상단 생리 아이콘 버튼. 홈의 생리 아이콘과 같은 `PeriodRecordSheet` 를 열어 **새 기록만 추가**한다(빈 상태의 기록 버튼도 동일; 한 달 캘린더 + 오늘 컨디션 칩, 기존 기록은 점으로만 표시). 지난 기록의 날짜 수정·삭제는 `RecentCyclesCard` 행을 탭해 여는 `PeriodEditSheet` 에서만 한다. 저장은 두 화면이 공유하는 `useApplyPeriodChanges`(삭제 → 수정 → 추가 순). 예전의 새 기록 전용 `LogEntryDialog`(시작/종료 + 컨디션·메모)는 2026-09-26 TestFlight R3-6 에서 제거.
 2. **StatusBadge** — `classifyCycleStatus()` 결과를 7단계 코드(`stable` / `regular` / `slightlyIrregular` / `irregular` / `shortPeriod` / `longPeriod` / `insufficient`)로 표시. 탭하면 StatusTooltip이 열림.
 3. **CycleChart** — 최근 주기 길이 시계열 차트.
 4. **RecentCyclesCard** — 최근 생리 기록 목록 (날짜 + 기간).
@@ -46,7 +46,7 @@ flowchart TD
     Empty["CycleReportEmpty\n(기록 없음 안내)"]
     Report["ReportHeader\n+ StatusBadge\n+ CycleChart\n+ RecentCyclesCard"]
     Tooltip["StatusTooltip\n(StatusBadge 탭)"]
-    Dialog["PeriodSelectSheet\n(생리 아이콘 탭 · 홈과 공통)"]
+    Dialog["PeriodRecordSheet\n(생리 아이콘 탭 · 홈과 공통)"]
 
     Mount --> HasPeriods
     HasPeriods -- no --> Empty
@@ -268,7 +268,7 @@ flowchart TD
 
 ### 컨디션 연동 (STEP 10.2c) · 생리 토글 제거 (R4-10)
 
-`EventFormSheet` 는 add/edit 두 모드 모두에서 `EventConditionSection`(선택) 을 렌더합니다. **생리 토글은 2026-09-28(TestFlight R4-10) 제거** — 일정 유형(필수)과 생리가 한 시트에서 함께 선택돼 헷갈린다는 피드백으로, 일정과 생리 기록을 분리했습니다. 생리 기록은 홈의 생리 아이콘·주기리포트의 생리 아이콘(`PeriodSelectSheet`)에서만 입력합니다.
+`EventFormSheet` 는 add/edit 두 모드 모두에서 `EventConditionSection`(선택) 을 렌더합니다. **생리 토글은 2026-09-28(TestFlight R4-10) 제거** — 일정 유형(필수)과 생리가 한 시트에서 함께 선택돼 헷갈린다는 피드백으로, 일정과 생리 기록을 분리했습니다. 생리 기록은 홈의 생리 아이콘·주기리포트의 생리 아이콘(`PeriodRecordSheet`)에서만 입력합니다.
 
 - 일정 삭제는 일정만 지웁니다. 생리 기록은 홈·리포트에서 따로 수정·삭제합니다. 일정 상세에서도 "생리 있음/없음" 행을 뺐습니다.
 - `event_logs.has_period_mark` / `linked_period_id` 컬럼과 `EventLog` 의 해당 필드는 `0018_drop_event_period_link.sql` 로 삭제했습니다 (2026-09-30, 출시 전이라 데이터 보존 안 함). `eventStore.linkPeriodMark` / `unlinkPeriodMark` 도 R4-10 에서 삭제.

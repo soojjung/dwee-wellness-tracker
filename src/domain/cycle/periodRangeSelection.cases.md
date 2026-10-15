@@ -4,7 +4,7 @@
 
 Last run: 2026-10-16 — 16/16 passed
 
-공용 달력 탭 규칙 — 홈 `PeriodSelectSheet` 와 리포트 `PeriodRecordSheet` 가 같이 쓴다 (R7-4). 입력은 빈 상태에서 차례로 누른 날짜.
+`PeriodRecordSheet`(홈·리포트 생리 아이콘 공통)의 달력 탭 규칙 (R7-4). 입력은 빈 상태에서 차례로 누른 날짜.
 
 ## `tapPeriodDate(state, date, newKey)`
 

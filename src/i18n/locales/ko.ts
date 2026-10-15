@@ -41,12 +41,6 @@ export const ko: Dictionary = {
   home: {
     errorLabel: '잠시 문제가 있었어요. 다시 시도해 주세요.',
     startPeriodButton: '생리 시작 기록',
-    periodSheet: {
-      title: '생리일 선택',
-      closeAria: '닫기',
-      saveAria: '저장',
-      showEarlier: '이전 달 더 보기',
-    },
     cancel: '취소',
     todayLabel: '오늘',
     dDayPrefix: 'D-',
@@ -1128,7 +1122,6 @@ export const ko: Dictionary = {
   onboarding: {
     skip: '건너뛰기',
     next: '다음',
-    start: '시작하기',
     slides: {
       record: {
         eyebrow: '생리와 일상을 함께 기록',
