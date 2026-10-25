@@ -102,7 +102,7 @@ export function PhotoImportModal({ file, onClose, onSaved }: PhotoImportModalPro
       <div
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: '90dvh' }}
-        className="mx-auto mt-auto flex w-full max-w-md flex-col overflow-hidden rounded-t-[32px] bg-brand-white"
+        className="mx-auto mt-auto flex w-full max-w-md flex-col overflow-hidden rounded-t-[32px] bg-brand-white sm:max-w-[416px]"
       >
         <header className="flex shrink-0 items-center justify-between p-4">
           <button
