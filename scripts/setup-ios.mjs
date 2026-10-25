@@ -13,6 +13,7 @@
  *  - deployment target 15.0 (pbxproj + Podfile), MARKETING_VERSION / CURRENT_PROJECT_VERSION
  *    from package.json `version` / `iosBuild`
  *  - 1024 app icon from public/, plain #F5F3F4 launch screen
+ *  - #F5F3F4 window background (shows beside the keyboard while the WebView is shrunk)
  *  - DEVELOPMENT_TEAM + App.entitlements (Sign in with Apple) registered in the target
  *
  * Nothing is left to do in Xcode for a debug build; App Store signing still
@@ -300,6 +301,24 @@ if (existsSync(iconSrc)) {
       .replace(/\s*<capability name="System colors in document resources"[^>]*\/>/, '');
     writeFileSync(storyboardPath, plain);
     log('LaunchScreen: plain #F5F3F4 background');
+  }
+}
+
+// --------------------------------------------------------- window background
+// Keyboard `resize: 'native'` shrinks the WebView itself, so the strip beside
+// the iOS 26 keyboard's rounded corners shows the window behind it — black by
+// default. Paint it the sheet color so the keyboard sits on the sheet.
+{
+  const file = join(appDir, 'AppDelegate.swift');
+  const body = readFileSync(file, 'utf8');
+  const hook = '        // Override point for customization after application launch.\n';
+  if (!body.includes('window?.backgroundColor') && body.includes(hook)) {
+    const { red, green, blue } = LAUNCH_BG;
+    const line = `        window?.backgroundColor = UIColor(red: ${red}, green: ${green}, blue: ${blue}, alpha: 1)\n`;
+    writeFileSync(file, body.replace(hook, hook + line));
+    log('AppDelegate: window background #F5F3F4');
+  } else if (!body.includes('window?.backgroundColor')) {
+    console.warn('[setup-ios] AppDelegate hook not found — window background left black');
   }
 }
 
