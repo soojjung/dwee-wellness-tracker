@@ -765,6 +765,7 @@ export const ko: Dictionary = {
         save: '완료',
         close: '닫기',
         delete: '일정 유형 삭제',
+        deletedToast: '일정 유형이 삭제되었어요.',
       },
       palette: {
         pink: '핑크',

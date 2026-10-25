@@ -1,6 +1,7 @@
 'use client';
 import { supabase } from '@/data/adapters/supabase/client';
 import { fileToBase64 } from '@/lib/image/fileToBase64';
+import { downscaleImage } from '@/lib/image/downscale';
 import { base64ToBlob } from '@/lib/cutout/base64ToBlob';
 import type {
   StickerCutoutError,
@@ -32,6 +33,20 @@ interface EdgeResponse {
 
 interface InvokeErrorContext {
   json: () => Promise<unknown>;
+}
+
+// 누끼 결과는 trimTransparentMargins 가 다시 1280px 로 줄여 저장한다. 원본(수 MB)을 그대로
+// 보내면 업로드·remove.bg 처리·결과 PNG 다운로드가 모두 커져 스캔이 오래 걸린다(R8-11).
+const CUTOUT_INPUT_MAX_EDGE = 1500;
+
+/** 보내기 전에 줄인다. PNG·WebP 는 투명 영역이 검게 변하지 않게 PNG 로 둔다. */
+async function shrinkForCutout(
+  blob: Blob,
+  mediaType: SupportedImageMediaType,
+): Promise<{ blob: Blob; mediaType: SupportedImageMediaType }> {
+  const type = mediaType === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+  const shrunk = await downscaleImage(blob, CUTOUT_INPUT_MAX_EDGE, 0.9, type);
+  return shrunk === blob ? { blob, mediaType } : { blob: shrunk, mediaType: type };
 }
 
 async function ensureAnonSession(): Promise<void> {
@@ -87,9 +102,10 @@ export async function removeStickerBackground(input: CutoutInput): Promise<Cutou
     return { ok: false, error: 'unauthenticated' };
   }
 
+  const { blob, mediaType } = await shrinkForCutout(input.blob, input.mediaType);
   let imageBase64: string;
   try {
-    imageBase64 = await fileToBase64(input.blob);
+    imageBase64 = await fileToBase64(blob);
   } catch {
     return { ok: false, error: 'missing_image' };
   }
@@ -97,7 +113,7 @@ export async function removeStickerBackground(input: CutoutInput): Promise<Cutou
   const { data, error } = await supabase.functions.invoke<EdgeResponse>(
     'sticker-cutout',
     {
-      body: { imageBase64, imageMediaType: input.mediaType },
+      body: { imageBase64, imageMediaType: mediaType },
       signal: input.signal,
     },
   );

@@ -2,13 +2,19 @@ import { canvasToBlob } from './canvas';
 import { fitWithin } from './fit';
 
 /**
- * Re-encode a photo so its long edge is at most `maxEdge`, as JPEG.
+ * Re-encode a photo so its long edge is at most `maxEdge`, as JPEG (or PNG
+ * when transparency must survive).
  * Camera-roll originals are 3–5 MB; home photos render in a ≤448px column
  * (even at 4× zoom a ~2k edge stays sharp), so uploading the original only
  * makes the save slow on cellular. Falls back to the original blob when it's
  * already small enough or the browser can't decode it.
  */
-export async function downscaleImage(blob: Blob, maxEdge = 2048, quality = 0.85): Promise<Blob> {
+export async function downscaleImage(
+  blob: Blob,
+  maxEdge = 2048,
+  quality = 0.85,
+  type: 'image/jpeg' | 'image/png' = 'image/jpeg',
+): Promise<Blob> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(blob);
@@ -24,7 +30,7 @@ export async function downscaleImage(blob: Blob, maxEdge = 2048, quality = 0.85)
     const ctx = canvas.getContext('2d');
     if (!ctx) return blob;
     ctx.drawImage(bitmap, 0, 0, target.width, target.height);
-    return (await canvasToBlob(canvas, 'image/jpeg', quality)) ?? blob;
+    return (await canvasToBlob(canvas, type, quality)) ?? blob;
   } finally {
     bitmap.close();
   }

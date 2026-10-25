@@ -3,6 +3,7 @@ import './globals.css';
 import { DevBridge } from '@/dev/DevBridge';
 import { NativeChrome } from '@/components/app/NativeChrome';
 import { SwipeBackGesture } from '@/components/app/SwipeBackGesture';
+import { ModalFocusTrap } from '@/components/app/ModalFocusTrap';
 import { StaticPageUrlCleanup } from '@/components/app/StaticPageUrlCleanup';
 import { Monitoring } from '@/components/app/Monitoring';
 
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <DevBridge />
         <NativeChrome />
         <SwipeBackGesture />
+        <ModalFocusTrap />
         <StaticPageUrlCleanup />
         {children}
       </body>

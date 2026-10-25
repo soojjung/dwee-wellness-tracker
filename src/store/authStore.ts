@@ -1,6 +1,6 @@
 'use client';
 import { create } from 'zustand';
-import type { Session, User } from '@supabase/supabase-js';
+import { isAuthRetryableFetchError, type Session, type User } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
@@ -96,6 +96,10 @@ function reportAuthFailure(step: 'anonymous' | 'oauth', e: unknown): void {
 }
 
 function classifyError(e: unknown): AuthErrorKind {
+  // iOS WebView reports a dropped request as "Load failed", which the message
+  // check below misses; Supabase wraps every request that never got an
+  // answer in AuthRetryableFetchError.
+  if (isAuthRetryableFetchError(e)) return 'networkOffline';
   const msg = (e as Error)?.message?.toLowerCase() ?? '';
   if (msg.includes('network') || msg.includes('fetch')) return 'networkOffline';
   return 'anonFailed';

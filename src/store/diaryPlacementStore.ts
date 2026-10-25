@@ -182,6 +182,11 @@ export const useDiaryPlacementStore = create<DiaryPlacementState>()((set, get) =
 // infinite re-render loop ("The result of getSnapshot should be cached").
 const EMPTY_PLACEMENTS: DiaryStickerPlacement[] = [];
 
+/** 그 달을 한 번이라도 불러왔는지 — 스와이프용 옆 달을 미리 받을 때 중복 요청을 피한다. */
+export function selectMonthLoaded(year: number, monthIndex: number) {
+  return (s: DiaryPlacementState): boolean => monthKey(year, monthIndex) in s.byMonth;
+}
+
 export function selectPlacementsForMonth(year: number, monthIndex: number) {
   return (s: DiaryPlacementState): DiaryStickerPlacement[] =>
     s.byMonth[monthKey(year, monthIndex)] ?? EMPTY_PLACEMENTS;

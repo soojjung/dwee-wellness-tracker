@@ -55,7 +55,7 @@ export function YearMonthWheelPicker({
       onClick={onCancel}
     >
       <div
-        className="flex w-full max-w-md flex-col rounded-t-3xl bg-brand-white pb-6 shadow-[0_-8px_32px_0_rgba(0,0,0,0.18)]"
+        className="flex w-full max-w-md flex-col rounded-t-3xl bg-brand-white pb-6 shadow-[0_-8px_32px_0_rgba(0,0,0,0.18)] sm:max-w-[416px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Figma 311:2130 header — same shape as the event sheet header:

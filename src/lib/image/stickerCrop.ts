@@ -1,5 +1,6 @@
 import type { StickerRatio } from '@/types';
 import { canvasToBlob } from './canvas';
+import { fitWithin } from './fit';
 import {
   STICKER_RATIO_ASPECT,
   centerCropRect,
@@ -56,11 +57,15 @@ const TRIM_SCAN_MAX_SIDE = 512;
 const TRIM_ALPHA_THRESHOLD = 12;
 // 잘라낸 뒤 피사체가 프레임 끝에 딱 붙지 않게 두는 여백 (피사체 긴 변 대비).
 const TRIM_PADDING_RATIO = 0.02;
+// 저장하는 누끼 스티커의 긴 변 상한. 최대 확대(3배)한 세로형 스티커도 3x 화면에서 약
+// 1150px 이라 이걸로 충분하다. 원본 크기 PNG 는 수 MB 라 등록(업로드)이 느려진다(R8-11).
+const STICKER_MAX_EDGE = 1280;
 
 /**
  * 누끼 PNG 의 투명 여백을 걷어 낸다. 카메라는 화면 전체를 찍으므로 피사체 둘레에 빈
  * 공간이 크게 남는데, 그대로 저장하면 스티커가 제 상자보다 작게 보이고 눈에 안 보이는
- * 영역까지 터치가 잡힌다. 어떤 이유로든 실패하면 원본을 그대로 돌려준다.
+ * 영역까지 터치가 잡힌다. 결과는 긴 변 STICKER_MAX_EDGE 로 줄인다. 어떤 이유로든
+ * 실패하면 원본을 그대로 돌려준다.
  */
 export async function trimTransparentMargins(png: Blob): Promise<Blob> {
   try {
@@ -80,19 +85,24 @@ export async function trimTransparentMargins(png: Blob): Promise<Blob> {
       scanH,
       TRIM_ALPHA_THRESHOLD,
     );
-    if (!found) return png;
-
-    const toFull = img.width / scanW;
-    const padding = Math.max(found.width, found.height) * toFull * TRIM_PADDING_RATIO;
-    const crop = expandBounds(found, scanW / img.width, padding, img.width, img.height);
-    if (crop.width >= img.width && crop.height >= img.height) return png;
+    const full = { x: 0, y: 0, width: img.width, height: img.height };
+    let crop = full;
+    if (found) {
+      const toFull = img.width / scanW;
+      const padding = Math.max(found.width, found.height) * toFull * TRIM_PADDING_RATIO;
+      crop = expandBounds(found, scanW / img.width, padding, img.width, img.height);
+    }
+    const size = fitWithin(crop, STICKER_MAX_EDGE);
+    const untouched =
+      crop.width >= img.width && crop.height >= img.height && size.width === crop.width;
+    if (untouched) return png;
 
     const out = document.createElement('canvas');
-    out.width = crop.width;
-    out.height = crop.height;
+    out.width = size.width;
+    out.height = size.height;
     const outCtx = out.getContext('2d');
     if (!outCtx) return png;
-    outCtx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+    outCtx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, size.width, size.height);
     const trimmed = await canvasToBlob(out, 'image/png');
     return trimmed ?? png;
   } catch {

@@ -40,13 +40,15 @@ export function DiaryWeekEventLayer({
               backgroundColor: p.bg,
             }}
             className={
-              'pointer-events-auto block min-w-0 truncate px-1 py-[2px] text-left text-[12px] font-medium leading-none text-brand-gray900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink800 ' +
+              'pointer-events-auto block min-w-0 px-1 py-[2px] text-left text-[12px] font-medium leading-none text-brand-gray900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink800 ' +
               (seg.continuesBefore ? '' : 'ml-1 rounded-l ') +
               (seg.continuesAfter ? '' : 'mr-1 rounded-r ') +
               (seg.outOfMonth ? 'opacity-40' : '')
             }
           >
-            {seg.event.title}
+            {/* 한 줄 높이에 글자 단위 줄바꿈 → 칸에 다 안 들어가는 글자는 다음 줄로 넘어가 통째로 가려진다.
+                한 줄로 두고 자르면 마지막 글자가 반쯤 잘려 보인다(R8-7). */}
+            <span className="block h-3 overflow-hidden break-all">{seg.event.title}</span>
           </button>
         );
       })}

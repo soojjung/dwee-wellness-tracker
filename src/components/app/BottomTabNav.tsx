@@ -1,10 +1,12 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { useDiaryFocusStore } from '@/store/diaryFocusStore';
 import { useTabNavWatchdog } from '@/hooks/useTabNavWatchdog';
+import { tapHaptic } from '@/lib/native/haptics';
 import { NavIcon, type NavIconKey } from './NavIcon';
 
 type TabKey = NavIconKey;
@@ -30,13 +32,20 @@ export function BottomTabNav() {
   const pathname = usePathname();
   const pingDiaryToday = useDiaryFocusStore((s) => s.pingToday);
   const watchTabNav = useTabNavWatchdog(pathname);
+  // 누른 탭을 주소가 바뀌기 전에 미리 표시한다. 그렇지 않으면 알약이 새 화면을 받아 올 때까지
+  // 제자리에 있다가 출발해 늦게 따라오는 것처럼 보인다(R8-6). 누를 때의 주소에 묶어 두어
+  // 주소가 바뀌면(이동 완료) 자연히 실제 탭 기준으로 돌아간다.
+  const [pressed, setPressed] = useState<{ from: string; index: number } | null>(null);
+  // 이동이 끝나면 바로 비운다 — 남겨 두면 나중에 다른 길로 같은 주소에 돌아왔을 때 다시 맞는다.
+  if (pressed && pressed.from !== pathname) setPressed(null);
 
   // next.config sets trailingSlash: true → normalize before allowlist check.
   const normalized = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
   if (!SHOW_NAV_PATHS.includes(normalized)) return null;
-  const activeIndex = TABS.findIndex((tab) =>
+  const routeIndex = TABS.findIndex((tab) =>
     tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href),
   );
+  const activeIndex = pressed?.from === pathname ? pressed.index : routeIndex;
 
   return (
     <>
@@ -84,19 +93,26 @@ export function BottomTabNav() {
                   // 미리 받아 둔 데이터가 앱이 멈춘 사이 끊기면 그 탭이 계속 먹통이 된다(R7-8).
                   // 탭 화면은 앱 안 파일이라 누를 때 받아도 충분히 빠르다.
                   prefetch={false}
-                  aria-current={active ? 'page' : undefined}
+                  aria-current={i === routeIndex ? 'page' : undefined}
                   aria-label={t.nav[tab.labelKey]}
                   onClick={() => {
+                    tapHaptic();
                     if (tab.key === 'log') pingDiaryToday();
-                    if (!active) watchTabNav(tab.href);
+                    if (i !== routeIndex) {
+                      setPressed({ from: pathname, index: i });
+                      watchTabNav(tab.href);
+                    }
                   }}
                   className={cn(
-                    'flex h-[52px] w-full items-center justify-center rounded-[32px] transition-colors duration-300',
+                    'group flex h-[52px] w-full items-center justify-center rounded-[32px] transition-colors duration-300',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',
                     active ? 'text-brand-pink200' : 'text-brand-gray900',
                   )}
                 >
-                  <NavIcon icon={tab.key} className="h-6 w-6" />
+                  <NavIcon
+                    icon={tab.key}
+                    className="h-6 w-6 transition-transform duration-150 group-active:scale-[0.82] motion-reduce:transition-none"
+                  />
                 </Link>
               </li>
             );

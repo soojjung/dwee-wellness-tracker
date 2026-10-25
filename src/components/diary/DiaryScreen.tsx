@@ -9,16 +9,23 @@ import { useConditionStore } from '@/store/conditionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDiaryStickerStore } from '@/store/diaryStickerStore';
 import { currentMonth, useDiaryFocusStore } from '@/store/diaryFocusStore';
-import { useDiaryPlacementStore, selectPlacementsForMonth } from '@/store/diaryPlacementStore';
+import {
+  useDiaryPlacementStore,
+  selectMonthLoaded,
+  selectPlacementsForMonth,
+} from '@/store/diaryPlacementStore';
 import { todayISO, shiftMonth } from '@/lib/date';
 import { resolveHolidayCountries } from '@/domain/holiday';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe';
+import { useFlashMessage } from '@/hooks/useFlashMessage';
 import { useDiaryHydration } from '@/hooks/useDiaryHydration';
 import { useCalendarPredictions } from '@/hooks/useCalendarPredictions';
+import { Toast } from '@/components/ui/Toast';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
+import { DiaryNeighborMonth } from './DiaryNeighborMonth';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
 import { EventDetailScreen } from './EventDetailScreen';
 import { EventFormSheet, type EventFormInput } from './EventFormSheet';
@@ -27,6 +34,9 @@ import { YearMonthWheelPicker } from './YearMonthWheelPicker';
 import type { LogView } from './LogViewToggle';
 
 const WEEK_STARTS_ON = 0;
+const TOAST_MS = 2400;
+// 스와이프 중 가운데 달과 옆 달 사이 간격 (DiaryNeighborMonth 의 mr-4 / ml-4).
+const MONTH_PAGE_GAP = 16;
 interface DiaryScreenProps {
   currentView: LogView;
   onViewChange: (view: LogView) => void;
@@ -45,6 +55,7 @@ type ActiveSheet =
 export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const t = useT();
   const categoryName = useCategoryName();
+  const [toast, flashToast] = useFlashMessage(TOAST_MS);
   const today = todayISO();
 
   const periods = usePeriodStore((s) => s.periods);
@@ -242,7 +253,20 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     handlers: swipeHandlers,
   } = useHorizontalSwipe({
     onCommit: (direction) => setCursor((c) => shiftMonth(c, direction)),
+    pageGap: MONTH_PAGE_GAP,
   });
+
+  // 끄는 동안 옆 달이 따라 들어오도록 이전·다음 달 스티커를 미리 받아 둔다(R8-9).
+  const prevMonth = useMemo(() => shiftMonth(cursor, -1), [cursor]);
+  const nextMonth = useMemo(() => shiftMonth(cursor, 1), [cursor]);
+  useEffect(() => {
+    const state = useDiaryPlacementStore.getState();
+    for (const m of [prevMonth, nextMonth]) {
+      if (!selectMonthLoaded(m.year, m.monthIndex)(state)) {
+        void hydratePlacementMonth(m.year, m.monthIndex);
+      }
+    }
+  }, [prevMonth, nextMonth, hydratePlacementMonth]);
 
   // Spec 8: onboarding nudge — the calendar pulls slightly left and returns
   // on first mount of the diary tab in this session, hinting that swipe
@@ -258,6 +282,8 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
     const t = window.setTimeout(() => setNudgeOnMount(false), 1000);
     return () => window.clearTimeout(t);
   }, []);
+
+  const showNeighbors = swipeOffset !== 0 || swipeAnimating || nudgeOnMount;
 
   return (
     <>
@@ -298,6 +324,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
               the same property. */}
             <div className={nudgeOnMount ? 'animate-diaryNudge' : undefined}>
               <div
+                className="relative"
                 style={{
                   transform: `translateX(${swipeOffset}px)`,
                   transition: swipeAnimating ? 'transform 220ms ease-out' : 'none',
@@ -333,6 +360,41 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
                     />
                   </div>
                 </DiaryStickerViewLayer>
+                {/* 옆 달은 끄는 동안·넘어가는 동안·첫 진입 힌트 동안만 그린다 — 평소엔 세 달을 다 그릴 필요가 없다. */}
+                {showNeighbors ? (
+                  <>
+                  <DiaryNeighborMonth
+                    side="prev"
+                    year={prevMonth.year}
+                    monthIndex={prevMonth.monthIndex}
+                    stickers={stickers}
+                    urls={stickerUrls}
+                    weekStartsOn={WEEK_STARTS_ON}
+                    today={today}
+                    periods={periods}
+                    events={events}
+                    categories={categories}
+                    conditionByDate={conditionByDate}
+                    predictions={predictions}
+                    holidayCountries={holidayCountries}
+                  />
+                  <DiaryNeighborMonth
+                    side="next"
+                    year={nextMonth.year}
+                    monthIndex={nextMonth.monthIndex}
+                    stickers={stickers}
+                    urls={stickerUrls}
+                    weekStartsOn={WEEK_STARTS_ON}
+                    today={today}
+                    periods={periods}
+                    events={events}
+                    categories={categories}
+                    conditionByDate={conditionByDate}
+                    predictions={predictions}
+                    holidayCountries={holidayCountries}
+                  />
+                  </>
+                ) : null}
               </div>
             </div>
           </div>
@@ -407,7 +469,9 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
             categories.length > 1
               ? async () => {
                   const removed = await removeCategory(activeCategoryForEdit.id);
-                  if (removed) returnToEventSheet(sheet.prev);
+                  if (!removed) return;
+                  returnToEventSheet(sheet.prev);
+                  flashToast(t.report.diary.categorySheet.deletedToast);
                 }
               : undefined
           }
@@ -424,6 +488,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           }}
         />
       ) : null}
+      <Toast message={toast} variant="topConfirm" />
     </>
   );
 }

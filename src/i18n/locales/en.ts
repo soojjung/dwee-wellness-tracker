@@ -770,6 +770,7 @@ export const en = {
         save: 'Save',
         close: 'Close',
         delete: 'Delete category',
+        deletedToast: 'Category deleted.',
       },
       palette: {
         pink: 'Pink',
