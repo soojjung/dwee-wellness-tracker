@@ -26,21 +26,36 @@ useEscToClose(onClose); // Esc 로 닫기 (submitting 중이면 handleClose 가 
 - 루트 `<div class="fixed inset-0 ...">` 에 `onClick={handleCancel}` 부착.
 - 내부 sheet 는 `onClick={(e) => e.stopPropagation()}` 로 버블링 차단.
 - 제출 중 (`submitting`) 이면 `handleCancel` 초입에서 return.
+- 대안: 바깥 `onClick` 에서 `e.target === e.currentTarget` 일 때만 취소 (`DiagnoseConsentModal`). 둘 중 하나만 쓸 것.
 
 ## 3) 스크롤 컨테이너 규칙
 
 콘텐츠가 뷰포트를 넘을 수 있는 sheet 는:
 
-- 외곽 sheet: `flex flex-col overflow-hidden`, `maxHeight: '90dvh'` (bottom sheet) 또는 `max-h-[90vh]` (centered).
+- 외곽 sheet: `flex flex-col overflow-hidden`.
+- 높이 (폰 폭 바텀시트): `h-[calc(100dvh-120px-env(safe-area-inset-top,0px))]` — 상태바 아래 120px 를 남겨 뒤 화면 제목이 보이게. 내용이 짧은 시트는 `h-` 대신 `max-h-` 로 같은 값 (`PeriodEditSheet`). 기준 사용처: `EventFormSheet`·`PeriodRecordSheet`·`PeriodEditSheet`.
+- 높이 (넓은 화면 `sm` 이상, 가운데 뜨는 시트): `sm:h-auto sm:max-h-[90vh]`.
+- **알려진 예외**: `PhotoImportModal` 은 `maxHeight: '90dvh'` (위 기준 이전 값). 새 시트는 이 값을 따르지 말 것.
 - 스크롤 영역: `min-h-0 flex-1 overflow-y-auto`.
 - 헤더/푸터는 `flex-shrink-0` (기본), 스크롤 영역만 확장.
 - **스크롤바 두 개 금지** — sheet 자체는 `overflow-hidden`, 스크롤은 안쪽 컨테이너 하나에서만.
+
+## 3-1) 시트 폭
+
+- 폰 폭: `w-full max-w-md` 바텀시트.
+- 넓은 화면(`sm` 이상): `sm:max-w-[416px]` — 화면 카드(앱 열 448px 에서 좌우 16px 안쪽)보다 넓어 보이지 않게 (R8-3). 가운데 뜨는 시트·아래 붙는 시트 모두.
 
 ## 4) 접근성
 
 - `role="dialog"` + `aria-modal="true"` 필수.
 - `aria-labelledby` (title 이 있으면) 또는 `aria-label` 지정.
 - 닫기 버튼에 `aria-label={t.home.cancel}` 또는 유사 사전 키.
+
+## 4-1) 포커스 트랩 (자동)
+
+- 루트 레이아웃의 `ModalFocusTrap`(`src/components/app/ModalFocusTrap.tsx`)이 가장 위(DOM 마지막)의 `aria-modal="true"` 안에서만 Tab / Shift+Tab 이 돌게 하고, 열릴 때 포커스를 모달로, 닫힐 때 연 버튼으로 돌려준다.
+- 모달 쪽에서 할 일은 `role="dialog"` + `aria-modal="true"` 를 모달 루트(또는 dim 안쪽 카드 — `DiagnoseConsentModal`)에 두는 것뿐. 따로 훅을 달지 않는다.
+- 보기 전용으로 겹쳐 그리는 요소(예: 스와이프 중 옆 달 `DiaryNeighborMonth`)에는 `aria-modal` 을 쓰지 말 것 — `inert` + `aria-hidden` 으로 둔다.
 
 ## 5) z-index
 
