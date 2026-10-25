@@ -5,7 +5,7 @@ export interface DiaryStickerPlacement {
   monthIndex: number;
   /** Center x, pixels at a nominal 358px calendar container width. */
   x: number;
-  /** Center y, pixels at a nominal 358px calendar container width. */
+  /** Center y, CSS pixels from the top — not scaled, since calendar rows have a fixed height. */
   y: number;
   /** Scale multiplier from the base sticker size. */
   scale: number;

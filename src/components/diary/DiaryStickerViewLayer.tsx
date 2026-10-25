@@ -102,7 +102,9 @@ function ViewSticker({
   // "4:3" label = portrait 3:4 aspect (height taller than width).
   const baseH = ratio === '1:1' ? baseW : baseW * (4 / 3);
   const renderX = placement.x * scaleFactor;
-  const renderY = placement.y * scaleFactor;
+  // 세로 위치는 늘리지 않는다 — 달력 행 높이는 너비와 무관하게 고정이라, 넓은 화면에서 y 까지
+  // 늘리면 스티커가 붙인 날짜보다 아래로 밀려 달력 밖으로 나간다(R8-8).
+  const renderY = placement.y;
   const renderW = baseW * scaleFactor;
   const renderH = baseH * scaleFactor;
 
