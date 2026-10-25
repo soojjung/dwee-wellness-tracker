@@ -75,7 +75,7 @@ export function DiaryDayCell({
         ) : null}
       </div>
       <span
-        className="block h-3 truncate px-0.5 text-center text-[9px] font-medium leading-3 text-brand-gray600"
+        className="block h-3 overflow-hidden break-all px-0.5 text-center text-[9px] font-medium leading-3 text-brand-gray600"
         title={holidayLabel}
       >
         {holidayLabel}
