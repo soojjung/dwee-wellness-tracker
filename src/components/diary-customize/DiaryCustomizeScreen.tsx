@@ -295,7 +295,9 @@ export function DiaryCustomizeScreen() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-gray200">
+    // 스티커를 길게 누르거나 끌 때 iOS 가 글자 선택(돋보기·파란 손잡이)을 시작하지 않게 한다(R8-12).
+    // 이 화면엔 글자 입력칸이 없어 화면 전체에서 꺼도 된다.
+    <div className="flex min-h-dvh select-none flex-col bg-brand-gray200">
       {/* 8px above the row, plus the notch inset where there is one — bare
           `pt-safe` resolved to 0 outside a notched device and left the
           back/done buttons flush against the top edge. */}
