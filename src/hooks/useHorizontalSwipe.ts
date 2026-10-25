@@ -6,6 +6,8 @@ const SWIPE_ANIMATION_MS = 220;
 interface UseHorizontalSwipeArgs {
   /** 스와이프가 임계값을 넘어 커밋될 때 -1(다음) / 1(이전) 방향과 함께 호출. */
   onCommit: (direction: -1 | 1) => void;
+  /** 옆 페이지와의 간격(px). 커밋할 때 이만큼 더 밀어야 옆 페이지가 정확히 제자리에 온다. */
+  pageGap?: number;
 }
 
 interface HorizontalSwipeHandlers {
@@ -26,7 +28,10 @@ interface UseHorizontalSwipeResult {
  * 다이어리 캘린더의 좌우 스와이프 제스처. 순수 포인터 드래그 상태만 다루고 도메인
  * 데이터(달 커서 등)는 모른다 — 임계값을 넘으면 `onCommit(direction)` 만 알린다.
  */
-export function useHorizontalSwipe({ onCommit }: UseHorizontalSwipeArgs): UseHorizontalSwipeResult {
+export function useHorizontalSwipe({
+  onCommit,
+  pageGap = 0,
+}: UseHorizontalSwipeArgs): UseHorizontalSwipeResult {
   const containerRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -43,7 +48,7 @@ export function useHorizontalSwipe({ onCommit }: UseHorizontalSwipeArgs): UseHor
     // Slide fully out of view in the swipe direction, then swap month +
     // instantly snap the new month in from the opposite side (offset 0).
     setAnimating(true);
-    setOffset(direction * -containerWidth);
+    setOffset(direction * -(containerWidth + pageGap));
     window.setTimeout(() => {
       onCommit(direction);
       setAnimating(false);
