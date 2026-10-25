@@ -31,6 +31,7 @@ TestFlight·출시 이후 **무슨 일이 있었고 무엇을 했는지** 시간
 | # | 날짜 | 화면 | 증상 (보고 그대로) | 원인 | 조치 | 커밋 | 상태 |
 |---|---|---|---|---|---|---|---|
 | R8-1 | 10-25 | 로그인 | Sentry DWEE-3 `AuthRetryableFetchError: Load failed` (익명 로그인, 3회 — iPhone14,5 빌드 8 · iPhone99,7 등) | 응답 자체가 없음(`auth_status=0`) → 기기 네트워크 끊김/불안정 추정. 게다가 iOS WebView 메시지 `Load failed` 가 `classifyError` 의 `network`/`fetch` 검사에 안 걸려 오프라인인데 "다시 시도해 주세요" 문구가 뜸 | `classifyError` 가 `isAuthRetryableFetchError` 면 `networkOffline` → "네트워크 연결을 확인해 주세요". `hydrate` 의 세션 확인 실패도 같은 분류. 실기기(비행기 모드) 미검증 | (이 커밋) | 수정 |
+| R8-2 | 10-22 | 다이어리 · 일정 유형 편집 | 일정 유형 삭제할때 위에 삭제되었다는 토스트 알럿 띄우기 (iPhone14,5, 빌드 8) | 삭제 후 시트만 닫히고 일정 시트로 돌아가 아무 안내가 없음 | `DiaryScreen` 이 삭제 성공 시 상단 토스트(`Toast` `topConfirm`, 2.4초) — 시트가 닫힌 뒤에도 보이도록 시트가 아닌 화면에 둠. 사전 키 `report.diary.categorySheet.deletedToast` (en/ko — i18n 에이전트). 실패 시엔 토스트 없음(기존대로 시트 유지) | (이 커밋) | 수정 |
 
 ## 라운드 7 — 빌드 7 피드백 (2026-10-01 ~)
 

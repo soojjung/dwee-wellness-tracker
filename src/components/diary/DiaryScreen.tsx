@@ -15,8 +15,10 @@ import { resolveHolidayCountries } from '@/domain/holiday';
 import type { BuiltinCategoryKey } from '@/domain/event/builtins';
 import type { EventCategory, EventLog } from '@/types';
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe';
+import { useFlashMessage } from '@/hooks/useFlashMessage';
 import { useDiaryHydration } from '@/hooks/useDiaryHydration';
 import { useCalendarPredictions } from '@/hooks/useCalendarPredictions';
+import { Toast } from '@/components/ui/Toast';
 import { DiaryHeader } from './DiaryHeader';
 import { DiaryMonthGrid } from './DiaryMonthGrid';
 import { DiaryStickerViewLayer } from './DiaryStickerViewLayer';
@@ -27,6 +29,7 @@ import { YearMonthWheelPicker } from './YearMonthWheelPicker';
 import type { LogView } from './LogViewToggle';
 
 const WEEK_STARTS_ON = 0;
+const TOAST_MS = 2400;
 interface DiaryScreenProps {
   currentView: LogView;
   onViewChange: (view: LogView) => void;
@@ -45,6 +48,7 @@ type ActiveSheet =
 export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
   const t = useT();
   const categoryName = useCategoryName();
+  const [toast, flashToast] = useFlashMessage(TOAST_MS);
   const today = todayISO();
 
   const periods = usePeriodStore((s) => s.periods);
@@ -407,7 +411,9 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
             categories.length > 1
               ? async () => {
                   const removed = await removeCategory(activeCategoryForEdit.id);
-                  if (removed) returnToEventSheet(sheet.prev);
+                  if (!removed) return;
+                  returnToEventSheet(sheet.prev);
+                  flashToast(t.report.diary.categorySheet.deletedToast);
                 }
               : undefined
           }
@@ -424,6 +430,7 @@ export function DiaryScreen({ currentView, onViewChange }: DiaryScreenProps) {
           }}
         />
       ) : null}
+      <Toast message={toast} variant="topConfirm" />
     </>
   );
 }
