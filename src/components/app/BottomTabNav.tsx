@@ -5,6 +5,7 @@ import { useT } from '@/i18n/useT';
 import { cn } from '@/lib/cn';
 import { useDiaryFocusStore } from '@/store/diaryFocusStore';
 import { useTabNavWatchdog } from '@/hooks/useTabNavWatchdog';
+import { tapHaptic } from '@/lib/native/haptics';
 import { NavIcon, type NavIconKey } from './NavIcon';
 
 type TabKey = NavIconKey;
@@ -87,16 +88,20 @@ export function BottomTabNav() {
                   aria-current={active ? 'page' : undefined}
                   aria-label={t.nav[tab.labelKey]}
                   onClick={() => {
+                    tapHaptic();
                     if (tab.key === 'log') pingDiaryToday();
                     if (!active) watchTabNav(tab.href);
                   }}
                   className={cn(
-                    'flex h-[52px] w-full items-center justify-center rounded-[32px] transition-colors duration-300',
+                    'group flex h-[52px] w-full items-center justify-center rounded-[32px] transition-colors duration-300',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-auth-button focus-visible:ring-offset-2',
                     active ? 'text-brand-pink200' : 'text-brand-gray900',
                   )}
                 >
-                  <NavIcon icon={tab.key} className="h-6 w-6" />
+                  <NavIcon
+                    icon={tab.key}
+                    className="h-6 w-6 transition-transform duration-150 group-active:scale-[0.82] motion-reduce:transition-none"
+                  />
                 </Link>
               </li>
             );
