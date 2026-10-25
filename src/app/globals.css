@@ -33,6 +33,12 @@ img {
   -webkit-user-drag: none;
 }
 
+/* ModalFocusTrap 이 모달을 열 때 포커스를 모달 자체로 옮긴다. 그건 키보드 이동의 시작점일 뿐
+   사용자가 고른 항목이 아니라 테두리를 그리지 않는다 (안쪽 버튼의 focus-visible 링은 그대로). */
+[aria-modal='true']:focus {
+  outline: none;
+}
+
 /* 상태바 뒤·주소창 뒤·오버스크롤 영역은 페이지 콘텐츠가 아니라 브라우저가 body 배경색으로
    칠한다 (iOS Safari 26 은 theme-color 메타도 여기엔 쓰지 않는다). body 는 앱 공통 회색이라,
    배경이 다른 풀스크린 화면(로그인·스플래시 = 핑크, 소개 슬라이드 = 흰색)은 위아래에 회색 띠가
